@@ -171,6 +171,21 @@ export const internalNavGroups: NavGroup[] = [
   },
 ];
 
+/**
+ * Care professional portal — discharge planners, social workers, care coordinators.
+ * Focus: patients, placement status, applications, messages.
+ */
+export const professionalNav: NavItem[] = [
+  { href: "/professional/dashboard", label: "Dashboard" },
+  { href: "/professional/patients", label: "Patients" },
+  { href: "/professional/applications", label: "Applications" },
+  { href: "/professional/messages", label: "Messages" },
+  { href: "/professional/communities", label: "Communities" },
+  { href: "/professional/organization", label: "My Organization" },
+  { href: "/professional/settings", label: "Settings" },
+];
+
 export const familyHome = "/family/dashboard";
 export const communityHome = "/community/dashboard";
 export const internalHome = "/internal/overview";
+export const professionalHome = "/professional/dashboard";

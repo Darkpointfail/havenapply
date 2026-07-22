@@ -23,4 +23,10 @@ export const AUTH_MESSAGES = {
   resendSuccess: "A new confirmation link has been sent.",
   generic: "Something went wrong. Please try again.",
   required: "Please fill in all required fields.",
+  emailInvalid:
+    "This email can’t be used for signup right now. Try another address, or ask your admin to finish Supabase email setup.",
+  emailNotAuthorized:
+    "Supabase’s built-in email only allows team member addresses. Add a custom SMTP provider, or set SUPABASE_SERVICE_ROLE_KEY in .env.local for local signup.",
+  signupNeedsSmtp:
+    "Account creation needs Supabase email setup. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Project Settings → API → service_role) for local testing, or configure custom SMTP in Supabase Auth.",
 } as const;

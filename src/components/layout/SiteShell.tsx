@@ -15,12 +15,15 @@ import {
   internalHome,
   internalNav,
   internalNavGroups,
+  professionalHome,
+  professionalNav,
 } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
 import {
   AUTH_OPEN_ACCESS,
   isFamilyBrowsePath,
   isFamilyPortalPath,
+  isProfessionalPortalPath,
 } from "@/lib/auth-open-access";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
@@ -30,6 +33,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const isCoreFamily = isFamilyPortalPath(pathname);
   const isBrowse = isFamilyBrowsePath(pathname);
   const isCommunity = pathname.startsWith("/community");
+  const isProfessional = isProfessionalPortalPath(pathname);
   const isInternal = pathname.startsWith("/internal");
   const isPortalAuth =
     pathname === "/community/sign-in" ||
@@ -47,10 +51,26 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   // Family shell on portal routes, or on browse/detail only when signed in as family
   const showFamilyShell = user?.role === "family" && (isCoreFamily || isBrowse);
+  const showProfessionalShell =
+    (user?.role === "professional" || AUTH_OPEN_ACCESS) && isProfessional;
 
   const communitySession =
     (user?.role === "community" && user.communityStatus === "verified") ||
     (AUTH_OPEN_ACCESS && isCommunity && !isPortalAuth && !isCommunityPending);
+
+  if (showProfessionalShell) {
+    return (
+      <>
+        <PortalHeader
+          nav={professionalNav}
+          homeHref={professionalHome}
+          badge="Care professional"
+          signOutHref="/"
+        />
+        <main className="flex-1 page-enter">{children}</main>
+      </>
+    );
+  }
 
   if (showFamilyShell) {
     return (
@@ -112,7 +132,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const hideFooter = isPublicAuth || isPortalAuth || isCoreFamily || isCommunity || isInternal;
+  const hideFooter =
+    isPublicAuth || isPortalAuth || isCoreFamily || isCommunity || isInternal || isProfessional;
 
   return (
     <>

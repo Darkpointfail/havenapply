@@ -7,6 +7,7 @@ import {
   AUTH_OPEN_ACCESS,
   DEMO_COMMUNITY_USER,
   DEMO_FAMILY_USER,
+  DEMO_PROFESSIONAL_USER,
 } from "@/lib/auth-open-access";
 
 export function RequireAuth({
@@ -27,7 +28,9 @@ export function RequireAuth({
     AUTH_OPEN_ACCESS && role !== "internal"
       ? role === "community"
         ? DEMO_COMMUNITY_USER
-        : DEMO_FAMILY_USER
+        : role === "professional"
+          ? DEMO_PROFESSIONAL_USER
+          : DEMO_FAMILY_USER
       : user;
 
   useEffect(() => {

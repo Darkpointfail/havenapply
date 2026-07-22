@@ -72,26 +72,37 @@ export async function getSupabaseSessionUser(): Promise<SessionUser | null> {
   return sessionFromSupabaseUser(data.user);
 }
 
-function mapAuthError(message: string): string {
+function mapAuthError(message: string, code?: string): string {
   const m = message.toLowerCase();
+  const c = (code || "").toLowerCase();
+
+  if (c === "email_address_not_authorized" || m.includes("not authorized")) {
+    return AUTH_MESSAGES.emailNotAuthorized;
+  }
+  if (c === "email_address_invalid" || (m.includes("email address") && m.includes("invalid"))) {
+    return AUTH_MESSAGES.emailNotAuthorized;
+  }
   if (
     m.includes("already registered") ||
     m.includes("already been registered") ||
-    m.includes("user already exists")
+    m.includes("user already exists") ||
+    c === "email_exists" ||
+    c === "user_already_exists"
   ) {
     return AUTH_MESSAGES.emailTaken;
   }
-  if (m.includes("invalid login") || m.includes("invalid credentials")) {
+  if (m.includes("invalid login") || m.includes("invalid credentials") || c === "invalid_credentials") {
     return AUTH_MESSAGES.badCredentials;
   }
-  if (m.includes("email not confirmed")) {
+  if (m.includes("email not confirmed") || c === "email_not_confirmed") {
     return AUTH_MESSAGES.confirmBeforeSignIn;
   }
   if (
     m.includes("password should") ||
     m.includes("password is") ||
     m.includes("weak_password") ||
-    m.includes("weak password")
+    m.includes("weak password") ||
+    c === "weak_password"
   ) {
     return AUTH_MESSAGES.weakPassword;
   }
@@ -104,7 +115,6 @@ function mapAuthError(message: string): string {
   if (m.includes("rate limit") || m.includes("too many") || m.includes("email rate")) {
     return "Supabase email rate limit hit (common in local testing). Wait ~1 hour, use a new email, or turn off Confirm email in Supabase Auth → Providers → Email.";
   }
-  // Surface the real message so the user can diagnose (still user-readable)
   if (message && message.length < 160) return message;
   return AUTH_MESSAGES.generic;
 }
@@ -156,13 +166,76 @@ export async function signUpWithRoleSupabase(
     return { ok: false, error: AUTH_MESSAGES.weakPassword };
   }
 
-  const supabase = createClient();
   const email = normalizeEmail(input.email);
+
+  // Prefer server admin signup when available (bypasses default SMTP allowlist in local/dev).
+  try {
+    const adminRes = await fetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: input.role,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email,
+        password: input.password,
+        acceptedTerms: input.acceptedTerms,
+        organization: input.organization,
+        jobTitle: input.jobTitle,
+        phone: input.phone,
+      }),
+    });
+    const adminJson = (await adminRes.json()) as {
+      ok: boolean;
+      error?: string;
+      code?: string;
+    };
+
+    if (adminRes.ok && adminJson.ok) {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: input.password,
+      });
+      if (error || !data.user) {
+        return {
+          ok: false,
+          error: mapAuthError(error?.message || AUTH_MESSAGES.generic, error?.code),
+        };
+      }
+      const sessionUser = sessionFromSignup(data.user, {
+        email,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        role: input.role,
+        organization: input.organization?.trim(),
+        jobTitle: input.jobTitle?.trim(),
+        communityStatus: input.role === "facility" ? "verified" : undefined,
+        onboardingCompleted: input.role !== "family",
+      });
+      return { ok: true, data: sessionUser };
+    }
+
+    // No service role: keep trying client signup (works once custom SMTP / team email is set).
+    // Still surface a clearer hint when admin path is unavailable and client path will likely fail.
+    if (adminJson.code === "missing_service_role") {
+      // continue to client signUp below
+    } else {
+      return {
+        ok: false,
+        error: adminJson.error || AUTH_MESSAGES.generic,
+      };
+    }
+  } catch {
+    // Fall through to client signup.
+  }
+
+  const supabase = createClient();
   const nextPath =
     input.role === "facility"
       ? "/community/profile?welcome=1"
       : input.role === "professional"
-        ? "/family/dashboard"
+        ? "/professional/dashboard"
         : "/start";
 
   const metadata: Record<string, unknown> = {
@@ -192,7 +265,7 @@ export async function signUpWithRoleSupabase(
 
   if (error) {
     console.error("[auth] signup failed:", input.role, error.message, error);
-    return { ok: false, error: mapAuthError(error.message) };
+    return { ok: false, error: mapAuthError(error.message, error.code) };
   }
   if (!data.user) return { ok: false, error: AUTH_MESSAGES.generic };
 

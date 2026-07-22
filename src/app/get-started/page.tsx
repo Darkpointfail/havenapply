@@ -149,7 +149,13 @@ function GetStartedInner() {
       );
       return;
     }
-    router.push(role === "facility" ? "/community/dashboard" : "/family/dashboard");
+    router.push(
+      role === "facility"
+        ? "/community/dashboard"
+        : role === "professional"
+          ? "/professional/dashboard"
+          : "/family/dashboard",
+    );
   };
 
   if (!ready) {
@@ -164,7 +170,7 @@ function GetStartedInner() {
     <div className="mx-auto max-w-3xl px-5 py-12 md:py-16">
       <PageHeader
         title="Who are you using HavenApply as?"
-        description="Choose your role once, then create your account. We’ll save it for when portals are ready."
+        description="Choose your role once, then create your account."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Get Started" }]}
       />
 

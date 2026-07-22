@@ -31,6 +31,19 @@ export const DEMO_COMMUNITY_USER: SessionUser = {
   onboardingCompleted: true,
 };
 
+export const DEMO_PROFESSIONAL_USER: SessionUser = {
+  id: "demo_professional",
+  email: "demo.care@havenapply.local",
+  firstName: "Sam",
+  lastName: "Rivera",
+  name: "Sam Rivera",
+  role: "professional",
+  organization: "City General Hospital",
+  jobTitle: "Discharge Planner",
+  emailConfirmed: true,
+  onboardingCompleted: true,
+};
+
 const OPEN_FAMILY_KEY = "haven-open-family";
 const OPEN_COMMUNITY_KEY = "haven-open-community";
 
@@ -128,12 +141,19 @@ export function isCommunityPortalPath(pathname: string) {
   return true;
 }
 
+export function isProfessionalPortalPath(pathname: string) {
+  return pathname.startsWith("/professional");
+}
+
 /** Demo session for the current path. Pass useStoredSession only after mount (client). */
 export function demoUserForPath(
   pathname: string,
   options?: { useStoredSession?: boolean },
 ): SessionUser | null {
   if (!AUTH_OPEN_ACCESS) return null;
+  if (isProfessionalPortalPath(pathname)) {
+    return DEMO_PROFESSIONAL_USER;
+  }
   if (isCommunityPortalPath(pathname)) {
     return DEMO_COMMUNITY_USER;
   }

@@ -513,14 +513,13 @@ export function homeForUser(user: SessionUser) {
   if (isFacilityRole(user.role)) {
     return user.communityStatus === "verified" ? "/community/dashboard" : "/community/pending";
   }
-  // professional uses family home until dedicated routing exists
-  return user.onboardingCompleted || user.role === "professional"
-    ? "/family/dashboard"
-    : "/start";
+  if (user.role === "professional") return "/professional/dashboard";
+  return user.onboardingCompleted ? "/family/dashboard" : "/start";
 }
 
 export function homeForRole(role: UserRole) {
   if (isFacilityRole(role)) return "/community/dashboard";
   if (role === "internal") return "/internal/overview";
+  if (role === "professional") return "/professional/dashboard";
   return "/family/dashboard";
 }

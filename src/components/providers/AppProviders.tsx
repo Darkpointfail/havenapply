@@ -9,6 +9,7 @@ import { InternalAdminProvider } from "@/lib/internal-admin-store";
 import { MessagingProvider } from "@/lib/messaging-store";
 import { NotificationsTasksProvider } from "@/lib/notifications-tasks-store";
 import { PrivacySecurityProvider } from "@/lib/privacy-security-store";
+import { ProfessionalProvider } from "@/lib/professional-store";
 import { ThemeProvider } from "@/lib/theme";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -16,19 +17,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <AuthProvider>
         <FamilyDataProvider>
-          <MessagingProvider>
-            <FamilyCollaborationProvider>
-              <CommunityPortalProvider>
-                <InternalAdminProvider>
-                  <NotificationsTasksProvider>
-                    <PrivacySecurityProvider>
-                      <AiProvider>{children}</AiProvider>
-                    </PrivacySecurityProvider>
-                  </NotificationsTasksProvider>
-                </InternalAdminProvider>
-              </CommunityPortalProvider>
-            </FamilyCollaborationProvider>
-          </MessagingProvider>
+          <ProfessionalProvider>
+            <MessagingProvider>
+              <FamilyCollaborationProvider>
+                <CommunityPortalProvider>
+                  <InternalAdminProvider>
+                    <NotificationsTasksProvider>
+                      <PrivacySecurityProvider>
+                        <AiProvider>{children}</AiProvider>
+                      </PrivacySecurityProvider>
+                    </NotificationsTasksProvider>
+                  </InternalAdminProvider>
+                </CommunityPortalProvider>
+              </FamilyCollaborationProvider>
+            </MessagingProvider>
+          </ProfessionalProvider>
         </FamilyDataProvider>
       </AuthProvider>
     </ThemeProvider>

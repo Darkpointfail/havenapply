@@ -36,7 +36,9 @@ export function Logo({
     <Link
       href={href}
       className={cn(
-        "inline-flex shrink-0 -translate-y-1.5 items-center leading-none transition-opacity hover:opacity-90 -ml-0.5",
+        "inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90 -ml-0.5",
+        // Optical crop on desktop; sit lower/centered on mobile header
+        "translate-y-1 md:-translate-y-1.5",
         className,
       )}
       aria-label="HavenApply home"

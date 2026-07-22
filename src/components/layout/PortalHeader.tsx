@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Menu, Moon, Sparkles, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import type { NavGroup, NavItem } from "@/config/navigation";
@@ -43,8 +44,13 @@ export function PortalHeader({
   const notifUnread = notifTasks?.unreadCount ?? 0;
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const headerMenusRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isMessagesHref = (href: string) => href.includes("/messages");
   const isNotificationsHref = (href: string) => href.includes("/notifications");
@@ -74,8 +80,13 @@ export function PortalHeader({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
@@ -97,11 +108,130 @@ export function PortalHeader({
     };
   }, [openGroup]);
 
+  const drawer =
+    mounted &&
+    createPortal(
+      <div
+        className={cn(
+          "fixed inset-0 z-[200] lg:hidden",
+          open ? "pointer-events-auto" : "pointer-events-none",
+        )}
+        aria-hidden={!open}
+      >
+        <button
+          type="button"
+          className={cn(
+            "absolute inset-0 bg-ink/50 backdrop-blur-[2px] transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0",
+          )}
+          aria-label="Close menu"
+          onClick={() => setOpen(false)}
+        />
+        <aside
+          className={cn(
+            "absolute inset-y-0 right-0 flex w-[min(100%,19.5rem)] flex-col rounded-l-3xl border-l border-line bg-surface shadow-lift transition-transform duration-300 ease-out",
+            open ? "translate-x-0" : "translate-x-full",
+          )}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+        >
+          <div className="flex min-h-16 items-center justify-between gap-3 border-b border-line px-5 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <div className="flex min-w-0 items-center gap-2">
+              <Logo href={homeHref} size="md" className="!ml-0 !translate-y-0" />
+              <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand-strong">
+                {badge}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-soft text-ink"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <nav
+            className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            aria-label="Portal mobile"
+          >
+            {useGroups
+              ? groups!.map((group) => (
+                  <div key={group.id}>
+                    <p className="px-3 pb-1.5 text-sm font-semibold tracking-tight text-ink">
+                      {group.id === "account" && user?.name ? user.name : group.label}
+                    </p>
+                    <div className="flex flex-col gap-0.5">
+                      {group.children.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            "flex items-center justify-between rounded-2xl px-3 py-3 text-sm",
+                            pathMatches(pathname, link.href)
+                              ? "bg-brand-soft font-medium text-brand-strong"
+                              : "text-ink hover:bg-bg-soft",
+                          )}
+                        >
+                          <span>{link.label}</span>
+                          {badgeForHref(link.href) > 0 && (
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
+                              {badgeForHref(link.href) > 9
+                                ? "9+"
+                                : badgeForHref(link.href)}
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              : nav.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center justify-between rounded-2xl px-3 py-3 text-sm",
+                      pathMatches(pathname, link.href)
+                        ? "bg-brand-soft font-medium text-brand-strong"
+                        : "text-ink hover:bg-bg-soft",
+                    )}
+                  >
+                    <span>{link.label}</span>
+                    {badgeForHref(link.href) > 0 && (
+                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
+                        {badgeForHref(link.href) > 9
+                          ? "9+"
+                          : badgeForHref(link.href)}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+            <Button
+              className="mt-auto"
+              variant="secondary"
+              onClick={() => {
+                signOut();
+                setOpen(false);
+                router.push(signOutHref);
+              }}
+            >
+              Sign out
+            </Button>
+          </nav>
+        </aside>
+      </div>,
+      document.body,
+    );
+
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-surface/90 backdrop-blur-xl">
       <div
         ref={headerMenusRef}
-        className="relative mx-auto grid h-[4.5rem] max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:h-20 md:px-6 lg:flex lg:gap-3"
+        className="relative mx-auto grid h-16 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:h-20 md:px-6 lg:flex lg:gap-3"
       >
         {/* Mobile: spacer left so logo stays centered */}
         <div className="flex items-center justify-self-start lg:hidden">
@@ -109,7 +239,7 @@ export function PortalHeader({
         </div>
 
         {/* Mobile centered logo */}
-        <div className="justify-self-center lg:hidden">
+        <div className="flex items-center justify-self-center lg:hidden">
           <Logo href={homeHref} size="lg" className="!ml-0" />
         </div>
 
@@ -348,7 +478,7 @@ export function PortalHeader({
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-soft lg:hidden"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -357,110 +487,7 @@ export function PortalHeader({
           </button>
         </div>
       </div>
-
-      {/* Mobile drawer from the right */}
-      <div
-        className={cn(
-          "fixed inset-0 z-[60] lg:hidden",
-          open ? "pointer-events-auto" : "pointer-events-none",
-        )}
-        aria-hidden={!open}
-      >
-        <button
-          type="button"
-          className={cn(
-            "absolute inset-0 bg-ink/40 transition-opacity duration-300",
-            open ? "opacity-100" : "opacity-0",
-          )}
-          aria-label="Close menu"
-          onClick={() => setOpen(false)}
-        />
-        <div
-          className={cn(
-            "absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-line bg-surface shadow-lift transition-transform duration-300 ease-out",
-            open ? "translate-x-0" : "translate-x-full",
-          )}
-        >
-          <div className="flex h-[4.5rem] items-center justify-between border-b border-line px-4">
-            <p className="text-sm font-semibold text-ink">{badge}</p>
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft"
-              aria-label="Close menu"
-              onClick={() => setOpen(false)}
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <nav className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-label="Portal mobile">
-            {useGroups
-              ? groups!.map((group) => (
-                  <div key={group.id}>
-                    <p className="px-3 pb-1.5 text-sm font-semibold tracking-tight text-ink">
-                      {group.id === "account" && user?.name ? user.name : group.label}
-                    </p>
-                    <div className="flex flex-col gap-0.5">
-                      {group.children.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setOpen(false)}
-                          className={cn(
-                            "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm",
-                            pathMatches(pathname, link.href)
-                              ? "bg-brand-soft font-medium text-brand-strong"
-                              : "text-ink hover:bg-bg-soft",
-                          )}
-                        >
-                          <span>{link.label}</span>
-                          {badgeForHref(link.href) > 0 && (
-                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
-                              {badgeForHref(link.href) > 9
-                                ? "9+"
-                                : badgeForHref(link.href)}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              : nav.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm",
-                      pathMatches(pathname, link.href)
-                        ? "bg-brand-soft font-medium text-brand-strong"
-                        : "text-ink hover:bg-bg-soft",
-                    )}
-                  >
-                    <span>{link.label}</span>
-                    {badgeForHref(link.href) > 0 && (
-                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
-                        {badgeForHref(link.href) > 9
-                          ? "9+"
-                          : badgeForHref(link.href)}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-            <Button
-              className="mt-2"
-              variant="secondary"
-              onClick={() => {
-                signOut();
-                setOpen(false);
-                router.push(signOutHref);
-              }}
-            >
-              Sign out
-            </Button>
-          </nav>
-        </div>
-      </div>
+      {drawer}
     </header>
   );
 }

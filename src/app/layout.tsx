@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s · HavenApply",
   },
   description:
-    "Senior living admissions, made clear. One dossier to find the right communities and apply with confidence.",
+    "Senior living admissions, made clear. Build one profile, find the right communities, and apply with confidence.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

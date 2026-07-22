@@ -49,7 +49,7 @@ export default function HomePage() {
               Senior living admissions, made clear.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-secondary md:text-xl">
-              One dossier. Find the right communities and apply with confidence.
+              Build one profile, find the right communities, and apply with confidence.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button href="/family/dashboard" size="lg">

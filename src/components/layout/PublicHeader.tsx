@@ -126,8 +126,8 @@ export function PublicHeader() {
     );
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line/80 bg-surface/90 backdrop-blur-xl">
-      <div className="relative mx-auto grid h-16 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:h-20 md:px-8">
+    <header className="relative z-50 border-b border-line/80 bg-surface/90 backdrop-blur-xl md:sticky md:top-0">
+      <div className="relative mx-auto grid h-[5.25rem] max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:h-20 md:px-8">
         <div className="flex items-center justify-self-start lg:contents">
           <div className="hidden min-w-0 items-center lg:flex">
             <Logo href="/" size="lg" />

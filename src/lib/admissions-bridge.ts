@@ -1,14 +1,18 @@
 /**
- * Shared admissions bridge — connects family submissions to community intake
+ * Shared admissions bridge, connects family submissions to community intake
  * and community decisions back to the family application record (localStorage demo).
  */
 
 import type { ApplicationStatus } from "@/data/applications";
 import type { CommunityApplication } from "@/lib/community-portal";
+import {
+  canonicalSeniorName,
+  scrubDemoNamesDeep,
+} from "@/lib/demo-name-fix";
 import type { CommunityDecisionKind, FamilyApplication } from "@/lib/family-applications";
 import { applyCommunityDecision, withdrawApplication } from "@/lib/family-applications";
 
-const SHARED_KEY = "haven-shared-admissions-v1";
+const SHARED_KEY = "haven-shared-admissions-v2";
 
 export type SharedAdmissionPacket = {
   id: string;
@@ -48,7 +52,13 @@ function readAll(): SharedAdmissionPacket[] {
   try {
     const raw = localStorage.getItem(SHARED_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as SharedAdmissionPacket[];
+    const list = JSON.parse(raw) as SharedAdmissionPacket[];
+    return list.map((p) =>
+      scrubDemoNamesDeep({
+        ...p,
+        seniorName: canonicalSeniorName(p.seniorName),
+      }),
+    );
   } catch {
     return [];
   }
@@ -90,7 +100,7 @@ export function publishFamilyApplication(
     familyEmail: (app.submittedByEmail || "").toLowerCase(),
     residenceId: app.residenceId,
     residenceName: app.residenceName,
-    seniorName: extras?.seniorName || "Senior",
+    seniorName: canonicalSeniorName(extras?.seniorName, "Paul Gilbert"),
     seniorAge: extras?.seniorAge || 0,
     relationship: extras?.relationship || "Family",
     summary:
@@ -114,7 +124,7 @@ export function publishFamilyApplication(
     family: {
       name: app.submittedByName || "Family contact",
       email: app.submittedByEmail || "",
-      phone: extras?.phone || "—",
+      phone: extras?.phone || ",",
       relationship: extras?.relationship || "Primary contact",
     },
     status: app.status,
@@ -130,7 +140,95 @@ export function publishFamilyApplication(
     decisionNote: null,
   };
 
-  return upsert(packet);
+  const saved = upsert(packet);
+  notifyCommunityPortalOfApplication(saved);
+  return saved;
+}
+
+const COMMUNITY_PORTAL_KEY = "haven-community-portal-v6";
+export const COMMUNITY_ADMISSIONS_EVENT = "haven-community-admissions";
+
+type PortalNotification = {
+  id: string;
+  type: "application_received";
+  title: string;
+  body: string;
+  applicationId: string;
+  at: string;
+  read: boolean;
+};
+
+function applicationReceivedNote(packet: SharedAdmissionPacket): PortalNotification {
+  return {
+    id: `cnote-${packet.familyApplicationId}`,
+    type: "application_received",
+    title: "New application submitted",
+    body: `${packet.seniorName} applied via Haven. Review the dossier in Admissions.`,
+    applicationId: `capp-shared-${packet.familyApplicationId}`,
+    at: packet.submittedAt || new Date().toISOString(),
+    read: false,
+  };
+}
+
+/** Push an unread alert into an existing community workspace when a family submits. */
+export function notifyCommunityPortalOfApplication(packet: SharedAdmissionPacket) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(COMMUNITY_PORTAL_KEY);
+    if (!raw) {
+      window.dispatchEvent(
+        new CustomEvent(COMMUNITY_ADMISSIONS_EVENT, {
+          detail: { residenceId: packet.residenceId },
+        }),
+      );
+      return;
+    }
+    const map = JSON.parse(raw) as Record<
+      string,
+      { residenceId: string; applications?: unknown[]; notifications?: PortalNotification[]; updatedAt?: string }
+    >;
+    const ws = map[packet.residenceId];
+    // Only patch a fully seeded workspace (must already have applications array)
+    if (!ws || !Array.isArray(ws.applications)) {
+      window.dispatchEvent(
+        new CustomEvent(COMMUNITY_ADMISSIONS_EVENT, {
+          detail: { residenceId: packet.residenceId },
+        }),
+      );
+      return;
+    }
+    const note = applicationReceivedNote(packet);
+    const existing = ws.notifications ?? [];
+    if (!existing.some((n) => n.id === note.id)) {
+      ws.notifications = [note, ...existing];
+      ws.updatedAt = new Date().toISOString();
+      map[packet.residenceId] = ws;
+      localStorage.setItem(COMMUNITY_PORTAL_KEY, JSON.stringify(map));
+    }
+    window.dispatchEvent(
+      new CustomEvent(COMMUNITY_ADMISSIONS_EVENT, {
+        detail: { residenceId: packet.residenceId },
+      }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Ensure shared submissions have matching unread notifications (e.g. first portal open). */
+export function ensureApplicationNotifications(
+  residenceId: string,
+  notifications: PortalNotification[] = [],
+): PortalNotification[] {
+  const shared = listSharedForResidence(residenceId);
+  const next = [...notifications];
+  for (const packet of shared) {
+    const note = applicationReceivedNote(packet);
+    if (!next.some((n) => n.id === note.id)) {
+      next.unshift(note);
+    }
+  }
+  return next;
 }
 
 export function listSharedForResidence(residenceId: string): SharedAdmissionPacket[] {
@@ -176,7 +274,7 @@ export function updateSharedFromCommunity(
 }
 
 function familyStorageKey(email: string) {
-  return `haven-family-${email.toLowerCase()}`;
+  return `haven-family-v4-${email.toLowerCase()}`;
 }
 
 function syncDecisionToFamilyStore(packet: SharedAdmissionPacket) {
@@ -257,15 +355,26 @@ export function mergeSharedIntoCommunityApps(
     return {
       id,
       residenceId: p.residenceId,
-      seniorName: p.seniorName,
+      seniorName: canonicalSeniorName(p.seniorName),
       seniorAge: p.seniorAge || 80,
       relationship: p.relationship,
-      summary: p.summary,
+      summary: scrubDemoNamesDeep(p.summary),
       careNeeds: p.careNeeds,
       medicalHighlights: p.medicalHighlights,
       documents: p.documents,
       family: p.family,
       status: p.status,
+      careType: prior?.careType,
+      referralSource: prior?.referralSource ?? "Family",
+      priority: prior?.priority ?? "medium",
+      executiveSummary: scrubDemoNamesDeep(prior?.executiveSummary ?? p.summary),
+      insights: prior?.insights,
+      dossier: prior?.dossier,
+      emergencyContact: prior?.emergencyContact,
+      paymentMethod: prior?.paymentMethod,
+      moveInRequested: prior?.moveInRequested,
+      focusReason: prior?.focusReason,
+      nextAction: prior?.nextAction,
       assigneeId: prior?.assigneeId ?? null,
       assigneeName: prior?.assigneeName ?? null,
       internalNotes: prior?.internalNotes ?? [],

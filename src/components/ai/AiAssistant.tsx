@@ -1,50 +1,46 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import {
-  FileSearch,
-  MapPin,
-  MessageSquareText,
-  Sparkles,
-  X,
-  ArrowUp,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowUp, Sparkles, X } from "lucide-react";
 import { useAi } from "@/lib/ai";
+import { answerCopilot } from "@/lib/assistant/copilot-intents";
+import { useFamilyData } from "@/lib/family-data";
+import { seniorDisplayName } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
-
-const suggestions = [
-  "Which communities match Mom’s memory-care needs?",
-  "Estimate monthly cost near Montreal",
-  "What’s missing from our documents?",
-  "Draft a message to Maple Grove",
-  "Explain assisted living vs memory care",
-];
-
-const replies: Record<string, string> = {
-  default:
-    "I’ve reviewed Margaret’s profile. Based on mobility, mild cognitive changes, and a $4–5.5k budget within 25 km, Maple Grove and Cedar Memory Care are strong matches. Want me to compare them side by side or draft applications?",
-};
 
 export function AiAssistant() {
   const { open, setOpen, prompt, setPrompt } = useAi();
-  const [messages, setMessages] = useState<
-    { role: "user" | "ai"; text: string }[]
-  >([
+  const { data } = useFamilyData();
+  const router = useRouter();
+  const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string; href?: string }[]>([
     {
       role: "ai",
-      text: "I’m Haven AI — I can compare communities, estimate costs, check missing documents, and guide applications. What do you need?",
+      text: "I'm Haven. Ask me about applications, missing documents, or say “continue setup” to keep building the profile.",
     },
   ]);
+
+  useEffect(() => {
+    if (open && prompt.trim()) {
+      const q = prompt.trim();
+      setPrompt("");
+      // Defer so panel is open
+      window.setTimeout(() => send(q), 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const send = (text: string) => {
     const q = text.trim();
     if (!q) return;
-    setMessages((m) => [
-      ...m,
-      { role: "user", text: q },
-      { role: "ai", text: replies.default },
-    ]);
+    const reply = answerCopilot({
+      question: q,
+      applications: data.applications,
+      documents: data.documents,
+      seniorName: seniorDisplayName(data.senior) || data.person.name || "your loved one",
+    });
+    setMessages((m) => [...m, { role: "user", text: q }, { role: "ai", text: reply.text, href: reply.href }]);
     setPrompt("");
   };
 
@@ -59,13 +55,13 @@ export function AiAssistant() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-5 right-5 z-[60] flex h-14 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white shadow-lift transition-all hover:-translate-y-0.5 hover:shadow-lg",
+          "fixed bottom-5 right-5 z-[60] flex h-14 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white shadow-lift transition-all hover:-translate-y-0.5",
           open && "pointer-events-none opacity-0",
         )}
         aria-label="Open Haven AI"
       >
-        <Sparkles size={18} className="text-brand-strong" />
-        Ask Haven AI
+        <Sparkles size={18} className="text-brand" />
+        Ask Haven
       </button>
 
       <div
@@ -76,18 +72,18 @@ export function AiAssistant() {
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ai-soft text-ai">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
               <Sparkles size={16} />
             </span>
             <div>
-              <p className="font-semibold">Haven AI</p>
+              <p className="font-semibold">Haven</p>
               <p className="text-xs text-ink-muted">Admission co-pilot</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-xl p-2 text-ink-muted hover:bg-bg-soft hover:text-ink"
+            className="rounded-xl p-2 text-ink-muted hover:bg-bg-soft"
             aria-label="Close"
           >
             <X size={18} />
@@ -96,73 +92,70 @@ export function AiAssistant() {
 
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
-            >
+            <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-                  m.role === "user"
-                    ? "rounded-br-md bg-brand text-white"
-                    : "rounded-bl-md bg-bg-soft text-ink",
+                  "max-w-[90%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+                  m.role === "user" ? "bg-ink text-white" : "bg-bg-soft text-ink",
                 )}
               >
                 {m.text}
+                {m.role === "ai" && m.href && (
+                  <button
+                    type="button"
+                    className="mt-2 block text-xs font-semibold text-brand hover:underline"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push(m.href!);
+                    }}
+                  >
+                    Open →
+                  </button>
+                )}
               </div>
             </div>
           ))}
+        </div>
 
-          {messages.length < 3 && (
-            <div className="space-y-2 pt-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                Try asking
-              </p>
-              {suggestions.map((s) => (
+        <div className="border-t border-line p-3">
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {["Where is my application?", "What document am I missing?", "Continue setup"].map(
+              (s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="flex w-full items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2.5 text-left text-sm text-ink-secondary transition hover:border-line-strong hover:bg-bg-soft"
+                  className="rounded-full border border-line px-2.5 py-1 text-[11px] text-ink-muted hover:border-brand/30"
                 >
-                  {s.includes("document") ? (
-                    <FileSearch size={14} className="mt-0.5 shrink-0 text-brand" />
-                  ) : s.includes("message") ? (
-                    <MessageSquareText size={14} className="mt-0.5 shrink-0 text-brand" />
-                  ) : (
-                    <MapPin size={14} className="mt-0.5 shrink-0 text-brand" />
-                  )}
                   {s}
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <form onSubmit={onSubmit} className="border-t border-line p-4">
-          <div className="flex items-end gap-2 rounded-2xl border border-line bg-bg-soft p-2">
-            <textarea
+              ),
+            )}
+          </div>
+          <form onSubmit={onSubmit} className="flex gap-2">
+            <input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              rows={2}
-              placeholder="Ask anything about admissions…"
-              className="max-h-28 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none"
+              placeholder="Ask Haven…"
+              className="flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
             />
-            <Button type="submit" size="icon" aria-label="Send">
+            <button
+              type="submit"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-white"
+              aria-label="Send"
+            >
               <ArrowUp size={16} />
-            </Button>
-          </div>
-        </form>
+            </button>
+          </form>
+          <Link
+            href="/assistant"
+            className="mt-2 block text-center text-xs font-medium text-brand"
+            onClick={() => setOpen(false)}
+          >
+            Open full assistant
+          </Link>
+        </div>
       </div>
-
-      {open && (
-        <button
-          type="button"
-          className="fixed inset-0 z-[65] bg-ink/20 backdrop-blur-[2px]"
-          aria-label="Close AI overlay"
-          onClick={() => setOpen(false)}
-        />
-      )}
     </>
   );
 }

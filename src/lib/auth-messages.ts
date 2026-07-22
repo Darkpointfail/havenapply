@@ -1,4 +1,4 @@
-/** User-facing auth copy — never expose technical errors. */
+/** User-facing auth copy, never expose technical errors. */
 
 export const AUTH_MESSAGES = {
   emailTaken: "This email is already connected to an account.",

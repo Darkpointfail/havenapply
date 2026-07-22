@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import {
   AuthAlert,
   AuthField,
@@ -13,16 +13,43 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 
 function ResetPasswordInner() {
   const { resetPassword } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") || "";
+  const remote = isSupabaseBackend();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [ready, setReady] = useState(!remote);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+
+  useEffect(() => {
+    if (!remote) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) {
+          setHasRecoverySession(Boolean(data.session));
+          setReady(true);
+        }
+      } catch {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remote]);
+
+  const canSubmit = remote ? hasRecoverySession : Boolean(token);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,12 +59,12 @@ function ResetPasswordInner() {
       setError(AUTH_MESSAGES.passwordMismatch);
       return;
     }
-    if (!token) {
+    if (!canSubmit) {
       setError(AUTH_MESSAGES.resetInvalid);
       return;
     }
     setSubmitting(true);
-    const result = await resetPassword({ token, password });
+    const result = await resetPassword({ token: token || "supabase", password });
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
@@ -45,6 +72,14 @@ function ResetPasswordInner() {
     }
     setDone(true);
   };
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-10 w-10 animate-pulse-soft rounded-full bg-brand-soft" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
@@ -64,8 +99,12 @@ function ResetPasswordInner() {
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             {error && <AuthAlert>{error}</AuthAlert>}
-            {!token && (
-              <AuthAlert>{AUTH_MESSAGES.resetInvalid}</AuthAlert>
+            {!canSubmit && (
+              <AuthAlert>
+                {remote
+                  ? "Open the reset link from your email first, then choose a new password."
+                  : AUTH_MESSAGES.resetInvalid}
+              </AuthAlert>
             )}
             <AuthField label="New password" hint="At least 8 characters">
               <input
@@ -76,7 +115,7 @@ function ResetPasswordInner() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
-                disabled={!token}
+                disabled={!canSubmit}
               />
             </AuthField>
             <AuthField label="Confirm new password">
@@ -88,20 +127,20 @@ function ResetPasswordInner() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 autoComplete="new-password"
-                disabled={!token}
+                disabled={!canSubmit}
               />
             </AuthField>
             <Button
               type="submit"
               className="w-full"
               size="lg"
-              disabled={submitting || !token}
+              disabled={submitting || !canSubmit}
             >
               {submitting ? "Updating…" : "Update password"}
             </Button>
             <p className="text-center text-sm text-ink-muted">
-              <Link href="/forgot-password" className="text-brand">
-                Request a new link
+              <Link href="/sign-in" className="text-brand">
+                Back to Sign In
               </Link>
             </p>
           </form>

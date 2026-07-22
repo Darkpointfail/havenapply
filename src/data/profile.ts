@@ -1,10 +1,10 @@
 export const medicalProfile = {
   completeness: 82,
   person: {
-    name: "Margaret Chen",
+    name: "Paul Gilbert",
     age: 78,
-    preferredName: "Maggie",
-    relationship: "Mother",
+    preferredName: "Paul",
+    relationship: "Father",
   },
   sections: [
     {
@@ -23,19 +23,19 @@ export const medicalProfile = {
       id: "medications",
       title: "Medications",
       summary: "4 active medications",
-      items: ["Amlodipine 5mg — morning", "Donepezil 5mg — evening", "Vitamin D 1000 IU", "Acetaminophen as needed"],
+      items: ["Amlodipine 5mg, morning", "Donepezil 5mg, evening", "Vitamin D 1000 IU", "Acetaminophen as needed"],
     },
     {
       id: "allergies",
       title: "Allergies",
       summary: "1 allergy",
-      items: ["Penicillin — rash"],
+      items: ["Penicillin, rash"],
     },
     {
       id: "vaccinations",
       title: "Vaccinations",
       summary: "Up to date for 2025–26",
-      items: ["Influenza — Oct 2025", "COVID booster — Nov 2025", "Pneumococcal — 2023"],
+      items: ["Influenza, Oct 2025", "COVID booster, Nov 2025", "Pneumococcal, 2023"],
     },
     {
       id: "mobility",
@@ -71,7 +71,7 @@ export const medicalProfile = {
       id: "emergency",
       title: "Emergency contacts",
       summary: "2 contacts",
-      items: ["David Chen — Son — Primary", "Sophie Chen — Daughter — Secondary"],
+      items: ["Alex Martin, Son, Primary", "Sophie Martin, Daughter, Secondary"],
     },
   ],
 };

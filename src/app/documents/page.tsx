@@ -115,6 +115,8 @@ export default function DocumentsPage() {
     };
   }, [previewId]);
 
+  const checklistPickRef = useRef(false);
+
   const resetForm = () => {
     setName("");
     setDescription("");
@@ -123,6 +125,26 @@ export default function DocumentsPage() {
     setCategory("identification");
     setFormOpen(false);
     setError(null);
+    checklistPickRef.current = false;
+  };
+
+  const openUploadForChecklist = (row: {
+    category: DocCategoryId;
+    label: string;
+    requestedBy?: string;
+  }) => {
+    setError(null);
+    setCategory(row.category);
+    setName(row.label);
+    setDescription(row.requestedBy ? `Requested by ${row.requestedBy}` : "");
+    setExpires("");
+    setPendingFile(null);
+    setFormOpen(true);
+    checklistPickRef.current = true;
+    window.setTimeout(() => {
+      fileRef.current?.click();
+      document.getElementById("doc-upload-form")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 80);
   };
 
   const ingestFile = async (file: File, overrides?: Partial<{ category: DocCategoryId; name: string; expires: string; description: string }>) => {
@@ -157,7 +179,10 @@ export default function DocumentsPage() {
     if (!files?.length) return;
     const file = files[0];
     setPendingFile(file);
-    setName(file.name.replace(/\.[^.]+$/, "") || file.name);
+    if (!checklistPickRef.current) {
+      setName(file.name.replace(/\.[^.]+$/, "") || file.name);
+    }
+    checklistPickRef.current = false;
     setFormOpen(true);
   };
 
@@ -313,38 +338,82 @@ export default function DocumentsPage() {
               </div>
             ))}
           </div>
-          <ul className="mt-5 max-h-64 space-y-2 overflow-y-auto">
-            {readiness.checklist.map((row) => (
-              <li
-                key={`${row.category}-${row.label}-${row.requestedBy || ""}`}
-                className="flex items-start justify-between gap-3 rounded-xl border border-line px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{row.label}</p>
-                  <p className="text-xs text-ink-faint">
-                    {row.priority === "requested"
-                      ? `Requested by ${row.requestedBy}`
-                      : row.priority === "required"
-                        ? "Required for most applications"
-                        : "Recommended"}
-                  </p>
-                </div>
-                <Badge
-                  tone={
-                    row.state === "missing"
-                      ? "neutral"
-                      : row.state === "expired" || row.state === "rejected" || row.state === "needs_replacement"
-                        ? "danger"
-                        : row.state === "verified"
-                          ? "success"
-                          : "brand"
-                  }
+          <ul className="mt-5 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+            {readiness.checklist.map((row) => {
+              const needsUpload =
+                row.state === "missing" ||
+                row.state === "expired" ||
+                row.state === "rejected" ||
+                row.state === "needs_replacement";
+              return (
+                <li
+                  key={`${row.category}-${row.label}-${row.requestedBy || ""}`}
+                  className={cn(
+                    "flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition",
+                    needsUpload
+                      ? "border-line bg-surface hover:border-brand/35"
+                      : "border-line/70 bg-bg-soft/40",
+                  )}
                 >
-                  {row.state === "missing" ? "Missing" : statusMeta(row.state as DocStatus).label}
-                </Badge>
-              </li>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{row.label}</p>
+                    <p className="text-xs text-ink-faint">
+                      {row.priority === "requested"
+                        ? `Requested by ${row.requestedBy}`
+                        : row.priority === "required"
+                          ? "Required for most applications"
+                          : "Recommended"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+                    <Badge
+                      tone={
+                        row.state === "missing"
+                          ? "neutral"
+                          : row.state === "expired" ||
+                              row.state === "rejected" ||
+                              row.state === "needs_replacement"
+                            ? "danger"
+                            : row.state === "verified"
+                              ? "success"
+                              : "brand"
+                      }
+                    >
+                      {row.state === "missing"
+                        ? "Missing"
+                        : statusMeta(row.state as DocStatus).label}
+                    </Badge>
+                    {needsUpload ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="soft"
+                        onClick={() => openUploadForChecklist(row)}
+                      >
+                        <Upload size={14} /> Add
+                      </Button>
+                    ) : row.documentIds[0] ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setReplaceTargetId(row.documentIds[0]);
+                          replaceRef.current?.click();
+                        }}
+                      >
+                        Replace
+                      </Button>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+          <p className="mt-3 text-xs text-ink-faint">
+            Tap <span className="font-medium text-ink-muted">Add</span> on a line to choose the
+            document type and upload the matching file.
+          </p>
         </Card>
 
         <Card className="flex flex-col p-5">
@@ -372,13 +441,15 @@ export default function DocumentsPage() {
                     size="sm"
                     variant="soft"
                     className="mt-3"
-                    onClick={() => {
-                      setCategory(req.category);
-                      setName(req.label);
-                      setFormOpen(true);
-                    }}
+                    onClick={() =>
+                      openUploadForChecklist({
+                        category: req.category,
+                        label: req.label,
+                        requestedBy: req.communityName,
+                      })
+                    }
                   >
-                    Upload for this request
+                    <Upload size={14} /> Upload for this request
                   </Button>
                 </li>
               );
@@ -441,13 +512,26 @@ export default function DocumentsPage() {
       )}
 
       {formOpen && (
+        <div id="doc-upload-form" className="scroll-mt-24">
         <Card className="mt-6 p-5 md:p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">{pendingFile ? "Finish upload details" : "Add document"}</h2>
+            <h2 className="font-semibold">
+              {pendingFile ? "Finish upload details" : "Add document"}
+            </h2>
             <button type="button" className="rounded-lg p-2 text-ink-muted hover:bg-bg-soft" onClick={resetForm}>
               <X size={16} />
             </button>
           </div>
+          <p className="mt-1 text-sm text-ink-muted">
+            Type selected:{" "}
+            <span className="font-medium text-ink">{categoryLabel(category)}</span>
+            {name ? (
+              <>
+                {" "}
+                · <span className="text-ink">{name}</span>
+              </>
+            ) : null}
+          </p>
           {pendingFile && (
             <p className="mt-2 text-sm text-ink-muted">
               File ready: <span className="font-medium text-ink">{pendingFile.name}</span> (
@@ -465,10 +549,17 @@ export default function DocumentsPage() {
               />
             </label>
             <label className="text-sm">
-              <span className="font-medium">Category</span>
+              <span className="font-medium">What is this document?</span>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as DocCategoryId)}
+                onChange={(e) => {
+                  const next = e.target.value as DocCategoryId;
+                  setCategory(next);
+                  const fromChecklist = readiness.checklist.find((r) => r.category === next);
+                  if (fromChecklist && (!name.trim() || readiness.checklist.some((r) => r.label === name))) {
+                    setName(fromChecklist.label);
+                  }
+                }}
                 className="mt-1.5 w-full rounded-xl border border-line bg-bg-soft px-3 py-2.5"
               >
                 {DOC_CATEGORIES.map((c) => (
@@ -509,6 +600,7 @@ export default function DocumentsPage() {
             </div>
           </form>
         </Card>
+        </div>
       )}
 
       {/* Filters */}
@@ -612,7 +704,7 @@ export default function DocumentsPage() {
                   </p>
                   <p className="text-sm text-ink-muted">
                     {doc.sharedWith.length === 0
-                      ? "Only your family account — not attached to any application."
+                      ? "Only your family account, not attached to any application."
                       : null}
                   </p>
                   {SHARE_TARGETS.map((t) => {

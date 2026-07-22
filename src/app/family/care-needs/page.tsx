@@ -129,7 +129,7 @@ export default function CareNeedsPage() {
       <div className="mx-auto max-w-[900px] px-5 py-8 md:px-8 md:py-10">
         <PageHeader
           title="Care Needs"
-          description="Describe daily support in plain language — after the senior profile is created."
+          description="Describe daily support in plain language, after the senior profile is created."
           breadcrumbs={[
             { label: "Family", href: "/family/dashboard" },
             { label: "Care Needs" },
@@ -152,7 +152,7 @@ export default function CareNeedsPage() {
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Care Needs"
-        description={`Help us understand ${name}’s day-to-day support needs. This guides community search — it is not a medical diagnosis.`}
+        description={`Help us understand ${name}’s day-to-day support needs. This guides community search, it is not a medical diagnosis.`}
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
           { label: "Care Needs" },
@@ -254,7 +254,7 @@ export default function CareNeedsPage() {
                   items={
                     summary.mustHaves.length
                       ? summary.mustHaves
-                      : ["No hard filters yet — keep refining answers."]
+                      : ["No hard filters yet, keep refining answers."]
                   }
                 />
                 <SummaryBlock
@@ -270,7 +270,7 @@ export default function CareNeedsPage() {
                   items={
                     summary.missing.length
                       ? summary.missing
-                      : ["Core sections look filled — you can still edit anytime."]
+                      : ["Core sections look filled, you can still edit anytime."]
                   }
                   tone="warn"
                 />
@@ -354,7 +354,7 @@ export default function CareNeedsPage() {
               {section === "medication" && (
                 <SectionShell
                   title="Medication"
-                  subtitle="Rough answers are fine — you can attach a full list in Documents later."
+                  subtitle="Rough answers are fine, you can attach a full list in Documents later."
                 >
                   <div className="space-y-5">
                     <div>
@@ -413,7 +413,7 @@ export default function CareNeedsPage() {
               {section === "cognition" && (
                 <SectionShell
                   title="Memory & cognition"
-                  subtitle="Select what fits. This is for matching communities — not diagnosing."
+                  subtitle="Select what fits. This is for matching communities, not diagnosing."
                 >
                   <MultiChip
                     options={[...COGNITION_OPTIONS]}
@@ -460,7 +460,7 @@ export default function CareNeedsPage() {
                       className={fieldClass}
                       value={care.allergiesDetail}
                       onChange={(e) => patch({ allergiesDetail: e.target.value })}
-                      placeholder="e.g. Penicillin — rash"
+                      placeholder="e.g. Penicillin, rash"
                     />
                   </Field>
                   <Field label="Other health notes" optional>

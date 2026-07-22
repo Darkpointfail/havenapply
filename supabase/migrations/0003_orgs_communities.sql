@@ -16,6 +16,7 @@ create table if not exists public.organizations (
   deleted_at timestamptz
 );
 
+drop trigger if exists organizations_set_updated_at on public.organizations;
 create trigger organizations_set_updated_at
   before update on public.organizations
   for each row execute function public.set_updated_at();
@@ -33,6 +34,7 @@ create table if not exists public.organization_settings (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+drop trigger if exists organization_settings_set_updated_at on public.organization_settings;
 create trigger organization_settings_set_updated_at
   before update on public.organization_settings
   for each row execute function public.set_updated_at();
@@ -111,6 +113,7 @@ create trigger communities_search_tsv_trg
   on public.communities
   for each row execute function public.communities_search_tsv_update();
 
+drop trigger if exists communities_set_updated_at on public.communities;
 create trigger communities_set_updated_at
   before update on public.communities
   for each row execute function public.set_updated_at();
@@ -148,6 +151,7 @@ create table if not exists public.community_rooms (
 
 create index if not exists community_rooms_community_idx on public.community_rooms (community_id);
 
+drop trigger if exists community_rooms_set_updated_at on public.community_rooms;
 create trigger community_rooms_set_updated_at
   before update on public.community_rooms
   for each row execute function public.set_updated_at();
@@ -163,6 +167,7 @@ create table if not exists public.admission_requirements (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+drop trigger if exists admission_requirements_set_updated_at on public.admission_requirements;
 create trigger admission_requirements_set_updated_at
   before update on public.admission_requirements
   for each row execute function public.set_updated_at();
@@ -180,6 +185,7 @@ create table if not exists public.availability (
 
 create index if not exists availability_community_idx on public.availability (community_id);
 
+drop trigger if exists availability_set_updated_at on public.availability;
 create trigger availability_set_updated_at
   before update on public.availability
   for each row execute function public.set_updated_at();
@@ -213,6 +219,7 @@ create unique index if not exists community_team_members_org_wide_user_uidx
 create index if not exists community_team_members_user_idx on public.community_team_members (user_id);
 create index if not exists community_team_members_org_idx on public.community_team_members (organization_id);
 
+drop trigger if exists community_team_members_set_updated_at on public.community_team_members;
 create trigger community_team_members_set_updated_at
   before update on public.community_team_members
   for each row execute function public.set_updated_at();

@@ -63,11 +63,11 @@ function OnboardingInner() {
   useEffect(() => {
     if (!ready) return;
     if (user?.onboardingCompleted && data.seniorCreated) {
-      router.replace("/family/care-needs");
+      router.replace("/family/dashboard");
       return;
     }
     setStep(Math.min(data.onboarding.stepIndex, ONBOARDING_STEPS.length - 1));
-    // Only sync from storage when ready / completion state changes — not on every draft keystroke
+    // Only sync from storage when ready / completion state changes, not on every draft keystroke
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, user?.onboardingCompleted, data.seniorCreated, router]);
 
@@ -207,35 +207,35 @@ function OnboardingInner() {
     setSubmitting(true);
     finalizeSeniorProfile();
     completeOnboarding();
-    router.push("/family/care-needs");
+    router.push("/family/dashboard");
   };
 
   const stepMeta = ONBOARDING_STEPS[step];
 
   const reviewRows = useMemo(() => {
-    const name = seniorDisplayName(draft) || "—";
+    const name = seniorDisplayName(draft) || ",";
     const age = seniorAge(draft);
     return [
-      ["Filled by", draft.filledBy || "—"],
-      ["Relationship", draft.relationship || "—"],
+      ["Filled by", draft.filledBy || ","],
+      ["Relationship", draft.relationship || ","],
       ["Senior", `${name}${age ? ` · age ${age}` : ""}`],
       [
         "Current situation",
         draft.livingSituation === "other"
           ? draft.livingSituationOther
-          : labelForId(LIVING_SITUATIONS, draft.livingSituation) || "—",
+          : labelForId(LIVING_SITUATIONS, draft.livingSituation) || ",",
       ],
       [
         "Housing interest",
-        draft.housingTypes.map((id) => labelForId(HOUSING_TYPES, id)).join(", ") || "—",
+        draft.housingTypes.map((id) => labelForId(HOUSING_TYPES, id)).join(", ") || ",",
       ],
-      ["Timeline", labelForId(URGENCY_OPTIONS, draft.urgency) || "—"],
+      ["Timeline", labelForId(URGENCY_OPTIONS, draft.urgency) || ","],
       [
         "Search areas",
         draft.searchZones
           .filter((z) => z.query.trim())
           .map((z) => `${z.query} (${z.radiusMiles === 0 ? "statewide" : `${z.radiusMiles} mi`})`)
-          .join("; ") || "—",
+          .join("; ") || ",",
       ],
       [
         "Budget",
@@ -243,11 +243,11 @@ function OnboardingInner() {
           ? "I’m not sure yet"
           : draft.budgetMin && draft.budgetMax
             ? `$${draft.budgetMin} – $${draft.budgetMax} / month`
-            : "—",
+            : ",",
       ],
       [
         "Funding",
-        draft.fundingModes.map((id) => labelForId(FUNDING_MODES, id)).join(", ") || "—",
+        draft.fundingModes.map((id) => labelForId(FUNDING_MODES, id)).join(", ") || ",",
       ],
     ] as [string, string][];
   }, [draft]);
@@ -273,6 +273,9 @@ function OnboardingInner() {
           >
             {savedFlash ? "Saved" : data.onboarding.lastSavedAt ? "Autosaved" : "Changes save as you go"}
           </span>
+          <Button size="sm" variant="ghost" href="/start">
+            Prefer talking with Haven?
+          </Button>
           <Button size="sm" variant="ghost" onClick={saveAndExit}>
             <Save size={14} /> Save and exit
           </Button>
@@ -311,7 +314,7 @@ function OnboardingInner() {
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Create a senior profile</h1>
             <p className="mt-3 text-ink-muted">
-              One calm dossier you can reuse across communities — complete what you know now, add
+              One calm dossier you can reuse across communities, complete what you know now, add
               more later.
             </p>
             <ul className="mt-8 space-y-4">
@@ -586,7 +589,7 @@ function OnboardingInner() {
           <div className="space-y-5">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Type of housing sought</h1>
-              <p className="mt-2 text-ink-muted">Select all that may fit — you can change this later.</p>
+              <p className="mt-2 text-ink-muted">Select all that may fit, you can change this later.</p>
             </div>
             {errors.housingTypes && <AuthAlert>{errors.housingTypes}</AuthAlert>}
             <MultiChip

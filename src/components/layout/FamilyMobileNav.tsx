@@ -2,28 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  CheckSquare,
-  FileText,
-  Home,
-  MessageSquare,
-  Search,
-} from "lucide-react";
+import { ClipboardList, Home, Search, UserRound } from "lucide-react";
 import { familyMobileNav } from "@/config/navigation";
-import { useMessaging } from "@/lib/messaging-store";
 import { cn } from "@/lib/utils";
 
 const icons: Record<string, typeof Home> = {
   "/family/dashboard": Home,
+  "/family/profile": UserRound,
   "/family/find-communities": Search,
-  "/family/applications": CheckSquare,
-  "/family/documents": FileText,
-  "/family/messages": MessageSquare,
+  "/family/applications": ClipboardList,
 };
-
 export function FamilyMobileNav() {
   const pathname = usePathname();
-  const { unreadTotal } = useMessaging();
 
   return (
     <nav
@@ -33,8 +23,13 @@ export function FamilyMobileNav() {
       <ul className="mx-auto flex max-w-lg items-stretch justify-between">
         {familyMobileNav.map((item) => {
           const Icon = icons[item.href] ?? Home;
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
-          const showUnread = item.href === "/family/messages" && unreadTotal > 0;
+          const active =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/") ||
+            (item.href === "/family/profile" &&
+              (pathname.startsWith("/family/senior-profile") ||
+                pathname.startsWith("/family/documents") ||
+                pathname.startsWith("/family/care-needs")));
           return (
             <li key={item.href} className="flex-1">
               <Link
@@ -44,12 +39,7 @@ export function FamilyMobileNav() {
                   active ? "text-brand" : "text-ink-muted",
                 )}
               >
-                <span className="relative">
-                  <Icon size={20} />
-                  {showUnread && (
-                    <span className="absolute -right-1.5 -top-1 h-2 w-2 rounded-full bg-danger" />
-                  )}
-                </span>
+                <Icon size={20} />
                 {item.label}
               </Link>
             </li>

@@ -10,9 +10,9 @@ export function AuthAlert({
   className?: string;
 }) {
   const tones = {
-    error: "border-danger/30 bg-danger-soft text-danger",
-    success: "border-success/30 bg-success-soft text-success",
-    info: "border-brand/25 bg-brand-soft text-brand-strong",
+    error: "border-danger/25 bg-danger-soft text-danger",
+    success: "border-success/25 bg-success-soft text-success",
+    info: "border-info/25 bg-info-soft text-info",
   };
 
   return (
@@ -44,7 +44,7 @@ export function AuthField({
 }
 
 export const authInputClass =
-  "w-full rounded-xl border border-line bg-bg-soft px-3 py-2.5 text-ink outline-none transition focus:border-brand";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-ink shadow-xs outline-none transition placeholder:text-ink-faint focus:border-brand focus:shadow-sm";
 
 export function DemoInbox({
   email,
@@ -61,7 +61,7 @@ export function DemoInbox({
     <div className="mt-4 rounded-xl border border-dashed border-line bg-bg-soft/80 p-4 text-left text-sm">
       <p className="font-medium text-ink">Demo inbox · {email}</p>
       <p className="mt-1 text-ink-muted">
-        No email server in this prototype — use the link below as if it arrived in your inbox.
+        No email server in this prototype, use the link below as if it arrived in your inbox.
       </p>
       <ul className="mt-3 space-y-2">
         {confirmHref ? (

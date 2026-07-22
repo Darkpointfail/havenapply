@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { useCommunityPortal } from "@/lib/community-portal-store";
@@ -12,15 +12,20 @@ import { cn } from "@/lib/utils";
 const FILTERS = [
   { id: "all", label: "All" },
   { id: "new", label: "New" },
-  { id: "pending", label: "Pending" },
-  { id: "docs", label: "Docs requested" },
-  { id: "visits", label: "Visits" },
-  { id: "waitlist", label: "Waitlist" },
+  { id: "pending", label: "In review" },
+  { id: "info", label: "Need info" },
+  { id: "decided", label: "Decided" },
 ] as const;
 
-export function CommunityApplicationsList() {
+type FilterId = (typeof FILTERS)[number]["id"];
+
+function ApplicationsListInner() {
+  const params = useSearchParams();
+  const initial = (params.get("filter") || "all") as FilterId;
   const { ready, workspace } = useCommunityPortal();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  const [filter, setFilter] = useState<FilterId>(
+    FILTERS.some((f) => f.id === initial) ? initial : "all",
+  );
   const [q, setQ] = useState("");
 
   const apps = useMemo(() => {
@@ -30,22 +35,26 @@ export function CommunityApplicationsList() {
       list = list.filter((a) => ["submitted", "received"].includes(a.status));
     } else if (filter === "pending") {
       list = list.filter((a) =>
-        ["under_review", "received", "submitted", "more_info"].includes(a.status),
+        ["under_review", "assessment_requested", "tour_requested"].includes(a.status),
       );
-    } else if (filter === "docs") {
-      list = list.filter((a) => Boolean(a.documentRequest));
-    } else if (filter === "visits") {
-      list = list.filter((a) => Boolean(a.tourProposal));
-    } else if (filter === "waitlist") {
-      list = list.filter((a) => a.status === "waitlisted");
+    } else if (filter === "info") {
+      list = list.filter(
+        (a) =>
+          a.status === "more_info" || Boolean(a.documentRequest) || Boolean(a.infoRequest),
+      );
+    } else if (filter === "decided") {
+      list = list.filter((a) =>
+        ["approved", "declined", "conditionally_approved", "offer_received", "waitlisted"].includes(
+          a.status,
+        ),
+      );
     }
     const query = q.trim().toLowerCase();
     if (query) {
       list = list.filter(
         (a) =>
           a.seniorName.toLowerCase().includes(query) ||
-          a.family.name.toLowerCase().includes(query) ||
-          (a.assigneeName || "").toLowerCase().includes(query),
+          a.family.name.toLowerCase().includes(query),
       );
     }
     return list.sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated));
@@ -61,14 +70,12 @@ export function CommunityApplicationsList() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
-      <PageHeader
-        title="Applications"
-        description="Review incoming families, assign your team, and move admissions forward."
-        breadcrumbs={[
-          { label: "Community", href: "/community/dashboard" },
-          { label: "Applications" },
-        ]}
-      />
+      <div className="mb-6">
+        <h1 className="text-3xl font-semibold tracking-tight">Applications</h1>
+        <p className="mt-1 text-ink-muted">
+          Complete digital admission packages. Review, message, decide.
+        </p>
+      </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-1">
@@ -97,40 +104,45 @@ export function CommunityApplicationsList() {
       </div>
 
       <div className="space-y-3">
-        {apps.map((a) => (
-          <Link key={a.id} href={`/community/applications/${a.id}`}>
-            <Card className="mb-3 p-4 transition hover:border-brand/40" hover>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-lg font-semibold">{a.seniorName}</p>
-                    <Badge tone={statusTone(a.status)}>{statusLabel(a.status)}</Badge>
-                    {a.waitlistPosition != null && (
-                      <Badge tone="accent">Waitlist #{a.waitlistPosition}</Badge>
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {a.family.name} · {a.family.relationship}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-sm text-ink">{a.summary}</p>
-                  <p className="mt-2 text-xs text-ink-faint">
-                    Assignee: {a.assigneeName || "Unassigned"} · Updated{" "}
-                    {formatPortalTime(a.lastUpdated)}
+        {apps.length === 0 ? (
+          <Card className="p-8 text-center text-sm text-ink-muted">
+            No applications in this view.
+          </Card>
+        ) : (
+          apps.map((a) => (
+            <Link key={a.id} href={`/community/applications/${a.id}`}>
+              <Card className="flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-brand/30 hover:shadow-xs">
+                <div className="min-w-0">
+                  <p className="font-semibold">{a.seniorName}</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">
+                    {a.family.name} · {a.relationship} · updated {formatPortalTime(a.lastUpdated)}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
-                  {a.documentRequest && <Badge tone="warn">Docs requested</Badge>}
-                  {a.tourProposal && <Badge tone="accent">Visit proposed</Badge>}
-                  {a.assessmentProposal && <Badge tone="brand">Assessment</Badge>}
+                <div className="flex items-center gap-2">
+                  {(a.documentRequest || a.infoRequest) && (
+                    <Badge tone="warn">Needs info</Badge>
+                  )}
+                  <Badge tone={statusTone(a.status)}>{statusLabel(a.status)}</Badge>
                 </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
-        {apps.length === 0 && (
-          <Card className="p-8 text-center text-ink-muted">No applications in this view.</Card>
+              </Card>
+            </Link>
+          ))
         )}
       </div>
     </div>
+  );
+}
+
+export function CommunityApplicationsList() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
+          Loading…
+        </div>
+      }
+    >
+      <ApplicationsListInner />
+    </Suspense>
   );
 }

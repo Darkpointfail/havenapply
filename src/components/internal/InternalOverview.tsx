@@ -65,7 +65,7 @@ export function InternalOverview() {
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Overview"
-        description="Platform operations console — users, partnerships, admissions health, and audit."
+        description="Platform operations console, users, partnerships, admissions health, and audit."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
           { label: "Overview" },
@@ -130,7 +130,7 @@ export function InternalOverview() {
             {workspace.auditLog.slice(0, 8).map((e) => (
               <li key={e.id} className="text-sm">
                 <p>
-                  <span className="font-medium">{e.actor}</span> — {e.summary}
+                  <span className="font-medium">{e.actor}</span>, {e.summary}
                 </p>
                 <p className="text-xs text-ink-faint">{formatAdminTime(e.at)}</p>
               </li>

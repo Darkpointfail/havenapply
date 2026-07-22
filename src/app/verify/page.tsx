@@ -15,6 +15,7 @@ function VerifyInner() {
   const { confirmEmail } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") || "";
+  const next = params.get("next") || "/setup";
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -70,8 +71,15 @@ function VerifyInner() {
         </div>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight">Email confirmed</h1>
         <p className="mt-2 text-ink-muted">{AUTH_MESSAGES.confirmSuccess}</p>
-        <Card className="mt-8 p-6">
-          <Button href="/sign-in" className="w-full" size="lg">
+        <Card className="mt-8 space-y-3 p-6">
+          <p className="text-sm text-ink-muted">
+            After you sign in, you can choose to talk with Haven or fill the profile with forms.
+          </p>
+          <Button
+            href={`/sign-in?next=${encodeURIComponent(next.startsWith("/") ? next : "/setup")}`}
+            className="w-full"
+            size="lg"
+          >
             Sign In
           </Button>
         </Card>

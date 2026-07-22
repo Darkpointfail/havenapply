@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/lib/auth";
 
 export function MessageButton({
   className,
@@ -16,14 +15,9 @@ export function MessageButton({
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "soft";
 }) {
-  const { user, ready } = useAuth();
-  const next = residenceId
+  const href = residenceId
     ? `/family/messages?community=${residenceId}`
     : "/family/messages";
-  const href =
-    ready && user?.role === "family"
-      ? next
-      : `/sign-in?next=${encodeURIComponent(next)}`;
 
   return (
     <Button href={href} variant={variant} size={size} className={className}>

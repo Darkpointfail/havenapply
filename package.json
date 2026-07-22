@@ -10,6 +10,9 @@
     "test:auth": "node scripts/test-auth.mjs"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.25.0",

@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, homeForUser, type UserRole } from "@/lib/auth";
+import {
+  AUTH_OPEN_ACCESS,
+  DEMO_COMMUNITY_USER,
+  DEMO_FAMILY_USER,
+} from "@/lib/auth-open-access";
 
 export function RequireAuth({
   role,
@@ -18,7 +23,15 @@ export function RequireAuth({
   const router = useRouter();
   const pathname = usePathname();
 
+  const effectiveUser =
+    AUTH_OPEN_ACCESS && role !== "internal"
+      ? role === "community"
+        ? DEMO_COMMUNITY_USER
+        : DEMO_FAMILY_USER
+      : user;
+
   useEffect(() => {
+    if (AUTH_OPEN_ACCESS && role !== "internal") return;
     if (!ready) return;
 
     if (!user) {
@@ -39,7 +52,11 @@ export function RequireAuth({
     }
   }, [ready, user, role, requireCommunityVerified, router, pathname]);
 
-  if (!ready || !user) {
+  if (AUTH_OPEN_ACCESS && role !== "internal") {
+    return <>{children}</>;
+  }
+
+  if (!ready || !effectiveUser) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <div className="text-center">
@@ -50,7 +67,7 @@ export function RequireAuth({
     );
   }
 
-  if (user.role !== role) {
+  if (effectiveUser.role !== role) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <p className="text-sm text-ink-muted">Redirecting…</p>
@@ -58,7 +75,11 @@ export function RequireAuth({
     );
   }
 
-  if (role === "community" && requireCommunityVerified && user.communityStatus !== "verified") {
+  if (
+    role === "community" &&
+    requireCommunityVerified &&
+    effectiveUser.communityStatus !== "verified"
+  ) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <p className="text-sm text-ink-muted">Redirecting…</p>
@@ -70,14 +91,39 @@ export function RequireAuth({
 }
 
 /** Redirect signed-in users away from auth pages to their home. */
-export function RedirectIfAuthenticated({ children }: { children: React.ReactNode }) {
+export function RedirectIfAuthenticated({
+  children,
+  fallbackHref,
+}: {
+  children: React.ReactNode;
+  /** Used when AUTH_OPEN_ACCESS is on (no real session). */
+  fallbackHref?: string;
+}) {
   const { user, ready } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const openAccessHome =
+    fallbackHref ||
+    (pathname.startsWith("/community") ? "/community/dashboard" : "/family/dashboard");
 
   useEffect(() => {
+    if (AUTH_OPEN_ACCESS) {
+      if (pathname.startsWith("/internal")) return;
+      router.replace(openAccessHome);
+      return;
+    }
     if (!ready || !user) return;
     router.replace(homeForUser(user));
-  }, [ready, user, router]);
+  }, [ready, user, router, openAccessHome, pathname]);
+
+  if (AUTH_OPEN_ACCESS && !pathname.startsWith("/internal")) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-ink-muted">Opening portal…</p>
+      </div>
+    );
+  }
 
   if (!ready) {
     return (

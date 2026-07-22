@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityProfileEditor } from "@/components/community/CommunityProfileEditor";
-
-export default function CommunityAdmissionCriteriaPage() {
-  return <CommunityProfileEditor initialTab="admissions" />;
+/** Admission requirements live on the public listing */
+export default function AdmissionCriteriaRedirect() {
+  redirect("/community/profile?tab=admissions");
 }

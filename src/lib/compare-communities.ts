@@ -154,7 +154,7 @@ export function buildCompareRows(
         return {
           text: `~${formatCurrency(fee)} / mo care + community`,
           tone: bestFee[i] ? "best" : "neutral",
-          hint: "Estimate from published base rate — confirm with admissions",
+          hint: "Estimate from published base rate, confirm with admissions",
         };
       }),
     },
@@ -200,7 +200,7 @@ export function buildCompareRows(
       id: "rooms",
       label: "Room types",
       cells: cols.map((r) => ({
-        text: r.roomTypes.join(", ") || "—",
+        text: r.roomTypes.join(", ") || ",",
         tone: r.roomTypes.length ? "neutral" : "missing",
       })),
     },
@@ -279,7 +279,7 @@ export function buildCompareRows(
         text: [
           ...r.highlights.slice(0, 2),
           ...(matches[i].reasons.filter((x) => x.tone === "fit").map((x) => x.text).slice(0, 1)),
-        ].join(" · ") || "—",
+        ].join(" · ") || ",",
         tone: "best",
       })),
     },

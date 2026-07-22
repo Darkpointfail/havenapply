@@ -2,27 +2,28 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "soft" | "onDark" | "ai" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "soft" | "onDark" | "ai" | "danger" | "accent";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-brand text-white shadow-soft hover:bg-brand-strong hover:-translate-y-0.5 hover:shadow-card active:translate-y-0",
+    "bg-brand text-white shadow-sm hover:bg-brand-strong hover:shadow-card active:translate-y-px",
   secondary:
-    "bg-surface text-ink border border-line shadow-xs hover:bg-bg-soft hover:-translate-y-0.5 hover:border-line-strong",
-  ghost: "bg-transparent text-ink-muted hover:text-ink hover:bg-bg-soft",
-  soft: "bg-brand-soft text-brand-strong hover:brightness-95",
+    "bg-surface text-ink border border-line shadow-xs hover:bg-bg-soft hover:border-line-strong",
+  ghost: "bg-transparent text-ink-secondary hover:text-ink hover:bg-bg-soft",
+  soft: "bg-brand-soft text-brand-strong hover:bg-brand-soft/80",
+  accent: "bg-accent text-white shadow-sm hover:brightness-95 hover:shadow-card",
   onDark:
-    "border border-white/15 bg-white text-[#0f1419] shadow-lift hover:bg-[#f3f3f0] hover:-translate-y-0.5",
-  ai: "bg-ai-soft text-ai border border-transparent hover:brightness-95",
-  danger: "bg-danger-soft text-danger hover:brightness-95",
+    "border border-white/20 bg-white text-ink shadow-md hover:bg-bg-soft",
+  ai: "bg-ai-soft text-ai hover:brightness-[0.98]",
+  danger: "bg-danger-soft text-danger hover:brightness-[0.98]",
 };
 
 const sizes: Record<Size, string> = {
   sm: "h-9 px-3.5 text-sm rounded-[10px]",
-  md: "h-11 px-[18px] text-[15px] rounded-[12px]",
-  lg: "h-12 px-6 text-base rounded-[14px]",
-  icon: "h-10 w-10 rounded-[12px] p-0",
+  md: "h-11 px-[18px] text-[15px] rounded-xl",
+  lg: "h-12 px-6 text-base rounded-xl",
+  icon: "h-10 w-10 rounded-xl p-0",
 };
 
 type Common = {

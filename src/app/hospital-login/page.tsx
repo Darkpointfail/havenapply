@@ -5,7 +5,7 @@ import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-/** Hospital portal remains a later phase — point staff to family auth for now. */
+/** Hospital portal remains a later phase, point staff to family auth for now. */
 export default function HospitalLoginPage() {
   return (
     <div className="mx-auto flex min-h-[75vh] max-w-md flex-col justify-center px-5 py-12">

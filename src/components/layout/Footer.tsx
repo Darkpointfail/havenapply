@@ -61,7 +61,7 @@ export function Footer() {
           </div>
         </div>
         <p className="mt-12 border-t border-line pt-6 text-sm text-ink-faint">
-          © {new Date().getFullYear()} Haven
+          © {new Date().getFullYear()} HavenApply
         </p>
       </div>
     </footer>

@@ -1,282 +1,603 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import type { CommunityProfile } from "@/lib/community-portal";
+import { cn, formatCurrency } from "@/lib/utils";
+
+const CARE_OPTIONS = [
+  "Independent Living",
+  "Assisted Living",
+  "Memory Care",
+  "Skilled Nursing",
+  "Respite Care",
+  "Rehabilitation",
+] as const;
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm disabled:opacity-60";
+  "mt-1.5 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-brand disabled:opacity-60";
 
-function listToText(items: string[]) {
-  return items.join("\n");
+function normalizeCare(s: string) {
+  return s.trim().toLowerCase();
 }
 
-function textToList(text: string) {
-  return text
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-export function CommunityProfileEditor({
-  initialTab = "overview",
+function Section({
+  title,
+  hint,
+  children,
 }: {
-  initialTab?: "overview" | "admissions" | "pricing";
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
 }) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>
+        {hint && <p className="mt-1 text-sm text-ink-muted">{hint}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function CommunityProfileEditor() {
   const { ready, workspace, can, updateProfile } = useCommunityPortal();
-  const [tab, setTab] = useState(initialTab);
   const [draft, setDraft] = useState<CommunityProfile | null>(null);
   const [saved, setSaved] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
 
   useEffect(() => {
-    if (workspace) setDraft({ ...workspace.profile });
+    if (workspace) {
+      const profile = { ...workspace.profile };
+      profile.admissionFlags = profile.admissionFlags || {
+        medicaid: false,
+        privatePay: true,
+        pets: false,
+        smoking: "No smoking",
+        minAge: 65,
+        notes: "",
+      };
+      profile.photos = profile.photos?.length ? [...profile.photos] : [];
+      profile.roomTypes = (profile.roomTypes || []).map((r) => ({
+        ...r,
+        availableUnits: r.availableUnits ?? 0,
+      }));
+      setDraft(profile);
+    }
   }, [workspace]);
 
   if (!ready || !workspace || !draft) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading profile…
+        Loading community…
       </div>
     );
   }
 
-  const editable =
-    can("editProfile") || can("editAdmissions") || can("editPricing");
+  const editable = can("editProfile") || can("editAdmissions") || can("editPricing");
+  const flags = draft.admissionFlags!;
+  const cover = draft.photos[0];
 
-  const save = () => {
-    const res = updateProfile(draft);
-    if (res.ok) {
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1600);
-    } else alert(res.error);
+  const patch = (partial: Partial<CommunityProfile>) =>
+    setDraft((prev) => (prev ? { ...prev, ...partial } : prev));
+
+  const toggleCare = (label: string) => {
+    const exists = draft.careTypes.some((c) => normalizeCare(c) === normalizeCare(label));
+    patch({
+      careTypes: exists
+        ? draft.careTypes.filter((c) => normalizeCare(c) !== normalizeCare(label))
+        : [...draft.careTypes, label],
+    });
   };
 
-  const tabs = [
-    { id: "overview" as const, label: "Overview" },
-    { id: "admissions" as const, label: "Admissions" },
-    { id: "pricing" as const, label: "Pricing & rooms" },
-  ];
+  const save = () => {
+    const r = updateProfile(draft);
+    if (r.ok) {
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2000);
+    }
+  };
+
+  const addPhoto = () => {
+    const url = photoUrl.trim();
+    if (!url) return;
+    patch({ photos: [...draft.photos, url] });
+    setPhotoUrl("");
+  };
+
+  const removePhoto = (index: number) => {
+    patch({ photos: draft.photos.filter((_, i) => i !== index) });
+  };
+
+  const setCover = (index: number) => {
+    if (index === 0) return;
+    const next = [...draft.photos];
+    const [picked] = next.splice(index, 1);
+    next.unshift(picked);
+    patch({ photos: next });
+  };
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-10">
-      <PageHeader
-        title="Community profile"
-        description="Public listing content families see when exploring your community."
-        breadcrumbs={[
-          { label: "Community", href: "/community/dashboard" },
-          { label: "Profile" },
-        ]}
-        actions={
-          editable ? (
-            <Button size="sm" onClick={save}>
+    <div className="min-h-full bg-bg">
+      <div className="mx-auto max-w-[800px] space-y-12 px-5 py-8 md:px-8 md:py-12">
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-ink-muted">Community</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight">{draft.name}</h1>
+            <p className="mt-2 max-w-xl text-sm text-ink-muted">
+              Photos, room pricing, care services, and admission rules, what families see when
+              they apply.
+            </p>
+          </div>
+          {editable && (
+            <Button type="button" size="sm" onClick={save}>
               {saved ? "Saved" : "Save changes"}
             </Button>
-          ) : null
-        }
-      />
+          )}
+        </header>
 
-      <div className="mb-5 flex flex-wrap gap-1 border-b border-line pb-2">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === t.id
-                ? "bg-brand-soft text-brand-strong"
-                : "text-ink-muted hover:bg-bg-soft"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+        {/* 1. Photos */}
+        <Section
+          title="Photos"
+          hint="Show the building, common areas, and rooms. The first photo is your cover image."
+        >
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
+            <div className="relative aspect-[16/9] bg-bg-soft">
+              {cover ? (
+                <Image
+                  src={cover}
+                  alt={`${draft.name} cover`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 800px) 100vw, 800px"
+                  unoptimized={cover.startsWith("http") === false}
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-faint">
+                  <ImagePlus size={28} />
+                  <p className="text-sm">No cover photo yet</p>
+                </div>
+              )}
+            </div>
 
-      {tab === "overview" && (
-        <Card className="space-y-4 p-5">
-          <label className="block text-sm">
-            <span className="text-ink-muted">Name</span>
-            <input
-              className={inputClass}
-              disabled={!can("editProfile")}
-              value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-ink-muted">Description</span>
-            <textarea
-              className={inputClass}
-              rows={5}
-              disabled={!can("editProfile")}
-              value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(
-              [
-                ["address", "Address"],
-                ["city", "City"],
-                ["state", "State"],
-                ["zip", "ZIP"],
-                ["phone", "Phone"],
-                ["email", "Email"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key} className="block text-sm">
-                <span className="text-ink-muted">{label}</span>
+            {draft.photos.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
+                {draft.photos.map((src, index) => (
+                  <div
+                    key={`${src}-${index}`}
+                    className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-bg-soft"
+                  >
+                    <Image
+                      src={src}
+                      alt={`Photo ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="200px"
+                      unoptimized={src.startsWith("http") === false}
+                    />
+                    {index === 0 && (
+                      <span className="absolute left-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-medium text-white">
+                        Cover
+                      </span>
+                    )}
+                    {can("editProfile") && (
+                      <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-gradient-to-t from-ink/70 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+                        {index !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setCover(index)}
+                            className="flex-1 rounded-lg bg-white/95 px-2 py-1 text-[11px] font-medium text-ink"
+                          >
+                            Set cover
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="rounded-lg bg-white/95 p-1.5 text-danger"
+                          aria-label="Remove photo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {can("editProfile") && (
+              <div className="flex flex-col gap-2 border-t border-line p-3 sm:flex-row">
+                <input
+                  className={cn(inputClass, "mt-0 flex-1")}
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  placeholder="Paste image URL…"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={addPhoto}
+                  disabled={!photoUrl.trim()}
+                >
+                  <ImagePlus size={14} />
+                  Add photo
+                </Button>
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* 2. About */}
+        <Section title="About" hint="A short description families read first.">
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
+            <label className="block text-sm">
+              Description
+              <textarea
+                rows={4}
+                className={inputClass}
+                value={draft.description}
+                disabled={!can("editProfile")}
+                onChange={(e) => patch({ description: e.target.value })}
+                placeholder="Describe your community, atmosphere, and who you serve…"
+              />
+            </label>
+          </div>
+        </Section>
+
+        {/* 3. Contact & location */}
+        <Section title="Contact & location">
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
+            <label className="block text-sm">
+              Community name
+              <input
+                className={inputClass}
+                value={draft.name}
+                disabled={!can("editProfile")}
+                onChange={(e) => patch({ name: e.target.value })}
+              />
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm sm:col-span-2">
+                Street address
                 <input
                   className={inputClass}
+                  value={draft.address}
                   disabled={!can("editProfile")}
-                  value={draft[key]}
-                  onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                  onChange={(e) => patch({ address: e.target.value })}
                 />
               </label>
-            ))}
-          </div>
-          {(
-            [
-              ["careTypes", "Care types"],
-              ["amenities", "Amenities"],
-              ["services", "Services"],
-              ["photos", "Photos (URLs)"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="block text-sm">
-              <span className="text-ink-muted">{label} (one per line)</span>
-              <textarea
-                className={inputClass}
-                rows={key === "photos" ? 3 : 4}
-                disabled={!can("editProfile")}
-                value={listToText(draft[key])}
-                onChange={(e) =>
-                  setDraft({ ...draft, [key]: textToList(e.target.value) })
-                }
-              />
-            </label>
-          ))}
-          <label className="block text-sm">
-            <span className="text-ink-muted">Promotions</span>
-            <textarea
-              className={inputClass}
-              rows={2}
-              disabled={!can("editProfile")}
-              value={draft.promotions}
-              onChange={(e) => setDraft({ ...draft, promotions: e.target.value })}
-            />
-          </label>
-        </Card>
-      )}
-
-      {tab === "admissions" && (
-        <Card className="space-y-4 p-5">
-          {(
-            [
-              ["admissionCriteria", "Admission criteria"],
-              ["notAccepted", "Conditions not accepted"],
-              ["requiredDocuments", "Required documents"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="block text-sm">
-              <span className="text-ink-muted">{label} (one per line)</span>
-              <textarea
-                className={inputClass}
-                rows={4}
-                disabled={!can("editAdmissions") && !can("editProfile")}
-                value={listToText(draft[key])}
-                onChange={(e) =>
-                  setDraft({ ...draft, [key]: textToList(e.target.value) })
-                }
-              />
-            </label>
-          ))}
-          <label className="block text-sm">
-            <span className="text-ink-muted">Waitlist notes</span>
-            <textarea
-              className={inputClass}
-              rows={3}
-              disabled={!can("editAdmissions") && !can("editProfile")}
-              value={draft.waitlistNotes}
-              onChange={(e) =>
-                setDraft({ ...draft, waitlistNotes: e.target.value })
-              }
-            />
-          </label>
-        </Card>
-      )}
-
-      {tab === "pricing" && (
-        <Card className="space-y-4 p-5">
-          <p className="text-sm text-ink-muted">
-            Room types and starting prices shown to families.
-          </p>
-          {draft.roomTypes.map((room, idx) => (
-            <div
-              key={`${room.name}-${idx}`}
-              className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-3"
-            >
-              <input
-                className={inputClass}
-                disabled={!can("editPricing") && !can("editProfile")}
-                value={room.name}
-                onChange={(e) => {
-                  const roomTypes = [...draft.roomTypes];
-                  roomTypes[idx] = { ...room, name: e.target.value };
-                  setDraft({ ...draft, roomTypes });
-                }}
-                placeholder="Room type"
-              />
-              <input
-                className={inputClass}
-                type="number"
-                disabled={!can("editPricing") && !can("editProfile")}
-                value={room.price ?? ""}
-                onChange={(e) => {
-                  const roomTypes = [...draft.roomTypes];
-                  roomTypes[idx] = {
-                    ...room,
-                    price: e.target.value ? Number(e.target.value) : null,
-                  };
-                  setDraft({ ...draft, roomTypes });
-                }}
-                placeholder="Price"
-              />
-              <input
-                className={inputClass}
-                disabled={!can("editPricing") && !can("editProfile")}
-                value={room.notes}
-                onChange={(e) => {
-                  const roomTypes = [...draft.roomTypes];
-                  roomTypes[idx] = { ...room, notes: e.target.value };
-                  setDraft({ ...draft, roomTypes });
-                }}
-                placeholder="Notes"
-              />
+              <label className="block text-sm">
+                City
+                <input
+                  className={inputClass}
+                  value={draft.city}
+                  disabled={!can("editProfile")}
+                  onChange={(e) => patch({ city: e.target.value })}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm">
+                  State
+                  <input
+                    className={inputClass}
+                    value={draft.state}
+                    disabled={!can("editProfile")}
+                    onChange={(e) => patch({ state: e.target.value })}
+                  />
+                </label>
+                <label className="block text-sm">
+                  ZIP
+                  <input
+                    className={inputClass}
+                    value={draft.zip}
+                    disabled={!can("editProfile")}
+                    onChange={(e) => patch({ zip: e.target.value })}
+                  />
+                </label>
+              </div>
+              <label className="block text-sm">
+                Phone
+                <input
+                  className={inputClass}
+                  value={draft.phone}
+                  disabled={!can("editProfile")}
+                  onChange={(e) => patch({ phone: e.target.value })}
+                />
+              </label>
+              <label className="block text-sm">
+                Admissions email
+                <input
+                  className={inputClass}
+                  value={draft.email}
+                  disabled={!can("editProfile")}
+                  onChange={(e) => patch({ email: e.target.value })}
+                />
+              </label>
             </div>
-          ))}
-          {(can("editPricing") || can("editProfile")) && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() =>
-                setDraft({
-                  ...draft,
-                  roomTypes: [
-                    ...draft.roomTypes,
-                    { name: "New room type", price: null, notes: "" },
-                  ],
+          </div>
+        </Section>
+
+        {/* 4. Rooms & pricing */}
+        <Section
+          title="Rooms & pricing"
+          hint="Monthly rates families see on your listing. Keep units simple, not a bed board."
+        >
+          <div className="space-y-3">
+            {draft.roomTypes.length === 0 && (
+              <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
+                No room types yet. Add your first rate card below.
+              </p>
+            )}
+            {draft.roomTypes.map((room, index) => (
+              <div
+                key={`${room.name}-${index}`}
+                className="rounded-2xl border border-line bg-surface p-5 shadow-xs"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <label className="block text-sm">
+                      Room type
+                      <input
+                        className={cn(inputClass, "font-medium")}
+                        value={room.name}
+                        disabled={!can("editPricing")}
+                        onChange={(e) => {
+                          const roomTypes = [...draft.roomTypes];
+                          roomTypes[index] = { ...room, name: e.target.value };
+                          patch({ roomTypes });
+                        }}
+                        placeholder="Studio, One bedroom, Memory care suite…"
+                      />
+                    </label>
+                  </div>
+                  <div className="rounded-xl bg-brand-soft/50 px-3 py-2 text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-strong">
+                      From
+                    </p>
+                    <p className="text-lg font-semibold tabular-nums text-ink">
+                      {room.price != null ? formatCurrency(room.price) : ","}
+                      <span className="text-sm font-normal text-ink-muted"> / mo</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm text-ink-muted">
+                    Monthly price (USD)
+                    <input
+                      type="number"
+                      className={inputClass}
+                      value={room.price ?? ""}
+                      disabled={!can("editPricing")}
+                      onChange={(e) => {
+                        const roomTypes = [...draft.roomTypes];
+                        roomTypes[index] = {
+                          ...room,
+                          price: e.target.value ? Number(e.target.value) : null,
+                        };
+                        patch({ roomTypes });
+                      }}
+                    />
+                  </label>
+                  <label className="block text-sm text-ink-muted">
+                    Available units
+                    <input
+                      type="number"
+                      className={inputClass}
+                      value={room.availableUnits ?? 0}
+                      disabled={!can("editPricing")}
+                      onChange={(e) => {
+                        const roomTypes = [...draft.roomTypes];
+                        roomTypes[index] = {
+                          ...room,
+                          availableUnits: Number(e.target.value) || 0,
+                        };
+                        patch({ roomTypes });
+                      }}
+                    />
+                  </label>
+                </div>
+                <label className="mt-3 block text-sm text-ink-muted">
+                  Notes
+                  <input
+                    className={inputClass}
+                    value={room.notes}
+                    disabled={!can("editPricing")}
+                    onChange={(e) => {
+                      const roomTypes = [...draft.roomTypes];
+                      roomTypes[index] = { ...room, notes: e.target.value };
+                      patch({ roomTypes });
+                    }}
+                    placeholder="Includes meals, second person fee, etc."
+                  />
+                </label>
+                {can("editPricing") && (
+                  <button
+                    type="button"
+                    className="mt-3 text-xs font-medium text-danger hover:underline"
+                    onClick={() =>
+                      patch({
+                        roomTypes: draft.roomTypes.filter((_, i) => i !== index),
+                      })
+                    }
+                  >
+                    Remove room type
+                  </button>
+                )}
+              </div>
+            ))}
+            {can("editPricing") && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  patch({
+                    roomTypes: [
+                      ...draft.roomTypes,
+                      {
+                        name: "Studio",
+                        price: null,
+                        notes: "",
+                        availableUnits: 1,
+                      },
+                    ],
+                  })
+                }
+              >
+                Add room type
+              </Button>
+            )}
+          </div>
+        </Section>
+
+        {/* 5. Care services */}
+        <Section title="Care services" hint="What levels of care you offer.">
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
+            <div className="grid gap-1 sm:grid-cols-2">
+              {CARE_OPTIONS.map((opt) => {
+                const checked = draft.careTypes.some(
+                  (c) => normalizeCare(c) === normalizeCare(opt),
+                );
+                return (
+                  <label
+                    key={opt}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-2.5 text-sm hover:bg-bg-soft"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={!can("editProfile")}
+                      onChange={() => toggleCare(opt)}
+                      className="h-4 w-4 rounded border-line text-brand"
+                    />
+                    {opt}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </Section>
+
+        {/* 6. Amenities */}
+        <Section title="Amenities" hint="One amenity per line, shown on your public listing.">
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
+            <textarea
+              rows={5}
+              className={inputClass}
+              value={draft.amenities.join("\n")}
+              disabled={!can("editProfile")}
+              onChange={(e) =>
+                patch({
+                  amenities: e.target.value
+                    .split("\n")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
                 })
               }
-            >
-              Add room type
+              placeholder={"Garden courtyard\nPet friendly\nOn-site dining\nTransportation"}
+            />
+          </div>
+        </Section>
+
+        {/* 7. Admission criteria */}
+        <Section
+          title="Admission criteria"
+          hint="Basic rules your team uses when reviewing applications."
+        >
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
+            {(
+              [
+                ["medicaid", "Accept Medicaid"],
+                ["privatePay", "Accept private pay"],
+                ["pets", "Pets allowed"],
+              ] as const
+            ).map(([key, label]) => (
+              <label
+                key={key}
+                className="flex items-center justify-between gap-3 rounded-xl bg-bg-soft/80 px-3 py-3 text-sm"
+              >
+                <span>{label}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={flags[key]}
+                  disabled={!can("editAdmissions")}
+                  onClick={() =>
+                    patch({
+                      admissionFlags: { ...flags, [key]: !flags[key] },
+                    })
+                  }
+                  className={cn(
+                    "relative h-7 w-12 rounded-full transition",
+                    flags[key] ? "bg-brand" : "bg-line-strong",
+                    !can("editAdmissions") && "opacity-50",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition",
+                      flags[key] ? "left-5" : "left-0.5",
+                    )}
+                  />
+                </button>
+              </label>
+            ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm">
+                Smoking policy
+                <input
+                  className={inputClass}
+                  value={flags.smoking}
+                  disabled={!can("editAdmissions")}
+                  onChange={(e) =>
+                    patch({ admissionFlags: { ...flags, smoking: e.target.value } })
+                  }
+                />
+              </label>
+              <label className="block text-sm">
+                Minimum age
+                <input
+                  type="number"
+                  className={inputClass}
+                  value={flags.minAge}
+                  disabled={!can("editAdmissions")}
+                  onChange={(e) =>
+                    patch({
+                      admissionFlags: { ...flags, minAge: Number(e.target.value) || 0 },
+                    })
+                  }
+                />
+              </label>
+            </div>
+            <label className="block text-sm">
+              Notes
+              <textarea
+                rows={3}
+                className={inputClass}
+                value={flags.notes}
+                disabled={!can("editAdmissions")}
+                onChange={(e) =>
+                  patch({ admissionFlags: { ...flags, notes: e.target.value } })
+                }
+              />
+            </label>
+          </div>
+        </Section>
+
+        {editable && (
+          <div className="sticky bottom-4 flex justify-end">
+            <Button type="button" onClick={save} className="shadow-md">
+              {saved ? "Saved" : "Save all changes"}
             </Button>
-          )}
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

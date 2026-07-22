@@ -1,4 +1,4 @@
-/** Family document center — categories, statuses, readiness checklist */
+/** Family document center, categories, statuses, readiness checklist */
 
 export const DOC_CATEGORIES = [
   { id: "identification", label: "Identification" },
@@ -21,7 +21,7 @@ export const DOC_CATEGORIES = [
 
 export type DocCategoryId = (typeof DOC_CATEGORIES)[number]["id"];
 
-/** @deprecated alias — use DocCategoryId */
+/** @deprecated alias, use DocCategoryId */
 export type DocCategory = DocCategoryId;
 
 export const DOC_STATUSES = [
@@ -109,7 +109,7 @@ export function statusMeta(id: DocStatus) {
 }
 
 export function formatFileSize(bytes: number) {
-  if (!bytes || bytes < 0) return "—";
+  if (!bytes || bytes < 0) return ",";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -147,7 +147,7 @@ export function migrateDocument(raw: Record<string, unknown>): VaultDocument {
     description: String(raw.description || ""),
     status,
     expires: (raw.expires as string | null) ?? null,
-    size: String(raw.size || "—"),
+    size: String(raw.size || ","),
     sizeBytes: Number(raw.sizeBytes) || 0,
     mimeType: String(raw.mimeType || "application/octet-stream"),
     updated: String(raw.updated || new Date().toLocaleDateString("en-CA")),
@@ -266,9 +266,9 @@ export const DEMO_DOCUMENT_REQUESTS: DocumentRequest[] = [
 ];
 
 export const SHARE_TARGETS = [
-  { id: "app-maple", label: "Maple Grove — Application", kind: "application" as const },
-  { id: "app-lakeside", label: "Lakeside Haven — Application", kind: "application" as const },
-  { id: "app-cedar", label: "Cedar Memory Care — Application", kind: "application" as const },
+  { id: "app-maple", label: "Maple Grove, Application", kind: "application" as const },
+  { id: "app-lakeside", label: "Lakeside Haven, Application", kind: "application" as const },
+  { id: "app-cedar", label: "Cedar Memory Care, Application", kind: "application" as const },
   { id: "community-orchard", label: "Orchard House (preview share)", kind: "community" as const },
 ];
 

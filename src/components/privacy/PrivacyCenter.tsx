@@ -414,7 +414,7 @@ function PrivacyInner() {
                 <span className="text-xs text-ink-faint">{formatPrivacyTime(e.at)}</span>
               </div>
               <p className="mt-2">
-                <span className="font-medium">{e.actor}</span> — {e.resource}
+                <span className="font-medium">{e.actor}</span>, {e.resource}
               </p>
               {e.detail && <p className="mt-1 text-ink-muted">{e.detail}</p>}
             </Card>

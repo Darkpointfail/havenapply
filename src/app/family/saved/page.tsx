@@ -112,7 +112,7 @@ export default function SavedCommunitiesPage() {
     <div className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Saved Communities"
-        description="Shortlist, tag, rank, and share favorites with family — then compare or apply."
+        description="Shortlist, tag, rank, and share favorites with family, then compare or apply."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
           { label: "Saved Communities" },

@@ -20,7 +20,7 @@ export default function Page() {
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Messages"
-        description="Oversight of flagged threads only — message bodies stay redacted."
+        description="Oversight of flagged threads only, message bodies stay redacted."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
           { label: "Messages" },

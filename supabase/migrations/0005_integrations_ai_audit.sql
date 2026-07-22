@@ -120,6 +120,7 @@ create table if not exists public.organization_integrations (
 create index if not exists organization_integrations_org_idx
   on public.organization_integrations (organization_id);
 
+drop trigger if exists organization_integrations_set_updated_at on public.organization_integrations;
 create trigger organization_integrations_set_updated_at
   before update on public.organization_integrations
   for each row execute function public.set_updated_at();

@@ -18,6 +18,7 @@ create table if not exists public.profiles (
 
 create index if not exists profiles_email_idx on public.profiles (lower(email));
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
@@ -77,6 +78,7 @@ create table if not exists public.families (
 
 create index if not exists families_owner_idx on public.families (owner_id);
 
+drop trigger if exists families_set_updated_at on public.families;
 create trigger families_set_updated_at
   before update on public.families
   for each row execute function public.set_updated_at();
@@ -96,6 +98,7 @@ create table if not exists public.family_members (
 create index if not exists family_members_user_idx on public.family_members (user_id);
 create index if not exists family_members_family_idx on public.family_members (family_id);
 
+drop trigger if exists family_members_set_updated_at on public.family_members;
 create trigger family_members_set_updated_at
   before update on public.family_members
   for each row execute function public.set_updated_at();
@@ -156,6 +159,7 @@ create table if not exists public.seniors (
 create index if not exists seniors_family_idx on public.seniors (family_id) where deleted_at is null;
 create index if not exists seniors_family_created_idx on public.seniors (family_id, created_at desc);
 
+drop trigger if exists seniors_set_updated_at on public.seniors;
 create trigger seniors_set_updated_at
   before update on public.seniors
   for each row execute function public.set_updated_at();
@@ -177,6 +181,7 @@ create table if not exists public.senior_care_assessments (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+drop trigger if exists senior_care_assessments_set_updated_at on public.senior_care_assessments;
 create trigger senior_care_assessments_set_updated_at
   before update on public.senior_care_assessments
   for each row execute function public.set_updated_at();
@@ -209,6 +214,7 @@ create table if not exists public.medications (
 
 create index if not exists medications_senior_idx on public.medications (senior_id);
 
+drop trigger if exists medications_set_updated_at on public.medications;
 create trigger medications_set_updated_at
   before update on public.medications
   for each row execute function public.set_updated_at();
@@ -252,6 +258,7 @@ create table if not exists public.documents (
 create index if not exists documents_senior_idx on public.documents (senior_id) where deleted_at is null;
 create index if not exists documents_family_idx on public.documents (family_id, created_at desc);
 
+drop trigger if exists documents_set_updated_at on public.documents;
 create trigger documents_set_updated_at
   before update on public.documents
   for each row execute function public.set_updated_at();

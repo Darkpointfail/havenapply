@@ -608,7 +608,7 @@ export function FamilyCollaborationProvider({ children }: { children: ReactNode 
       items.push({
         id: `n-inv-${inv.id}`,
         title: "Invitation pending",
-        body: `${inv.name} (${inv.email}) — ${roleLabel(inv.role)} · expires ${formatCollabTime(inv.expiresAt)}`,
+        body: `${inv.name} (${inv.email}), ${roleLabel(inv.role)} · expires ${formatCollabTime(inv.expiresAt)}`,
         at: inv.createdAt,
       });
     }
@@ -616,7 +616,7 @@ export function FamilyCollaborationProvider({ children }: { children: ReactNode 
       items.push({
         id: `n-exp-${inv.id}`,
         title: "Invitation expired",
-        body: `${inv.name} — resend to restore access offer`,
+        body: `${inv.name}, resend to restore access offer`,
         at: inv.expiresAt,
       });
     }

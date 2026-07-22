@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   LayoutGrid,
-  List,
   Map as MapIcon,
-  PanelLeft,
   Search,
   SlidersHorizontal,
+  Sparkles,
   X,
 } from "lucide-react";
 import { CommunitiesMap } from "@/components/residences/CommunitiesMap";
@@ -21,10 +21,11 @@ import {
   filterResidences,
   type SearchFilters,
 } from "@/lib/community-match";
+import { describeFilters, parseSearchIntent } from "@/lib/assistant/search-intent";
 import { useFamilyData } from "@/lib/family-data";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "list" | "map" | "split";
+type ViewMode = "list" | "map";
 
 const CARE_OPTIONS = [
   "Assisted living",
@@ -92,7 +93,7 @@ function ToggleChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-sm transition",
+        "rounded-full border px-2.5 py-1 text-xs transition",
         active
           ? "border-brand bg-brand-soft font-medium text-brand-strong"
           : "border-line bg-surface text-ink-muted hover:border-line-strong hover:text-ink",
@@ -104,11 +105,38 @@ function ToggleChip({
 }
 
 export default function FindCommunitiesPage() {
-  const { data } = useFamilyData();
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
+          Loading search…
+        </div>
+      }
+    >
+      <FindCommunitiesInner />
+    </Suspense>
+  );
+}
 
-  const [filters, setFilters] = useState<SearchFilters>(emptySearchFilters);
-  const [showFilters, setShowFilters] = useState(true);
-  const [view, setView] = useState<ViewMode>("split");
+function FindCommunitiesInner() {
+  const { data } = useFamilyData();
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<SearchFilters>(() => {
+    const base = emptySearchFilters();
+    const q = searchParams.get("q");
+    const miles = searchParams.get("miles");
+    const budget = searchParams.get("budget");
+    const care = searchParams.get("care");
+    if (q) base.query = q;
+    if (miles) base.maxMiles = Number(miles);
+    if (budget) base.budgetMax = Number(budget);
+    if (care) base.careTypes = [care];
+    return base;
+  });
+  const [ask, setAsk] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState<ViewMode>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -174,56 +202,66 @@ export default function FindCommunitiesPage() {
       : "/family/compare";
 
   return (
-    <div className="mx-auto max-w-[1480px] px-5 py-8 md:px-8 md:py-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">
-            Find Communities
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            Search senior living like you would a home
+    <div className="mx-auto max-w-[1280px] px-5 py-6 md:px-8 md:py-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-xl">
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
+            Find senior living
           </h1>
-          <p className="mt-2 text-ink-muted">
-            City, state, ZIP, or community name — then refine by care, budget, and what matters for
-            daily life. Compatibility scores are a search aid, not an admission guarantee.
+          <p className="mt-1 text-sm text-ink-muted">
+            Search by city, ZIP, or name, then refine by care and budget.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button href="/family/saved" variant="secondary">
+        <div className="flex flex-wrap gap-1.5">
+          <Button href="/family/saved" variant="ghost" size="sm">
             Saved
           </Button>
-          <Button
-            href={
-              data.compareIds.length
-                ? `/family/apply-multi?ids=${data.compareIds.join(",")}`
-                : "/family/apply-multi"
-            }
-            variant="secondary"
-          >
-            Multi-apply
+          <Button href="/family/applications" variant="ghost" size="sm">
+            My applications
           </Button>
-          <Button href={compareLink} variant="secondary">
+          <Button href={compareLink} variant="secondary" size="sm">
             Compare{data.compareIds.length ? ` (${data.compareIds.length})` : ""}
           </Button>
         </div>
       </div>
 
+      <form
+        className="mt-4 flex flex-col gap-2 rounded-xl bg-bg-soft/80 px-3 py-2 ring-1 ring-line md:flex-row md:items-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!ask.trim()) return;
+          setFilters(parseSearchIntent(ask, filters));
+        }}
+      >
+        <div className="flex flex-1 items-center gap-2">
+          <Sparkles size={14} className="shrink-0 text-brand" />
+          <input
+            value={ask}
+            onChange={(e) => setAsk(e.target.value)}
+            placeholder='Ask Haven: "within 20 miles of Boston under $7,000"'
+            className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
+          />
+        </div>
+        <Button type="submit" size="sm" variant="soft">
+          Apply
+        </Button>
+      </form>
+      {(filters.query || filters.budgetMax || filters.maxMiles) && (
+        <p className="mt-1.5 text-xs text-ink-muted">Active: {describeFilters(filters)}</p>
+      )}
+
       {/* Search bar */}
-      <div className="mt-8 rounded-[1.5rem] border border-line bg-surface p-3 shadow-soft md:p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <label className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-bg px-4 py-3">
-            <Search size={18} className="shrink-0 text-ink-faint" />
-            <div className="min-w-0 flex-1">
-              <span className="block text-xs font-medium uppercase tracking-wide text-ink-faint">
-                Search
-              </span>
-              <input
-                value={filters.query}
-                onChange={(e) => patch({ query: e.target.value })}
-                placeholder="City, state, ZIP, or community name"
-                className="mt-0.5 w-full bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
-              />
-            </div>
+      <div className="mt-4 rounded-xl border border-line bg-surface p-2.5 md:p-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <label className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg bg-bg px-3 py-2">
+            <Search size={16} className="shrink-0 text-ink-faint" />
+            <input
+              value={filters.query}
+              onChange={(e) => patch({ query: e.target.value })}
+              placeholder="City, state, ZIP, or community name"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
+              aria-label="Search"
+            />
             {filters.query && (
               <button
                 type="button"
@@ -231,25 +269,25 @@ export default function FindCommunitiesPage() {
                 onClick={() => patch({ query: "" })}
                 aria-label="Clear search"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
           </label>
           <Button
             type="button"
             variant={showFilters ? "soft" : "secondary"}
+            size="sm"
             onClick={() => setShowFilters((v) => !v)}
             className="shrink-0"
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal size={14} />
             Filters{activeFilterCount ? ` · ${activeFilterCount}` : ""}
           </Button>
-          <div className="flex shrink-0 rounded-2xl border border-line bg-bg p-1">
+          <div className="flex shrink-0 rounded-lg border border-line bg-bg p-0.5">
             {(
               [
-                { id: "list" as const, icon: List, label: "List" },
+                { id: "list" as const, icon: LayoutGrid, label: "List" },
                 { id: "map" as const, icon: MapIcon, label: "Map" },
-                { id: "split" as const, icon: PanelLeft, label: "Split" },
               ] as const
             ).map(({ id, icon: Icon, label }) => (
               <button
@@ -257,12 +295,12 @@ export default function FindCommunitiesPage() {
                 type="button"
                 onClick={() => setView(id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm transition",
+                  "inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition",
                   view === id ? "bg-surface font-medium text-ink shadow-xs" : "text-ink-muted",
                 )}
                 aria-pressed={view === id}
               >
-                <Icon size={15} />
+                <Icon size={14} />
                 <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
@@ -270,12 +308,12 @@ export default function FindCommunitiesPage() {
         </div>
 
         {showFilters && (
-          <div className="mt-4 space-y-4 border-t border-line pt-4">
+          <div className="mt-3 space-y-3 border-t border-line pt-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                 Care type
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {CARE_OPTIONS.map((c) => (
                   <ToggleChip
                     key={c}
@@ -288,13 +326,13 @@ export default function FindCommunitiesPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                   Monthly budget max
                 </span>
                 <select
-                  className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
+                  className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
                   value={filters.budgetMax ?? ""}
                   onChange={(e) =>
                     patch({ budgetMax: e.target.value ? Number(e.target.value) : null })
@@ -308,11 +346,11 @@ export default function FindCommunitiesPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                   Distance
                 </span>
                 <select
-                  className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
+                  className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
                   value={filters.maxMiles ?? ""}
                   onChange={(e) =>
                     patch({ maxMiles: e.target.value ? Number(e.target.value) : null })
@@ -326,11 +364,11 @@ export default function FindCommunitiesPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                   Availability
                 </span>
                 <select
-                  className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
+                  className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
                   value={filters.availability}
                   onChange={(e) =>
                     patch({
@@ -344,11 +382,11 @@ export default function FindCommunitiesPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                   Room
                 </span>
                 <select
-                  className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
+                  className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
                   value={filters.room}
                   onChange={(e) => patch({ room: e.target.value as SearchFilters["room"] })}
                 >
@@ -360,10 +398,10 @@ export default function FindCommunitiesPage() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                 More filters
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <ToggleChip
                   active={filters.secureMemoryCare}
                   onClick={() => patch({ secureMemoryCare: !filters.secureMemoryCare })}
@@ -451,10 +489,10 @@ export default function FindCommunitiesPage() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                 Languages spoken
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {LANGUAGE_OPTIONS.map((l) => (
                   <ToggleChip
                     key={l}
@@ -479,15 +517,15 @@ export default function FindCommunitiesPage() {
       </div>
 
       {/* Results meta */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-ink-muted">
           {loadingMore && visibleCount < matched.length ? (
-            <>Loading communities… showing {visible.length} of {matched.length}</>
+            <>Loading… {visible.length} of {matched.length}</>
           ) : (
             <>
               <span className="font-medium text-ink">{matched.length}</span>{" "}
               {matched.length === 1 ? "community" : "communities"}
-              {hasQueryOrFilters ? " match your search" : " near the demo metro"}
+              {hasQueryOrFilters ? " match your search" : ""}
             </>
           )}
         </p>
@@ -498,36 +536,29 @@ export default function FindCommunitiesPage() {
 
       {/* Empty / restrictive states */}
       {matched.length === 0 ? (
-        <div className="mt-8 rounded-[1.5rem] border border-dashed border-line bg-surface px-6 py-16 text-center">
-          <LayoutGrid className="mx-auto text-ink-faint" size={36} />
-          <h2 className="mt-4 text-xl font-semibold">
+        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface px-5 py-12 text-center">
+          <LayoutGrid className="mx-auto text-ink-faint" size={28} />
+          <h2 className="mt-3 text-lg font-semibold">
             {restrictiveEmpty ? "Filters look too restrictive" : "No communities found"}
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-ink-muted">
+          <p className="mx-auto mt-1.5 max-w-md text-sm text-ink-muted">
             {restrictiveEmpty
-              ? "Try removing a few requirements — especially budget, distance, and Medicaid together — or broaden care type."
+              ? "Try removing a few requirements, especially budget, distance, and Medicaid together, or broaden care type."
               : "Try another city, ZIP, or community name. You can also clear filters to browse the full demo list."}
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Button type="button" onClick={resetFilters}>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Button type="button" size="sm" onClick={resetFilters}>
               Clear filters
             </Button>
-            <Button href="/family/care-needs" variant="secondary">
+            <Button href="/family/care-needs" variant="secondary" size="sm">
               Update care needs
             </Button>
           </div>
         </div>
       ) : (
-        <div
-          className={cn(
-            "mt-6 gap-6",
-            view === "split" && "grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]",
-            view === "list" && "block",
-            view === "map" && "block",
-          )}
-        >
-          {(view === "list" || view === "split") && (
-            <div className={cn("space-y-4", view === "list" && "mx-auto max-w-3xl")}>
+        <div className="mt-4">
+          {view === "list" && (
+            <div className="grid gap-4 sm:grid-cols-2">
               {visible.map(({ residence, match }) => (
                 <ResidenceCard
                   key={residence.id}
@@ -535,15 +566,14 @@ export default function FindCommunitiesPage() {
                   match={match}
                   selected={selectedId === residence.id}
                   onSelect={() => setSelectedId(residence.id)}
-                  compact={view === "split"}
                 />
               ))}
               {loadingMore && (
-                <div className="space-y-3" aria-hidden>
+                <div className="contents" aria-hidden>
                   {[0, 1].map((i) => (
                     <div
                       key={i}
-                      className="h-40 animate-pulse rounded-[20px] border border-line bg-bg-soft"
+                      className="h-64 animate-pulse rounded-xl border border-line bg-bg-soft"
                     />
                   ))}
                 </div>
@@ -551,16 +581,16 @@ export default function FindCommunitiesPage() {
             </div>
           )}
 
-          {(view === "map" || view === "split") && (
-            <div className={cn(view === "map" && "mx-auto max-w-5xl")}>
+          {view === "map" && (
+            <div className="mx-auto max-w-5xl">
               <CommunitiesMap
                 residences={matched.map((m) => m.residence)}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
-                className={cn(view === "split" ? "sticky top-24 min-h-[560px]" : "min-h-[520px]")}
+                className="min-h-[480px]"
               />
-              {view === "map" && selectedId && (
-                <div className="mt-4">
+              {selectedId && (
+                <div className="mt-3 max-w-xl">
                   {(() => {
                     const item = matched.find((m) => m.residence.id === selectedId);
                     if (!item) return null;
@@ -579,11 +609,9 @@ export default function FindCommunitiesPage() {
         </div>
       )}
 
-      <p className="mt-10 max-w-3xl text-xs leading-relaxed text-ink-faint">
-        Compatibility scores weigh care type, budget, location, medical needs, availability, and
-        preferences from your family profile when available. They never guarantee admission, clinical
-        appropriateness, or a confirmed bed. Pricing and availability can change — always verify with
-        the community.
+      <p className="mt-8 max-w-2xl text-[11px] leading-relaxed text-ink-faint">
+        Compatibility scores are a search aid, not an admission guarantee. Pricing and availability
+        can change, always verify with the community.
       </p>
     </div>
   );

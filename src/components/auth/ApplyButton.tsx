@@ -1,13 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
+/**
+ * Navigates to the apply review page (community details + AI fit).
+ * That page requires a complete dossier before showing the review / send flow.
+ */
 export function ApplyButton({
   residenceId,
   size = "lg",
   className,
-  children = "Apply now",
+  children = "Apply",
   variant = "primary",
 }: {
   residenceId?: string;
@@ -15,16 +19,26 @@ export function ApplyButton({
   className?: string;
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "soft";
+  /** @deprecated ignored — apply always goes to the review page */
+  inline?: boolean;
+  /** @deprecated ignored */
+  autoOpen?: boolean;
 }) {
-  const { user, ready } = useAuth();
-  const applyPath = residenceId ? `/apply?residence=${residenceId}` : "/apply";
-  const href =
-    ready && user?.role === "family"
-      ? applyPath
-      : `/get-started?next=${encodeURIComponent(applyPath)}`;
+  if (!residenceId) {
+    return (
+      <Button href="/family/find-communities" size={size} variant={variant} className={className}>
+        {children}
+      </Button>
+    );
+  }
 
   return (
-    <Button href={href} size={size} variant={variant} className={className}>
+    <Button
+      href={`/family/apply/${residenceId}`}
+      size={size}
+      variant={variant}
+      className={cn(className)}
+    >
       {children}
     </Button>
   );

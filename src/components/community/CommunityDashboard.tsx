@@ -1,157 +1,223 @@
 "use client";
 
 import Link from "next/link";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import {
-  communityRoleLabel,
-  formatPortalTime,
-  statusLabel,
-  statusTone,
+  applicationCareType,
+  applicationPriority,
+  formatPortalDate,
+  initialsFromName,
+  priorityBadgeLabel,
+  queueSectionFor,
+  type AdmissionPriority,
+  type CommunityApplication,
+  type QueueSection,
 } from "@/lib/community-portal";
+import { cn } from "@/lib/utils";
+
+const SECTIONS: {
+  id: QueueSection;
+  title: string;
+  hint: string;
+  dot: string;
+}[] = [
+  {
+    id: "high",
+    title: "High priority",
+    hint: "Hospital discharge, urgent referrals, or immediate placement.",
+    dot: "bg-rose-500",
+  },
+  {
+    id: "medium",
+    title: "Medium priority",
+    hint: "Standard applications ready for review.",
+    dot: "bg-amber-500",
+  },
+  {
+    id: "low",
+    title: "Low priority",
+    hint: "Flexible move-in dates, review when you have capacity.",
+    dot: "bg-emerald-500",
+  },
+];
+
+function priorityTone(p: AdmissionPriority) {
+  if (p === "high") return "danger" as const;
+  if (p === "medium") return "warn" as const;
+  return "success" as const;
+}
+
+function ApplicationCard({ app }: { app: CommunityApplication }) {
+  const priority = applicationPriority(app);
+  return (
+    <article className="flex flex-col gap-4 rounded-2xl border border-line/80 bg-surface p-5 shadow-xs transition hover:border-line-strong hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3.5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand-strong">
+          {initialsFromName(app.seniorName)}
+        </div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-[15px] font-semibold tracking-tight text-ink">
+              {app.seniorName}
+            </h3>
+            <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
+          </div>
+          <p className="mt-1.5 text-sm text-ink-muted">{applicationCareType(app)}</p>
+          <p className="mt-1 text-xs text-ink-faint">
+            Move-in requested{" "}
+            {app.moveInRequested ? formatPortalDate(app.moveInRequested) : "Flexible"}
+            <span className="mx-1.5">·</span>
+            Submitted {formatPortalDate(app.submittedAt)}
+          </p>
+        </div>
+      </div>
+      <Button
+        href={`/community/applications/${app.id}`}
+        size="sm"
+        className="shrink-0 self-start sm:self-center"
+      >
+        Review application
+      </Button>
+    </article>
+  );
+}
 
 export function CommunityDashboard() {
-  const { ready, workspace, stats, myRole } = useCommunityPortal();
+  const {
+    ready,
+    workspace,
+    unreadNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useCommunityPortal();
 
-  if (!ready || !workspace || !stats) {
+  const apps = workspace?.applications ?? [];
+
+  const grouped = useMemo(() => {
+    const map: Record<QueueSection, CommunityApplication[]> = {
+      high: [],
+      medium: [],
+      low: [],
+    };
+    for (const app of apps) {
+      const section = queueSectionFor(app);
+      if (section) map[section].push(app);
+    }
+    for (const key of Object.keys(map) as QueueSection[]) {
+      map[key].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+    }
+    return map;
+  }, [apps]);
+
+  if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading community portal…
+        Opening admissions…
       </div>
     );
   }
 
-  const metrics: { label: string; value: string; hint?: string; href?: string }[] = [
-    {
-      label: "New applications",
-      value: String(stats.newApplications),
-      href: "/community/applications",
-    },
-    {
-      label: "Pending review",
-      value: String(stats.pendingReview),
-      href: "/community/applications",
-    },
-    {
-      label: "Document requests",
-      value: String(stats.documentRequests),
-      href: "/community/applications",
-    },
-    {
-      label: "Visits upcoming",
-      value: String(stats.upcomingVisits),
-    },
-    {
-      label: "Assessments to schedule",
-      value: String(stats.assessmentsToSchedule),
-    },
-    {
-      label: "Places available",
-      value: String(stats.openBeds),
-      href: "/community/availability",
-    },
-    {
-      label: "Waitlist",
-      value: String(stats.waitlistTotal),
-      href: "/community/availability",
-    },
-    {
-      label: "Conversion rate",
-      value: `${stats.conversionRate}%`,
-      hint: "Last 90 days",
-    },
-    {
-      label: "Avg. response time",
-      value: `${stats.avgResponseHours}h`,
-      hint: "To first action",
-    },
-  ];
-
-  const queue = [...workspace.applications]
-    .sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated))
-    .slice(0, 5);
+  const openCount =
+    grouped.high.length + grouped.medium.length + grouped.low.length;
 
   return (
-    <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
-      <PageHeader
-        title="Dashboard"
-        description={`${workspace.residenceName} · signed in as ${communityRoleLabel(myRole)}`}
-        breadcrumbs={[
-          { label: "Community", href: "/community/dashboard" },
-          { label: "Dashboard" },
-        ]}
-        actions={
-          <Button href="/community/applications" size="sm">
-            Open applications
-          </Button>
-        }
-      />
+    <div className="min-h-full bg-bg">
+      <div className="mx-auto max-w-[880px] space-y-10 px-5 py-8 md:px-8 md:py-12">
+        <header>
+          <p className="text-sm font-medium text-ink-muted">Admissions</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
+            Review queue
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
+            Complete applications ready for your decision, receive, review, discuss, decide.
+          </p>
+          <p className="mt-3 text-xs tabular-nums text-ink-faint">
+            {openCount} awaiting review
+          </p>
+        </header>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {metrics.map((m) => {
-          const inner = (
-            <>
-              <p className="text-3xl font-semibold tracking-tight">{m.value}</p>
-              <p className="mt-1 text-sm text-ink-muted">{m.label}</p>
-              {m.hint && <p className="mt-0.5 text-xs text-ink-faint">{m.hint}</p>}
-            </>
-          );
-          return m.href ? (
-            <Link key={m.label} href={m.href}>
-              <Card className="h-full p-5 transition hover:border-brand/40">{inner}</Card>
-            </Link>
-          ) : (
-            <Card key={m.label} className="p-5">
-              {inner}
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Application queue</h2>
-            <Button href="/community/applications" size="sm" variant="ghost">
-              View all
-            </Button>
-          </div>
-          <ul className="divide-y divide-line">
-            {queue.map((a) => (
-              <li key={a.id}>
-                <Link
-                  href={`/community/applications/${a.id}`}
-                  className="flex items-start justify-between gap-3 py-3 transition hover:bg-bg-soft/60"
-                >
-                  <div>
-                    <p className="font-medium">{a.seniorName}</p>
-                    <p className="text-sm text-ink-muted">
-                      {a.family.name} · {a.assigneeName || "Unassigned"}
-                    </p>
-                  </div>
-                  <Badge tone={statusTone(a.status)}>{statusLabel(a.status)}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="mb-4 font-semibold">Recent audit</h2>
-          <ul className="space-y-3">
-            {[...workspace.auditLog].reverse().slice(0, 8).map((e) => (
-              <li key={e.id} className="text-sm">
-                <p>
-                  <span className="font-medium">{e.actor}</span> — {e.action}
+        {unreadNotifications.length > 0 && (
+          <section className="rounded-2xl border border-brand/25 bg-brand-soft/40 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-ink">
+                  {unreadNotifications.length} new application
+                  {unreadNotifications.length === 1 ? "" : "s"}
                 </p>
-                <p className="text-xs text-ink-faint">{formatPortalTime(e.at)}</p>
-              </li>
-            ))}
-          </ul>
-        </Card>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  Submitted by families via Haven.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={markAllNotificationsRead}
+              >
+                Dismiss all
+              </Button>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {unreadNotifications.slice(0, 5).map((n) => (
+                <li
+                  key={n.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface/80 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink">{n.title}</p>
+                    <p className="text-xs text-ink-muted">{n.body}</p>
+                  </div>
+                  <Link
+                    href={`/community/applications/${n.applicationId}`}
+                    onClick={() => markNotificationRead(n.id)}
+                    className="inline-flex h-9 shrink-0 items-center justify-center rounded-[10px] bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:bg-brand-strong"
+                  >
+                    Review
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div className="space-y-10">
+          {SECTIONS.map((section) => {
+            const list = grouped[section.id];
+            return (
+              <section key={section.id}>
+                <div className="mb-4 flex items-start gap-2.5">
+                  <span
+                    className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", section.dot)}
+                    aria-hidden
+                  />
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-ink">
+                      {section.title}
+                      <span className="ml-2 text-sm font-normal tabular-nums text-ink-faint">
+                        {list.length}
+                      </span>
+                    </h2>
+                    <p className="mt-0.5 text-sm text-ink-muted">{section.hint}</p>
+                  </div>
+                </div>
+                {list.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
+                    No applications in this queue.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {list.map((app) => (
+                      <ApplicationCard key={app.id} app={app} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

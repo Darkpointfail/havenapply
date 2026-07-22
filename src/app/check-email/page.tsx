@@ -16,6 +16,7 @@ function CheckEmailInner() {
   const email = params.get("email") || "";
   const token = params.get("token");
   const role = params.get("role") || "family";
+  const next = params.get("next") || (role === "family" ? "/setup" : "/sign-in");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -27,13 +28,13 @@ function CheckEmailInner() {
     setSubmitting(true);
     setError(null);
     setMessage(null);
-    const result = resendConfirmationEmail(email);
+    const result = await resendConfirmationEmail(email);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    setConfirmToken(result.data.confirmToken);
+    setConfirmToken(result.data.confirmToken || null);
     setMessage(AUTH_MESSAGES.resendSuccess);
   };
 
@@ -48,8 +49,8 @@ function CheckEmailInner() {
         <p className="text-sm text-ink-muted">
           Sent to <span className="font-medium text-ink">{email || "your email"}</span>
           {role === "community"
-            ? ". After confirming, you can sign in — portal access waits on community verification."
-            : ". After confirming, sign in to continue family onboarding."}
+            ? ". After confirming, you can sign in, portal access waits on community verification."
+            : ". After confirming and signing in, you choose: talk with Haven or fill forms."}
         </p>
         {error && <AuthAlert className="mt-4">{error}</AuthAlert>}
         {message && (
@@ -61,16 +62,20 @@ function CheckEmailInner() {
           <Button type="submit" variant="secondary" className="w-full" disabled={submitting || !email}>
             {submitting ? "Sending…" : "Resend confirmation email"}
           </Button>
-          <Button href="/sign-in" variant="ghost" className="w-full">
+          <Button href={`/sign-in?next=${encodeURIComponent(next)}`} variant="ghost" className="w-full">
             Back to Sign In
           </Button>
         </form>
-        <DemoInbox
-          email={email}
-          confirmHref={
-            confirmToken ? `/verify?token=${encodeURIComponent(confirmToken)}` : null
-          }
-        />
+        {confirmToken ? (
+          <DemoInbox
+            email={email}
+            confirmHref={`/verify?token=${encodeURIComponent(confirmToken)}&next=${encodeURIComponent(next)}`}
+          />
+        ) : (
+          <p className="mt-4 text-sm text-ink-muted">
+            Open the confirmation link in your email (check spam). After confirming, sign in.
+          </p>
+        )}
       </Card>
       <p className="mt-6 text-center text-sm text-ink-muted">
         Wrong email?{" "}

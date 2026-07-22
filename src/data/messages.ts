@@ -29,13 +29,13 @@ export const conversations: Conversation[] = [
       {
         id: "m1",
         from: "residence",
-        text: "Thank you for applying to Maple Grove. We’ve reviewed Margaret’s profile.",
+        text: "Thank you for applying to Maple Grove. We’ve reviewed Paul’s profile.",
         time: "Mar 18 · 10:12",
       },
       {
         id: "m2",
         from: "family",
-        text: "Wonderful — happy to provide anything else you need.",
+        text: "Wonderful, happy to provide anything else you need.",
         time: "Mar 18 · 11:40",
       },
       {
@@ -83,13 +83,13 @@ export const conversations: Conversation[] = [
     id: "c3",
     residenceName: "Cedar Memory Care",
     avatar: images.holdingHands,
-    lastPreview: "Margaret is currently position 4 on our waiting list.",
+    lastPreview: "Paul is currently position 4 on our waiting list.",
     unread: 0,
     messages: [
       {
         id: "m1",
         from: "residence",
-        text: "Margaret is currently position 4 on our waiting list. We’ll notify you as soon as a suite opens.",
+        text: "Paul is currently position 4 on our waiting list. We’ll notify you as soon as a suite opens.",
         time: "Apr 5 · 11:00",
       },
     ],

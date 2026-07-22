@@ -1,4 +1,4 @@
-/** Care needs assessment — search aid, not a medical diagnosis */
+/** Care needs assessment, search aid, not a medical diagnosis */
 
 export const ADL_LEVELS = [
   { id: "independent", label: "Independent" },
@@ -237,12 +237,12 @@ export function buildCareNeedsSummary(care: CareNeeds): CareNeedsSummary {
     priorities.push("Staff experienced with sundowning and behavioral support.");
   }
   if (cog.has("mild") && !memoryHeavy) {
-    priorities.push("Mild memory changes — look for gentle cueing and routines.");
+    priorities.push("Mild memory changes, look for gentle cueing and routines.");
   }
 
   // Mobility
   if (care.mobility.includes("bedbound")) {
-    priorities.push("High mobility support — largely bedbound.");
+    priorities.push("High mobility support, largely bedbound.");
     mustHaves.push("Skilled nursing or high-acuity nursing support");
   } else if (care.mobility.includes("wheelchair") || care.mobility.includes("transfer_assist")) {
     priorities.push("Transfer and wheelchair accessibility matter.");
@@ -306,7 +306,7 @@ export function buildCareNeedsSummary(care: CareNeeds): CareNeedsSummary {
   // Mental
   const mental = new Set(care.mental);
   if (mental.has("risk")) {
-    priorities.push("Safety planning — risk to self or others noted.");
+    priorities.push("Safety planning, risk to self or others noted.");
     mustHaves.push("Community equipped for behavioral safety support");
   }
   if (mental.has("aggression") || mental.has("agitation")) {
@@ -344,7 +344,7 @@ export function buildCareNeedsSummary(care: CareNeeds): CareNeedsSummary {
     mostly_independent: {
       label: "Mostly independent",
       blurb:
-        "Based on what you’ve shared, Independent Living or light-support Assisted Living may be a useful starting filter — not a clinical determination.",
+        "Based on what you’ve shared, Independent Living or light-support Assisted Living may be a useful starting filter, not a clinical determination.",
     },
     light_assisted: {
       label: "Light to moderate support",
@@ -369,7 +369,7 @@ export function buildCareNeedsSummary(care: CareNeeds): CareNeedsSummary {
   };
 
   if (!priorities.length) {
-    priorities.push("Keep gathering details — more answers will sharpen the search filters.");
+    priorities.push("Keep gathering details, more answers will sharpen the search filters.");
   }
 
   return {

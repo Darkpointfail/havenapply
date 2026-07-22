@@ -1,1 +1,5 @@
-export { default } from "@/app/profile/page";
+import { redirect } from "next/navigation";
+
+export default function SeniorProfileRedirect() {
+  redirect("/family/profile?tab=details");
+}

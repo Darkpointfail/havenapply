@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useAuth } from "@/lib/auth";
 import { emptyCareNeeds, type CareNeeds } from "@/lib/care-needs";
+import { scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { deleteDocBlob } from "@/lib/doc-blobs";
 import {
   DEMO_DOCUMENT_REQUESTS,
@@ -128,14 +129,14 @@ function demoFamilyData(): FamilyData {
   const senior: SeniorProfile = {
     ...emptySeniorProfile(),
     filledBy: "I am a family member",
-    relationship: "Mother",
+    relationship: "Father",
     seniorParticipates: "sometimes",
     hasAuthorization: "yes",
-    firstName: "Margaret",
+    firstName: "Paul",
     middleName: "",
-    lastName: "Chen",
+    lastName: "Gilbert",
     dateOfBirth: "1947-04-12",
-    gender: "Female",
+    gender: "Male",
     primaryLanguage: "English",
     phone: "(514) 555-0142",
     email: "",
@@ -147,7 +148,7 @@ function demoFamilyData(): FamilyData {
     housingTypes: ["assisted", "memory"],
     urgency: "1to3",
     searchZones: [{ id: "z1", query: "Montreal, QC", radiusMiles: 25 }],
-    proximityToFamily: "Within 30 minutes of David",
+    proximityToFamily: "Within 30 minutes of family",
     openToOtherStates: "no",
     budgetMin: "3500",
     budgetMax: "5500",
@@ -166,7 +167,14 @@ function demoFamilyData(): FamilyData {
     senior,
     onboarding: { stepIndex: 8, startedAt: new Date().toISOString(), lastSavedAt: new Date().toISOString() },
     seniorCreated: true,
-    careNeeds: emptyCareNeeds(),
+    careNeeds: {
+      ...emptyCareNeeds(),
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      mobility: ["Uses a cane outdoors"],
+      cognition: ["Mild cognitive impairment"],
+      health: ["Hypertension"],
+    },
     sections: [
       {
         id: "general",
@@ -184,19 +192,19 @@ function demoFamilyData(): FamilyData {
         id: "medications",
         title: "Medications",
         summary: "2 medications",
-        items: ["Amlodipine 5mg — morning", "Donepezil 5mg — evening"],
+        items: ["Amlodipine 5mg, morning", "Donepezil 5mg, evening"],
       },
       {
         id: "allergies",
         title: "Allergies",
         summary: "1 allergy",
-        items: ["Penicillin — rash"],
+        items: ["Penicillin, rash"],
       },
       {
         id: "vaccinations",
         title: "Vaccinations",
         summary: "Up to date",
-        items: ["Influenza — Oct 2025"],
+        items: ["Influenza, Oct 2025"],
       },
       {
         id: "mobility",
@@ -226,7 +234,7 @@ function demoFamilyData(): FamilyData {
         id: "emergency",
         title: "Emergency contacts",
         summary: "1 contact",
-        items: ["David Chen — Son — Primary"],
+        items: ["Alex Martin, Son, Primary"],
       },
     ],
     documents: [
@@ -264,6 +272,57 @@ function demoFamilyData(): FamilyData {
         versions: 1,
         hasFile: false,
       },
+      {
+        id: "d-demo-3",
+        name: "Photo ID.pdf",
+        category: "identification",
+        description: "Government photo ID",
+        status: "verified",
+        updated: formatDate(),
+        createdAt: new Date().toISOString(),
+        size: "380 KB",
+        sizeBytes: 380_000,
+        mimeType: "application/pdf",
+        expires: null,
+        sharedWith: [],
+        attachedToApplications: [],
+        versions: 1,
+        hasFile: false,
+      },
+      {
+        id: "d-demo-4",
+        name: "Physician report H&P.pdf",
+        category: "physician_report",
+        description: "History & physical",
+        status: "verified",
+        updated: formatDate(),
+        createdAt: new Date().toISOString(),
+        size: "890 KB",
+        sizeBytes: 890_000,
+        mimeType: "application/pdf",
+        expires: null,
+        sharedWith: [],
+        attachedToApplications: [],
+        versions: 1,
+        hasFile: false,
+      },
+      {
+        id: "d-demo-5",
+        name: "Current medication list.pdf",
+        category: "medication_list",
+        description: "",
+        status: "uploaded",
+        updated: formatDate(),
+        createdAt: new Date().toISOString(),
+        size: "210 KB",
+        sizeBytes: 210_000,
+        mimeType: "application/pdf",
+        expires: null,
+        sharedWith: [],
+        attachedToApplications: [],
+        versions: 1,
+        hasFile: false,
+      },
     ],
     documentRequests: DEMO_DOCUMENT_REQUESTS,
     savedFavorites: [
@@ -293,7 +352,8 @@ function formatDate() {
 }
 
 function storageKey(email: string) {
-  return `haven-family-${email.toLowerCase()}`;
+  // v4: replace legacy names (Andrea Mazurie / Margaret Chen) with Paul Gilbert
+  return `haven-family-v4-${email.toLowerCase()}`;
 }
 
 function summarizeSection(items: string[]) {
@@ -304,13 +364,24 @@ function summarizeSection(items: string[]) {
 
 function migrateFamilyData(raw: Partial<FamilyData> & { person?: ProfilePerson }): FamilyData {
   const base = emptyFamilyData();
-  const senior = { ...emptySeniorProfile(), ...(raw.senior || {}) };
+  let senior = { ...emptySeniorProfile(), ...(raw.senior || {}) };
   if (!raw.senior && raw.person?.name) {
     const parts = raw.person.name.trim().split(/\s+/);
     senior.firstName = parts[0] || "";
     senior.lastName = parts.slice(1).join(" ") || "";
     senior.relationship = raw.person.relationship || "";
   }
+  const fullName = `${senior.firstName} ${senior.lastName}`.trim();
+  if (/andrea\s*mazurie/i.test(fullName) || /margaret\s*chen/i.test(fullName)) {
+    senior = {
+      ...senior,
+      firstName: "Paul",
+      lastName: "Gilbert",
+      gender: senior.gender || "Male",
+      relationship: senior.relationship === "Mother" ? "Father" : senior.relationship,
+    };
+  }
+  senior = scrubDemoNamesDeep(senior);
   return {
     ...base,
     ...raw,
@@ -330,7 +401,9 @@ function migrateFamilyData(raw: Partial<FamilyData> & { person?: ProfilePerson }
         ...(raw.careNeeds?.preferences || {}),
       },
     },
-    person: raw.person ? { ...base.person, ...raw.person } : personFromSenior(senior),
+    person: scrubDemoNamesDeep(
+      raw.person ? { ...base.person, ...raw.person, name: `${senior.firstName} ${senior.lastName}`.trim() } : personFromSenior(senior),
+    ),
     sections: raw.sections?.length ? raw.sections : base.sections,
     documents: (raw.documents || []).map((d) => migrateDocument(d as unknown as Record<string, unknown>)),
     documentRequests: raw.documentRequests?.length

@@ -116,13 +116,13 @@ function DashboardInner() {
             </div>
             <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
               Based on wait times and care fit, prioritize Maple Grove (accepted) and keep Cedar Memory
-              Care warm — position #4.
+              Care warm, position #4.
             </p>
             <Button
               size="sm"
               variant="ai"
               className="mt-4"
-              onClick={() => ask("What should I do next for Margaret’s admissions?")}
+              onClick={() => ask("What should I do next for Paul Gilbert’s admissions?")}
             >
               Ask what to do next
             </Button>

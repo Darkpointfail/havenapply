@@ -92,16 +92,16 @@ export default function ApplicationDetailPage() {
       "Haven · Application summary",
       `Community: ${app.residenceName}`,
       `Status: ${statusLabel(app.status)}`,
-      `Submitted: ${app.submittedDate || "—"}`,
+      `Submitted: ${app.submittedDate || ","}`,
       `Last update: ${app.lastUpdated}`,
       `Next action: ${app.nextAction}`,
       `Contact: ${app.contactName} (${app.contactRole})`,
       `Missing docs: ${app.missingDocuments.join(", ") || "None"}`,
-      `Waitlist: ${app.waitingPosition ?? "—"}`,
-      `Appointment: ${app.upcomingAppointment || "—"}`,
+      `Waitlist: ${app.waitingPosition ?? ","}`,
+      `Appointment: ${app.upcomingAppointment || ","}`,
       "",
       "Timeline:",
-      ...app.timeline.map((t) => `- ${t.date} · ${t.label}${t.detail ? ` — ${t.detail}` : ""}`),
+      ...app.timeline.map((t) => `- ${t.date} · ${t.label}${t.detail ? `, ${t.detail}` : ""}`),
       "",
       "Community responses on this application are private to this destination.",
     ];
@@ -355,7 +355,10 @@ export default function ApplicationDetailPage() {
           )}
 
           {!familyApp && app.status === "draft" && (
-            <Button href={`/apply?residence=${app.residenceId}`} className="w-full">
+            <Button
+              href={`/family/apply/${app.residenceId}`}
+              className="w-full"
+            >
               Continue draft
             </Button>
           )}

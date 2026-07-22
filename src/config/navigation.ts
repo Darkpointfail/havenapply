@@ -3,7 +3,7 @@ export type NavItem = {
   label: string;
 };
 
-/** Top-level header group — main title with nested destinations */
+/** Top-level header group, main title with nested destinations */
 export type NavGroup = {
   id: string;
   label: string;
@@ -14,58 +14,46 @@ export type NavGroup = {
 
 export const publicNav: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/how-it-works", label: "How It Works" },
   { href: "/find-senior-living", label: "Find Senior Living" },
   { href: "/for-families", label: "For Families" },
   { href: "/for-communities", label: "For Communities" },
-  { href: "/resources", label: "Resources" },
-  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export const publicAuthLinks = {
-  signIn: "/sign-in",
-  getStarted: "/get-started",
+  signIn: "/community/dashboard",
+  getStarted: "/family/dashboard",
 };
 
-/** Flat list kept for redirects / mobile — prefer familyNavGroups in the header */
+/**
+ * Primary family journey, keep this short.
+ * Dashboard → Profile → Communities → My applications
+ * Apply happens on each community profile.
+ */
 export const familyNav: NavItem[] = [
   { href: "/family/dashboard", label: "Dashboard" },
-  { href: "/family/senior-profile", label: "Senior Profile" },
-  { href: "/family/care-needs", label: "Care Needs" },
-  { href: "/family/documents", label: "Documents" },
-  { href: "/family/find-communities", label: "Find Communities" },
-  { href: "/family/saved", label: "Saved Communities" },
-  { href: "/family/compare", label: "Compare" },
-  { href: "/family/apply-multi", label: "Multi-Apply" },
-  { href: "/family/applications", label: "Applications" },
-  { href: "/family/messages", label: "Messages" },
-  { href: "/family/tasks", label: "Tasks" },
-  { href: "/family/family-members", label: "Family Members" },
-  { href: "/family/notifications", label: "Notifications" },
-  { href: "/family/privacy", label: "Privacy" },
-  { href: "/family/settings", label: "Settings" },
+  { href: "/family/profile", label: "Profile" },
+  { href: "/family/find-communities", label: "Communities" },
+  { href: "/family/applications", label: "My applications" },
 ];
 
 /**
- * Family header: few main titles; destinations live underneath.
- * Home · Profile · Communities · Applications · Messages · Account
+ * Header: four journey steps. Account lives on the user name in the header.
  */
 export const familyNavGroups: NavGroup[] = [
   {
-    id: "home",
-    label: "Home",
+    id: "dashboard",
+    label: "Dashboard",
     href: "/family/dashboard",
-    children: [{ href: "/family/dashboard", label: "Dashboard" }],
+    children: [{ href: "/family/dashboard", label: "Home" }],
   },
   {
     id: "profile",
     label: "Profile",
-    href: "/family/senior-profile",
+    href: "/family/profile",
     children: [
-      { href: "/family/senior-profile", label: "Senior profile" },
-      { href: "/family/care-needs", label: "Care needs" },
-      { href: "/family/documents", label: "Documents" },
-      { href: "/family/family-members", label: "Family members" },
+      { href: "/family/profile", label: "Manage profile" },
+      { href: "/family/profile?tab=documents", label: "Documents" },
     ],
   },
   {
@@ -73,26 +61,19 @@ export const familyNavGroups: NavGroup[] = [
     label: "Communities",
     href: "/family/find-communities",
     children: [
-      { href: "/family/find-communities", label: "Find communities" },
+      { href: "/family/find-communities", label: "Browse communities" },
       { href: "/family/saved", label: "Saved" },
       { href: "/family/compare", label: "Compare" },
     ],
   },
   {
     id: "applications",
-    label: "Applications",
+    label: "My applications",
     href: "/family/applications",
     children: [
-      { href: "/family/applications", label: "Track applications" },
-      { href: "/family/apply-multi", label: "Multi-apply" },
-      { href: "/family/tasks", label: "Tasks" },
+      { href: "/family/applications", label: "My applications" },
+      { href: "/family/messages", label: "Messages" },
     ],
-  },
-  {
-    id: "messages",
-    label: "Messages",
-    href: "/family/messages",
-    children: [{ href: "/family/messages", label: "Inbox" }],
   },
   {
     id: "account",
@@ -100,84 +81,35 @@ export const familyNavGroups: NavGroup[] = [
     href: "/family/settings",
     children: [
       { href: "/family/notifications", label: "Notifications" },
+      { href: "/family/family-members", label: "Family members" },
       { href: "/family/privacy", label: "Privacy & security" },
       { href: "/family/settings", label: "Settings" },
     ],
   },
 ];
 
-/** Bottom bar — most used family destinations */
+/** Bottom bar, mirrors the four journey steps */
 export const familyMobileNav: NavItem[] = [
   { href: "/family/dashboard", label: "Home" },
-  { href: "/family/find-communities", label: "Search" },
-  { href: "/family/applications", label: "Apps" },
-  { href: "/family/documents", label: "Docs" },
-  { href: "/family/messages", label: "Inbox" },
+  { href: "/family/profile", label: "Profile" },
+  { href: "/family/find-communities", label: "Communities" },
+  { href: "/family/applications", label: "My applications" },
 ];
 
+/**
+ * Community portal, intelligent admissions inbox.
+ * Admissions · Messages · Community · Team · Settings
+ */
 export const communityNav: NavItem[] = [
-  { href: "/community/dashboard", label: "Dashboard" },
-  { href: "/community/applications", label: "Applications" },
-  { href: "/community/prospects", label: "Prospects" },
+  { href: "/community/dashboard", label: "Admissions" },
   { href: "/community/messages", label: "Messages" },
-  { href: "/community/availability", label: "Availability" },
-  { href: "/community/pricing", label: "Pricing" },
-  { href: "/community/admission-criteria", label: "Admission Criteria" },
-  { href: "/community/profile", label: "Community Profile" },
+  { href: "/community/profile", label: "Community" },
   { href: "/community/team", label: "Team" },
-  { href: "/community/analytics", label: "Analytics" },
   { href: "/community/settings", label: "Settings" },
 ];
 
-/** Community header: few main titles with nested destinations */
-export const communityNavGroups: NavGroup[] = [
-  {
-    id: "home",
-    label: "Home",
-    href: "/community/dashboard",
-    children: [
-      { href: "/community/dashboard", label: "Dashboard" },
-      { href: "/community/analytics", label: "Analytics" },
-    ],
-  },
-  {
-    id: "admissions",
-    label: "Admissions",
-    href: "/community/applications",
-    children: [
-      { href: "/community/applications", label: "Applications" },
-      { href: "/community/prospects", label: "Prospects" },
-      { href: "/community/messages", label: "Messages" },
-    ],
-  },
-  {
-    id: "inventory",
-    label: "Inventory",
-    href: "/community/availability",
-    children: [
-      { href: "/community/availability", label: "Availability" },
-      { href: "/community/pricing", label: "Pricing" },
-    ],
-  },
-  {
-    id: "listing",
-    label: "Listing",
-    href: "/community/profile",
-    children: [
-      { href: "/community/profile", label: "Community profile" },
-      { href: "/community/admission-criteria", label: "Admission criteria" },
-    ],
-  },
-  {
-    id: "team",
-    label: "Team",
-    href: "/community/team",
-    children: [
-      { href: "/community/team", label: "Team & roles" },
-      { href: "/community/settings", label: "Settings" },
-    ],
-  },
-];
+/** Flat nav only, no nested groups for the admissions portal */
+export const communityNavGroups: NavGroup[] = [];
 
 export const internalNav: NavItem[] = [
   { href: "/internal/overview", label: "Overview" },

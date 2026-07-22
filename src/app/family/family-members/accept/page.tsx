@@ -37,7 +37,7 @@ function AcceptInviteInner() {
     <div className="mx-auto max-w-lg px-5 py-10">
       <PageHeader
         title="Accept invitation"
-        description="Join a family household with your own Haven login — passwords are never shared."
+        description="Join a family household with your own Haven login, passwords are never shared."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
           { label: "Family Members", href: "/family/family-members" },

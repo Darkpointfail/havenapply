@@ -93,7 +93,7 @@ function CompareInner() {
       lines.push("");
     });
     lines.push(
-      "Compatibility scores are a search aid — not a guarantee of admission or clinical fit.",
+      "Compatibility scores are a search aid, not a guarantee of admission or clinical fit.",
     );
     const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -113,7 +113,7 @@ function CompareInner() {
       <div className="mx-auto max-w-3xl px-5 py-16 text-center">
         <p className="text-xl font-semibold">Nothing to compare yet</p>
         <p className="mt-2 text-ink-muted">
-          Save communities or tap Compare on search results — up to four at a time.
+          Save communities or tap Compare on search results, up to four at a time.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button href="/family/saved" variant="secondary">
@@ -140,15 +140,11 @@ function CompareInner() {
               <Button href="/family/saved" variant="secondary">
                 From saved
               </Button>
-              <Button
-                href={
-                  cols.length
-                    ? `/family/apply-multi?ids=${cols.map((c) => c.id).join(",")}`
-                    : "/family/apply-multi"
-                }
-              >
-                Apply to selected
-              </Button>
+              {cols[0] ? (
+                <Button href={`/family/apply/${cols[0].id}`}>
+                  Apply on profile
+                </Button>
+              ) : null}
               <Button href="/family/find-communities" variant="secondary">
                 Add from search
               </Button>
@@ -243,7 +239,7 @@ function CompareInner() {
                 {r.city}, {r.state}
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
-                <Badge tone="ai">{matches[i]?.score ?? "—"}%</Badge>
+                <Badge tone="ai">{matches[i]?.score ?? ","}%</Badge>
                 <Badge tone="neutral">
                   <Star size={10} className="fill-warn text-warn" /> {r.rating}
                 </Badge>
@@ -318,7 +314,7 @@ function CompareInner() {
 
       <p className="mt-6 max-w-3xl text-xs leading-relaxed text-ink-faint print:mt-4">
         Highlights mark the strongest value per row, missing public data, and mismatches with the
-        senior profile or care needs when available. Compatibility is a search aid — not a guarantee
+        senior profile or care needs when available. Compatibility is a search aid, not a guarantee
         of admission, clinical fit, or bed availability. Comparing {cols.length} of up to 4 ·{" "}
         {residences.length} communities in this demo.
       </p>

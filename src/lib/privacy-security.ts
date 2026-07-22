@@ -1,4 +1,4 @@
-/** Privacy, consent ledger, sensitive-data helpers — functional controls (demo / client-side) */
+/** Privacy, consent ledger, sensitive-data helpers, functional controls (demo / client-side) */
 
 export type ConsentShareKind = "application" | "document" | "profile_summary" | "message_attachment";
 

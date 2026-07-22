@@ -1,4 +1,4 @@
-/** Internal platform administration — users, communities, apps, moderation, analytics, audit */
+/** Internal platform administration, users, communities, apps, moderation, analytics, audit */
 
 export type PlatformUserStatus = "active" | "suspended" | "pending";
 
@@ -62,7 +62,7 @@ export type PlatformApplication = {
   lastActivityAt: string;
   responseHours: number | null;
   disputeNote: string | null;
-  /** Redacted activity — no SSN / full clinical text */
+  /** Redacted activity, no SSN / full clinical text */
   activityLog: { at: string; actor: string; action: string }[];
 };
 
@@ -288,7 +288,7 @@ export function seedInternalWorkspace(): InternalWorkspace {
       verifiedProfile: false,
       submittedAt: "2026-04-10T16:00:00.000Z",
       lastReviewedAt: null,
-      aboutPreview: "Boutique assisted living — partnership application in review.",
+      aboutPreview: "Boutique assisted living, partnership application in review.",
       publishedPriceFrom: null,
       publishedBeds: 0,
       waitlistPublished: 0,

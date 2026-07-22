@@ -1,4 +1,4 @@
-/** Community partner portal — roles, applications, availability, profile, audit */
+/** Community partner portal, roles, applications, availability, profile, audit */
 
 import type { ApplicationStatus } from "@/data/applications";
 import { STATUS_META } from "@/data/applications";
@@ -38,29 +38,36 @@ export const COMMUNITY_ROLES: {
 }[] = [
   {
     id: "admin",
-    label: "Community administrator",
-    description: "Full control of profile, team, pricing, and admissions.",
+    label: "Administrator",
+    description: "Full control of community settings, team, and admissions.",
   },
   {
     id: "admissions_manager",
-    label: "Admissions manager",
-    description: "Own the pipeline — assign, decide, request docs, schedule visits.",
+    label: "Admissions Coordinator",
+    description: "Review applications, message families, and make decisions.",
   },
   {
     id: "sales_counselor",
-    label: "Sales counselor",
-    description: "Work prospects, propose tours, add notes, update non-final status.",
+    label: "Admissions Coordinator",
+    description: "Review applications and coordinate with families.",
   },
   {
     id: "nurse_reviewer",
-    label: "Nurse reviewer",
-    description: "Review care needs and clinical documents; request medical info.",
+    label: "Admissions Coordinator",
+    description: "Review care needs and clinical documents.",
   },
   {
     id: "readonly",
-    label: "Read-only user",
-    description: "View dashboard and applications without making changes.",
+    label: "Viewer",
+    description: "View applications without making changes.",
   },
+];
+
+/** Roles shown when inviting teammates */
+export const COMMUNITY_INVITE_ROLES: CommunityTeamRole[] = [
+  "admin",
+  "admissions_manager",
+  "readonly",
 ];
 
 export const COMMUNITY_PERMISSION_LABELS: Record<CommunityPermission, string> = {
@@ -151,6 +158,87 @@ export type SharedDocument = {
   name: string;
   category: string;
   shared: boolean;
+  /** Short AI summary of the document contents */
+  aiSummary?: string;
+};
+
+export type AdmissionPriority = "high" | "medium" | "low";
+export type ReferralSource = "Family" | "Hospital" | "Social Worker";
+export type QueueSection = "high" | "medium" | "low";
+
+export type ApplicationInsights = {
+  primaryDiagnoses: string[];
+  mobilityLevel: string;
+  cognitiveStatus: string;
+  importantMedications: string[];
+  allergies: string[];
+  specialConsiderations: string[];
+};
+
+export type MedicationEntry = {
+  name: string;
+  dose: string;
+  frequency: string;
+  route?: string;
+  indication?: string;
+  prescribedBy?: string;
+};
+
+export type PathologyEntry = {
+  name: string;
+  status: "active" | "history" | "resolved";
+  diagnosedYear?: string;
+  notes?: string;
+};
+
+export type PreviousFacility = {
+  name: string;
+  type: string;
+  from?: string;
+  to?: string;
+  reasonForLeaving?: string;
+};
+
+export type AdlEntry = {
+  activity: string;
+  level: string;
+};
+
+/** Complete client file shared with admissions for review */
+export type ClientDossier = {
+  dateOfBirth: string;
+  gender: string;
+  primaryLanguage: string;
+  maritalStatus?: string;
+  height?: string;
+  weight?: string;
+  bloodType?: string;
+  currentAddress?: string;
+  currentLivingSituation: string;
+  primaryPhysician?: string;
+  physicianPhone?: string;
+  pharmacy?: string;
+  insurancePrimary?: string;
+  insuranceSecondary?: string;
+  pathologies: PathologyEntry[];
+  medications: MedicationEntry[];
+  allergies: { substance: string; reaction: string; severity?: string }[];
+  previousFacilities: PreviousFacility[];
+  hospitalizations?: string[];
+  surgeries?: string[];
+  vaccinations?: string[];
+  adls?: AdlEntry[];
+  mobilityAids?: string[];
+  diet?: string;
+  continence?: string;
+  cognitiveNotes?: string;
+  behaviors?: string[];
+  hearingVision?: string;
+  codeStatus?: string;
+  advanceDirectives?: string;
+  fallHistory?: string;
+  smokingAlcohol?: string;
+  socialSupports?: string;
 };
 
 export type CommunityApplication = {
@@ -160,8 +248,13 @@ export type CommunityApplication = {
   seniorAge: number;
   relationship: string;
   summary: string;
+  /** Longer AI executive summary for review page */
+  executiveSummary?: string;
   careNeeds: string[];
   medicalHighlights: string[];
+  insights?: ApplicationInsights;
+  /** Full clinical + personal client file */
+  dossier?: ClientDossier;
   documents: SharedDocument[];
   family: {
     name: string;
@@ -169,7 +262,21 @@ export type CommunityApplication = {
     phone: string;
     relationship: string;
   };
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  paymentMethod?: string;
+  moveInRequested?: string;
   status: ApplicationStatus;
+  careType?: string;
+  referralSource?: ReferralSource;
+  priority?: AdmissionPriority;
+  /** @deprecated legacy */
+  focusReason?: string;
+  /** @deprecated legacy */
+  nextAction?: string;
   assigneeId: string | null;
   assigneeName: string | null;
   internalNotes: InternalNote[];
@@ -213,9 +320,22 @@ export type CommunityProfile = {
   admissionCriteria: string[];
   notAccepted: string[];
   requiredDocuments: string[];
-  roomTypes: { name: string; price: number | null; notes: string }[];
+  roomTypes: {
+    name: string;
+    price: number | null;
+    notes: string;
+    availableUnits?: number;
+  }[];
   promotions: string;
   waitlistNotes: string;
+  admissionFlags?: {
+    medicaid: boolean;
+    privatePay: boolean;
+    pets: boolean;
+    smoking: string;
+    minAge: number;
+    notes: string;
+  };
 };
 
 export type CommunityTeamMember = {
@@ -227,6 +347,16 @@ export type CommunityTeamMember = {
   jobTitle: string;
 };
 
+export type CommunityPortalNotification = {
+  id: string;
+  type: "application_received";
+  title: string;
+  body: string;
+  applicationId: string;
+  at: string;
+  read: boolean;
+};
+
 export type CommunityWorkspace = {
   residenceId: string;
   residenceName: string;
@@ -235,6 +365,8 @@ export type CommunityWorkspace = {
   applications: CommunityApplication[];
   team: CommunityTeamMember[];
   auditLog: AuditEntry[];
+  /** Inbound alerts (e.g. new family applications) */
+  notifications: CommunityPortalNotification[];
   /** Demo KPIs */
   metrics: {
     conversionRate: number;
@@ -274,6 +406,96 @@ export function formatPortalTime(iso: string) {
   } catch {
     return iso;
   }
+}
+
+export function formatPortalDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+export function applicationCareType(app: CommunityApplication) {
+  if (app.careType) return app.careType;
+  const joined = app.careNeeds.join(" ").toLowerCase();
+  if (joined.includes("memory") || joined.includes("alzheimer") || joined.includes("dementia")) {
+    return "Memory care";
+  }
+  if (joined.includes("nursing") || joined.includes("skilled")) return "Skilled nursing";
+  if (joined.includes("rehab")) return "Rehabilitation";
+  if (joined.includes("independent")) return "Independent living";
+  return "Assisted living";
+}
+
+export function applicationReferral(app: CommunityApplication): ReferralSource {
+  return app.referralSource || "Family";
+}
+
+export function applicationPriority(app: CommunityApplication): AdmissionPriority {
+  const raw = app.priority as string | undefined;
+  if (raw === "high" || raw === "urgent") return "high";
+  if (raw === "medium") return "medium";
+  if (raw === "low" || raw === "normal") return "low";
+  if (app.referralSource === "Hospital") return "high";
+  if (app.moveInRequested) {
+    const days =
+      (new Date(app.moveInRequested).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    if (Number.isFinite(days) && days >= 0 && days <= 14) return "high";
+    if (Number.isFinite(days) && days > 90) return "low";
+  }
+  return "medium";
+}
+
+export function queueSectionFor(app: CommunityApplication): QueueSection | null {
+  if (
+    ["approved", "declined", "withdrawn", "closed", "waitlisted", "offer_received", "conditionally_approved", "move_in_scheduled"].includes(
+      app.status,
+    )
+  ) {
+    return null;
+  }
+  return applicationPriority(app);
+}
+
+export function priorityBadgeLabel(p: AdmissionPriority) {
+  if (p === "high") return "High priority";
+  if (p === "medium") return "Medium priority";
+  return "Low priority";
+}
+
+export function reviewStatusLabel(app: CommunityApplication) {
+  if (app.status === "approved") return "Approved";
+  if (app.status === "declined") return "Declined";
+  if (app.status === "more_info") return "Waiting on information";
+  if (["submitted", "received"].includes(app.status)) return "Application complete · Ready for review";
+  if (app.status === "under_review") return "Under review";
+  return statusLabel(app.status);
+}
+
+export function initialsFromName(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("");
+}
+
+export function documentCategoryGroup(category: string): "Identity" | "Medical" | "Financial" | "Legal" | "Other" {
+  const c = category.toLowerCase();
+  if (c.includes("identity") || c.includes("id") || c.includes("photo")) return "Identity";
+  if (c.includes("clinic") || c.includes("medical") || c.includes("health") || c.includes("med"))
+    return "Medical";
+  if (c.includes("financ") || c.includes("insur") || c.includes("payment") || c.includes("bank"))
+    return "Financial";
+  if (c.includes("legal") || c.includes("poa") || c.includes("attorney") || c.includes("consent"))
+    return "Legal";
+  return "Other";
 }
 
 export function resolveCommunityResidenceId(
@@ -334,13 +556,178 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
 
   const applications: CommunityApplication[] = [
     {
+      id: "capp-urgent",
+      residenceId: r.id,
+      seniorName: "Frank Delgado",
+      seniorAge: 82,
+      relationship: "Father",
+      summary: "Hospital discharge within 48 hours. Assisted living with short-term rehab support.",
+      executiveSummary:
+        "Frank Delgado is an 82-year-old gentleman referred by hospital discharge planning for assisted living with short-term rehab support after hip fracture recovery. All required identity, medical, financial, and legal documents were verified before submission. He needs medication management and fall-risk precautions. The family is requesting placement within two days. Clinical notes indicate stable hypertension and an otherwise clear care picture for assisted living.",
+      careNeeds: ["Post-acute rehab", "Medication management", "Fall risk precautions"],
+      medicalHighlights: ["Hip fracture recovery", "Hypertension"],
+      insights: {
+        primaryDiagnoses: ["Hip fracture recovery", "Hypertension"],
+        mobilityLevel: "Walker outdoors · standby assist for transfers",
+        cognitiveStatus: "Alert and oriented · no dementia diagnosis",
+        importantMedications: ["Amlodipine 5mg daily", "Acetaminophen as needed"],
+        allergies: ["None reported"],
+        specialConsiderations: ["Hospital discharge within 48 hours", "Fall risk precautions"],
+      },
+      dossier: {
+        dateOfBirth: "1943-09-12",
+        gender: "Male",
+        primaryLanguage: "English · Spanish",
+        maritalStatus: "Widowed",
+        height: "5'9\"",
+        weight: "168 lb",
+        bloodType: "O+",
+        currentAddress: "Dell Seton Medical Center · Austin, TX",
+        currentLivingSituation: "Hospital inpatient · discharge planned within 48h",
+        primaryPhysician: "Dr. Rachel Kim, Orthopedics",
+        physicianPhone: "(512) 555-2201",
+        pharmacy: "CVS Pharmacy · West 38th St",
+        insurancePrimary: "Medicare Part A/B",
+        insuranceSecondary: "AARP UnitedHealthcare supplement",
+        pathologies: [
+          { name: "Left hip fracture (ORIF)", status: "active", diagnosedYear: "2026", notes: "Post-op day 6" },
+          { name: "Essential hypertension", status: "active", diagnosedYear: "2012" },
+          { name: "Osteoporosis", status: "active", diagnosedYear: "2019" },
+          { name: "Vitamin D deficiency", status: "active", diagnosedYear: "2024" },
+          { name: "Appendectomy", status: "history", diagnosedYear: "1988", notes: "Resolved" },
+        ],
+        medications: [
+          { name: "Amlodipine", dose: "5 mg", frequency: "Once daily morning", route: "Oral", indication: "Hypertension", prescribedBy: "Dr. Kim" },
+          { name: "Acetaminophen", dose: "650 mg", frequency: "Every 6h as needed", route: "Oral", indication: "Pain" },
+          { name: "Oxycodone", dose: "5 mg", frequency: "Every 6h as needed", route: "Oral", indication: "Breakthrough pain", prescribedBy: "Dr. Kim" },
+          { name: "Enoxaparin", dose: "40 mg", frequency: "Once daily", route: "Subcutaneous", indication: "DVT prophylaxis" },
+          { name: "Cholecalciferol (Vit D3)", dose: "2000 IU", frequency: "Once daily", route: "Oral", indication: "Deficiency" },
+          { name: "Calcium carbonate", dose: "600 mg", frequency: "Twice daily", route: "Oral", indication: "Bone health" },
+          { name: "Senna", dose: "8.6 mg", frequency: "At bedtime as needed", route: "Oral", indication: "Constipation" },
+        ],
+        allergies: [{ substance: "None known", reaction: ",", severity: "NKA" }],
+        previousFacilities: [
+          {
+            name: "Dell Seton Medical Center",
+            type: "Hospital · acute care",
+            from: "2026-04-10",
+            to: "Present",
+            reasonForLeaving: "Discharge to assisted living with rehab",
+          },
+          {
+            name: "Home with daughter (Elena)",
+            type: "Private residence",
+            from: "2021",
+            to: "2026-04-10",
+            reasonForLeaving: "Fall at home resulting in hip fracture",
+          },
+          {
+            name: "Sunrise of Northwest Hills",
+            type: "Independent living",
+            from: "2018",
+            to: "2021",
+            reasonForLeaving: "Moved in with family for support",
+          },
+        ],
+        hospitalizations: [
+          "Apr 2026, Hip fracture ORIF · Dell Seton",
+          "2019, Syncope workup · St. David’s (overnight)",
+        ],
+        surgeries: ["2026, Left hip ORIF", "1988, Appendectomy"],
+        vaccinations: ["Influenza Oct 2025", "COVID booster Sep 2025", "Pneumococcal 2023", "Shingles 2022"],
+        adls: [
+          { activity: "Bathing", level: "Standby assist" },
+          { activity: "Dressing", level: "Minimal assist (lower body)" },
+          { activity: "Toileting", level: "Independent with raised seat" },
+          { activity: "Transfers", level: "Standby / contact guard" },
+          { activity: "Eating", level: "Independent" },
+          { activity: "Medication management", level: "Needs setup & reminders" },
+        ],
+        mobilityAids: ["Front-wheeled walker", "Raised toilet seat", "Grab bars recommended"],
+        diet: "Regular · high protein for healing · encourage fluids",
+        continence: "Continent · occasional nocturia",
+        cognitiveNotes: "Alert and oriented ×3. No dementia diagnosis. Mild fatigue post-op.",
+        behaviors: ["Cooperative with staff", "Motivated for PT"],
+        hearingVision: "Hearing aids bilateral · glasses for reading",
+        codeStatus: "Full code",
+        advanceDirectives: "Healthcare proxy on file (Elena Delgado)",
+        fallHistory: "1 fall Apr 2026 (index event) · no prior falls in 12 months",
+        smokingAlcohol: "Never smoker · rare alcohol",
+        socialSupports: "Daughter Elena daily · son in Dallas visits monthly",
+      },
+      documents: [
+        {
+          id: "du1",
+          name: "Discharge summary",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Post-op hip recovery; recommends assisted living with rehab support.",
+        },
+        {
+          id: "du2",
+          name: "Insurance card",
+          category: "Financial",
+          shared: true,
+          aiSummary: "Active private insurance with Medicare Part A/B.",
+        },
+        {
+          id: "du3",
+          name: "Physician orders",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Orders for PT follow-up and fall precautions after discharge.",
+        },
+        {
+          id: "du4",
+          name: "Photo ID",
+          category: "Identity",
+          shared: true,
+          aiSummary: "Government ID matches applicant name and date of birth.",
+        },
+      ],
+      family: {
+        name: "Elena Delgado",
+        email: "elena.delgado@example.com",
+        phone: "(512) 555-0188",
+        relationship: "Daughter · primary contact",
+      },
+      emergencyContact: {
+        name: "Elena Delgado",
+        phone: "(512) 555-0188",
+        relationship: "Daughter",
+      },
+      paymentMethod: "Private pay + Medicare",
+      moveInRequested: "2026-04-18",
+      status: "received",
+      careType: "Assisted living",
+      referralSource: "Hospital",
+      priority: "high",
+      assigneeId: null,
+      assigneeName: null,
+      internalNotes: [],
+      infoRequest: null,
+      documentRequest: null,
+      tourProposal: null,
+      assessmentProposal: null,
+      waitlistPosition: null,
+      submittedAt: "2026-04-16T07:00:00.000Z",
+      lastUpdated: "2026-04-16T07:15:00.000Z",
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("System", "Documents verified"),
+        audit("Haven", "Application marked complete · ready for review"),
+      ],
+    },
+    {
       id: "capp-1",
       residenceId: r.id,
       seniorName: "Eleanor Martin",
       seniorAge: 84,
       relationship: "Mother",
       summary:
-        "Assisted living with light memory support. Family seeking move-in within 60 days. Strong preference for garden suite.",
+        "Assisted living with light memory support. Family seeking move-in within 60 days.",
+      executiveSummary:
+        "Eleanor Martin is an 84-year-old woman applying for assisted living with light cognitive support. Her daughter Claire is the primary contact. The application is complete: identity, insurance, medication list, and physician letter are all verified. Eleanor manages hypertension and osteoarthritis, with mild cognitive impairment that does not currently require secure memory care. The family prefers a garden suite and can move within about two months.",
       careNeeds: [
         "Medication management",
         "Standby assist for transfers",
@@ -348,11 +735,125 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
         "Social engagement programs",
       ],
       medicalHighlights: ["Hypertension", "Osteoarthritis", "Mild cognitive impairment"],
+      insights: {
+        primaryDiagnoses: ["Hypertension", "Osteoarthritis", "Mild cognitive impairment"],
+        mobilityLevel: "Independent indoors · walker outdoors",
+        cognitiveStatus: "Mild impairment · no wandering history",
+        importantMedications: ["Amlodipine 5mg morning", "Donepezil 5mg evening"],
+        allergies: ["Penicillin, rash"],
+        specialConsiderations: ["Prefers garden suite", "Benefits from structured social programs"],
+      },
+      dossier: {
+        dateOfBirth: "1941-04-12",
+        gender: "Female",
+        primaryLanguage: "English · French",
+        maritalStatus: "Widowed",
+        height: "5'4\"",
+        weight: "132 lb",
+        bloodType: "A+",
+        currentAddress: "42 Maple Avenue, Austin, TX 78731",
+        currentLivingSituation: "Lives alone in condo · daughter nearby",
+        primaryPhysician: "Dr. Amélie Caron, Internal medicine",
+        physicianPhone: "(512) 555-0190",
+        pharmacy: "Walgreens · Burnet Rd",
+        insurancePrimary: "Blue Cross Blue Shield PPO",
+        insuranceSecondary: "Medicare Part A/B",
+        pathologies: [
+          { name: "Mild cognitive impairment", status: "active", diagnosedYear: "2023", notes: "MMSE 24/30 · no wandering" },
+          { name: "Essential hypertension", status: "active", diagnosedYear: "2008" },
+          { name: "Osteoarthritis (knees, hands)", status: "active", diagnosedYear: "2015" },
+          { name: "Hyperlipidemia", status: "active", diagnosedYear: "2010" },
+          { name: "History of UTI", status: "history", diagnosedYear: "2024" },
+        ],
+        medications: [
+          { name: "Amlodipine", dose: "5 mg", frequency: "Once daily morning", route: "Oral", indication: "Hypertension" },
+          { name: "Donepezil", dose: "5 mg", frequency: "Once daily evening", route: "Oral", indication: "MCI", prescribedBy: "Neurology" },
+          { name: "Atorvastatin", dose: "20 mg", frequency: "Once daily evening", route: "Oral", indication: "Hyperlipidemia" },
+          { name: "Acetaminophen", dose: "500 mg", frequency: "Twice daily as needed", route: "Oral", indication: "Joint pain" },
+          { name: "Vitamin D3", dose: "1000 IU", frequency: "Once daily", route: "Oral" },
+          { name: "Calcium + magnesium", dose: "500 mg", frequency: "Once daily", route: "Oral" },
+          { name: "Artificial tears", dose: "1 drop", frequency: "Twice daily", route: "Ophthalmic", indication: "Dry eyes" },
+        ],
+        allergies: [
+          { substance: "Penicillin", reaction: "Rash / hives", severity: "Moderate" },
+          { substance: "Sulfa drugs", reaction: "Itching", severity: "Mild" },
+        ],
+        previousFacilities: [
+          {
+            name: "Home, Maple Avenue condo",
+            type: "Private residence",
+            from: "2005",
+            to: "Present",
+            reasonForLeaving: "Seeking assisted living for safety & social support",
+          },
+          {
+            name: "The Carlyle Senior Living (respite stay)",
+            type: "Assisted living · respite",
+            from: "2024-11",
+            to: "2024-12",
+            reasonForLeaving: "2-week respite while daughter traveled, completed successfully",
+          },
+        ],
+        hospitalizations: ["None in the last 24 months"],
+        surgeries: ["2016, Right knee arthroscopy", "2001, Cholecystectomy"],
+        vaccinations: ["Influenza Oct 2025", "COVID booster Aug 2025", "Shingles 2021", "Tdap 2020"],
+        adls: [
+          { activity: "Bathing", level: "Independent with grab bars" },
+          { activity: "Dressing", level: "Independent · occasional cueing for weather-appropriate clothing" },
+          { activity: "Toileting", level: "Independent" },
+          { activity: "Transfers", level: "Independent" },
+          { activity: "Eating", level: "Independent" },
+          { activity: "Medication management", level: "Weekly pillbox setup by daughter" },
+          { activity: "Meal prep", level: "Light meals · prefers community dining" },
+        ],
+        mobilityAids: ["Foldable walker for outdoors / uneven ground"],
+        diet: "Regular · low sodium preferred · no texture modification",
+        continence: "Continent",
+        cognitiveNotes: "Mild short-term memory difficulty. Remembers familiar people and routines. No sundowning reported.",
+        behaviors: ["Pleasant · socially engaged", "Anxious if rushed in the morning"],
+        hearingVision: "Glasses for distance and reading · hearing screen normal 2025",
+        codeStatus: "Full code",
+        advanceDirectives: "Living will + POA (Claire Martin)",
+        fallHistory: "No falls in past 12 months · near-fall outdoors Mar 2026",
+        smokingAlcohol: "Never smoker · occasional wine",
+        socialSupports: "Daughter Claire (primary) · son David · bridge club weekly",
+      },
       documents: [
-        { id: "d1", name: "Photo ID", category: "Identity", shared: true },
-        { id: "d2", name: "Insurance card", category: "Insurance", shared: true },
-        { id: "d3", name: "Medication list", category: "Clinical", shared: true },
-        { id: "d4", name: "Doctor’s letter", category: "Clinical", shared: false },
+        {
+          id: "d1",
+          name: "Photo ID",
+          category: "Identity",
+          shared: true,
+          aiSummary: "Valid photo ID for Eleanor Martin.",
+        },
+        {
+          id: "d2",
+          name: "Insurance card",
+          category: "Financial",
+          shared: true,
+          aiSummary: "Private insurance with supplemental coverage.",
+        },
+        {
+          id: "d3",
+          name: "Medication list",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Two daily medications; no high-risk interactions flagged.",
+        },
+        {
+          id: "d4",
+          name: "Doctor’s letter",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Physician supports assisted living with light cognitive support.",
+        },
+        {
+          id: "d4b",
+          name: "Power of attorney",
+          category: "Legal",
+          shared: true,
+          aiSummary: "Daughter Claire Martin named as primary agent.",
+        },
       ],
       family: {
         name: "Claire Martin",
@@ -360,7 +861,17 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
         phone: "(512) 555-0142",
         relationship: "Daughter · primary contact",
       },
+      emergencyContact: {
+        name: "David Martin",
+        phone: "(512) 555-0143",
+        relationship: "Son",
+      },
+      paymentMethod: "Private pay",
+      moveInRequested: "2026-06-01",
       status: "received",
+      careType: "Assisted living",
+      referralSource: "Family",
+      priority: "medium",
       assigneeId: null,
       assigneeName: null,
       internalNotes: [],
@@ -371,7 +882,11 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       waitlistPosition: null,
       submittedAt: "2026-04-14T15:20:00.000Z",
       lastUpdated: "2026-04-14T15:20:00.000Z",
-      auditLog: [audit("System", "Application received from Haven")],
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("System", "Documents verified"),
+        audit("Haven", "Application marked complete · ready for review"),
+      ],
     },
     {
       id: "capp-2",
@@ -379,119 +894,160 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       seniorName: "Robert Chen",
       seniorAge: 79,
       relationship: "Father",
-      summary: "Memory care evaluation. Family touring this week. Documents partly complete.",
+      summary: "Memory care evaluation for moderate Alzheimer’s. Application complete.",
+      executiveSummary:
+        "Robert Chen is a 79-year-old man applying for secure memory care. His daughter Amy submitted a complete packet including neurology notes, POA, identity, and insurance. He has moderate Alzheimer’s with wandering risk and managed type 2 diabetes. The family is flexible on timing but wants a secure memory unit with cueing for ADLs.",
       careNeeds: ["Secure memory care", "Wandering risk monitoring", "Cueing for ADLs"],
       medicalHighlights: ["Alzheimer’s disease (moderate)", "Type 2 diabetes"],
+      insights: {
+        primaryDiagnoses: ["Alzheimer’s disease (moderate)", "Type 2 diabetes"],
+        mobilityLevel: "Independent ambulation with supervision outdoors",
+        cognitiveStatus: "Moderate dementia · nighttime wandering risk",
+        importantMedications: ["Donepezil 10mg", "Metformin 500mg twice daily"],
+        allergies: ["None reported"],
+        specialConsiderations: ["Requires secure memory setting", "Benefits from consistent caregivers"],
+      },
+      dossier: {
+        dateOfBirth: "1946-11-03",
+        gender: "Male",
+        primaryLanguage: "English · Mandarin",
+        maritalStatus: "Married (wife in memory care elsewhere)",
+        height: "5'7\"",
+        weight: "154 lb",
+        bloodType: "B+",
+        currentAddress: "8910 Spicewood Springs Rd, Austin, TX",
+        currentLivingSituation: "Home with daughter Amy · unsafe alone",
+        primaryPhysician: "Dr. Priya Nair, Geriatrics",
+        physicianPhone: "(512) 555-0330",
+        pharmacy: "HEB Pharmacy · Far West",
+        insurancePrimary: "Medicare Advantage, Humana",
+        insuranceSecondary: "None",
+        pathologies: [
+          { name: "Alzheimer’s disease (moderate)", status: "active", diagnosedYear: "2021", notes: "MoCA 14/30 · progressive" },
+          { name: "Type 2 diabetes mellitus", status: "active", diagnosedYear: "2014", notes: "A1c 7.1%" },
+          { name: "Hypertension", status: "active", diagnosedYear: "2009" },
+          { name: "Insomnia / sundowning", status: "active", diagnosedYear: "2024" },
+          { name: "Benign prostatic hyperplasia", status: "active", diagnosedYear: "2017" },
+        ],
+        medications: [
+          { name: "Donepezil", dose: "10 mg", frequency: "Once daily evening", route: "Oral", indication: "Alzheimer’s", prescribedBy: "Neurology" },
+          { name: "Memantine", dose: "10 mg", frequency: "Twice daily", route: "Oral", indication: "Alzheimer’s" },
+          { name: "Metformin", dose: "500 mg", frequency: "Twice daily with meals", route: "Oral", indication: "Diabetes" },
+          { name: "Lisinopril", dose: "10 mg", frequency: "Once daily", route: "Oral", indication: "Hypertension" },
+          { name: "Tamsulosin", dose: "0.4 mg", frequency: "Once daily", route: "Oral", indication: "BPH" },
+          { name: "Melatonin", dose: "3 mg", frequency: "At bedtime", route: "Oral", indication: "Sleep" },
+          { name: "Vitamin B12", dose: "1000 mcg", frequency: "Once daily", route: "Oral" },
+          { name: "Aspirin", dose: "81 mg", frequency: "Once daily", route: "Oral", indication: "CV prevention" },
+        ],
+        allergies: [{ substance: "None known", reaction: ",", severity: "NKA" }],
+        previousFacilities: [
+          {
+            name: "Home with daughter Amy",
+            type: "Private residence",
+            from: "2023",
+            to: "Present",
+            reasonForLeaving: "Wandering risk · caregiver burnout",
+          },
+          {
+            name: "Daybreak Adult Day Program",
+            type: "Adult day care",
+            from: "2024",
+            to: "Present",
+            reasonForLeaving: "Still attending 3 days/week until move-in",
+          },
+          {
+            name: "Seton Northwest Hospital",
+            type: "Hospital · observation",
+            from: "2025-08",
+            to: "2025-08",
+            reasonForLeaving: "Confusion episode · returned home",
+          },
+        ],
+        hospitalizations: ["Aug 2025, Acute confusion observation · Seton Northwest"],
+        surgeries: ["2011, Cataract surgery (bilateral)", "2005, Hernia repair"],
+        vaccinations: ["Influenza Oct 2025", "COVID booster Jul 2025", "Pneumococcal 2022"],
+        adls: [
+          { activity: "Bathing", level: "Full assist · resists at times" },
+          { activity: "Dressing", level: "Cueing + partial assist" },
+          { activity: "Toileting", level: "Reminders · occasional incontinence" },
+          { activity: "Transfers", level: "Independent" },
+          { activity: "Eating", level: "Independent · may skip meals without cueing" },
+          { activity: "Medication management", level: "Full assist required" },
+        ],
+        mobilityAids: ["None indoors · supervision outdoors"],
+        diet: "Diabetic · carb-controlled · no concentrated sweets",
+        continence: "Occasional urinary incontinence · scheduled toileting helps",
+        cognitiveNotes: "Moderate Alzheimer’s. Recognizes daughter. Nighttime wandering 2–3×/week. Exit-seeking if doors unlocked.",
+        behaviors: ["Sundowning after 5pm", "Repeats questions", "Can become agitated if corrected harshly"],
+        hearingVision: "Post-cataract vision good · mild hearing loss left ear",
+        codeStatus: "DNR / DNI per family discussion (documented)",
+        advanceDirectives: "POA healthcare + financial: Amy Chen",
+        fallHistory: "No falls in 6 months · unsupervised outdoor risk high",
+        smokingAlcohol: "Former smoker (quit 1998) · no alcohol",
+        socialSupports: "Daughter Amy primary · adult day program peers",
+      },
       documents: [
-        { id: "d5", name: "Photo ID", category: "Identity", shared: true },
-        { id: "d6", name: "Neurology summary", category: "Clinical", shared: true },
-        { id: "d7", name: "POA", category: "Legal", shared: false },
+        {
+          id: "d5",
+          name: "Photo ID",
+          category: "Identity",
+          shared: true,
+          aiSummary: "Valid ID matching applicant details.",
+        },
+        {
+          id: "d6",
+          name: "Neurology summary",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Moderate Alzheimer’s; recommends secure memory care.",
+        },
+        {
+          id: "d7",
+          name: "Power of attorney",
+          category: "Legal",
+          shared: true,
+          aiSummary: "Amy Chen appointed as healthcare and financial agent.",
+        },
+        {
+          id: "d7b",
+          name: "Insurance card",
+          category: "Financial",
+          shared: true,
+          aiSummary: "Active coverage suitable for memory care private pay.",
+        },
       ],
       family: {
         name: "Amy Chen",
         email: "amy.chen@example.com",
         phone: "(512) 555-0199",
+        relationship: "Daughter · primary contact",
+      },
+      emergencyContact: {
+        name: "Amy Chen",
+        phone: "(512) 555-0199",
         relationship: "Daughter",
       },
-      status: "more_info",
-      assigneeId: "tm-sofia",
-      assigneeName: "Sofia Nguyen",
-      internalNotes: [
-        {
-          id: "n1",
-          author: "Sofia Nguyen",
-          body: "Need updated POA before clinical review can finish.",
-          at: "2026-04-12T11:00:00.000Z",
-        },
-      ],
-      infoRequest: "Please confirm nighttime wandering episodes in the last 30 days.",
-      documentRequest: "Power of attorney · Recent labs",
-      tourProposal: "Thu Apr 23 · 2:00 PM",
-      assessmentProposal: null,
-      waitlistPosition: null,
-      submittedAt: "2026-04-08T10:00:00.000Z",
-      lastUpdated: "2026-04-12T11:00:00.000Z",
-      auditLog: [
-        audit("System", "Application received"),
-        audit("Sofia Nguyen", "Assigned to Sofia Nguyen"),
-        audit("Sofia Nguyen", "Requested documents: Power of attorney · Recent labs"),
-        audit("Marcus Hale", "Proposed tour: Thu Apr 23 · 2:00 PM"),
-      ],
-    },
-    {
-      id: "capp-3",
-      residenceId: r.id,
-      seniorName: "Helen Brooks",
-      seniorAge: 88,
-      relationship: "Aunt",
-      summary: "Assisted living. Assessment scheduled. Strong financial clearance.",
-      careNeeds: ["Bathing assist", "Meal prep", "Fall risk precautions"],
-      medicalHighlights: ["COPD", "History of falls"],
-      documents: [
-        { id: "d8", name: "Photo ID", category: "Identity", shared: true },
-        { id: "d9", name: "Insurance", category: "Insurance", shared: true },
-        { id: "d10", name: "Physical therapy notes", category: "Clinical", shared: true },
-      ],
-      family: {
-        name: "Daniel Brooks",
-        email: "daniel.brooks@example.com",
-        phone: "(737) 555-0110",
-        relationship: "Nephew",
-      },
-      status: "assessment_requested",
-      assigneeId: "tm-priya",
-      assigneeName: "Priya Shah",
+      paymentMethod: "Private pay",
+      moveInRequested: "2026-05-15",
+      status: "received",
+      careType: "Memory care",
+      referralSource: "Family",
+      priority: "medium",
+      assigneeId: null,
+      assigneeName: null,
       internalNotes: [],
       infoRequest: null,
       documentRequest: null,
       tourProposal: null,
-      assessmentProposal: "Mon Apr 27 · 10:30 AM · Nursing assessment",
-      waitlistPosition: null,
-      submittedAt: "2026-04-05T09:00:00.000Z",
-      lastUpdated: "2026-04-11T14:00:00.000Z",
-      auditLog: [
-        audit("System", "Application received"),
-        audit("Priya Shah", "Proposed nursing assessment"),
-      ],
-    },
-    {
-      id: "capp-4",
-      residenceId: r.id,
-      seniorName: "James Ortega",
-      seniorAge: 81,
-      relationship: "Husband",
-      summary: "Waitlisted for private suite. Family flexible on timing.",
-      careNeeds: ["Medication management", "Mobility support"],
-      medicalHighlights: ["CHF (stable)"],
-      documents: [
-        { id: "d11", name: "Photo ID", category: "Identity", shared: true },
-        { id: "d12", name: "Insurance", category: "Insurance", shared: true },
-      ],
-      family: {
-        name: "Maria Ortega",
-        email: "maria.ortega@example.com",
-        phone: "(512) 555-0177",
-        relationship: "Wife",
-      },
-      status: "waitlisted",
-      assigneeId: "tm-marcus",
-      assigneeName: "Marcus Hale",
-      internalNotes: [
-        {
-          id: "n2",
-          author: "Marcus Hale",
-          body: "Happy with shared temporarily if private opens later.",
-          at: "2026-04-09T16:00:00.000Z",
-        },
-      ],
-      infoRequest: null,
-      documentRequest: null,
-      tourProposal: null,
       assessmentProposal: null,
-      waitlistPosition: 3,
-      submittedAt: "2026-03-28T12:00:00.000Z",
-      lastUpdated: "2026-04-09T16:00:00.000Z",
-      auditLog: [audit("Marcus Hale", "Placed on waitlist · position 3")],
+      waitlistPosition: null,
+      submittedAt: "2026-04-08T10:00:00.000Z",
+      lastUpdated: "2026-04-08T10:00:00.000Z",
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("System", "Documents verified"),
+        audit("Haven", "Application marked complete · ready for review"),
+      ],
     },
     {
       id: "capp-5",
@@ -499,19 +1055,136 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       seniorName: "Dorothy Walsh",
       seniorAge: 86,
       relationship: "Mother",
-      summary: "New inbound — not yet assigned. Quick triage needed.",
+      summary: "Assisted living with flexible timing. Referred by a social worker.",
+      executiveSummary:
+        "Dorothy Walsh is an 86-year-old woman referred by a social worker for assisted living. Her son Tom is the primary contact. The packet is complete and clinically straightforward: well-managed hypertension, interest in social programming, and a flexible move-in window later this year.",
       careNeeds: ["Assisted living", "Social programming"],
       medicalHighlights: ["Well-managed hypertension"],
+      insights: {
+        primaryDiagnoses: ["Hypertension (well managed)"],
+        mobilityLevel: "Independent with cane outdoors",
+        cognitiveStatus: "Intact · no cognitive concerns noted",
+        importantMedications: ["Lisinopril 10mg daily"],
+        allergies: ["None reported"],
+        specialConsiderations: ["Flexible move-in timing", "Values community activities"],
+      },
+      dossier: {
+        dateOfBirth: "1939-07-22",
+        gender: "Female",
+        primaryLanguage: "English",
+        maritalStatus: "Widowed",
+        height: "5'2\"",
+        weight: "118 lb",
+        bloodType: "A-",
+        currentAddress: "2200 Westover Rd, Austin, TX 78703",
+        currentLivingSituation: "Lives alone in townhome · weekly housekeeper",
+        primaryPhysician: "Dr. Samuel Ortiz, Family medicine",
+        physicianPhone: "(512) 555-0444",
+        pharmacy: "Randalls Pharmacy",
+        insurancePrimary: "Medicare + Medigap Plan G",
+        insuranceSecondary: "None",
+        pathologies: [
+          { name: "Essential hypertension", status: "active", diagnosedYear: "2005", notes: "Well controlled" },
+          { name: "Osteopenia", status: "active", diagnosedYear: "2018" },
+          { name: "Seasonal allergies", status: "active" },
+          { name: "Hypothyroidism", status: "resolved", diagnosedYear: "2010", notes: "Off levothyroxine since 2019" },
+        ],
+        medications: [
+          { name: "Lisinopril", dose: "10 mg", frequency: "Once daily morning", route: "Oral", indication: "Hypertension" },
+          { name: "Alendronate", dose: "70 mg", frequency: "Once weekly", route: "Oral", indication: "Osteopenia" },
+          { name: "Vitamin D3", dose: "2000 IU", frequency: "Once daily", route: "Oral" },
+          { name: "Loratadine", dose: "10 mg", frequency: "As needed spring/fall", route: "Oral", indication: "Allergies" },
+          { name: "Multivitamin", dose: "1 tablet", frequency: "Once daily", route: "Oral" },
+        ],
+        allergies: [
+          { substance: "Codeine", reaction: "Nausea", severity: "Mild" },
+        ],
+        previousFacilities: [
+          {
+            name: "Home, Westover townhome",
+            type: "Private residence",
+            from: "1995",
+            to: "Present",
+            reasonForLeaving: "Planning proactive move for socialization & light support",
+          },
+          {
+            name: "Longhorn Village (tour / waitlist inquiry only)",
+            type: "CCRC · inquiry",
+            from: "2025",
+            to: "2025",
+            reasonForLeaving: "Chose not to proceed · preferred smaller community",
+          },
+        ],
+        hospitalizations: ["None in the last 5 years"],
+        surgeries: ["2003, Cataract (right eye)", "1992, Hysterectomy"],
+        vaccinations: ["Influenza Oct 2025", "COVID booster Jan 2026", "Shingles 2019", "Pneumococcal 2018"],
+        adls: [
+          { activity: "Bathing", level: "Independent" },
+          { activity: "Dressing", level: "Independent" },
+          { activity: "Toileting", level: "Independent" },
+          { activity: "Transfers", level: "Independent" },
+          { activity: "Eating", level: "Independent" },
+          { activity: "Medication management", level: "Independent with weekly organizer" },
+        ],
+        mobilityAids: ["Single-point cane outdoors"],
+        diet: "Regular · prefers lighter dinners",
+        continence: "Continent",
+        cognitiveNotes: "Intact cognition. Manages finances and appointments independently.",
+        behaviors: ["Outgoing · enjoys group activities", "No behavioral concerns"],
+        hearingVision: "Glasses · mild bilateral hearing loss (no aids yet)",
+        codeStatus: "Full code",
+        advanceDirectives: "Healthcare proxy: Tom Walsh",
+        fallHistory: "No falls in past 24 months",
+        smokingAlcohol: "Never smoker · no alcohol",
+        socialSupports: "Son Tom · church group · neighbors check weekly",
+      },
       documents: [
-        { id: "d13", name: "Photo ID", category: "Identity", shared: true },
+        {
+          id: "d13",
+          name: "Photo ID",
+          category: "Identity",
+          shared: true,
+          aiSummary: "Valid photo identification.",
+        },
+        {
+          id: "d14",
+          name: "Insurance card",
+          category: "Financial",
+          shared: true,
+          aiSummary: "Active Medicare with supplemental plan.",
+        },
+        {
+          id: "d15",
+          name: "Physician letter",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Supports assisted living; no skilled nursing needs.",
+        },
+        {
+          id: "d16",
+          name: "Healthcare proxy",
+          category: "Legal",
+          shared: true,
+          aiSummary: "Tom Walsh named as healthcare proxy.",
+        },
       ],
       family: {
         name: "Tom Walsh",
         email: "tom.walsh@example.com",
         phone: "(512) 555-0133",
+        relationship: "Son · primary contact",
+      },
+      emergencyContact: {
+        name: "Tom Walsh",
+        phone: "(512) 555-0133",
         relationship: "Son",
       },
+      paymentMethod: "Private pay",
+      moveInRequested: "2026-09-01",
       status: "submitted",
+      careType: "Assisted living",
+      referralSource: "Social Worker",
+      priority: "low",
       assigneeId: null,
       assigneeName: null,
       internalNotes: [],
@@ -522,7 +1195,11 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       waitlistPosition: null,
       submittedAt: "2026-04-16T08:30:00.000Z",
       lastUpdated: "2026-04-16T08:30:00.000Z",
-      auditLog: [audit("System", "Application submitted via Haven")],
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("System", "Documents verified"),
+        audit("Haven", "Application marked complete · ready for review"),
+      ],
     },
   ];
 
@@ -582,17 +1259,27 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       admissionCriteria: [...detail.admission.residencyCriteria],
       notAccepted: [...detail.admission.notAccepted],
       requiredDocuments: [...detail.admission.documents],
-      roomTypes: r.pricing.map((p) => ({
+      roomTypes: r.pricing.map((p, i) => ({
         name: p.room,
         price: p.price,
         notes: p.notes,
+        availableUnits: i === 0 ? 2 : i === 1 ? 1 : 0,
       })),
       promotions: "Spring move-in credit: first community fee waived for May admissions.",
       waitlistNotes: "Memory care waitlist currently ~4–6 weeks for private suites.",
+      admissionFlags: {
+        medicaid: r.acceptsMedicaid,
+        privatePay: true,
+        pets: r.petFriendly,
+        smoking: "Outdoor only",
+        minAge: 65,
+        notes: "Clinical review required for memory care.",
+      },
     },
     availability,
     applications,
     team,
+    notifications: [],
     auditLog: [
       audit("System", `Workspace opened for ${r.name}`),
       audit("Jordan Lee", "Synced community profile from Haven listing"),

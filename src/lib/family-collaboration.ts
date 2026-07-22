@@ -41,7 +41,7 @@ export const FAMILY_ROLES: {
   {
     id: "viewer",
     label: "Viewer",
-    description: "Read profile, documents, and messages — no edits.",
+    description: "Read profile, documents, and messages, no edits.",
   },
   {
     id: "financial",
@@ -178,7 +178,7 @@ export type CollaborationAudit = {
 
 export type FamilyHousehold = {
   id: string;
-  /** Primary owner email — household key */
+  /** Primary owner email, household key */
   ownerEmail: string;
   seniorLabel: string;
   members: FamilyMember[];
@@ -334,7 +334,7 @@ export function seedHousehold(ownerEmail: string, ownerName: string): FamilyHous
         id: "fc-1",
         authorName: "Claire Martin",
         authorEmail: "claire.martin@example.com",
-        body: "Mom preferred the lakeside suite — noted on the compare board.",
+        body: "Mom preferred the lakeside suite, noted on the compare board.",
         createdAt: "2026-04-09T16:20:00.000Z",
       },
       {

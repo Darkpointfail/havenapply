@@ -9,7 +9,6 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import {
   communityHome,
   communityNav,
-  communityNavGroups,
   familyHome,
   familyNav,
   familyNavGroups,
@@ -18,17 +17,24 @@ import {
   internalNavGroups,
 } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
+import {
+  AUTH_OPEN_ACCESS,
+  isFamilyBrowsePath,
+  isFamilyPortalPath,
+} from "@/lib/auth-open-access";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const isFamily =
-    pathname.startsWith("/family") || pathname.startsWith("/onboarding");
+  const isCoreFamily = isFamilyPortalPath(pathname);
+  const isBrowse = isFamilyBrowsePath(pathname);
   const isCommunity = pathname.startsWith("/community");
   const isInternal = pathname.startsWith("/internal");
   const isPortalAuth =
-    pathname === "/community/sign-in" || pathname === "/internal/sign-in";
+    pathname === "/community/sign-in" ||
+    pathname === "/community/get-started" ||
+    pathname === "/internal/sign-in";
   const isCommunityPending = pathname === "/community/pending";
   const isPublicAuth =
     pathname === "/sign-in" ||
@@ -39,7 +45,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  if (isFamily && user?.role === "family") {
+  // Family shell on portal routes, or on browse/detail only when signed in as family
+  const showFamilyShell = user?.role === "family" && (isCoreFamily || isBrowse);
+
+  const communitySession =
+    (user?.role === "community" && user.communityStatus === "verified") ||
+    (AUTH_OPEN_ACCESS && isCommunity && !isPortalAuth && !isCommunityPending);
+
+  if (showFamilyShell) {
     return (
       <>
         <PortalHeader
@@ -56,35 +69,28 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isCommunityPending && user?.role === "community") {
+  if (isCommunityPending && (user?.role === "community" || AUTH_OPEN_ACCESS)) {
     return (
       <>
         <PortalHeader
           nav={[]}
           homeHref="/community/pending"
           badge="Verification pending"
-          signOutHref="/community/sign-in"
+          signOutHref="/"
         />
         <main className="flex-1 page-enter">{children}</main>
       </>
     );
   }
 
-  if (
-    isCommunity &&
-    !isPortalAuth &&
-    !isCommunityPending &&
-    user?.role === "community" &&
-    user.communityStatus === "verified"
-  ) {
+  if (isCommunity && !isPortalAuth && !isCommunityPending && communitySession) {
     return (
       <>
         <PortalHeader
           nav={communityNav}
-          groups={communityNavGroups}
           homeHref={communityHome}
-          badge="Community portal"
-          signOutHref="/community/sign-in"
+          badge="Admissions"
+          signOutHref="/"
         />
         <main className="flex-1 page-enter">{children}</main>
       </>
@@ -106,8 +112,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Public site (and auth pages, and portal sign-in while logged out)
-  const hideFooter = isPublicAuth || isPortalAuth || isFamily || isCommunity || isInternal;
+  const hideFooter = isPublicAuth || isPortalAuth || isCoreFamily || isCommunity || isInternal;
 
   return (
     <>

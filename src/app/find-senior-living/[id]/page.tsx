@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { CommunityDetailView } from "@/components/residences/CommunityDetail";
+import { CommunityDetailGate } from "@/components/residences/CommunityDetailGate";
 import { residences } from "@/data/residences";
 import { getCommunityDetail } from "@/lib/residence-detail";
 
@@ -16,5 +16,5 @@ export default async function ResidenceProfilePage({
   const community = getCommunityDetail(id);
   if (!community) notFound();
 
-  return <CommunityDetailView community={community} />;
+  return <CommunityDetailGate community={community} />;
 }

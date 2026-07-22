@@ -12,7 +12,9 @@ import {
 import { useAuth } from "@/lib/auth";
 import type { ApplicationStatus } from "@/data/applications";
 import {
+  COMMUNITY_ADMISSIONS_EVENT,
   decisionKindFromStatus,
+  ensureApplicationNotifications,
   mergeSharedIntoCommunityApps,
   sharedIdFromCommunityAppId,
   updateSharedFromCommunity,
@@ -24,14 +26,16 @@ import {
   seedCommunityWorkspace,
   type AvailabilityUnit,
   type CommunityPermission,
+  type CommunityPortalNotification,
   type CommunityProfile,
   type CommunityTeamMember,
   type CommunityTeamRole,
   type CommunityWorkspace,
   type DashboardStats,
 } from "@/lib/community-portal";
+import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v1";
+const STORAGE_KEY = "haven-community-portal-v6";
 
 type PortalContextValue = {
   ready: boolean;
@@ -39,7 +43,10 @@ type PortalContextValue = {
   myRole: CommunityTeamRole;
   can: (permission: CommunityPermission) => boolean;
   stats: DashboardStats | null;
+  unreadNotifications: CommunityPortalNotification[];
   getApplication: (id: string) => CommunityWorkspace["applications"][0] | undefined;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   assignApplication: (appId: string, memberId: string | null) => { ok: boolean; error?: string };
   addInternalNote: (appId: string, body: string) => { ok: boolean; error?: string };
   requestInfo: (appId: string, text: string) => { ok: boolean; error?: string };
@@ -63,6 +70,14 @@ type PortalContextValue = {
     jobTitle: string;
   }) => { ok: boolean; error?: string };
 };
+
+function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
+  const notifications = ensureApplicationNotifications(
+    ws.residenceId,
+    Array.isArray(ws.notifications) ? ws.notifications : [],
+  );
+  return { ...ws, notifications };
+}
 
 const PortalContext = createContext<PortalContextValue | null>(null);
 
@@ -96,12 +111,21 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     const residenceId = resolveCommunityResidenceId(user.organization, user.email);
     const map = readMap();
     let ws = map[residenceId];
-    if (!ws) {
+    if (!ws || !Array.isArray(ws.applications)) {
       ws = seedCommunityWorkspace(residenceId);
     }
     // Merge live family submissions into intake list
-    const mergedApps = mergeSharedIntoCommunityApps(residenceId, ws.applications);
-    ws = { ...ws, applications: mergedApps, updatedAt: new Date().toISOString() };
+    const mergedApps = mergeSharedIntoCommunityApps(residenceId, ws.applications).map((app) =>
+      scrubDemoNamesDeep({
+        ...app,
+        seniorName: canonicalSeniorName(app.seniorName),
+      }),
+    );
+    ws = normalizeWorkspace({
+      ...ws,
+      applications: mergedApps,
+      updatedAt: new Date().toISOString(),
+    });
     map[residenceId] = ws;
     writeMap(map);
     setWorkspace(ws);
@@ -122,18 +146,24 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // Refresh shared applications when community returns to the tab
+  // Refresh shared applications when community returns to the tab or a family submits
   useEffect(() => {
     if (!authReady || !user || user.role !== "community") return;
-    const onFocus = () => {
-      persist((ws) => ({
-        ...ws,
-        applications: mergeSharedIntoCommunityApps(ws.residenceId, ws.applications),
-        updatedAt: new Date().toISOString(),
-      }));
+    const refresh = () => {
+      persist((ws) =>
+        normalizeWorkspace({
+          ...ws,
+          applications: mergeSharedIntoCommunityApps(ws.residenceId, ws.applications),
+          updatedAt: new Date().toISOString(),
+        }),
+      );
     };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("focus", refresh);
+    window.addEventListener(COMMUNITY_ADMISSIONS_EVENT, refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener(COMMUNITY_ADMISSIONS_EVENT, refresh);
+    };
   }, [authReady, user, persist]);
 
   const myRole: CommunityTeamRole = useMemo(() => {
@@ -141,8 +171,13 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     const email = user.email.toLowerCase();
     const member = workspace.team.find((t) => t.email.toLowerCase() === email);
     if (member) return member.role;
-    // Demo community owner defaults to admin
-    if (email === "community@demo.haven") return "admin";
+    // Demo / open-access community owners default to admin
+    if (
+      email === "community@demo.haven" ||
+      email === "demo.admissions@havenapply.local"
+    ) {
+      return "admin";
+    }
     return "admissions_manager";
   }, [user, workspace]);
 
@@ -179,6 +214,32 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     (id: string) => workspace?.applications.find((a) => a.id === id),
     [workspace],
   );
+
+  const unreadNotifications = useMemo(
+    () => (workspace?.notifications ?? []).filter((n) => !n.read),
+    [workspace],
+  );
+
+  const markNotificationRead = useCallback(
+    (id: string) => {
+      persist((ws) => ({
+        ...ws,
+        notifications: (ws.notifications ?? []).map((n) =>
+          n.id === id ? { ...n, read: true } : n,
+        ),
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+    [persist],
+  );
+
+  const markAllNotificationsRead = useCallback(() => {
+    persist((ws) => ({
+      ...ws,
+      notifications: (ws.notifications ?? []).map((n) => ({ ...n, read: true })),
+      updatedAt: new Date().toISOString(),
+    }));
+  }, [persist]);
 
   const mutateApp = useCallback(
     (
@@ -509,7 +570,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       myRole,
       can,
       stats,
+      unreadNotifications,
       getApplication,
+      markNotificationRead,
+      markAllNotificationsRead,
       assignApplication,
       addInternalNote,
       requestInfo,
@@ -531,7 +595,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       myRole,
       can,
       stats,
+      unreadNotifications,
       getApplication,
+      markNotificationRead,
+      markAllNotificationsRead,
       assignApplication,
       addInternalNote,
       requestInfo,

@@ -15,7 +15,6 @@ import {
   detectSensitiveContent,
   formatMessageTime,
   residencesForCommunityOrg,
-  seedThreads,
   unreadForRole,
   type ConversationScope,
   type MessageThread,
@@ -88,9 +87,8 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     if (existing?.length) {
       setThreads(existing);
     } else {
-      const seeded = seedThreads(user.role === "family" ? user.email : "family@demo.haven");
-      setThreads(seeded);
-      writeShared(seeded);
+      setThreads([]);
+      writeShared([]);
     }
     setReady(true);
   }, [authReady, user]);

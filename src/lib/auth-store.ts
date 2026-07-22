@@ -192,63 +192,9 @@ async function makeAccount(input: {
   };
 }
 
-/** Seed demo accounts once so sign-in journeys are testable. */
+/** No seeded demo accounts, start empty for a clean product experience. */
 export async function ensureSeedAccounts() {
-  const existing = readAccounts();
-  if (existing.length > 0) return;
-
-  const seeds: AccountRecord[] = [
-    await makeAccount({
-      email: "family@demo.haven",
-      password: "HavenDemo1!",
-      firstName: "David",
-      lastName: "Chen",
-      role: "family",
-      emailConfirmed: true,
-      onboardingCompleted: true,
-    }),
-    await makeAccount({
-      email: "newfamily@demo.haven",
-      password: "HavenDemo1!",
-      firstName: "Sarah",
-      lastName: "Nguyen",
-      role: "family",
-      emailConfirmed: true,
-      onboardingCompleted: false,
-    }),
-    await makeAccount({
-      email: "pending@demo.haven",
-      password: "HavenDemo1!",
-      firstName: "Amélie",
-      lastName: "Rousseau",
-      role: "community",
-      organization: "Cedar Ridge Living",
-      jobTitle: "Admissions Director",
-      emailConfirmed: true,
-      communityStatus: "pending",
-    }),
-    await makeAccount({
-      email: "community@demo.haven",
-      password: "HavenDemo1!",
-      firstName: "Jordan",
-      lastName: "Lee",
-      role: "community",
-      organization: "Maple Grove Community",
-      jobTitle: "Director of Admissions",
-      emailConfirmed: true,
-      communityStatus: "verified",
-    }),
-    await makeAccount({
-      email: "admin@demo.haven",
-      password: "HavenDemo1!",
-      firstName: "Haven",
-      lastName: "Ops",
-      role: "internal",
-      emailConfirmed: true,
-    }),
-  ];
-
-  writeAccounts(seeds);
+  // intentionally empty
 }
 
 export type SignUpFamilyInput = {
@@ -272,7 +218,7 @@ export type SignUpCommunityInput = {
 
 export async function signUpFamilyAccount(
   input: SignUpFamilyInput,
-): Promise<AuthResult<{ email: string; confirmToken: string }>> {
+): Promise<AuthResult<SessionUser>> {
   if (!input.acceptedTerms) return { ok: false, error: AUTH_MESSAGES.acceptTerms };
   if (!input.firstName.trim() || !input.lastName.trim() || !input.email.trim()) {
     return { ok: false, error: AUTH_MESSAGES.required };
@@ -286,19 +232,21 @@ export async function signUpFamilyAccount(
     firstName: input.firstName,
     lastName: input.lastName,
     role: "family",
-    emailConfirmed: false,
+    emailConfirmed: true,
     onboardingCompleted: false,
   });
+  // Ready to use immediately (no email gate in this simplified flow)
+  account.confirmToken = null;
+  account.confirmExpiresAt = null;
   saveAccount(account);
-  return {
-    ok: true,
-    data: { email: account.email, confirmToken: account.confirmToken! },
-  };
+  const session = toSessionUser(account);
+  writeSession(session);
+  return { ok: true, data: session };
 }
 
 export async function signUpCommunityAccount(
   input: SignUpCommunityInput,
-): Promise<AuthResult<{ email: string; confirmToken: string }>> {
+): Promise<AuthResult<SessionUser>> {
   if (!input.acceptedTerms) return { ok: false, error: AUTH_MESSAGES.acceptTerms };
   if (
     !input.firstName.trim() ||
@@ -321,14 +269,15 @@ export async function signUpCommunityAccount(
     organization: input.organization,
     jobTitle: input.jobTitle,
     phone: input.phone,
-    emailConfirmed: false,
-    communityStatus: "pending",
+    emailConfirmed: true,
+    communityStatus: "verified",
   });
+  account.confirmToken = null;
+  account.confirmExpiresAt = null;
   saveAccount(account);
-  return {
-    ok: true,
-    data: { email: account.email, confirmToken: account.confirmToken! },
-  };
+  const session = toSessionUser(account);
+  writeSession(session);
+  return { ok: true, data: session };
 }
 
 export async function signInAccount(input: {
@@ -382,7 +331,7 @@ export function confirmEmailToken(token: string): AuthResult<SessionUser> {
 export function resendConfirmation(email: string): AuthResult<{ email: string; confirmToken: string }> {
   const account = findByEmail(email);
   if (!account) {
-    // Don't leak existence — still show success-style for family UX? Spec wants resend; show friendly.
+    // Don't leak existence, still show success-style for family UX? Spec wants resend; show friendly.
     return { ok: false, error: AUTH_MESSAGES.accountNotFound };
   }
   if (account.emailConfirmed) return { ok: false, error: AUTH_MESSAGES.alreadyConfirmed };
@@ -400,7 +349,7 @@ export function requestPasswordReset(
   email: string,
 ): AuthResult<{ email: string; resetToken: string | null; sent: boolean }> {
   const account = findByEmail(email);
-  // Always succeed from user POV when email format ok — but return token only if found (demo inbox).
+  // Always succeed from user POV when email format ok, but return token only if found (demo inbox).
   if (!account) {
     return { ok: true, data: { email: normalizeEmail(email), resetToken: null, sent: true } };
   }
@@ -434,7 +383,7 @@ export async function resetPasswordWithToken(input: {
     resetToken: null,
     resetExpiresAt: null,
   });
-  // Password change invalidates the current session — caller should re-sign-in
+  // Password change invalidates the current session, caller should re-sign-in
   writeSession(null);
   return { ok: true, data: undefined };
 }
@@ -462,7 +411,7 @@ export async function changeAccountPassword(
   return { ok: true, data: undefined };
 }
 
-/** Marks a deletion request on the account (demo — does not wipe immediately). */
+/** Marks a deletion request on the account (demo, does not wipe immediately). */
 export function requestAccountDeletion(email: string): AuthResult {
   const account = findByEmail(email);
   if (!account) return { ok: false, error: AUTH_MESSAGES.badCredentials };
@@ -513,7 +462,7 @@ export function homeForUser(user: SessionUser) {
   if (user.role === "community") {
     return user.communityStatus === "verified" ? "/community/dashboard" : "/community/pending";
   }
-  return user.onboardingCompleted ? "/family/dashboard" : "/onboarding";
+  return user.onboardingCompleted ? "/family/dashboard" : "/start";
 }
 
 export function homeForRole(role: UserRole) {

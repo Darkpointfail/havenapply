@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -15,51 +16,98 @@ export function Logo({
   size?: "md" | "lg";
 }) {
   const large = size === "lg";
+  // Cropped assets: height = visible wordmark (no empty PNG padding)
+  const heightClass = large ? "h-[2.7rem] md:h-[3.05rem]" : "h-8 md:h-9";
+  const markSize = large ? "h-[2.7rem] w-[2.7rem]" : "h-8 w-8";
+  const maxWidth = large ? "292px" : "215px";
+
+  const imageClass = cn(
+    "w-auto object-contain object-left",
+    heightClass,
+    light && "brightness-0 invert",
+  );
+
+  const imageStyle = {
+    width: "auto" as const,
+    maxWidth,
+  };
 
   return (
     <Link
       href={href}
       className={cn(
-        "inline-flex items-center transition-opacity hover:opacity-80",
-        large ? "gap-3" : "gap-2.5",
+        "inline-flex shrink-0 -translate-y-1.5 items-center leading-none transition-opacity hover:opacity-90 -ml-0.5",
         className,
       )}
-      aria-label="Haven home"
+      aria-label="HavenApply home"
     >
-      <span
-        className={cn(
-          "relative flex items-center justify-center rounded-[10px]",
-          large ? "h-10 w-10 rounded-xl" : "h-8 w-8 rounded-[10px]",
-          light ? "bg-white/15" : "bg-brand-soft",
-        )}
-        aria-hidden
-      >
-        <svg
-          width={large ? 22 : 18}
-          height={large ? 22 : 18}
-          viewBox="0 0 22 22"
-          fill="none"
-        >
-          <path
-            d="M4 12.5C4 8.5 7 5.5 11 4c4 1.5 7 4.5 7 8.5 0 3.2-2.4 5.5-7 7.5-4.6-2-7-4.3-7-7.5Z"
-            className={light ? "stroke-white" : "stroke-brand"}
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <circle cx="11" cy="12.2" r="1.6" className={light ? "fill-white" : "fill-brand"} />
-        </svg>
-      </span>
-      {!markOnly && (
-        <span
-          className={cn(
-            "font-semibold tracking-tight",
-            large ? "text-[1.55rem] leading-none" : "text-[1.2rem]",
-            light ? "text-white" : "text-ink",
+      {markOnly ? (
+        <span className={cn("relative overflow-hidden", markSize, light && "brightness-0 invert")}>
+          {!light && (
+            <>
+              <Image
+                src="/brand/havenapply-logo.png"
+                alt=""
+                width={875}
+                height={199}
+                className="absolute left-0 top-1/2 h-[140%] w-auto max-w-none -translate-y-1/2 dark:hidden"
+                priority
+              />
+              <Image
+                src="/brand/havenapply-logo-dark.png"
+                alt=""
+                width={875}
+                height={199}
+                className="absolute left-0 top-1/2 hidden h-[140%] w-auto max-w-none -translate-y-1/2 dark:block"
+                priority
+              />
+            </>
           )}
-        >
-          Haven
+          {light && (
+            <Image
+              src="/brand/havenapply-logo.png"
+              alt=""
+              width={875}
+              height={199}
+              className="absolute left-0 top-1/2 h-[140%] w-auto max-w-none -translate-y-1/2"
+              priority
+            />
+          )}
         </span>
+      ) : light ? (
+        <Image
+          src="/brand/havenapply-logo.png"
+          alt="HavenApply"
+          width={875}
+          height={199}
+          priority
+          sizes="(max-width: 768px) 320px, 420px"
+          className={imageClass}
+          style={imageStyle}
+        />
+      ) : (
+        <>
+          <Image
+            src="/brand/havenapply-logo.png"
+            alt="HavenApply"
+            width={875}
+            height={199}
+            priority
+            sizes="(max-width: 768px) 320px, 420px"
+            className={cn(imageClass, "dark:hidden")}
+            style={imageStyle}
+          />
+          <Image
+            src="/brand/havenapply-logo-dark.png"
+            alt="HavenApply"
+            width={875}
+            height={199}
+            priority
+            sizes="(max-width: 768px) 320px, 420px"
+            className={cn(imageClass, "hidden dark:block")}
+            style={imageStyle}
+          />
+        </>
       )}
     </Link>
   );

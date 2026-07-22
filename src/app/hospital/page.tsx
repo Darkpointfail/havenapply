@@ -35,7 +35,7 @@ function HospitalInner() {
       <Card className="mt-6 overflow-hidden p-0">
         <div className="border-b border-line px-5 py-3 text-sm font-semibold">Open referrals</div>
         {[
-          ["Margaret Chen", "Memory care", "Sent to 4", "2 reviewing"],
+          ["Paul Gilbert", "Memory care", "Sent to 4", "2 reviewing"],
           ["Robert Lang", "Rehab", "Sent to 2", "Docs requested"],
           ["Helen Park", "Assisted living", "Draft", "Needs insurance card"],
         ].map((row) => (

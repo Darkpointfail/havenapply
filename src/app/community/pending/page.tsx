@@ -15,7 +15,7 @@ function PendingInner() {
     <div className="mx-auto max-w-lg px-5 py-12 md:py-16">
       <PageHeader
         title="Community verification"
-        description="Your account is ready — Haven still needs to verify your organization."
+        description="Your account is ready, Haven still needs to verify your organization."
         breadcrumbs={[{ label: "Community" }, { label: "Pending verification" }]}
       />
       <Card className="p-8">
@@ -44,9 +44,6 @@ function PendingInner() {
             Sign out
           </Button>
         </div>
-        <p className="mt-6 text-xs text-ink-faint">
-          Demo tip: sign in with community@demo.haven / HavenDemo1! for a verified community portal.
-        </p>
       </Card>
     </div>
   );

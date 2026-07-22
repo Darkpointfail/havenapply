@@ -14,7 +14,7 @@ const icons = {
   "/family/messages": MessageSquare,
 } as const;
 
-/** @deprecated Prefer FamilyMobileNav — kept for compatibility */
+/** @deprecated Prefer FamilyMobileNav, kept for compatibility */
 export function MobileNav() {
   const pathname = usePathname();
 

@@ -12,8 +12,6 @@ import {
 import { useAuth } from "@/lib/auth";
 import {
   defaultPreferences,
-  seedNotifications,
-  seedTasks,
   type AppNotification,
   type FamilyTaskItem,
   type NotificationPreferences,
@@ -107,8 +105,8 @@ export function NotificationsTasksProvider({ children }: { children: ReactNode }
       });
     } else {
       const bundle: StoredBundle = {
-        notifications: seedNotifications(),
-        tasks: seedTasks(),
+        notifications: [],
+        tasks: [],
         preferences: defaultPreferences(),
       };
       writeBundle(user.email, bundle);

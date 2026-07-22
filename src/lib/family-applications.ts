@@ -41,7 +41,7 @@ export type FamilyApplication = {
   unreadMessages: number;
   timeline: TimelineEvent[];
   draftStep: number;
-  /** Links apps sent in one multi-apply session — each app remains independent */
+  /** Links apps sent in one multi-apply session, each app remains independent */
   batchId: string | null;
   /**
    * Private community response for THIS application only.
@@ -54,7 +54,7 @@ export type FamilyApplication = {
   lastUpdatedLabel: string;
 };
 
-/** Actions a community may take — visible only on that application's thread */
+/** Actions a community may take, visible only on that application's thread */
 export type CommunityDecisionKind =
   | "pending"
   | "accepted"
@@ -103,6 +103,38 @@ export const APPLY_REQUIRED_DOCS: { category: DocCategoryId; label: string }[] =
   { category: "power_of_attorney", label: "Power of attorney (if applicable)" },
 ];
 
+/** Hard gate before submit — POA stays optional ("if applicable"). */
+export const APPLY_HARD_REQUIRED_DOCS = APPLY_REQUIRED_DOCS.filter(
+  (d) => d.category !== "power_of_attorney",
+);
+
+/** Categories still missing from the vault for a valid submission. */
+export function missingRequiredApplyDocs(
+  documents: { category: DocCategoryId | string }[],
+): { category: DocCategoryId; label: string }[] {
+  const present = new Set(documents.map((d) => d.category));
+  return APPLY_HARD_REQUIRED_DOCS.filter((req) => !present.has(req.category));
+}
+
+export function dossierReadyForApply(input: {
+  seniorCreated: boolean;
+  completeness: number;
+  careNeedsCompleted: boolean;
+  documents: { category: DocCategoryId | string }[];
+}): { ok: boolean; missingDocs: { category: DocCategoryId; label: string }[]; reasons: string[] } {
+  const reasons: string[] = [];
+  if (!input.seniorCreated) reasons.push("Create the beneficiary profile first.");
+  if (input.completeness < 70) {
+    reasons.push("Complete the profile to at least 70%.");
+  }
+  if (!input.careNeedsCompleted) reasons.push("Complete care needs.");
+  const missingDocs = missingRequiredApplyDocs(input.documents);
+  if (missingDocs.length) {
+    reasons.push("Upload the required documents.");
+  }
+  return { ok: reasons.length === 0, missingDocs, reasons };
+}
+
 export const EXTRA_FORMS: Record<string, string[]> = {
   default: ["Community residency questionnaire", "Financial disclosure summary"],
   "cedar-memory": [
@@ -142,7 +174,7 @@ export function communityQuestions(residenceId: string): ApplicationQuestion[] {
       id: "wandering",
       label: "Any history of wandering or exit-seeking?",
       type: "select",
-      options: ["No", "Yes — occasional", "Yes — frequent", "Unsure"],
+      options: ["No", "Yes, occasional", "Yes, frequent", "Unsure"],
       required: true,
     });
   }
@@ -257,7 +289,7 @@ export function toDisplayApplication(app: FamilyApplication): Application {
     image: app.image,
     status,
     submittedDate: app.submittedDateLabel,
-    lastUpdated: app.lastUpdatedLabel || app.submittedDateLabel || "—",
+    lastUpdated: app.lastUpdatedLabel || app.submittedDateLabel || ",",
     waitingPosition: app.waitingPosition,
     estimatedAdmission: app.estimatedAdmission,
     requestedDocuments: app.requestedDocuments,
@@ -351,9 +383,9 @@ export function applyCommunityDecision(
         : app.requestedDocuments,
     upcomingAppointment:
       kind === "tour_offered"
-        ? "Tour proposed — confirm a time"
+        ? "Tour proposed, confirm a time"
         : kind === "assessment_offered"
-          ? "Assessment proposed — confirm a time"
+          ? "Assessment proposed, confirm a time"
           : app.upcomingAppointment,
     communityDecision: { kind, note, updatedAt: now.toISOString() },
     timeline: [
@@ -431,7 +463,7 @@ export function requirementGaps(
     );
   }
   if (!residence.partner) {
-    incompatibilities.push("Non-partner listing — response times may vary on Haven.");
+    incompatibilities.push("Non-partner listing, response times may vary on Haven.");
   }
 
   return {

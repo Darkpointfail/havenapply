@@ -22,12 +22,12 @@ export default function ForgotPasswordPage() {
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting) return;
     setError(null);
     setSubmitting(true);
-    const result = forgotPassword(email);
+    const result = await forgotPassword(email);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
@@ -48,12 +48,16 @@ export default function ForgotPasswordPage() {
         {sent ? (
           <div className="space-y-4">
             <AuthAlert tone="success">{AUTH_MESSAGES.resetSent}</AuthAlert>
-            <DemoInbox
-              email={email}
-              resetHref={
-                resetToken ? `/reset-password?token=${encodeURIComponent(resetToken)}` : null
-              }
-            />
+            {resetToken ? (
+              <DemoInbox
+                email={email}
+                resetHref={`/reset-password?token=${encodeURIComponent(resetToken)}`}
+              />
+            ) : (
+              <p className="text-sm text-ink-muted">
+                Check your inbox for the reset link (and spam). Open it to choose a new password.
+              </p>
+            )}
             <Button href="/sign-in" className="w-full">
               Back to Sign In
             </Button>

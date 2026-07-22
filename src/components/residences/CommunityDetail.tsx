@@ -275,7 +275,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               />
               <p className="mt-4 leading-relaxed text-ink">{community.about}</p>
               <p className="mt-3 leading-relaxed text-ink-muted">
-                <span className="font-medium text-ink">Philosophy — </span>
+                <span className="font-medium text-ink">Philosophy, </span>
                 {community.philosophy}
               </p>
               <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -371,7 +371,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               {community.pricingNote && (
                 <p className="mt-3 rounded-xl bg-warn-soft/60 px-3 py-2 text-sm text-warn">
                   {community.rooms.some((r) => r.estimated) || !community.priceAvailable
-                    ? "Estimative pricing — "
+                    ? "Estimative pricing, "
                     : ""}
                   {community.pricingNote}
                 </p>
@@ -415,19 +415,19 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                             <dd className="font-medium">
                               {room.communityFee != null
                                 ? formatCurrency(room.communityFee)
-                                : "—"}
+                                : ","}
                             </dd>
                           </div>
                           <div>
                             <dt className="text-xs text-ink-faint">Care fee (typical)</dt>
                             <dd className="font-medium">
-                              {room.careFee != null ? formatCurrency(room.careFee) : "—"}
+                              {room.careFee != null ? formatCurrency(room.careFee) : ","}
                             </dd>
                           </div>
                           <div>
                             <dt className="text-xs text-ink-faint">Deposit</dt>
                             <dd className="font-medium">
-                              {room.deposit != null ? formatCurrency(room.deposit) : "—"}
+                              {room.deposit != null ? formatCurrency(room.deposit) : ","}
                             </dd>
                           </div>
                         </dl>
@@ -586,7 +586,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               <SectionTitle
                 id="reviews"
                 title="Reviews"
-                subtitle="Family feedback — not a clinical or admission decision."
+                subtitle="Family feedback, not a clinical or admission decision."
               />
               <div className="mt-4 flex flex-wrap items-end gap-6">
                 <div>
@@ -619,7 +619,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                     <p className="mt-2 text-sm leading-relaxed text-ink">“{rev.text}”</p>
                     {rev.communityResponse && (
                       <div className="mt-3 rounded-lg bg-bg px-3 py-2 text-sm text-ink-muted">
-                        <span className="font-medium text-ink">Community response — </span>
+                        <span className="font-medium text-ink">Community response, </span>
                         {rev.communityResponse}
                       </div>
                     )}
@@ -745,7 +745,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                     </Button>
                   )}
                   <ApplyButton residenceId={community.id} variant="soft" size="md">
-                    Start Application
+                    Apply here
                   </ApplyButton>
                 </div>
                 {sent && (
@@ -779,11 +779,11 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               </p>
               {!community.partner && (
                 <p className="mt-2 text-xs text-ink-faint">
-                  Non-partner listing — some Haven flows may be limited.
+                  Non-partner listing, some Haven flows may be limited.
                 </p>
               )}
               <ApplyButton residenceId={community.id} size="lg" className="mt-5 w-full">
-                Start Application
+                Apply here
               </ApplyButton>
               <MessageButton residenceId={community.id} size="md" className="mt-2 w-full">
                 Message

@@ -12,11 +12,21 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "Haven — The Common App for senior living",
-    template: "%s · Haven",
+    default: "HavenApply, The Common App for senior living",
+    template: "%s · HavenApply",
   },
   description:
-    "One intelligent profile. Apply to assisted living, memory care, and nursing homes with clarity — AI-first admissions OS for families, hospitals, and communities.",
+    "One intelligent profile. Apply to assisted living, memory care, and nursing homes with clarity, AI-first admissions OS for families, hospitals, and communities.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/brand/favicon-32-v5.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-48-v5.png", sizes: "48x48", type: "image/png" },
+      { url: "/brand/icon-v5.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/apple-icon-v5.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

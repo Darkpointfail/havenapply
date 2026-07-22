@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Menu, Moon, Sun, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Moon, Sparkles, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
@@ -44,11 +44,13 @@ export function PortalHeader({
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const navRef = useRef<HTMLElement>(null);
+  const headerMenusRef = useRef<HTMLDivElement>(null);
 
   const isMessagesHref = (href: string) => href.includes("/messages");
   const isNotificationsHref = (href: string) => href.includes("/notifications");
   const useGroups = Boolean(groups?.length);
+  const accountGroup = groups?.find((g) => g.id === "account");
+  const mainGroups = groups?.filter((g) => g.id !== "account") ?? [];
 
   const badgeForHref = (href: string) => {
     if (isMessagesHref(href) && unreadTotal > 0) return unreadTotal;
@@ -59,6 +61,10 @@ export function PortalHeader({
   const badgeForGroup = (group: NavGroup) =>
     group.children.reduce((max, c) => Math.max(max, badgeForHref(c.href)), 0);
 
+  const accountActive = accountGroup ? groupIsActive(pathname, accountGroup) : false;
+  const accountExpanded = openGroup === "account";
+  const accountBadge = accountGroup ? badgeForGroup(accountGroup) : 0;
+
   useEffect(() => {
     setOpenGroup(null);
   }, [pathname]);
@@ -66,7 +72,7 @@ export function PortalHeader({
   useEffect(() => {
     if (!openGroup) return;
     const onPointer = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+      if (headerMenusRef.current && !headerMenusRef.current.contains(e.target as Node)) {
         setOpenGroup(null);
       }
     };
@@ -81,25 +87,20 @@ export function PortalHeader({
     };
   }, [openGroup]);
 
-  const messagesUnread = (href: string) => isMessagesHref(href) && unreadTotal > 0;
-
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-surface/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center justify-between gap-4 px-4 md:h-20 md:px-6">
-        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+      <div
+        ref={headerMenusRef}
+        className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-3 pl-0 pr-4 md:h-20 md:pr-6"
+      >
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-3 md:gap-6">
           <Logo href={homeHref} size="lg" />
-          <span className="hidden rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand-strong sm:inline">
+          <span className="hidden shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold leading-none text-brand-strong sm:inline">
             {badge}
           </span>
-        </div>
-
-        <nav
-          ref={navRef}
-          className="hidden items-center gap-0.5 lg:flex"
-          aria-label="Portal"
-        >
+          <nav className="hidden flex-nowrap items-center gap-0.5 lg:flex" aria-label="Portal">
           {useGroups
-            ? groups!.map((group) => {
+            ? mainGroups.map((group) => {
                 const active = groupIsActive(pathname, group);
                 const hasMenu = group.children.length > 1;
                 const groupBadge = badgeForGroup(group);
@@ -111,7 +112,7 @@ export function PortalHeader({
                       key={group.id}
                       href={group.href}
                       className={cn(
-                        "relative shrink-0 rounded-xl px-3.5 py-2.5 text-base font-semibold tracking-tight transition-colors",
+                        "relative shrink-0 rounded-xl px-3.5 py-2 text-[15px] font-semibold leading-none tracking-tight transition-colors",
                         active
                           ? "bg-brand-soft text-brand-strong"
                           : "text-ink-muted hover:bg-bg-soft hover:text-ink",
@@ -136,7 +137,7 @@ export function PortalHeader({
                       aria-haspopup="menu"
                       onClick={() => setOpenGroup(expanded ? null : group.id)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-base font-semibold tracking-tight transition-colors",
+                        "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[15px] font-semibold leading-none tracking-tight transition-colors",
                         active || expanded
                           ? "bg-brand-soft text-brand-strong"
                           : "text-ink-muted hover:bg-bg-soft hover:text-ink",
@@ -211,9 +212,20 @@ export function PortalHeader({
                   </Link>
                 );
               })}
-        </nav>
+          </nav>
+        </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          {homeHref.startsWith("/family") && (
+            <Button
+              size="sm"
+              variant="soft"
+              className="hidden sm:inline-flex"
+              href="/assistant"
+            >
+              <Sparkles size={14} /> Assistant
+            </Button>
+          )}
           <button
             type="button"
             onClick={toggle}
@@ -222,20 +234,97 @@ export function PortalHeader({
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <span className="hidden max-w-[100px] truncate text-sm text-ink-muted lg:inline">
-            {user?.name}
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="hidden sm:inline-flex"
-            onClick={() => {
-              signOut();
-              router.push(signOutHref);
-            }}
-          >
-            <LogOut size={14} /> Sign out
-          </Button>
+
+          {accountGroup && user?.name ? (
+            <div className="relative hidden lg:block">
+              <button
+                type="button"
+                aria-expanded={accountExpanded}
+                aria-haspopup="menu"
+                aria-label="Account menu"
+                onClick={() => setOpenGroup(accountExpanded ? null : "account")}
+                className={cn(
+                  "inline-flex max-w-[160px] items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold leading-none transition-colors",
+                  accountActive || accountExpanded
+                    ? "bg-brand-soft text-brand-strong"
+                    : "text-ink-muted hover:bg-bg-soft hover:text-ink",
+                )}
+              >
+                <span className="truncate">{user.name}</span>
+                {accountBadge > 0 && (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                    {accountBadge > 9 ? "9+" : accountBadge}
+                  </span>
+                )}
+                <ChevronDown
+                  size={14}
+                  className={cn("shrink-0 opacity-70 transition", accountExpanded && "rotate-180")}
+                />
+              </button>
+              {accountExpanded && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-1.5 min-w-[220px] rounded-xl border border-line bg-surface p-1.5 shadow-lg"
+                >
+                  {accountGroup.children.map((child) => {
+                    const childActive = pathMatches(pathname, child.href);
+                    const childBadge = badgeForHref(child.href);
+                    return (
+                      <Link
+                        key={child.href}
+                        role="menuitem"
+                        href={child.href}
+                        onClick={() => setOpenGroup(null)}
+                        className={cn(
+                          "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                          childActive
+                            ? "bg-brand-soft font-medium text-brand-strong"
+                            : "text-ink hover:bg-bg-soft",
+                        )}
+                      >
+                        <span>{child.label}</span>
+                        {childBadge > 0 && (
+                          <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                            {childBadge > 9 ? "9+" : childBadge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mt-0.5 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted hover:bg-bg-soft hover:text-ink"
+                    onClick={() => {
+                      setOpenGroup(null);
+                      signOut();
+                      router.push(signOutHref);
+                    }}
+                  >
+                    <LogOut size={14} /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <span className="hidden max-w-[100px] truncate text-sm text-ink-muted lg:inline">
+                {user?.name}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden sm:inline-flex"
+                onClick={() => {
+                  signOut();
+                  router.push(signOutHref);
+                }}
+              >
+                <LogOut size={14} /> Sign out
+              </Button>
+            </>
+          )}
+
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft lg:hidden"
@@ -254,7 +343,7 @@ export function PortalHeader({
               ? groups!.map((group) => (
                   <div key={group.id}>
                     <p className="px-3 pb-1.5 text-sm font-semibold tracking-tight text-ink">
-                      {group.label}
+                      {group.id === "account" && user?.name ? user.name : group.label}
                     </p>
                     <div className="flex flex-col gap-0.5">
                       {group.children.map((link) => (

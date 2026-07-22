@@ -199,7 +199,7 @@ export const applications: Application[] = [
       ev("3a", "sent", "Submitted", "Apr 1", true),
       ev("3b", "received", "Received", "Apr 1", true),
       ev("3c", "request", "More information needed", "Apr 8", true, "Doctor’s letter, lab results"),
-      ev("3d", "status", "Under review", "—", false),
+      ev("3d", "status", "Under review", ",", false),
     ],
   },
   {
@@ -260,7 +260,7 @@ export const applications: Application[] = [
     requestedDocuments: [],
     missingDocuments: ["Physician report", "Insurance card"],
     nextAction: "Finish and submit application",
-    contactName: "—",
+    contactName: ",",
     contactRole: "Not assigned",
     upcomingAppointment: null,
     unreadMessages: 0,

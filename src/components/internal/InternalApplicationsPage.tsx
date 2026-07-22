@@ -55,7 +55,7 @@ export function InternalApplicationsPage() {
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Applications"
-        description="Monitor statuses, stalled files, response times, and disputes — without exposing sensitive clinical detail."
+        description="Monitor statuses, stalled files, response times, and disputes, without exposing sensitive clinical detail."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
           { label: "Applications" },
@@ -136,7 +136,7 @@ export function InternalApplicationsPage() {
               <ul className="mt-4 space-y-2 border-t border-line pt-3 text-sm">
                 {a.activityLog.map((e, i) => (
                   <li key={`${e.at}-${i}`}>
-                    <span className="font-medium">{e.actor}</span> — {e.action}
+                    <span className="font-medium">{e.actor}</span>, {e.action}
                     <span className="ml-2 text-xs text-ink-faint">
                       {formatAdminTime(e.at)}
                     </span>

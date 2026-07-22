@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityApplicationsList } from "@/components/community/CommunityApplicationsList";
-
+/** Admissions inbox lives on the dashboard */
 export default function CommunityApplicationsPage() {
-  return <CommunityApplicationsList />;
+  redirect("/community/dashboard");
 }

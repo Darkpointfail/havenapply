@@ -14,14 +14,12 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { residences } from "@/data/residences";
 import { images } from "@/data/images";
-import { ResidenceCard } from "@/components/residences/ResidenceCard";
 
 const steps = [
   {
     title: "Create one intelligent profile",
-    text: "Guided AI onboarding — upload records or answer calmly. Autosaved. Resumable.",
+    text: "Guided AI onboarding, upload records or answer calmly. Autosaved. Resumable.",
   },
   {
     title: "Discover & compare communities",
@@ -33,7 +31,7 @@ const steps = [
   },
   {
     title: "Track admission to move-in",
-    text: "Tours, assessments, waitlists, and messages — one calm operating system.",
+    text: "Tours, assessments, waitlists, and messages, one calm operating system.",
   },
 ];
 
@@ -52,11 +50,11 @@ export default function HomePage() {
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-secondary md:text-xl">
               One intelligent profile. Apply to assisted living, memory care, and nursing homes in a
-              few clicks — with clarity families can trust.
+              few clicks, with clarity families can trust.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button href="/get-started" size="lg">
-                Start free family account
+              <Button href="/family/dashboard" size="lg">
+                Start your application
                 <ArrowRight size={18} />
               </Button>
               <Button href="/find-senior-living" size="lg" variant="secondary">
@@ -89,7 +87,7 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 rounded-2xl glass p-4 text-ink shadow-md">
                 <p className="text-xs font-semibold uppercase tracking-wide text-brand">Live preview</p>
-                <p className="mt-1 text-sm font-medium">Margaret’s profile · 82% complete</p>
+                <p className="mt-1 text-sm font-medium">Paul Gilbert’s profile · 82% complete</p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-mute">
                   <div className="h-full w-[82%] rounded-full bg-brand" />
                 </div>
@@ -99,20 +97,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Audience promise */}
       <section className="border-y border-line bg-surface">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-6 px-5 py-10 md:grid-cols-4 md:px-8">
-          {[
-            ["12k+", "Family profiles"],
-            ["2.4k", "Communities"],
-            ["68%", "Faster applications"],
-            ["4.9★", "Family trust score"],
-          ].map(([n, l]) => (
-            <div key={l} className="text-center md:text-left">
-              <p className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{n}</p>
-              <p className="mt-1 text-sm text-ink-muted">{l}</p>
-            </div>
-          ))}
+        <div className="mx-auto max-w-[1400px] px-5 py-8 md:px-8">
+          <p className="text-center text-base leading-snug text-ink-secondary md:whitespace-nowrap md:text-lg">
+            For families and care professionals alike, Haven makes transfers and integration simpler,
+            clearer, and more human.
+          </p>
         </div>
       </section>
 
@@ -129,7 +120,7 @@ export default function HomePage() {
             {
               icon: FileSearch,
               title: "Duplicate forms",
-              text: "Every community asks for the same medical story — again and again.",
+              text: "Every community asks for the same medical story, again and again.",
             },
             {
               icon: Timer,
@@ -159,14 +150,23 @@ export default function HomePage() {
             Haven is the operating system for senior living admissions.
           </h2>
           <p className="mt-4 max-w-xl text-white/70">
-            Not a marketplace. A shared application layer for families, hospitals, and communities —
-            with AI that removes busywork.
+            Not a marketplace. A shared application layer for families, care professionals, and
+            residences, with AI that removes busywork.
           </p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {[
-              ["Families", "One profile. Apply everywhere. Track every response."],
-              ["Hospitals", "Discharge to placement without fax chaos."],
-              ["Communities", "Complete applicants. Faster decisions. Higher occupancy."],
+              [
+                "Families & loved ones",
+                "One profile for the person you care for. Apply everywhere. Track every response.",
+              ],
+              [
+                "Social workers & care coordinators",
+                "Discharge planners and care teams place seniors without fax chaos or phone tag.",
+              ],
+              [
+                "Residences",
+                "Complete applicants. Faster admissions decisions. Higher occupancy.",
+              ],
             ].map(([t, d]) => (
               <div key={t} className="rounded-2xl border border-white/10 bg-white/5 p-6">
                 <h3 className="text-lg font-semibold">{t}</h3>
@@ -211,7 +211,7 @@ export default function HomePage() {
               </h2>
               <p className="mt-3 text-ink-muted">
                 Discharge summaries, medication lists, and insurance cards become editable fields with
-                confidence scores — you verify, we don’t guess silently.
+                confidence scores, you verify, we don’t guess silently.
               </p>
               <ul className="mt-8 space-y-3">
                 {[
@@ -226,8 +226,8 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Button href="/onboarding" className="mt-8" variant="ai">
-                Try guided profile setup
+              <Button href="/assistant" className="mt-8" variant="ai">
+                Talk with Haven
               </Button>
             </div>
             <div className="relative min-h-[320px] bg-bg-soft p-6 md:p-10">
@@ -252,35 +252,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Comparison */}
-      <section className="mx-auto max-w-[1400px] px-5 py-16 md:px-8">
-        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-          Traditional admissions vs Haven
-        </h2>
-        <div className="mt-8 overflow-hidden rounded-2xl border border-line">
-          <div className="grid grid-cols-3 bg-bg-soft text-sm font-semibold">
-            <div className="p-4">Capability</div>
-            <div className="border-l border-line p-4 text-ink-muted">Traditional</div>
-            <div className="border-l border-line bg-brand-soft/40 p-4 text-brand-strong">Haven</div>
-          </div>
-          {[
-            ["Medical profile", "Rewritten per facility", "One living profile"],
-            ["Status visibility", "Phone tag & email", "Live timeline"],
-            ["Documents", "Scattered attachments", "Secure vault + sharing"],
-            ["Matching", "Guesswork", "AI Match %"],
-            ["Hospital discharge", "Fax & chase", "One send · many communities"],
-          ].map(([c, t, h]) => (
-            <div key={c} className="grid grid-cols-3 border-t border-line text-sm">
-              <div className="p-4 font-medium">{c}</div>
-              <div className="border-l border-line p-4 text-ink-muted">{t}</div>
-              <div className="border-l border-line bg-brand-soft/20 p-4 font-medium text-brand-strong">
-                {h}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Social proof */}
       <section className="mx-auto max-w-[1400px] px-5 py-16 md:px-8 md:py-20">
         <h2 className="text-3xl font-semibold tracking-tight">Trusted in hard moments</h2>
@@ -297,7 +268,7 @@ export default function HomePage() {
               r: "Hospital case management",
             },
             {
-              q: "Our intake team finally sees medical context on day one — not after three email chains.",
+              q: "Our intake team finally sees medical context on day one, not after three email chains.",
               n: "Amélie R.",
               r: "Residence director",
             },
@@ -319,26 +290,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Browse preview */}
-      <section className="bg-surface px-5 py-20 md:px-8 md:py-24">
-        <div className="mx-auto max-w-[1400px]">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-3xl font-semibold tracking-tight">Communities worth comparing</h2>
-              <p className="mt-2 text-ink-muted">Premium search — map, filters, and AI recommendations.</p>
-            </div>
-            <Button href="/find-senior-living" variant="secondary">
-              Open search <ArrowRight size={16} />
-            </Button>
-          </div>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {residences.slice(0, 3).map((r) => (
-              <ResidenceCard key={r.id} residence={r} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section id="pricing" className="mx-auto max-w-[1400px] scroll-mt-24 px-5 py-20 md:px-8 md:py-28">
         <div className="max-w-2xl">
@@ -354,15 +305,15 @@ export default function HomePage() {
               price: "$0",
               desc: "Profile, applications, vault, messaging, AI guidance.",
               cta: "Create account",
-              href: "/get-started",
+              href: "/family/dashboard",
               featured: false,
             },
             {
               name: "Communities",
               price: "Custom",
-              desc: "Admissions pipeline, occupancy, AI applicant summaries.",
-              cta: "Community portal",
-              href: "/community/sign-in",
+              desc: "Receive complete applications, review the packet, message families, decide.",
+              cta: "Join as a community",
+              href: "/community/dashboard",
               featured: true,
             },
             {
@@ -404,7 +355,7 @@ export default function HomePage() {
             ],
             [
               "How does AI use our medical data?",
-              "AI extracts and suggests — you verify. Sharing is explicit per application.",
+              "AI extracts and suggests, you verify. Sharing is explicit per application.",
             ],
             [
               "Can hospitals and siblings collaborate?",
@@ -435,11 +386,11 @@ export default function HomePage() {
             Start the calmest admissions journey you’ve had
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">
-            Create your family account in under a minute. Resume onboarding anytime.
+            Talk with Haven to build your loved one&apos;s profile once, then apply to communities with clarity.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button href="/get-started" size="lg" variant="onDark">
-              Get started free
+            <Button href="/family/dashboard" size="lg" variant="onDark">
+              Let&apos;s build your loved one&apos;s profile
             </Button>
             <Button
               href="/find-senior-living"

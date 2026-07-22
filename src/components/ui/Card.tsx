@@ -15,9 +15,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border border-line bg-surface shadow-soft",
+        "rounded-[var(--radius-lg)] border border-line bg-surface shadow-sm",
         hover &&
-          "transition-all duration-300 ease-out hover:-translate-y-1 hover:border-line-strong hover:shadow-card",
+          "transition-all duration-300 ease-out hover:border-line-strong hover:shadow-card",
         padding && "p-5 md:p-6",
         className,
       )}

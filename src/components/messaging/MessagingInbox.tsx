@@ -107,8 +107,8 @@ export function MessagingInbox({
           ? `Application · ${decodeURIComponent(senior)}`
           : `Message · ${familyEmail}`,
         firstMessage: senior
-          ? `Hello — regarding ${decodeURIComponent(senior)}’s application, we’d like to connect securely on Haven.`
-          : "Hello — we’d like to connect securely on Haven about your application.",
+          ? `Hello, regarding ${decodeURIComponent(senior)}’s application, we’d like to connect securely on Haven.`
+          : "Hello, we’d like to connect securely on Haven about your application.",
       });
       if (id) setActiveId(id);
       return;
@@ -126,7 +126,7 @@ export function MessagingInbox({
             residenceName: r.name,
             avatar: r.image,
             subject: `Inquiry · ${r.name}`,
-            firstMessage: `Hello ${r.name} admissions — we’d like to start a private conversation on Haven.`,
+            firstMessage: `Hello ${r.name} admissions, we’d like to start a private conversation on Haven.`,
           });
           if (id) setActiveId(id);
         }
@@ -150,7 +150,7 @@ export function MessagingInbox({
     if (!active || !draft.trim()) return;
     const result = sendMessage(active.id, draft, {
       forceSensitive,
-      attachments: attachName ? [{ name: attachName, size: "—" }] : undefined,
+      attachments: attachName ? [{ name: attachName, size: "," }] : undefined,
       type: attachName ? "attachment" : "text",
       meta: attachName ? `Attachment: ${attachName}` : undefined,
     });
@@ -183,8 +183,8 @@ export function MessagingInbox({
         title="Messages"
         description={
           portal === "community"
-            ? "Private conversations with applicant families — only your community’s threads."
-            : "Secure conversations with communities — tied to an application or a general inquiry."
+            ? "Private conversations with applicant families, only your community’s threads."
+            : "Secure conversations with communities, tied to an application or a general inquiry."
         }
         breadcrumbs={
           portal === "community"
@@ -342,7 +342,7 @@ export function MessagingInbox({
                       <span className="text-ink-faint">
                         {new Date(a.at).toLocaleString()} ·{" "}
                       </span>
-                      <span className="font-medium text-ink">{a.actor}</span> — {a.action}
+                      <span className="font-medium text-ink">{a.actor}</span>, {a.action}
                     </p>
                   ))}
               </div>
@@ -428,7 +428,7 @@ export function MessagingInbox({
                 </p>
                 <p className="mt-1 text-xs text-ink-muted">
                   This message may include {sensitiveWarn.join(", ")}. Only send if the community
-                  truly needs it for admissions — prefer Haven document vault for IDs and clinical
+                  truly needs it for admissions, prefer Haven document vault for IDs and clinical
                   files.
                 </p>
                 <div className="mt-2 flex gap-2">

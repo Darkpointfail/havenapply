@@ -28,7 +28,6 @@ import { cn } from "@/lib/utils";
 
 const marketingLinks = [
   { href: "/#problem", label: "Why Haven" },
-  { href: "/#how-it-works", label: "How it works" },
   { href: "/#ai", label: "AI" },
   { href: "/#pricing", label: "Pricing" },
   { href: "/find-senior-living", label: "Browse" },
@@ -36,8 +35,8 @@ const marketingLinks = [
 
 const familyLinks = [
   { href: "/family/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/family/find-communities", label: "Search", icon: Search },
-  { href: "/family/applications", label: "Applications", icon: CheckSquare },
+  { href: "/family/find-communities", label: "Communities", icon: Search },
+  { href: "/family/applications", label: "My applications", icon: CheckSquare },
   { href: "/family/documents", label: "Documents", icon: FileText },
   { href: "/family/messages", label: "Messages", icon: MessageSquare },
   { href: "/family/tasks", label: "Tasks", icon: CheckSquare },
@@ -72,10 +71,10 @@ export function Header() {
   if (isPortal && user?.role === "community") {
     return (
       <header className="sticky top-0 z-50 border-b border-line bg-surface/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 md:px-8">
+        <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center justify-between pl-0 pr-5 md:h-20 md:pr-8">
           <div className="flex items-center gap-3">
-            <Logo href="/community/dashboard" />
-            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold text-accent">
+            <Logo href="/community/dashboard" size="lg" />
+            <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold leading-none text-accent">
               Community portal
             </span>
           </div>
@@ -109,32 +108,36 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-surface/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 md:h-[68px] md:px-8">
-        <Logo href={isFamily ? "/family/dashboard" : "/"} />
+      <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-3 pl-0 pr-5 md:h-20 md:pr-8">
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-4 md:gap-7">
+          <Logo href={isFamily ? "/family/dashboard" : "/"} size="lg" />
+          <nav
+            className="hidden flex-nowrap items-center gap-0.5 lg:flex"
+            aria-label="Primary"
+          >
+            {links.map((link) => {
+              const active =
+                !link.href.includes("#") &&
+                (pathname === link.href || pathname.startsWith(link.href + "/"));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "shrink-0 rounded-xl px-3 py-2 text-[15px] font-medium leading-none transition-colors",
+                    active
+                      ? "bg-brand-soft text-brand-strong"
+                      : "text-ink-muted hover:bg-bg-soft hover:text-ink",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
-          {links.map((link) => {
-            const active =
-              !link.href.includes("#") &&
-              (pathname === link.href || pathname.startsWith(link.href + "/"));
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-brand-soft text-brand-strong"
-                    : "text-ink-muted hover:bg-bg-soft hover:text-ink",
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="hidden items-center gap-1.5 lg:flex">
+        <div className="hidden shrink-0 items-center gap-1.5 lg:flex">
           <button
             type="button"
             onClick={toggle}
@@ -184,8 +187,8 @@ export function Header() {
               <Button href="/sign-in" size="sm" variant="ghost">
                 Log in
               </Button>
-              <Button href="/get-started?next=/onboarding" size="sm">
-                Get started
+              <Button href="/get-started" size="sm">
+                Start your application
               </Button>
             </>
           ) : null}
@@ -193,7 +196,7 @@ export function Header() {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft text-ink lg:hidden"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-soft text-ink lg:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -231,7 +234,7 @@ export function Header() {
                 <Button href="/sign-in" variant="ghost" className="mt-2">
                   Log in
                 </Button>
-                <Button href="/get-started">Get started</Button>
+                <Button href="/get-started">Start your application</Button>
               </>
             )}
           </nav>

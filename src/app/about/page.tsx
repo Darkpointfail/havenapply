@@ -1,25 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { publicAuthLinks } from "@/config/navigation";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return (
-    <div className="mx-auto max-w-[900px] px-5 py-12 md:px-8 md:py-16">
-      <PageHeader
-        title="About"
-        description="Haven is the common application for senior living — trust, simplicity, and human care."
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
-      />
-      <Card className="space-y-4 p-8">
-        <p className="text-ink-muted">
-          This public page is part of Haven&apos;s information architecture. Detailed content and workflows will deepen in later steps — navigation and entry points are ready now.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Button href={publicAuthLinks.getStarted}>Get Started</Button>
-          <Button href="/find-senior-living" variant="secondary">Find Senior Living</Button>
-        </div>
-      </Card>
-    </div>
-  );
+export default function AboutRedirect() {
+  redirect("/contact");
 }

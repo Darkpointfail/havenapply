@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityProfileEditor } from "@/components/community/CommunityProfileEditor";
-
-export default function CommunityPricingPage() {
-  return <CommunityProfileEditor initialTab="pricing" />;
+/** Pricing lives on the public listing */
+export default function PricingRedirect() {
+  redirect("/community/profile?tab=pricing");
 }

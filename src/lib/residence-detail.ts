@@ -133,7 +133,7 @@ function availabilityFrom(r: Residence): AvailabilityDetail {
       status: "limited",
       label: "Limited / unconfirmed availability",
       estimatedMoveIn: "Confirm with admissions",
-      contactNote: "Listings may change — message admissions to verify before applying.",
+      contactNote: "Listings may change, message admissions to verify before applying.",
     };
   }
   if (r.waitingWeeks) {
@@ -148,7 +148,7 @@ function availabilityFrom(r: Residence): AvailabilityDetail {
     status: "unknown",
     label: "Ask the community",
     estimatedMoveIn: null,
-    contactNote: "Availability is not published — request a call or tour to learn more.",
+    contactNote: "Availability is not published, request a call or tour to learn more.",
   };
 }
 
@@ -179,7 +179,7 @@ function defaultCareServices(r: Residence): CareServiceBlock[] {
       available: hasMemory,
       detail: hasMemory
         ? "Secure environment, trained staff, and structured dementia programming."
-        : "Not a dedicated memory-care program — ask about cognitive support options.",
+        : "Not a dedicated memory-care program, ask about cognitive support options.",
     },
     {
       title: "Therapies",
@@ -289,7 +289,7 @@ function defaultAdmission(r: Residence): AdmissionInfo {
     assessmentRequired:
       "In-person or virtual clinical assessment with admissions nursing before move-in confirmation.",
     financialPolicy: r.acceptsMedicaid
-      ? "Private pay and Medicaid pathways available — verify bed type and spend-down rules with admissions."
+      ? "Private pay and Medicaid pathways available, verify bed type and spend-down rules with admissions."
       : r.acceptsVeteransBenefits
         ? "Private pay primary; Veterans Benefits may offset costs when approved."
         : "Primarily private pay. Ask admissions about long-term care insurance and deposit policies.",
@@ -336,7 +336,7 @@ const STREET: Record<string, string> = {
 const OVERRIDES: Partial<Record<string, Partial<CommunityDetail>>> = {
   "maple-grove": {
     philosophy:
-      "Dignity in the everyday — familiar routines, sunlight, and a neighborhood feel that keeps families close to the rhythm of home.",
+      "Dignity in the everyday, familiar routines, sunlight, and a neighborhood feel that keeps families close to the rhythm of home.",
     yearOpened: 2014,
     capacity: 86,
     licenses: ["Texas ALF license", "Memory care endorsement", "Life Safety Code compliant"],
@@ -358,7 +358,7 @@ const OVERRIDES: Partial<Record<string, Partial<CommunityDetail>>> = {
       "Published rates are unavailable. Treat any figures as estimates until the community provides a written quote.",
   },
   "lakeside-haven": {
-    philosophy: "Recover strength, then live well — rehab-forward assisted living with lake-side calm.",
+    philosophy: "Recover strength, then live well, rehab-forward assisted living with lake-side calm.",
     yearOpened: 2016,
     capacity: 92,
   },
@@ -386,7 +386,7 @@ export function buildCommunityDetail(r: Residence): CommunityDetail {
     rooms,
     pricingNote: r.priceAvailable
       ? "Base rates shown; care fees vary after assessment. Confirm totals in writing."
-      : "Pricing is estimative / unavailable publicly — request a formal quote.",
+      : "Pricing is estimative / unavailable publicly, request a formal quote.",
     availabilityDetail: availabilityFrom(r),
     amenityGroups: defaultAmenityGroups(r),
     admission: defaultAdmission(r),
@@ -411,7 +411,7 @@ export function buildCommunityDetail(r: Residence): CommunityDetail {
       { name: "Park / walking trail", distance: "0.4 mi", type: "Outdoors" },
       { name: "Place of worship", distance: "1.0 mi", type: "Community" },
     ],
-    familyDistanceNote: `About ${r.distanceMiles} miles from the Haven demo search center — useful as a proxy for family visit distance.`,
+    familyDistanceNote: `About ${r.distanceMiles} miles from the Haven demo search center, useful as a proxy for family visit distance.`,
     tourSlots: [
       { id: `${r.id}-t1`, label: "Weekday morning", when: "Tue · 10:00 AM" },
       { id: `${r.id}-t2`, label: "Weekday afternoon", when: "Wed · 2:30 PM" },

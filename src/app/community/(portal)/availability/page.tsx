@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityAvailabilityManager } from "@/components/community/CommunityAvailabilityManager";
-
-export default function CommunityAvailabilityPage() {
-  return <CommunityAvailabilityManager />;
+/** Occupancy tooling removed from admissions-focused portal */
+export default function AvailabilityRedirect() {
+  redirect("/community/dashboard");
 }

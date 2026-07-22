@@ -453,7 +453,7 @@ export const residences: Residence[] = [
     image: images.grandmotherChild,
     gallery: [images.grandmotherChild, images.elderlyCouple, images.outdoorWalk],
     about:
-      "A boutique residence with a home-like scale — personalized assisted living without an institutional feel.",
+      "A boutique residence with a home-like scale, personalized assisted living without an institutional feel.",
     staffRatio: "1:5 daytime · 1:8 overnight",
     doctors: ["Dr. Laura Kim"],
     nurses: ["Emma Walsh, RN"],
@@ -519,7 +519,7 @@ export const residences: Residence[] = [
     image: images.community,
     gallery: [images.community, images.familyVisit],
     about:
-      "A continuing-care campus with independent and assisted living. Listed on Haven for discovery — pricing confirmed after inquiry.",
+      "A continuing-care campus with independent and assisted living. Listed on Haven for discovery, pricing confirmed after inquiry.",
     staffRatio: "1:7 daytime · 1:10 overnight",
     doctors: ["Dr. Nina Ortiz"],
     nurses: ["Carlos Mendez, RN"],

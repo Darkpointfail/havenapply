@@ -25,7 +25,7 @@ export const URGENCY_OPTIONS = [
   { id: "30days", label: "Within 30 days" },
   { id: "1to3", label: "In 1 to 3 months" },
   { id: "3to6", label: "In 3 to 6 months" },
-  { id: "exploring", label: "Exploring — no firm timeline" },
+  { id: "exploring", label: "Exploring, no firm timeline" },
 ] as const;
 
 export const FUNDING_MODES = [
@@ -73,13 +73,13 @@ export type SearchZone = {
 };
 
 export type SeniorProfile = {
-  // Step 1 — Relationship
+  // Step 1, Relationship
   filledBy: string;
   relationship: string;
   seniorParticipates: "" | "yes" | "no" | "sometimes";
   hasAuthorization: "" | "yes" | "no" | "unsure";
 
-  // Step 2 — Personal
+  // Step 2, Personal
   firstName: string;
   middleName: string;
   lastName: string;
@@ -93,22 +93,22 @@ export type SeniorProfile = {
   state: string;
   zip: string;
 
-  // Step 3 — Living
+  // Step 3, Living
   livingSituation: string;
   livingSituationOther: string;
 
-  // Step 4 — Housing
+  // Step 4, Housing
   housingTypes: string[];
 
-  // Step 5 — Urgency
+  // Step 5, Urgency
   urgency: string;
 
-  // Step 6 — Location
+  // Step 6, Location
   searchZones: SearchZone[];
   proximityToFamily: string;
   openToOtherStates: "" | "yes" | "no" | "unsure";
 
-  // Step 7 — Budget
+  // Step 7, Budget
   budgetMin: string;
   budgetMax: string;
   budgetUnsure: boolean;

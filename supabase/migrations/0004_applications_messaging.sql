@@ -46,6 +46,7 @@ create unique index if not exists applications_active_unique
   where deleted_at is null
     and status not in ('declined', 'withdrawn', 'closed');
 
+drop trigger if exists applications_set_updated_at on public.applications;
 create trigger applications_set_updated_at
   before update on public.applications
   for each row execute function public.set_updated_at();
@@ -101,6 +102,7 @@ create table if not exists public.application_questions (
 
 create index if not exists application_questions_app_idx on public.application_questions (application_id);
 
+drop trigger if exists application_questions_set_updated_at on public.application_questions;
 create trigger application_questions_set_updated_at
   before update on public.application_questions
   for each row execute function public.set_updated_at();
@@ -148,6 +150,7 @@ create table if not exists public.conversations (
 create index if not exists conversations_family_idx on public.conversations (family_id);
 create index if not exists conversations_community_idx on public.conversations (community_id);
 
+drop trigger if exists conversations_set_updated_at on public.conversations;
 create trigger conversations_set_updated_at
   before update on public.conversations
   for each row execute function public.set_updated_at();
@@ -191,6 +194,7 @@ create table if not exists public.tours (
 
 create index if not exists tours_application_idx on public.tours (application_id, scheduled_at);
 
+drop trigger if exists tours_set_updated_at on public.tours;
 create trigger tours_set_updated_at
   before update on public.tours
   for each row execute function public.set_updated_at();
@@ -212,6 +216,7 @@ create table if not exists public.tasks (
 
 create index if not exists tasks_family_idx on public.tasks (family_id, status, due_date);
 
+drop trigger if exists tasks_set_updated_at on public.tasks;
 create trigger tasks_set_updated_at
   before update on public.tasks
   for each row execute function public.set_updated_at();

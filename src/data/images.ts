@@ -1,4 +1,4 @@
-/** Curated Unsplash images — seniors, family caregiving, warm assistance */
+/** Curated Unsplash images, seniors, family caregiving, warm assistance */
 
 export const images = {
   hero:

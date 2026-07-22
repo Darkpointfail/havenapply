@@ -15,7 +15,7 @@ function CalendarInner() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-10">
       <h1 className="text-3xl font-semibold tracking-tight">Admissions calendar</h1>
-      <p className="mt-2 text-ink-muted">Tours, assessments, deadlines, and move-in — one timeline.</p>
+      <p className="mt-2 text-ink-muted">Tours, assessments, deadlines, and move-in, one timeline.</p>
 
       <div className="mt-8 space-y-3">
         {events.map((e) => (

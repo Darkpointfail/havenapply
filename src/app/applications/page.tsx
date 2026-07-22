@@ -45,20 +45,12 @@ function ApplicationsHub() {
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Applications"
-        description="Track every destination — status, documents, appointments, and next steps in one place."
+        title="My applications"
+        description="Track every destination, status, documents, appointments, and next steps in one place."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
-          { label: "Applications" },
+          { label: "My applications" },
         ]}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button href="/family/apply-multi" variant="secondary">
-              Multi-apply
-            </Button>
-            <Button href="/family/find-communities">Find communities</Button>
-          </div>
-        }
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -93,12 +85,11 @@ function ApplicationsHub() {
       {apps.length === 0 ? (
         <div className="rounded-[1.5rem] border border-dashed border-line px-6 py-16 text-center">
           <p className="text-xl font-semibold">No applications yet</p>
-          <p className="mt-2 text-ink-muted">Start from a community or send to several at once.</p>
+          <p className="mt-2 text-ink-muted">
+            Open a community profile to apply, then track each dossier here.
+          </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Button href="/family/apply-multi">Multi-apply</Button>
-            <Button href="/family/find-communities" variant="secondary">
-              Browse
-            </Button>
+            <Button href="/family/find-communities">Browse communities</Button>
           </div>
         </div>
       ) : view === "table" ? (
@@ -127,7 +118,7 @@ function CardsView({ apps }: { apps: Application[] }) {
                 <Badge tone={statusTone(app.status)}>{statusLabel(app.status)}</Badge>
               </div>
               <p className="mt-1 text-xs text-ink-muted">
-                Sent {app.submittedDate || "—"} · Updated {app.lastUpdated}
+                Sent {app.submittedDate || ","} · Updated {app.lastUpdated}
               </p>
               <p className="mt-3 text-sm">
                 <span className="text-ink-faint">Next · </span>
@@ -188,7 +179,7 @@ function TableView({ apps }: { apps: Application[] }) {
               <td className="px-3 py-3">
                 <Badge tone={statusTone(app.status)}>{statusLabel(app.status)}</Badge>
               </td>
-              <td className="px-3 py-3 text-ink-muted">{app.submittedDate || "—"}</td>
+              <td className="px-3 py-3 text-ink-muted">{app.submittedDate || ","}</td>
               <td className="px-3 py-3 text-ink-muted">{app.lastUpdated}</td>
               <td className="max-w-[180px] px-3 py-3 text-ink-muted">{app.nextAction}</td>
               <td className="px-3 py-3">
@@ -204,9 +195,9 @@ function TableView({ apps }: { apps: Application[] }) {
               </td>
               <td className="px-3 py-3 text-ink-muted">
                 {app.upcomingAppointment ||
-                  (app.waitingPosition != null ? `#${app.waitingPosition}` : "—")}
+                  (app.waitingPosition != null ? `#${app.waitingPosition}` : ",")}
               </td>
-              <td className="px-3 py-3">{app.unreadMessages || "—"}</td>
+              <td className="px-3 py-3">{app.unreadMessages || ","}</td>
             </tr>
           ))}
         </tbody>

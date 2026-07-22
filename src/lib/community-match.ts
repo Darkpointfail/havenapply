@@ -143,7 +143,7 @@ export function computeCompatibility(
   } else {
     reasons.push({
       tone: "partial",
-      text: "No housing preference set yet — score uses general community fit.",
+      text: "No housing preference set yet, score uses general community fit.",
     });
   }
 
@@ -172,7 +172,7 @@ export function computeCompatibility(
   } else if (!residence.priceAvailable || residence.priceFrom == null) {
     reasons.push({
       tone: "partial",
-      text: "Public pricing is unavailable — confirm rates directly with the community.",
+      text: "Public pricing is unavailable, confirm rates directly with the community.",
     });
   }
 
@@ -192,7 +192,7 @@ export function computeCompatibility(
       score += 6;
       reasons.push({
         tone: "partial",
-        text: `About ${residence.distanceMiles} miles away — within a typical search radius.`,
+        text: `About ${residence.distanceMiles} miles away, within a typical search radius.`,
       });
     } else {
       score -= 4;
@@ -253,7 +253,7 @@ export function computeCompatibility(
 
     if (care.preferences.pets?.trim() && residence.petFriendly) {
       score += 4;
-      reasons.push({ tone: "fit", text: "Pet-friendly — aligns with your preferences." });
+      reasons.push({ tone: "fit", text: "Pet-friendly, aligns with your preferences." });
     }
     if (care.preferences.language?.trim()) {
       const lang = care.preferences.language.toLowerCase();
@@ -273,12 +273,12 @@ export function computeCompatibility(
     score += 3;
     reasons.push({
       tone: "partial",
-      text: "Listed as available — confirmation still pending with the community.",
+      text: "Listed as available, confirmation still pending with the community.",
     });
   } else if (residence.waitingWeeks) {
     reasons.push({
       tone: "partial",
-      text: `Waitlist estimated around ${residence.waitingWeeks} weeks — not immediate.`,
+      text: `Waitlist estimated around ${residence.waitingWeeks} weeks, not immediate.`,
     });
   }
 
@@ -286,7 +286,7 @@ export function computeCompatibility(
     score -= 5;
     reasons.push({
       tone: "partial",
-      text: "Non-partner listing — apply/messaging flows may be more limited on Haven.",
+      text: "Non-partner listing, apply/messaging flows may be more limited on Haven.",
     });
   }
 
@@ -298,6 +298,6 @@ export function computeCompatibility(
     score,
     reasons,
     disclaimer:
-      "Compatibility is a search aid from your profile and care needs — not a guarantee of admission, clinical fit, or bed availability.",
+      "Compatibility is a search aid from your profile and care needs, not a guarantee of admission, clinical fit, or bed availability.",
   };
 }

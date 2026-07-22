@@ -166,20 +166,20 @@ export default function MedicalProfilePage() {
             <span className="font-medium">
               {data.senior.livingSituation === "other"
                 ? data.senior.livingSituationOther
-                : labelForId(LIVING_SITUATIONS, data.senior.livingSituation) || "—"}
+                : labelForId(LIVING_SITUATIONS, data.senior.livingSituation) || ","}
             </span>
           </p>
           <p>
             <span className="text-ink-faint">Looking for · </span>
             <span className="font-medium">
               {data.senior.housingTypes.map((id) => labelForId(HOUSING_TYPES, id)).join(", ") ||
-                "—"}
+                ","}
             </span>
           </p>
           <p>
             <span className="text-ink-faint">Timeline · </span>
             <span className="font-medium">
-              {labelForId(URGENCY_OPTIONS, data.senior.urgency) || "—"}
+              {labelForId(URGENCY_OPTIONS, data.senior.urgency) || ","}
             </span>
           </p>
         </div>

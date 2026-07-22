@@ -151,9 +151,9 @@ export default function AdminPage() {
                         <Image src={app.image} alt="" fill className="object-cover" sizes="48px" />
                       </div>
                       <div>
-                        <p className="font-semibold">Margaret Chen</p>
+                        <p className="font-semibold">Paul Gilbert</p>
                         <p className="text-sm text-ink-muted">
-                          Applied {app.submittedDate ?? "—"} · via Haven profile
+                          Applied {app.submittedDate ?? ","} · via Haven profile
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Badge tone="teal">Assisted living</Badge>

@@ -21,7 +21,7 @@ export default function Page() {
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Documents"
-        description={`${workspace.analytics.documentsAdded.toLocaleString()} documents added platform-wide. Event log only — file contents are not shown.`}
+        description={`${workspace.analytics.documentsAdded.toLocaleString()} documents added platform-wide. Event log only, file contents are not shown.`}
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
           { label: "Documents" },

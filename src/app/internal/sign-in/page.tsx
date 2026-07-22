@@ -19,8 +19,8 @@ function InternalSignInForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next");
-  const [email, setEmail] = useState("admin@demo.haven");
-  const [password, setPassword] = useState("HavenDemo1!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,7 +46,7 @@ function InternalSignInForm() {
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
         title="Internal admin"
-        description="Haven operations sign-in — platform administration only."
+        description="Haven operations sign-in, platform administration only."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Internal sign-in" }]}
       />
       <Card className="p-6">
@@ -79,10 +79,9 @@ function InternalSignInForm() {
       </Card>
       <p className="mt-6 text-center text-sm text-ink-muted">
         <Link href="/sign-in" className="text-brand">
-          Family / community sign-in
+          Back to sign in
         </Link>
       </p>
-      <p className="mt-3 text-center text-xs text-ink-faint">Demo · admin@demo.haven · HavenDemo1!</p>
     </div>
   );
 }

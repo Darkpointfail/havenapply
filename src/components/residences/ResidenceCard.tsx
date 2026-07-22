@@ -44,8 +44,8 @@ export function ResidenceCard({
   return (
     <article
       className={cn(
-        "group overflow-hidden rounded-[20px] border bg-surface shadow-soft transition-all duration-300",
-        selected ? "border-brand ring-2 ring-brand/25" : "border-line hover:-translate-y-0.5 hover:shadow-card",
+        "group overflow-hidden rounded-xl border border-line bg-surface shadow-sm texture-paper transition-all duration-300",
+        selected ? "border-brand ring-1 ring-brand/20" : "hover:border-line-strong hover:shadow-card",
         onSelect && "cursor-pointer",
       )}
       onClick={onSelect}
@@ -58,7 +58,7 @@ export function ResidenceCard({
       role={onSelect ? "button" : undefined}
       tabIndex={onSelect ? 0 : undefined}
     >
-      <div className={cn("relative overflow-hidden", compact ? "aspect-[16/9]" : "aspect-[16/10]")}>
+      <div className={cn("relative overflow-hidden", compact ? "aspect-[2/1]" : "aspect-[16/10]")}>
         <Link
           href={`/find-senior-living/${residence.id}`}
           className="block h-full"
@@ -75,7 +75,7 @@ export function ResidenceCard({
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
           <Badge tone={avail.tone}>{avail.text}</Badge>
           {!residence.partner && <Badge tone="neutral">Non-partner</Badge>}
-          {match && <Badge tone="ai">{match.score}% match</Badge>}
+          {match && <Badge tone="brand">{match.score}% match</Badge>}
         </div>
         <button
           type="button"
@@ -95,10 +95,10 @@ export function ResidenceCard({
         </button>
       </div>
 
-      <div className={cn("space-y-3", compact ? "p-4" : "p-5")}>
+      <div className={cn("space-y-2.5", compact ? "p-3.5" : "p-4")}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className={cn("font-semibold tracking-tight text-ink", compact ? "text-base" : "text-lg")}>
+            <h3 className={cn("font-semibold tracking-tight text-ink", compact ? "text-sm" : "text-base")}>
               <Link
                 href={`/find-senior-living/${residence.id}`}
                 className="hover:text-brand"
@@ -161,12 +161,12 @@ export function ResidenceCard({
           <div>
             <p className="text-xs uppercase tracking-wide text-ink-faint">From</p>
             {residence.priceAvailable && residence.priceFrom != null ? (
-              <p className={cn("font-semibold", compact ? "text-lg" : "text-xl")}>
+              <p className={cn("font-semibold", compact ? "text-base" : "text-lg")}>
                 {formatCurrency(residence.priceFrom)}
                 <span className="text-sm font-normal text-ink-muted"> / mo</span>
               </p>
             ) : (
-              <p className="text-base font-semibold text-ink-muted">Price unavailable</p>
+              <p className="text-sm font-semibold text-ink-muted">Price unavailable</p>
             )}
           </div>
         </div>

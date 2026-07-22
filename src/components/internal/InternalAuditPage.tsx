@@ -86,7 +86,7 @@ export function InternalAuditPage() {
               <span className="text-xs text-ink-faint">{formatAdminTime(e.at)}</span>
             </div>
             <p className="mt-2 text-sm">
-              <span className="font-semibold">{e.actor}</span> — {e.summary}
+              <span className="font-semibold">{e.actor}</span>, {e.summary}
             </p>
             <p className="mt-1 text-xs text-ink-muted">
               Resource: {e.resource}

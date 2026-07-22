@@ -108,7 +108,7 @@ export function FamilyMembersHub() {
         <h1 className="mt-4 text-2xl font-semibold">No household access</h1>
         <p className="mt-2 text-ink-muted">
           Sign in with your own Haven account. If you were invited, accept the invitation with
-          the email that received it — never share passwords.
+          the email that received it, never share passwords.
         </p>
       </div>
     );
@@ -128,7 +128,7 @@ export function FamilyMembersHub() {
       return;
     }
     setInviteSuccess(
-      `Invitation sent to ${res.invitation!.email}. They sign in with their own Haven account to accept — no shared password.`,
+      `Invitation sent to ${res.invitation!.email}. They sign in with their own Haven account to accept, no shared password.`,
     );
     setInviteEmail("");
     setInviteName("");
@@ -168,7 +168,7 @@ export function FamilyMembersHub() {
     <div className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
         title="Family Members"
-        description={`Collaborate on ${household.seniorLabel} without sharing passwords — each person uses their own Haven login.`}
+        description={`Collaborate on ${household.seniorLabel} without sharing passwords, each person uses their own Haven login.`}
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
           { label: "Family Members" },
@@ -206,7 +206,7 @@ export function FamilyMembersHub() {
                   </p>
                   <p className="text-xs text-ink-muted">
                     {inv.status === "expired"
-                      ? "Expired — ask the owner to resend"
+                      ? "Expired, ask the owner to resend"
                       : `Expires ${formatCollabTime(inv.expiresAt)}`}
                   </p>
                 </div>
@@ -270,7 +270,7 @@ export function FamilyMembersHub() {
               >
                 {inviteRoles.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.label} — {r.description}
+                    {r.label}, {r.description}
                   </option>
                 ))}
               </select>
@@ -332,7 +332,7 @@ export function FamilyMembersHub() {
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">{m.email}</p>
                     <p className="mt-1 text-xs text-ink-faint">
-                      Joined {m.joinedAt ? formatCollabTime(m.joinedAt) : "—"}
+                      Joined {m.joinedAt ? formatCollabTime(m.joinedAt) : ","}
                       {m.lastActiveAt ? ` · Last active ${formatCollabTime(m.lastActiveAt)}` : ""}
                     </p>
                   </div>
@@ -471,7 +471,7 @@ export function FamilyMembersHub() {
                         {row.roles[r.id] ? (
                           <Check size={16} className="mx-auto text-success" />
                         ) : (
-                          <span className="text-ink-faint">—</span>
+                          <span className="text-ink-faint">,</span>
                         )}
                       </td>
                     ))}
@@ -570,7 +570,7 @@ export function FamilyMembersHub() {
               <textarea
                 className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm"
                 rows={3}
-                placeholder="Visible only to authorized family members — not communities."
+                placeholder="Visible only to authorized family members, not communities."
                 value={commentDraft}
                 onChange={(e) => setCommentDraft(e.target.value)}
               />
@@ -603,7 +603,7 @@ export function FamilyMembersHub() {
               <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" />
               <div>
                 <p className="text-sm">
-                  <span className="font-semibold">{a.actor}</span> — {a.action}
+                  <span className="font-semibold">{a.actor}</span>, {a.action}
                 </p>
                 <p className="mt-1 text-xs text-ink-faint">{formatCollabTime(a.at)}</p>
               </div>

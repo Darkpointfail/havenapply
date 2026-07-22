@@ -85,8 +85,8 @@ export default function HowItWorksPage() {
             One profile. Then apply everywhere.
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
-            Haven is the common application for senior living. Create the dossier once, discover the
-            right communities, and send applications without starting over.
+            Create the dossier once, discover the right communities, and send applications without
+            starting over, so your family can move forward with clarity.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button href="/family/dashboard" size="lg">

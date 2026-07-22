@@ -12,11 +12,11 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "HavenApply, The Common App for senior living",
+    default: "HavenApply, One dossier. Clearer senior living admissions.",
     template: "%s · HavenApply",
   },
   description:
-    "One intelligent profile. Apply to assisted living, memory care, and nursing homes with clarity, AI-first admissions OS for families, hospitals, and communities.",
+    "One dossier. Clearer senior living admissions. Build one profile, find the right communities, and apply with confidence.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

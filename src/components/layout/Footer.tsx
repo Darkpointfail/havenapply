@@ -10,8 +10,7 @@ export function Footer() {
           <div>
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-muted">
-              The common application for senior living. One profile. Apply to communities with
-              clarity and trust.
+              One dossier. Clearer senior living admissions.
             </p>
           </div>
           <div>

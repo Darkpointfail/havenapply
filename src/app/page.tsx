@@ -23,7 +23,7 @@ const steps = [
   },
   {
     title: "Discover & compare communities",
-    text: "Search like Airbnb. Filter by care, insurance, budget, waitlist, and distance.",
+    text: "Filter by care type, insurance, budget, waitlist, and distance to find the right fit.",
   },
   {
     title: "Apply once. Everywhere.",
@@ -46,11 +46,10 @@ export default function HomePage() {
               <Sparkles size={12} /> AI-first admissions OS
             </Badge>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink md:text-6xl">
-              The Common App for senior living.
+              One dossier. Clearer senior living admissions.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-secondary md:text-xl">
-              One intelligent profile. Apply to assisted living, memory care, and nursing homes in a
-              few clicks, with clarity families can trust.
+              Build one profile, find the right communities, and apply with confidence.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button href="/family/dashboard" size="lg">
@@ -347,7 +346,7 @@ export default function HomePage() {
           {[
             [
               "Is this a marketplace?",
-              "No. Haven is a common application and admissions OS. Communities remain the decision-makers.",
+              "No. Haven helps families prepare and send applications. Communities remain the decision-makers.",
             ],
             [
               "Do I need an account to browse?",

@@ -12,11 +12,11 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "HavenApply, One dossier. Clearer senior living admissions.",
+    default: "HavenApply, Senior living admissions, made clear.",
     template: "%s · HavenApply",
   },
   description:
-    "One dossier. Clearer senior living admissions. Build one profile, find the right communities, and apply with confidence.",
+    "Senior living admissions, made clear. One dossier to find the right communities and apply with confidence.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

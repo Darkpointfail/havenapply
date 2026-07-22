@@ -10,7 +10,7 @@ export function Footer() {
           <div>
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-muted">
-              One dossier. Clearer senior living admissions.
+              Senior living admissions, made clear.
             </p>
           </div>
           <div>

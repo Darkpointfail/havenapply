@@ -46,10 +46,10 @@ export default function HomePage() {
               <Sparkles size={12} /> AI-first admissions OS
             </Badge>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink md:text-6xl">
-              One dossier. Clearer senior living admissions.
+              Senior living admissions, made clear.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-secondary md:text-xl">
-              Build one profile, find the right communities, and apply with confidence.
+              One dossier. Find the right communities and apply with confidence.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button href="/family/dashboard" size="lg">

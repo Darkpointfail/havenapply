@@ -67,7 +67,17 @@ export function PortalHeader({
 
   useEffect(() => {
     setOpenGroup(null);
+    setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!openGroup) return;
@@ -91,9 +101,20 @@ export function PortalHeader({
     <header className="sticky top-0 z-50 border-b border-line bg-surface/90 backdrop-blur-xl">
       <div
         ref={headerMenusRef}
-        className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-3 pl-0 pr-4 md:h-20 md:pr-6"
+        className="relative mx-auto grid h-[4.5rem] max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:h-20 md:px-6 lg:flex lg:gap-3"
       >
-        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-3 md:gap-6">
+        {/* Mobile: spacer left so logo stays centered */}
+        <div className="flex items-center justify-self-start lg:hidden">
+          <span className="h-10 w-10" aria-hidden />
+        </div>
+
+        {/* Mobile centered logo */}
+        <div className="justify-self-center lg:hidden">
+          <Logo href={homeHref} size="lg" className="!ml-0" />
+        </div>
+
+        {/* Desktop: logo + nav */}
+        <div className="hidden min-w-0 flex-1 flex-nowrap items-center gap-3 md:gap-6 lg:flex">
           <Logo href={homeHref} size="lg" />
           <span className="hidden shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold leading-none text-brand-strong sm:inline">
             {badge}
@@ -215,7 +236,7 @@ export function PortalHeader({
           </nav>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center justify-self-end gap-1">
           {homeHref.startsWith("/family") && (
             <Button
               size="sm"
@@ -229,7 +250,7 @@ export function PortalHeader({
           <button
             type="button"
             onClick={toggle}
-            className="rounded-xl p-2 text-ink-muted hover:bg-bg-soft"
+            className="hidden rounded-xl p-2 text-ink-muted hover:bg-bg-soft sm:inline-flex"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
@@ -329,6 +350,7 @@ export function PortalHeader({
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft lg:hidden"
             aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X size={18} /> : <Menu size={18} />}
@@ -336,9 +358,41 @@ export function PortalHeader({
         </div>
       </div>
 
-      {open && (
-        <div className="max-h-[70vh] overflow-y-auto border-t border-line bg-surface px-4 py-3 lg:hidden">
-          <nav className="flex flex-col gap-3" aria-label="Portal mobile">
+      {/* Mobile drawer from the right */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[60] lg:hidden",
+          open ? "pointer-events-auto" : "pointer-events-none",
+        )}
+        aria-hidden={!open}
+      >
+        <button
+          type="button"
+          className={cn(
+            "absolute inset-0 bg-ink/40 transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0",
+          )}
+          aria-label="Close menu"
+          onClick={() => setOpen(false)}
+        />
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-line bg-surface shadow-lift transition-transform duration-300 ease-out",
+            open ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex h-[4.5rem] items-center justify-between border-b border-line px-4">
+            <p className="text-sm font-semibold text-ink">{badge}</p>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-bg-soft"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <nav className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-label="Portal mobile">
             {useGroups
               ? groups!.map((group) => (
                   <div key={group.id}>
@@ -406,7 +460,7 @@ export function PortalHeader({
             </Button>
           </nav>
         </div>
-      )}
+      </div>
     </header>
   );
 }

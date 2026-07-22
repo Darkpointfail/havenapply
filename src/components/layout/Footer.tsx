@@ -29,13 +29,13 @@ export function Footer() {
             <h3 className="text-sm font-semibold">Get started</h3>
             <ul className="mt-4 space-y-2.5">
               <li>
-                <Link href={publicAuthLinks.getStarted} className="text-sm text-ink-muted hover:text-brand">
-                  Get Started
+                <Link href={publicAuthLinks.register} className="text-sm text-ink-muted hover:text-brand">
+                  Register
                 </Link>
               </li>
               <li>
                 <Link href={publicAuthLinks.signIn} className="text-sm text-ink-muted hover:text-brand">
-                  Sign In
+                  Log in
                 </Link>
               </li>
               <li>

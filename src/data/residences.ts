@@ -1,4 +1,15 @@
-import { images } from "@/data/images";
+const residencePhotos = {
+  mapleGrove: "/community-photos/maple-grove.jpg",
+  lakesideHaven: "/community-photos/lakeside-haven.jpg",
+  cedarMemory: "/community-photos/cedar-memory.jpg",
+  sunriseTerrace: "/community-photos/sunrise-terrace.jpg",
+  riversideNursing: "/community-photos/riverside-nursing.jpg",
+  orchardHouse: "/community-photos/orchard-house.jpg",
+  hillcrestManor: "/community-photos/hillcrest-manor.jpg",
+  lobby: "/community-photos/amenity-lobby.jpg",
+  garden: "/community-photos/amenity-garden.jpg",
+  dining: "/community-photos/amenity-dining.jpg",
+} as const;
 
 export type CareLevel =
   | "Assisted living"
@@ -94,12 +105,12 @@ export const residences: Residence[] = [
     respiteAvailable: true,
     partner: true,
     highlights: ["Secure memory wing", "Pet friendly", "Garden courtyard"],
-    image: images.caregiverSenior,
+    image: residencePhotos.mapleGrove,
     gallery: [
-      images.caregiverSenior,
-      images.adultChildParent,
-      images.seniorsTogether,
-      images.holdingHands,
+      residencePhotos.mapleGrove,
+      residencePhotos.garden,
+      residencePhotos.lobby,
+      residencePhotos.dining,
     ],
     about:
       "A warm, light-filled community focused on dignified daily living with attentive memory-care support and a strong sense of neighborhood.",
@@ -185,8 +196,13 @@ export const residences: Residence[] = [
     respiteAvailable: true,
     partner: true,
     highlights: ["Rehab program", "Medicaid accepted", "Private rooms"],
-    image: images.gentleCare,
-    gallery: [images.gentleCare, images.outdoorWalk, images.elderlyCouple],
+    image: residencePhotos.lakesideHaven,
+    gallery: [
+      residencePhotos.lakesideHaven,
+      residencePhotos.lobby,
+      residencePhotos.dining,
+      residencePhotos.garden,
+    ],
     about:
       "Lakeside Haven specializes in short- and long-term assisted living with a strong rehabilitation program after hospital stays.",
     staffRatio: "1:6 daytime · 1:9 overnight",
@@ -251,8 +267,13 @@ export const residences: Residence[] = [
     respiteAvailable: true,
     partner: true,
     highlights: ["Secure memory campus", "Dementia specialists", "Sensory garden"],
-    image: images.holdingHands,
-    gallery: [images.holdingHands, images.seniorSmile, images.caregiverSenior],
+    image: residencePhotos.cedarMemory,
+    gallery: [
+      residencePhotos.cedarMemory,
+      residencePhotos.garden,
+      residencePhotos.lobby,
+      residencePhotos.dining,
+    ],
     about:
       "Purpose-built for Alzheimer’s and related dementias, with familiar routines, sensory gardens, and trained memory-care teams.",
     staffRatio: "1:4 daytime · 1:6 overnight",
@@ -317,8 +338,13 @@ export const residences: Residence[] = [
     respiteAvailable: false,
     partner: true,
     highlights: ["Independent + assisted", "Shuttle service", "Couples welcome"],
-    image: images.seniorsTogether,
-    gallery: [images.seniorsTogether, images.familyVisit, images.community],
+    image: residencePhotos.sunriseTerrace,
+    gallery: [
+      residencePhotos.sunriseTerrace,
+      residencePhotos.dining,
+      residencePhotos.garden,
+      residencePhotos.lobby,
+    ],
     about:
       "A lively community for seniors who want independence with a safety net. Bright apartments and flexible care add-ons.",
     staffRatio: "1:8 daytime · 1:12 overnight",
@@ -384,8 +410,13 @@ export const residences: Residence[] = [
     respiteAvailable: true,
     partner: true,
     highlights: ["Skilled nursing", "Wound care", "Respite stays"],
-    image: images.nursingCare,
-    gallery: [images.nursingCare, images.bedsideCare, images.holdingHands],
+    image: residencePhotos.riversideNursing,
+    gallery: [
+      residencePhotos.riversideNursing,
+      residencePhotos.lobby,
+      residencePhotos.dining,
+      residencePhotos.garden,
+    ],
     about:
       "Clinical excellence with a human touch. Riverside supports complex medical needs while keeping daily life personal.",
     staffRatio: "1:4 daytime · 1:7 overnight",
@@ -450,8 +481,13 @@ export const residences: Residence[] = [
     respiteAvailable: false,
     partner: true,
     highlights: ["Boutique scale", "Available now", "Private suites"],
-    image: images.grandmotherChild,
-    gallery: [images.grandmotherChild, images.elderlyCouple, images.outdoorWalk],
+    image: residencePhotos.orchardHouse,
+    gallery: [
+      residencePhotos.orchardHouse,
+      residencePhotos.garden,
+      residencePhotos.dining,
+      residencePhotos.lobby,
+    ],
     about:
       "A boutique residence with a home-like scale, personalized assisted living without an institutional feel.",
     staffRatio: "1:5 daytime · 1:8 overnight",
@@ -516,8 +552,13 @@ export const residences: Residence[] = [
     respiteAvailable: true,
     partner: false,
     highlights: ["CCRC path", "Medicaid", "Non-partner listing"],
-    image: images.community,
-    gallery: [images.community, images.familyVisit],
+    image: residencePhotos.hillcrestManor,
+    gallery: [
+      residencePhotos.hillcrestManor,
+      residencePhotos.lobby,
+      residencePhotos.garden,
+      residencePhotos.dining,
+    ],
     about:
       "A continuing-care campus with independent and assisted living. Listed on Haven for discovery, pricing confirmed after inquiry.",
     staffRatio: "1:7 daytime · 1:10 overnight",

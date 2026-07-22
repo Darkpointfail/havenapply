@@ -8,8 +8,35 @@ import {
   verifyPassword,
 } from "@/lib/auth-crypto";
 
-export type UserRole = "family" | "community" | "internal";
+export type UserRole =
+  | "family"
+  | "professional"
+  | "facility"
+  | "community"
+  | "internal";
+
+/** Roles selectable during account creation. */
+export type SignupRole = "family" | "professional" | "facility";
+
 export type CommunityStatus = "pending" | "verified" | "rejected";
+
+export function parseUserRole(value: unknown): UserRole | null {
+  if (value === "residence") return "community";
+  if (
+    value === "family" ||
+    value === "professional" ||
+    value === "facility" ||
+    value === "community" ||
+    value === "internal"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+export function isFacilityRole(role: UserRole) {
+  return role === "facility" || role === "community";
+}
 
 export type AccountRecord = {
   id: string;
@@ -101,13 +128,7 @@ export function readSession(): SessionUser | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const legacyRole = parsed.role as string | undefined;
-    const role: UserRole | null =
-      legacyRole === "residence"
-        ? "community"
-        : legacyRole === "family" || legacyRole === "community" || legacyRole === "internal"
-          ? legacyRole
-          : null;
+    const role = parseUserRole(parsed.role);
     if (!parsed.id || !parsed.email || !role) return null;
     return {
       id: String(parsed.id),
@@ -216,6 +237,18 @@ export type SignUpCommunityInput = {
   acceptedTerms: boolean;
 };
 
+export type SignUpWithRoleInput = {
+  role: SignupRole;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  acceptedTerms: boolean;
+  organization?: string;
+  jobTitle?: string;
+  phone?: string;
+};
+
 export async function signUpFamilyAccount(
   input: SignUpFamilyInput,
 ): Promise<AuthResult<SessionUser>> {
@@ -247,14 +280,28 @@ export async function signUpFamilyAccount(
 export async function signUpCommunityAccount(
   input: SignUpCommunityInput,
 ): Promise<AuthResult<SessionUser>> {
+  return signUpWithRoleAccount({
+    role: "facility",
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    password: input.password,
+    organization: input.organization,
+    jobTitle: input.jobTitle,
+    phone: input.phone,
+    acceptedTerms: input.acceptedTerms,
+  });
+}
+
+export async function signUpWithRoleAccount(
+  input: SignUpWithRoleInput,
+): Promise<AuthResult<SessionUser>> {
   if (!input.acceptedTerms) return { ok: false, error: AUTH_MESSAGES.acceptTerms };
-  if (
-    !input.firstName.trim() ||
-    !input.lastName.trim() ||
-    !input.email.trim() ||
-    !input.organization.trim() ||
-    !input.jobTitle.trim()
-  ) {
+  if (!input.firstName.trim() || !input.lastName.trim() || !input.email.trim()) {
+    return { ok: false, error: AUTH_MESSAGES.required };
+  }
+  const needsOrg = input.role === "professional" || input.role === "facility";
+  if (needsOrg && (!input.organization?.trim() || !input.jobTitle?.trim())) {
     return { ok: false, error: AUTH_MESSAGES.required };
   }
   if (!isValidPassword(input.password)) return { ok: false, error: AUTH_MESSAGES.weakPassword };
@@ -265,12 +312,13 @@ export async function signUpCommunityAccount(
     password: input.password,
     firstName: input.firstName,
     lastName: input.lastName,
-    role: "community",
+    role: input.role,
     organization: input.organization,
     jobTitle: input.jobTitle,
     phone: input.phone,
     emailConfirmed: true,
-    communityStatus: "verified",
+    communityStatus: input.role === "facility" ? "verified" : undefined,
+    onboardingCompleted: input.role !== "family",
   });
   account.confirmToken = null;
   account.confirmExpiresAt = null;
@@ -296,7 +344,10 @@ export async function signInAccount(input: {
   }
 
   if (input.expectedRole && account.role !== input.expectedRole) {
-    return { ok: false, error: AUTH_MESSAGES.accessDenied };
+    const facilityAlias =
+      (input.expectedRole === "facility" && account.role === "community") ||
+      (input.expectedRole === "community" && account.role === "facility");
+    if (!facilityAlias) return { ok: false, error: AUTH_MESSAGES.accessDenied };
   }
 
   const session = toSessionUser(account);
@@ -459,14 +510,17 @@ export function getDemoMailbox(email: string) {
 
 export function homeForUser(user: SessionUser) {
   if (user.role === "internal") return "/internal/overview";
-  if (user.role === "community") {
+  if (isFacilityRole(user.role)) {
     return user.communityStatus === "verified" ? "/community/dashboard" : "/community/pending";
   }
-  return user.onboardingCompleted ? "/family/dashboard" : "/start";
+  // professional uses family home until dedicated routing exists
+  return user.onboardingCompleted || user.role === "professional"
+    ? "/family/dashboard"
+    : "/start";
 }
 
 export function homeForRole(role: UserRole) {
-  if (role === "community") return "/community/dashboard";
+  if (isFacilityRole(role)) return "/community/dashboard";
   if (role === "internal") return "/internal/overview";
   return "/family/dashboard";
 }

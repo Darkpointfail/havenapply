@@ -107,17 +107,27 @@ export function RedirectIfAuthenticated({
     fallbackHref ||
     (pathname.startsWith("/community") ? "/community/dashboard" : "/family/dashboard");
 
+  const isRegistrationPath =
+    pathname === "/get-started" ||
+    pathname.startsWith("/get-started/") ||
+    pathname === "/signup" ||
+    pathname.startsWith("/signup/") ||
+    pathname === "/sign-in" ||
+    pathname.startsWith("/sign-in/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/");
+
   useEffect(() => {
     if (AUTH_OPEN_ACCESS) {
-      if (pathname.startsWith("/internal")) return;
+      if (pathname.startsWith("/internal") || isRegistrationPath) return;
       router.replace(openAccessHome);
       return;
     }
     if (!ready || !user) return;
     router.replace(homeForUser(user));
-  }, [ready, user, router, openAccessHome, pathname]);
+  }, [ready, user, router, openAccessHome, pathname, isRegistrationPath]);
 
-  if (AUTH_OPEN_ACCESS && !pathname.startsWith("/internal")) {
+  if (AUTH_OPEN_ACCESS && !pathname.startsWith("/internal") && !isRegistrationPath) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-sm text-ink-muted">Opening portal…</p>

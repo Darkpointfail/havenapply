@@ -21,8 +21,9 @@ export const publicNav: NavItem[] = [
 ];
 
 export const publicAuthLinks = {
-  signIn: "/community/dashboard",
-  getStarted: "/family/dashboard",
+  signIn: "/sign-in",
+  register: "/get-started",
+  getStarted: "/get-started",
 };
 
 /**

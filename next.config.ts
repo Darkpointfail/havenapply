@@ -25,8 +25,13 @@ const nextConfig: NextConfig = {
       { source: "/notifications", destination: "/family/notifications", permanent: false },
       { source: "/settings", destination: "/family/settings", permanent: false },
       { source: "/compare", destination: "/family/compare", permanent: false },
+      // Avoid catching static files under /residences/*.*
       { source: "/residences", destination: "/find-senior-living", permanent: false },
-      { source: "/residences/:id", destination: "/find-senior-living/:id", permanent: false },
+      {
+        source: "/residences/:id((?!.*\\.).*)",
+        destination: "/find-senior-living/:id",
+        permanent: false,
+      },
       { source: "/admin", destination: "/community/dashboard", permanent: false },
       { source: "/admin/:path*", destination: "/community/:path*", permanent: false },
       { source: "/residence-login", destination: "/community/sign-in", permanent: false },

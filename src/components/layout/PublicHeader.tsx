@@ -105,10 +105,10 @@ export function PublicHeader() {
             })}
             <div className="mt-auto space-y-2 border-t border-line pt-5">
               <Button href={publicAuthLinks.signIn} variant="secondary" className="w-full">
-                Residences
+                Log in
               </Button>
-              <Button href={publicAuthLinks.getStarted} className="w-full">
-                Families
+              <Button href={publicAuthLinks.register} className="w-full">
+                Register
               </Button>
               <button
                 type="button"
@@ -179,10 +179,10 @@ export function PublicHeader() {
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <Button href={publicAuthLinks.signIn} size="sm" variant="ghost">
-              Residences
+              Log in
             </Button>
-            <Button href={publicAuthLinks.getStarted} size="sm" className="shadow-xs">
-              Families
+            <Button href={publicAuthLinks.register} size="sm" className="shadow-xs">
+              Register
             </Button>
           </div>
 

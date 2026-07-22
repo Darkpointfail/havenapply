@@ -22,13 +22,13 @@ import {
   resetPasswordWithToken,
   signInAccount,
   signOutAccount,
-  signUpCommunityAccount,
-  signUpFamilyAccount,
+  signUpWithRoleAccount,
   writeSession,
   type AuthResult,
   type SessionUser,
   type SignUpCommunityInput,
   type SignUpFamilyInput,
+  type SignUpWithRoleInput,
   type UserRole,
 } from "@/lib/auth-store";
 import {
@@ -51,8 +51,7 @@ import {
   sessionFromSupabaseUser,
   signInSupabase,
   signOutSupabase,
-  signUpCommunitySupabase,
-  signUpFamilySupabase,
+  signUpWithRoleSupabase,
   type SignUpAuthResult,
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
@@ -67,6 +66,7 @@ type AuthContextValue = {
   ready: boolean;
   signUpFamily: (input: SignUpFamilyInput) => Promise<SignUpAuthResult>;
   signUpCommunity: (input: SignUpCommunityInput) => Promise<SignUpAuthResult>;
+  signUp: (input: SignUpWithRoleInput) => Promise<SignUpAuthResult>;
   signIn: (input: {
     email: string;
     password: string;
@@ -156,54 +156,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [remote]);
 
-  const signUpFamily = useCallback(
-    async (input: SignUpFamilyInput) => {
-      if (AUTH_OPEN_ACCESS) {
-        setUser(DEMO_FAMILY_USER);
-        return { ok: true as const, data: DEMO_FAMILY_USER, pendingConfirmation: false };
-      }
+  const signUp = useCallback(
+    async (input: SignUpWithRoleInput) => {
+      // Always persist real accounts (and role metadata) even when open-access demo is on.
       if (remote) {
-        const result = await signUpFamilySupabase(input);
+        const result = await signUpWithRoleSupabase(input);
         if (result.ok && !result.pendingConfirmation) setUser(result.data);
         return result;
       }
-      const result = await signUpFamilyAccount(input);
+      const result = await signUpWithRoleAccount(input);
       if (result.ok) setUser(result.data);
       return result;
     },
     [remote],
   );
 
+  const signUpFamily = useCallback(
+    async (input: SignUpFamilyInput) =>
+      signUp({
+        role: "family",
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        password: input.password,
+        acceptedTerms: input.acceptedTerms,
+      }),
+    [signUp],
+  );
+
   const signUpCommunity = useCallback(
-    async (input: SignUpCommunityInput) => {
-      if (AUTH_OPEN_ACCESS) {
-        setUser(DEMO_COMMUNITY_USER);
-        return { ok: true as const, data: DEMO_COMMUNITY_USER, pendingConfirmation: false };
-      }
-      if (remote) {
-        const result = await signUpCommunitySupabase(input);
-        if (result.ok && !result.pendingConfirmation) setUser(result.data);
-        return result;
-      }
-      const result = await signUpCommunityAccount(input);
-      if (result.ok) setUser(result.data);
-      return result;
-    },
-    [remote],
+    async (input: SignUpCommunityInput) =>
+      signUp({
+        role: "facility",
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        password: input.password,
+        organization: input.organization,
+        jobTitle: input.jobTitle,
+        phone: input.phone,
+        acceptedTerms: input.acceptedTerms,
+      }),
+    [signUp],
   );
 
   const signIn = useCallback(
     async (input: { email: string; password: string; expectedRole?: UserRole }) => {
-      if (AUTH_OPEN_ACCESS) {
-        const demo =
-          input.expectedRole === "community" ? DEMO_COMMUNITY_USER : DEMO_FAMILY_USER;
-        setUser(demo);
-        return { ok: true as const, data: demo };
-      }
+      // Prefer real auth when Supabase is configured, even if open-access demo is on.
       if (remote) {
         const result = await signInSupabase(input);
         if (result.ok) setUser(result.data);
         return result;
+      }
+      if (AUTH_OPEN_ACCESS) {
+        const demo =
+          input.expectedRole === "community" || input.expectedRole === "facility"
+            ? DEMO_COMMUNITY_USER
+            : DEMO_FAMILY_USER;
+        setUser(demo);
+        return { ok: true as const, data: demo };
       }
       const result = await signInAccount(input);
       if (result.ok) setUser(result.data);
@@ -287,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       signUpFamily,
       signUpCommunity,
+      signUp,
       signIn,
       signOut,
       confirmEmail,
@@ -304,6 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       signUpFamily,
       signUpCommunity,
+      signUp,
       signIn,
       signOut,
       confirmEmail,

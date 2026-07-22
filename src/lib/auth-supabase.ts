@@ -7,8 +7,10 @@ import type {
   SessionUser,
   SignUpCommunityInput,
   SignUpFamilyInput,
+  SignUpWithRoleInput,
   UserRole,
 } from "@/lib/auth-store";
+import { isFacilityRole, parseUserRole } from "@/lib/auth-store";
 import { createClient } from "@/lib/supabase/client";
 
 export type SignUpAuthResult = AuthResult<SessionUser> & {
@@ -35,11 +37,7 @@ function metaBool(meta: Record<string, unknown>, key: string) {
 
 export function sessionFromSupabaseUser(user: User): SessionUser | null {
   const meta = (user.user_metadata || {}) as Record<string, unknown>;
-  const roleRaw = meta.role;
-  const role: UserRole | null =
-    roleRaw === "family" || roleRaw === "community" || roleRaw === "internal"
-      ? roleRaw
-      : null;
+  const role = parseUserRole(meta.role);
   if (!role) return null;
 
   const firstName = metaString(meta, "first_name");
@@ -56,14 +54,13 @@ export function sessionFromSupabaseUser(user: User): SessionUser | null {
     organization: metaString(meta, "organization") || undefined,
     jobTitle: metaString(meta, "job_title") || undefined,
     emailConfirmed: Boolean(user.email_confirmed_at),
-    communityStatus:
-      role === "community"
-        ? communityStatus === "pending" ||
-          communityStatus === "verified" ||
-          communityStatus === "rejected"
-          ? communityStatus
-          : "verified"
-        : undefined,
+    communityStatus: isFacilityRole(role)
+      ? communityStatus === "pending" ||
+        communityStatus === "verified" ||
+        communityStatus === "rejected"
+        ? communityStatus
+        : "verified"
+      : undefined,
     onboardingCompleted: metaBool(meta, "onboarding_completed"),
   };
 }
@@ -137,74 +134,22 @@ function sessionFromSignup(
     organization: fallback.organization,
     jobTitle: fallback.jobTitle,
     emailConfirmed: Boolean(user.email_confirmed_at),
-    communityStatus: fallback.role === "community" ? fallback.communityStatus ?? "verified" : undefined,
+    communityStatus: isFacilityRole(fallback.role)
+      ? fallback.communityStatus ?? "verified"
+      : undefined,
     onboardingCompleted: Boolean(fallback.onboardingCompleted),
   };
 }
 
-export async function signUpFamilySupabase(
-  input: SignUpFamilyInput,
+export async function signUpWithRoleSupabase(
+  input: SignUpWithRoleInput,
 ): Promise<SignUpAuthResult> {
   if (!input.acceptedTerms) return { ok: false, error: AUTH_MESSAGES.acceptTerms };
   if (!input.firstName.trim() || !input.lastName.trim() || !input.email.trim()) {
     return { ok: false, error: AUTH_MESSAGES.required };
   }
-  if (!isValidPassword(input.password)) {
-    return { ok: false, error: AUTH_MESSAGES.weakPassword };
-  }
-
-  const supabase = createClient();
-  const email = normalizeEmail(input.email);
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password: input.password,
-    options: {
-      emailRedirectTo: `${siteOrigin()}/auth/callback?next=/start`,
-      data: {
-        first_name: input.firstName.trim(),
-        last_name: input.lastName.trim(),
-        role: "family",
-        onboarding_completed: false,
-      },
-    },
-  });
-
-  if (error) {
-    console.error("[auth] family signup failed:", error.message, error);
-    return { ok: false, error: mapAuthError(error.message) };
-  }
-  if (!data.user) return { ok: false, error: AUTH_MESSAGES.generic };
-
-  // Duplicate email: Supabase may return a user with empty identities
-  if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    return { ok: false, error: AUTH_MESSAGES.emailTaken };
-  }
-
-  const sessionUser = sessionFromSignup(data.user, {
-    email,
-    firstName: input.firstName.trim(),
-    lastName: input.lastName.trim(),
-    role: "family",
-    onboardingCompleted: false,
-  });
-
-  if (!data.session) {
-    return { ok: true, data: sessionUser, pendingConfirmation: true };
-  }
-  return { ok: true, data: sessionUser };
-}
-
-export async function signUpCommunitySupabase(
-  input: SignUpCommunityInput,
-): Promise<SignUpAuthResult> {
-  if (!input.acceptedTerms) return { ok: false, error: AUTH_MESSAGES.acceptTerms };
-  if (
-    !input.firstName.trim() ||
-    !input.lastName.trim() ||
-    !input.email.trim() ||
-    !input.organization.trim() ||
-    !input.jobTitle.trim()
-  ) {
+  const needsOrg = input.role === "professional" || input.role === "facility";
+  if (needsOrg && (!input.organization?.trim() || !input.jobTitle?.trim())) {
     return { ok: false, error: AUTH_MESSAGES.required };
   }
   if (!isValidPassword(input.password)) {
@@ -213,26 +158,40 @@ export async function signUpCommunitySupabase(
 
   const supabase = createClient();
   const email = normalizeEmail(input.email);
+  const nextPath =
+    input.role === "facility"
+      ? "/community/profile?welcome=1"
+      : input.role === "professional"
+        ? "/family/dashboard"
+        : "/start";
+
+  const metadata: Record<string, unknown> = {
+    first_name: input.firstName.trim(),
+    last_name: input.lastName.trim(),
+    role: input.role,
+    onboarding_completed: input.role !== "family",
+  };
+
+  if (needsOrg) {
+    metadata.organization = input.organization!.trim();
+    metadata.job_title = input.jobTitle!.trim();
+    metadata.phone = input.phone?.trim() || "";
+  }
+  if (input.role === "facility") {
+    metadata.community_status = "verified";
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password: input.password,
     options: {
-      emailRedirectTo: `${siteOrigin()}/auth/callback?next=/community/profile?welcome=1`,
-      data: {
-        first_name: input.firstName.trim(),
-        last_name: input.lastName.trim(),
-        role: "community",
-        organization: input.organization.trim(),
-        job_title: input.jobTitle.trim(),
-        phone: input.phone?.trim() || "",
-        community_status: "verified",
-        onboarding_completed: true,
-      },
+      emailRedirectTo: `${siteOrigin()}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      data: metadata,
     },
   });
 
   if (error) {
-    console.error("[auth] community signup failed:", error.message, error);
+    console.error("[auth] signup failed:", input.role, error.message, error);
     return { ok: false, error: mapAuthError(error.message) };
   }
   if (!data.user) return { ok: false, error: AUTH_MESSAGES.generic };
@@ -245,17 +204,46 @@ export async function signUpCommunitySupabase(
     email,
     firstName: input.firstName.trim(),
     lastName: input.lastName.trim(),
-    role: "community",
-    organization: input.organization.trim(),
-    jobTitle: input.jobTitle.trim(),
-    communityStatus: "verified",
-    onboardingCompleted: true,
+    role: input.role,
+    organization: input.organization?.trim(),
+    jobTitle: input.jobTitle?.trim(),
+    communityStatus: input.role === "facility" ? "verified" : undefined,
+    onboardingCompleted: input.role !== "family",
   });
 
   if (!data.session) {
     return { ok: true, data: sessionUser, pendingConfirmation: true };
   }
   return { ok: true, data: sessionUser };
+}
+
+export async function signUpFamilySupabase(
+  input: SignUpFamilyInput,
+): Promise<SignUpAuthResult> {
+  return signUpWithRoleSupabase({
+    role: "family",
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    password: input.password,
+    acceptedTerms: input.acceptedTerms,
+  });
+}
+
+export async function signUpCommunitySupabase(
+  input: SignUpCommunityInput,
+): Promise<SignUpAuthResult> {
+  return signUpWithRoleSupabase({
+    role: "facility",
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    password: input.password,
+    organization: input.organization,
+    jobTitle: input.jobTitle,
+    phone: input.phone,
+    acceptedTerms: input.acceptedTerms,
+  });
 }
 
 export async function signInSupabase(input: {
@@ -277,7 +265,13 @@ export async function signInSupabase(input: {
     await supabase.auth.signOut();
     return { ok: false, error: AUTH_MESSAGES.accessDenied };
   }
-  if (input.expectedRole && sessionUser.role !== input.expectedRole) {
+  // Accept legacy community accounts when facility is expected (and vice versa)
+  const roleMatches =
+    !input.expectedRole ||
+    sessionUser.role === input.expectedRole ||
+    (input.expectedRole === "facility" && sessionUser.role === "community") ||
+    (input.expectedRole === "community" && sessionUser.role === "facility");
+  if (!roleMatches) {
     await supabase.auth.signOut();
     return { ok: false, error: AUTH_MESSAGES.accessDenied };
   }

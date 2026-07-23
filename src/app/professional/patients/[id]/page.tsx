@@ -52,14 +52,25 @@ const careFields = [
   ["notes", "Notes"],
 ] as const;
 
+const fieldClass =
+  "mt-1 w-full rounded-lg border border-line bg-surface px-2.5 py-2 text-sm outline-none focus:border-brand";
+
 function PatientDetailInner() {
   const { id } = useParams<{ id: string }>();
   const params = useSearchParams();
-  const { getPatient, addMessage } = useProfessional();
+  const {
+    getPatient,
+    addMessage,
+    updatePatient,
+    updatePatientCare,
+    updatePatientChecklist,
+    updatePatientStatus,
+  } = useProfessional();
   const patient = getPatient(id);
   const initialTab = (params.get("tab") as Tab | null) || "overview";
   const [tab, setTab] = useState<Tab>(tabs.includes(initialTab) ? initialTab : "overview");
   const [draft, setDraft] = useState("");
+  const [savedNote, setSavedNote] = useState<string | null>(null);
 
   const missing = useMemo(() => (patient ? missingChecklist(patient) : []), [patient]);
 
@@ -73,6 +84,11 @@ function PatientDetailInner() {
       </div>
     );
   }
+
+  const flash = (msg: string) => {
+    setSavedNote(msg);
+    window.setTimeout(() => setSavedNote(null), 1800);
+  };
 
   const onSend = (e: FormEvent) => {
     e.preventDefault();
@@ -120,33 +136,79 @@ function PatientDetailInner() {
         ))}
       </div>
 
+      {savedNote ? (
+        <p className="mt-4 rounded-xl bg-success-soft px-3 py-2 text-sm font-medium text-success">
+          {savedNote}
+        </p>
+      ) : null}
+
       {tab === "overview" ? (
         <div className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-              Placement status
-            </p>
-            <div className="mt-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                Placement status
+              </p>
               <Badge tone={statusTone(patient.status)} className="text-sm">
                 {PATIENT_STATUS_LABEL[patient.status]}
               </Badge>
             </div>
-            <p className="mt-4 text-sm text-ink-muted">{patient.nextAction}</p>
-            <dl className="mt-6 space-y-3 text-sm">
-              {[
-                ["Hospital", patient.hospital],
-                ["Unit", patient.unit || "—"],
-                ["Professional", patient.assignedProfessional],
-                ["Emergency", `${patient.emergencyContact} · ${patient.emergencyPhone}`],
-                ["Family", `${patient.familyContact} (${patient.familyRelation})`],
-                ["Language", patient.language],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 border-b border-line/70 pb-2">
-                  <dt className="text-ink-faint">{k}</dt>
-                  <dd className="text-right font-medium text-ink">{v}</dd>
-                </div>
+            <label className="mt-4 block text-sm font-medium text-ink">
+              Status
+              <select
+                className={fieldClass}
+                value={patient.status}
+                onChange={(e) => {
+                  updatePatientStatus(patient.id, e.target.value as typeof patient.status);
+                  flash("Status updated");
+                }}
+              >
+                {(Object.keys(PATIENT_STATUS_LABEL) as Array<keyof typeof PATIENT_STATUS_LABEL>).map(
+                  (s) => (
+                    <option key={s} value={s}>
+                      {PATIENT_STATUS_LABEL[s]}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label className="mt-3 block text-sm font-medium text-ink">
+              Next action
+              <input
+                className={fieldClass}
+                value={patient.nextAction}
+                onChange={(e) => updatePatient(patient.id, { nextAction: e.target.value })}
+                onBlur={() => flash("Saved")}
+              />
+            </label>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {(
+                [
+                  ["firstName", "First name"],
+                  ["lastName", "Last name"],
+                  ["hospital", "Hospital"],
+                  ["unit", "Unit"],
+                  ["currentLocation", "Current location"],
+                  ["language", "Language"],
+                  ["assignedProfessional", "Professional"],
+                  ["emergencyContact", "Emergency contact"],
+                  ["emergencyPhone", "Emergency phone"],
+                  ["familyContact", "Family contact"],
+                  ["familyRelation", "Family relation"],
+                  ["primaryCommunity", "Primary community"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block text-sm font-medium text-ink">
+                  {label}
+                  <input
+                    className={fieldClass}
+                    value={patient[key] || ""}
+                    onChange={(e) => updatePatient(patient.id, { [key]: e.target.value })}
+                    onBlur={() => flash("Saved")}
+                  />
+                </label>
               ))}
-            </dl>
+            </div>
           </Card>
 
           <Card className="p-6">
@@ -167,21 +229,21 @@ function PatientDetailInner() {
               {(Object.keys(CHECKLIST_LABEL) as ChecklistKey[]).map((key) => {
                 const done = patient.checklist[key];
                 return (
-                  <li
-                    key={key}
-                    className="flex items-center justify-between rounded-xl bg-bg-soft/80 px-3.5 py-2.5 text-sm"
-                  >
-                    <span className={done ? "text-ink" : "text-ink-muted"}>
-                      {CHECKLIST_LABEL[key]}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs font-semibold",
-                        done ? "text-success" : "text-warn",
-                      )}
-                    >
-                      {done ? "Complete" : "Missing"}
-                    </span>
+                  <li key={key}>
+                    <label className="flex cursor-pointer items-center justify-between rounded-xl bg-bg-soft/80 px-3.5 py-2.5 text-sm">
+                      <span className={done ? "text-ink" : "text-ink-muted"}>
+                        {CHECKLIST_LABEL[key]}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={done}
+                        onChange={(e) => {
+                          updatePatientChecklist(patient.id, key, e.target.checked);
+                          flash("Checklist updated");
+                        }}
+                        className="h-4 w-4 accent-[var(--brand)]"
+                      />
+                    </label>
                   </li>
                 );
               })}
@@ -194,17 +256,22 @@ function PatientDetailInner() {
         <Card className="mt-8 p-6">
           <h2 className="text-lg font-semibold">Care profile</h2>
           <p className="mt-1 text-sm text-ink-muted">
-            Structured fields for quick community review.
+            Edit structured fields anytime. Nothing is shared until you submit an application.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {careFields.map(([key, label]) => (
-              <div
+              <label
                 key={key}
-                className="rounded-xl border border-line bg-bg-soft/50 px-3.5 py-3"
+                className="block rounded-xl border border-line bg-bg-soft/50 px-3.5 py-3 text-sm"
               >
-                <p className="text-xs font-medium text-ink-faint">{label}</p>
-                <p className="mt-1 text-sm text-ink">{patient.care[key] || "—"}</p>
-              </div>
+                <span className="text-xs font-medium text-ink-faint">{label}</span>
+                <input
+                  className={fieldClass}
+                  value={patient.care[key] || ""}
+                  onChange={(e) => updatePatientCare(patient.id, { [key]: e.target.value })}
+                  onBlur={() => flash("Care profile saved")}
+                />
+              </label>
             ))}
           </div>
         </Card>

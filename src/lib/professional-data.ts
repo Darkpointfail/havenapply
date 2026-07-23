@@ -135,6 +135,32 @@ export type ProfessionalOrganization = {
   units: string[];
 };
 
+export type ProfessionalProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  jobTitle: string;
+  phone: string;
+};
+
+/** Admissions / facility contacts maintained by care professionals. */
+export type FacilityContact = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  notes: string;
+  /** Residence ids from the communities catalog */
+  facilityIds: string[];
+  updatedAt: string;
+};
+
+export function contactName(c: FacilityContact) {
+  return `${c.firstName} ${c.lastName}`.trim();
+}
+
 export const PATIENT_STATUS_LABEL: Record<PatientStatus, string> = {
   building_profile: "Building profile",
   waiting_documents: "Waiting for documents",
@@ -253,6 +279,50 @@ export const SEED_ORGANIZATION: ProfessionalOrganization = {
   phone: "(512) 555-0140",
   units: ["Med-Surg 4B", "Rehab 2A", "Geriatrics", "ED Observation"],
 };
+
+export const SEED_PROFILE: ProfessionalProfile = {
+  firstName: "Sam",
+  lastName: "Rivera",
+  email: "demo.care@havenapply.local",
+  jobTitle: "Discharge Planner",
+  phone: "(512) 555-0101",
+};
+
+export const SEED_CONTACTS: FacilityContact[] = [
+  {
+    id: "ct_jordan",
+    firstName: "Jordan",
+    lastName: "Lee",
+    jobTitle: "Director of Admissions",
+    email: "jordan.lee@maplegrove.example",
+    phone: "(512) 555-2201",
+    notes: "Best reached mornings. Prefers complete med lists upfront.",
+    facilityIds: ["maple-grove"],
+    updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    id: "ct_priya",
+    firstName: "Priya",
+    lastName: "Shah",
+    jobTitle: "Memory Care Admissions",
+    email: "priya.shah@cedar.example",
+    phone: "(512) 555-3310",
+    notes: "Handles clinical review for memory-care referrals.",
+    facilityIds: ["cedar-memory"],
+    updatedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+  },
+  {
+    id: "ct_thomas",
+    firstName: "Thomas",
+    lastName: "Berger",
+    jobTitle: "Admissions Nurse",
+    email: "t.berger@lakeside.example",
+    phone: "(214) 555-4488",
+    notes: "Schedules nursing assessments for Lakeside.",
+    facilityIds: ["lakeside-haven"],
+    updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+  },
+];
 
 export const SEED_PATIENTS: Patient[] = [
   {

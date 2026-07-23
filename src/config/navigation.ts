@@ -99,14 +99,13 @@ export const familyMobileNav: NavItem[] = [
 
 /**
  * Community portal, intelligent admissions inbox.
- * Admissions · Messages · Community · Team · Settings
+ * Admissions · Messages · Community · Team
  */
 export const communityNav: NavItem[] = [
   { href: "/community/dashboard", label: "Admissions" },
   { href: "/community/messages", label: "Messages" },
   { href: "/community/profile", label: "Community" },
   { href: "/community/team", label: "Team" },
-  { href: "/community/settings", label: "Settings" },
 ];
 
 /** Flat nav only, no nested groups for the admissions portal */
@@ -173,7 +172,7 @@ export const internalNavGroups: NavGroup[] = [
 
 /**
  * Care professional portal — discharge planners, social workers, care coordinators.
- * Focus: patients, placement status, applications, messages.
+ * Focus: patients, placement status, applications, messages, facility contacts.
  */
 export const professionalNav: NavItem[] = [
   { href: "/professional/dashboard", label: "Dashboard" },
@@ -181,8 +180,8 @@ export const professionalNav: NavItem[] = [
   { href: "/professional/applications", label: "Applications" },
   { href: "/professional/messages", label: "Messages" },
   { href: "/professional/communities", label: "Communities" },
+  { href: "/professional/contacts", label: "Contacts" },
   { href: "/professional/organization", label: "My Organization" },
-  { href: "/professional/settings", label: "Settings" },
 ];
 
 export const familyHome = "/family/dashboard";

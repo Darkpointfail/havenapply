@@ -51,7 +51,7 @@ async function signInAfterCreate(
   attempts = 3,
 ): Promise<{ user: User; errorMessage?: string; errorCode?: string } | { user: null; errorMessage: string; errorCode?: string }> {
   const supabase = createClient();
-  let lastMessage = AUTH_MESSAGES.generic;
+  let lastMessage: string = AUTH_MESSAGES.generic;
   let lastCode: string | undefined;
 
   for (let i = 0; i < attempts; i++) {

@@ -158,9 +158,6 @@ export default function ForCommunitiesPage() {
               <Button href="/community/dashboard" size="lg">
                 Create a community account
               </Button>
-              <Button href="/how-it-works" size="lg" variant="secondary">
-                See how it works
-              </Button>
             </div>
             <p className="mt-5 text-sm text-ink-faint">
               Receive. Review. Respond. Nothing else.
@@ -336,10 +333,6 @@ export default function ForCommunitiesPage() {
           </p>
           <p className="mt-8 text-sm text-ink-muted">
             Also see{" "}
-            <Link href="/how-it-works" className="font-medium text-brand hover:underline">
-              How it works
-            </Link>{" "}
-            and{" "}
             <Link href="/for-families" className="font-medium text-brand hover:underline">
               For families
             </Link>

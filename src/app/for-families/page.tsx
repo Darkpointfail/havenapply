@@ -170,9 +170,6 @@ export default function ForFamiliesPage() {
               <Button href="/family/dashboard" size="lg">
                 Create a family profile
               </Button>
-              <Button href="/how-it-works" size="lg" variant="secondary">
-                See how it works
-              </Button>
             </div>
             <p className="mt-5 text-sm text-ink-faint">
               One profile. Multiple applications. Your family stays in control.
@@ -356,10 +353,6 @@ export default function ForFamiliesPage() {
           </p>
           <p className="mt-8 text-sm text-ink-muted">
             Also see{" "}
-            <Link href="/how-it-works" className="font-medium text-brand hover:underline">
-              How it works
-            </Link>{" "}
-            and{" "}
             <Link href="/for-communities" className="font-medium text-brand hover:underline">
               For communities
             </Link>

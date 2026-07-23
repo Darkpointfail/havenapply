@@ -128,7 +128,7 @@ function emptyFamilyData(): FamilyData {
 function demoFamilyData(): FamilyData {
   const senior: SeniorProfile = {
     ...emptySeniorProfile(),
-    filledBy: "I am a family member",
+    filledBy: "I'm a family member or friend",
     relationship: "Father",
     seniorParticipates: "sometimes",
     hasAuthorization: "yes",

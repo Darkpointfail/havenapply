@@ -26,11 +26,15 @@ import { dossierReadyForApply, toDisplayApplication } from "@/lib/family-applica
 import { useMessaging } from "@/lib/messaging-store";
 import {
   type SeniorProfile,
+  isSelfApplicant,
 } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
 
 /** Kinship phrase for the welcome message, without repeating the name. */
 function lovedOnePhrase(senior: SeniorProfile): string {
+  if (isSelfApplicant(senior)) {
+    return "you";
+  }
   const rel = (senior.relationship || "").toLowerCase();
   const gender = (senior.gender || "").toLowerCase();
   const isFemale =
@@ -44,9 +48,6 @@ function lovedOnePhrase(senior: SeniorProfile): string {
     gender === "m" ||
     gender.includes("homme");
 
-  if (rel.includes("self") || rel.includes("senior")) {
-    return "your profile";
-  }
   if (rel.includes("mother") || rel === "mom") return "your mother";
   if (rel.includes("father") || rel === "dad") return "your father";
   if (rel === "daughter" || rel === "son") {
@@ -99,6 +100,7 @@ export default function FamilyDashboardPage() {
   const senior = data.senior;
   const firstName = user?.firstName || user?.name?.split(" ")[0] || "";
   const careDone = Boolean(data.careNeeds.completedAt);
+  const forSelf = isSelfApplicant(senior);
   const lovedOne = lovedOnePhrase(senior);
   const needsSetup = !data.seniorCreated || !user?.onboardingCompleted;
   const greeting = firstName ? `Hi ${firstName}` : "Hi";
@@ -122,19 +124,26 @@ export default function FamilyDashboardPage() {
     const docsDone = data.documents.length > 0;
     const discovered = data.savedFavorites.length > 0 || activeApps.length > 0;
     const applied = activeApps.length > 0;
+    const forSelf = isSelfApplicant(senior);
+
+    const profileTitle = needsSetup
+      ? "Create a care profile"
+      : forSelf
+        ? "Complete your care profile"
+        : `Complete the profile for ${lovedOne}`;
+
+    const profileDetail = needsSetup
+      ? "For yourself or a loved one—a few questions so Haven understands the care needs."
+      : careDone
+        ? "Add the last details for more accurate applications."
+        : "Fill in care needs to better match communities.";
 
     return [
       {
         id: "profile",
-        title: needsSetup
-          ? `Create a profile for ${lovedOne}`
-          : `Complete the profile for ${lovedOne}`,
-        detail: needsSetup
-          ? "A few questions so Haven understands the situation and care needs."
-          : careDone
-            ? "Add the last details for more accurate applications."
-            : "Fill in care needs to better match communities.",
-        href: needsSetup ? "/start" : "/family/profile",
+        title: profileTitle,
+        detail: profileDetail,
+        href: needsSetup ? "/onboarding" : "/family/profile",
         done: profileDone && careDone,
         minutes: needsSetup ? 15 : 8,
       },
@@ -149,7 +158,9 @@ export default function FamilyDashboardPage() {
       {
         id: "discover",
         title: "Browse matching communities",
-        detail: `Suggestions based on the profile for ${lovedOne}.`,
+        detail: forSelf
+          ? "Suggestions based on your profile."
+          : `Suggestions based on the profile for ${lovedOne}.`,
         href: "/family/find-communities",
         done: discovered,
         minutes: 10,
@@ -172,6 +183,7 @@ export default function FamilyDashboardPage() {
     needsSetup,
     lovedOne,
     careDone,
+    senior,
   ]);
 
   const remaining = steps.filter((s) => !s.done);
@@ -224,8 +236,17 @@ export default function FamilyDashboardPage() {
 
   /* ─── Tracking mode (journey complete) ─── */
   if (journeyComplete) {
-    const actionHeadline =
-      needsActionApps.length > 0
+    const actionHeadline = forSelf
+      ? needsActionApps.length > 0
+        ? needsActionApps.length === 1
+          ? "An application needs your response"
+          : `${needsActionApps.length} applications need your attention`
+        : underReview.length > 0
+          ? "Tracking your applications"
+          : decided.length > 0
+            ? "Updates on your applications"
+            : "Here’s where your applications stand"
+      : needsActionApps.length > 0
         ? needsActionApps.length === 1
           ? `An application for ${lovedOne} needs your response`
           : `${needsActionApps.length} applications for ${lovedOne} need your attention`
@@ -332,7 +353,9 @@ export default function FamilyDashboardPage() {
                   Applications
                 </h2>
                 <p className="mt-1 text-lg font-semibold tracking-tight">
-                  {activeApps.length} for {lovedOne}
+                  {forSelf
+                    ? `${activeApps.length} application${activeApps.length === 1 ? "" : "s"}`
+                    : `${activeApps.length} for ${lovedOne}`}
                 </p>
               </div>
               <Link
@@ -419,7 +442,7 @@ export default function FamilyDashboardPage() {
                     Keep going
                   </h2>
                   <p className="mt-1 text-lg font-semibold tracking-tight">
-                    More communities for {lovedOne}
+                    {forSelf ? "More communities for you" : `More communities for ${lovedOne}`}
                   </p>
                 </div>
                 <Link
@@ -507,13 +530,21 @@ export default function FamilyDashboardPage() {
 
   /* ─── Journey mode (not finished yet) ─── */
   const profileIncomplete = !steps[0].done;
-  const headline = profileIncomplete
-    ? remaining.length <= 1
-      ? `One more step for ${lovedOne}`
-      : `A few steps to finish the profile for ${lovedOne}`
-    : dossierComplete
-      ? `The profile for ${lovedOne} is ready, explore communities`
-      : `Keep building the dossier for ${lovedOne}`;
+  const headline = forSelf
+    ? profileIncomplete
+      ? remaining.length <= 1
+        ? "One more step on your profile"
+        : "A few steps to finish your care profile"
+      : dossierComplete
+        ? "Your profile is ready—explore communities"
+        : "Keep building your care dossier"
+    : profileIncomplete
+      ? remaining.length <= 1
+        ? `One more step for ${lovedOne}`
+        : `A few steps to finish the profile for ${lovedOne}`
+      : dossierComplete
+        ? `The profile for ${lovedOne} is ready, explore communities`
+        : `Keep building the dossier for ${lovedOne}`;
 
   return (
     <div className="min-h-full">
@@ -618,7 +649,7 @@ export default function FamilyDashboardPage() {
                     Suggestions
                   </h2>
                   <p className="mt-1 text-lg font-semibold tracking-tight">
-                    Communities for {lovedOne}
+                    {forSelf ? "Communities for you" : `Communities for ${lovedOne}`}
                   </p>
                 </div>
                 <Link
@@ -692,7 +723,9 @@ export default function FamilyDashboardPage() {
                 <div>
                   <p className="font-semibold">Need a hand?</p>
                   <p className="mt-0.5 text-sm text-ink-muted">
-                    Ask Haven for the next step for {lovedOne}.
+                    {forSelf
+                      ? "Ask Haven for the next step on your profile."
+                      : `Ask Haven for the next step for ${lovedOne}.`}
                   </p>
                 </div>
               </div>

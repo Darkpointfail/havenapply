@@ -21,8 +21,10 @@ import { CommunitiesMap } from "@/components/residences/CommunitiesMap";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/lib/auth";
 import { computeCompatibility } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
+import { compareCommunitiesHref } from "@/lib/permissions";
 import type { CommunityDetail } from "@/lib/residence-detail";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -64,11 +66,14 @@ function SectionTitle({
 }
 
 export function CommunityDetailView({ community }: { community: CommunityDetail }) {
+  const { user } = useAuth();
   const { data, toggleSavedCommunity, toggleCompareCommunity } = useFamilyData();
   const [slots, setSlots] = useState<string[]>([]);
   const [contactMode, setContactMode] = useState<"message" | "call" | "tour">("tour");
   const [sent, setSent] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const backHref =
+    user?.role === "professional" ? "/professional/communities" : "/find-senior-living";
 
   const match = useMemo(
     () =>
@@ -83,11 +88,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
   const saved = data.savedFavorites.some((f) => f.communityId === community.id);
   const comparing = data.compareIds.includes(community.id);
   const avail = availBadge(community);
-  const compareHref = `/family/compare?ids=${[
-    ...new Set([...data.compareIds, community.id]),
-  ]
-    .slice(0, 4)
-    .join(",")}`;
+  const compareHref = compareCommunitiesHref([...data.compareIds, community.id]);
 
   const toggleSlot = (id: string) => {
     setSlots((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -102,7 +103,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
     <div className="pb-28">
       <div className="mx-auto max-w-7xl px-5 pt-6 md:px-8">
         <Link
-          href="/family/find-communities"
+          href={backHref}
           className="inline-flex items-center gap-2 text-sm text-ink-muted transition hover:text-ink"
         >
           <ArrowLeft size={16} /> Back to search

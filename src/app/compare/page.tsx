@@ -11,8 +11,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { getResidence, residences } from "@/data/residences";
+import { useAuth } from "@/lib/auth";
 import { buildCompareRows, type CompareCellTone } from "@/lib/compare-communities";
 import { useFamilyData } from "@/lib/family-data";
+import {
+  compareCommunitiesHref,
+  savedCommunitiesHref,
+} from "@/lib/permissions";
 import { cn, formatCurrency } from "@/lib/utils";
 
 function toneClass(tone: CompareCellTone) {
@@ -33,8 +38,13 @@ function toneClass(tone: CompareCellTone) {
 function CompareInner() {
   const params = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const { data, setCompareIds, toggleSavedCommunity } = useFamilyData();
   const [exported, setExported] = useState(false);
+  const isProfessional = user?.role === "professional";
+  const browseHref = isProfessional ? "/professional/communities" : "/find-senior-living";
+  const portalLabel = isProfessional ? "Care professional" : "Family";
+  const portalHome = isProfessional ? "/professional/dashboard" : "/family/dashboard";
 
   const idsFromUrl = (params.get("ids") || "")
     .split(",")
@@ -64,8 +74,7 @@ function CompareInner() {
 
   const syncUrl = (nextIds: string[]) => {
     setCompareIds(nextIds);
-    const q = nextIds.length ? `?ids=${nextIds.join(",")}` : "";
-    router.replace(`/family/compare${q}`);
+    router.replace(compareCommunitiesHref(nextIds));
   };
 
   const removeCol = (id: string) => {
@@ -116,10 +125,12 @@ function CompareInner() {
           Save communities or tap Compare on search results, up to four at a time.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button href="/family/saved" variant="secondary">
-            Open saved
-          </Button>
-          <Button href="/family/find-communities">Browse communities</Button>
+          {!isProfessional ? (
+            <Button href={savedCommunitiesHref()} variant="secondary">
+              Open saved
+            </Button>
+          ) : null}
+          <Button href={browseHref}>Browse communities</Button>
         </div>
       </div>
     );
@@ -132,20 +143,22 @@ function CompareInner() {
           title="Compare communities"
           description="Side-by-side view of up to four communities. Highlights show best fits, gaps, and missing data."
           breadcrumbs={[
-            { label: "Family", href: "/family/dashboard" },
+            { label: portalLabel, href: portalHome },
             { label: "Compare" },
           ]}
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button href="/family/saved" variant="secondary">
-                From saved
-              </Button>
-              {cols[0] ? (
-                <Button href={`/family/apply/${cols[0].id}`}>
-                  Apply on profile
+              {!isProfessional ? (
+                <Button href={savedCommunitiesHref()} variant="secondary">
+                  From saved
                 </Button>
               ) : null}
-              <Button href="/family/find-communities" variant="secondary">
+              {cols[0] ? (
+                <ApplyButton residenceId={cols[0].id} size="md">
+                  Apply on profile
+                </ApplyButton>
+              ) : null}
+              <Button href={browseHref} variant="secondary">
                 Add from search
               </Button>
               <Button type="button" variant="soft" onClick={exportText}>

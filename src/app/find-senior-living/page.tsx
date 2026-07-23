@@ -22,7 +22,13 @@ import {
   type SearchFilters,
 } from "@/lib/community-match";
 import { describeFilters, parseSearchIntent } from "@/lib/assistant/search-intent";
+import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
+import {
+  applicationsHrefForUser,
+  compareCommunitiesHref,
+  savedCommunitiesHref,
+} from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "list" | "map";
@@ -119,8 +125,10 @@ export default function FindCommunitiesPage() {
 }
 
 function FindCommunitiesInner() {
+  const { user } = useAuth();
   const { data } = useFamilyData();
   const searchParams = useSearchParams();
+  const isProfessional = user?.role === "professional";
 
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const base = emptySearchFilters();
@@ -196,10 +204,7 @@ function FindCommunitiesInner() {
 
   const resetFilters = () => setFilters(emptySearchFilters());
 
-  const compareLink =
-    data.compareIds.length > 0
-      ? `/family/compare?ids=${data.compareIds.join(",")}`
-      : "/family/compare";
+  const compareLink = compareCommunitiesHref(data.compareIds);
 
   return (
     <div className="mx-auto max-w-[1280px] px-5 py-6 md:px-8 md:py-8">
@@ -213,12 +218,22 @@ function FindCommunitiesInner() {
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <Button href="/family/saved" variant="ghost" size="sm">
-            Saved
-          </Button>
-          <Button href="/family/applications" variant="ghost" size="sm">
-            My applications
-          </Button>
+          {user ? (
+            <>
+              {!isProfessional ? (
+                <Button href={savedCommunitiesHref()} variant="ghost" size="sm">
+                  Saved
+                </Button>
+              ) : null}
+              <Button href={applicationsHrefForUser(user)} variant="ghost" size="sm">
+                {isProfessional ? "Applications" : "My applications"}
+              </Button>
+            </>
+          ) : (
+            <Button href="/sign-in" variant="ghost" size="sm">
+              Sign in
+            </Button>
+          )}
           <Button href={compareLink} variant="secondary" size="sm">
             Compare{data.compareIds.length ? ` (${data.compareIds.length})` : ""}
           </Button>

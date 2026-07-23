@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/lib/auth";
+import { isFacilityRole } from "@/lib/auth-store";
 import {
   createThread,
   detectSensitiveContent,
@@ -128,18 +129,23 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    if (user.role === "community") {
+    if (isFacilityRole(user.role)) {
       const allowed = residencesForCommunityOrg(user.organization, user.email);
       return threads.filter((t) => allowed.includes(t.residenceId));
     }
 
-    // Internal: all threads (oversight)
-    return threads;
+    if (user.role === "internal") {
+      return threads;
+    }
+
+    // Care professionals use the professional messaging portal, not family↔community threads.
+    return [];
   }, [threads, user]);
 
   const unreadTotal = useMemo(() => {
     if (!user) return 0;
-    const role = user.role === "community" ? "community" : "family";
+    if (user.role === "professional") return 0;
+    const role = isFacilityRole(user.role) ? "community" : "family";
     return visibleThreads
       .filter((t) => !(role === "family" ? t.archivedByFamily : t.archivedByCommunity))
       .reduce((sum, t) => sum + unreadForRole(t, role), 0);
@@ -165,7 +171,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       }
 
       const now = new Date();
-      const fromRole = user.role === "community" ? "community" : "family";
+      const fromRole = isFacilityRole(user.role) ? "community" : "family";
       const msg: SecureMessage = {
         id: `msg-${now.getTime()}`,
         fromRole,
@@ -304,7 +310,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       if (!user) return "";
       const familyEmail = (input.familyEmail || user.email).toLowerCase();
       const fromRole =
-        input.fromRole || (user.role === "community" ? "community" : "family");
+        input.fromRole || (isFacilityRole(user.role) ? "community" : "family");
       const thread = createThread({
         ...input,
         familyEmail,

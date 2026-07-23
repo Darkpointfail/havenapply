@@ -39,6 +39,7 @@ export const FUNDING_MODES = [
 ] as const;
 
 export const RELATIONSHIP_OPTIONS = [
+  "Myself (I'm the one looking)",
   "Daughter",
   "Son",
   "Spouse / partner",
@@ -47,14 +48,13 @@ export const RELATIONSHIP_OPTIONS = [
   "Niece / nephew",
   "Friend",
   "Professional caregiver",
-  "Self (I am the senior)",
   "Other",
 ];
 
 export const FILLER_OPTIONS = [
-  "I am a family member",
-  "I am the senior looking for myself",
-  "I am a professional (care manager, social worker)",
+  "I'm looking for myself",
+  "I'm a family member or friend",
+  "I'm a care professional helping someone",
   "Other",
 ];
 
@@ -122,6 +122,18 @@ export type SeniorProfile = {
   updatedAt: string | null;
 };
 
+/** True when the account holder is the person seeking care. */
+export function isSelfApplicant(senior: Pick<SeniorProfile, "relationship" | "filledBy">) {
+  const rel = (senior.relationship || "").toLowerCase();
+  const filled = (senior.filledBy || "").toLowerCase();
+  return (
+    rel.includes("myself") ||
+    rel.includes("self") ||
+    filled.includes("looking for myself") ||
+    filled.includes("i am the senior")
+  );
+}
+
 export type OnboardingMeta = {
   /** Index into ONBOARDING_STEPS (0 = intro) */
   stepIndex: number;
@@ -131,7 +143,7 @@ export type OnboardingMeta = {
 
 export const ONBOARDING_STEPS = [
   { id: "intro", title: "Welcome", short: "Intro" },
-  { id: "relationship", title: "Your relationship", short: "Relation" },
+  { id: "relationship", title: "Who is this for?", short: "Who" },
   { id: "personal", title: "Personal information", short: "Personal" },
   { id: "living", title: "Current situation", short: "Situation" },
   { id: "housing", title: "Housing type", short: "Housing" },

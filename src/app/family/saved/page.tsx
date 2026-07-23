@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/Card";
 import { getResidence } from "@/data/residences";
 import { computeCompatibility } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
+import { compareCommunitiesHref } from "@/lib/permissions";
 import {
   FAVORITE_TAGS,
   favoriteTagLabel,
@@ -71,10 +72,10 @@ export default function SavedCommunitiesPage() {
   const allIds = favorites.map((f) => f.residence.id);
   const compareHref =
     data.compareIds.length > 0
-      ? `/family/compare?ids=${data.compareIds.join(",")}`
+      ? compareCommunitiesHref(data.compareIds)
       : allIds.length
-        ? `/family/compare?ids=${allIds.slice(0, 4).join(",")}`
-        : "/family/find-communities";
+        ? compareCommunitiesHref(allIds.slice(0, 4))
+        : "/find-senior-living";
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));

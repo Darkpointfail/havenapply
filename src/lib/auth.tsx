@@ -30,17 +30,23 @@ import {
   type SignUpFamilyInput,
   type SignUpWithRoleInput,
   type UserRole,
+  isFacilityRole,
 } from "@/lib/auth-store";
 import {
   AUTH_OPEN_ACCESS,
   DEMO_COMMUNITY_USER,
   DEMO_FAMILY_USER,
+  DEMO_PROFESSIONAL_USER,
   clearOpenAccessSessions,
   demoUserForPath,
+  hasOpenFamilySession,
   isCommunityPortalPath,
+  isFamilyApplyPath,
   isFamilyPortalPath,
+  isProfessionalPortalPath,
   markOpenCommunitySession,
   markOpenFamilySession,
+  markOpenProfessionalSession,
 } from "@/lib/auth-open-access";
 import {
   completeOnboardingSupabase,
@@ -111,8 +117,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!AUTH_OPEN_ACCESS) return;
-    if (isFamilyPortalPath(pathname)) markOpenFamilySession();
-    if (isCommunityPortalPath(pathname)) markOpenCommunitySession();
+
+    // Do not mint a demo family session just by opening an apply URL while logged out.
+    if (isFamilyApplyPath(pathname) && !hasOpenFamilySession()) {
+      setUser(null);
+      setReady(true);
+      return;
+    }
+
+    if (isProfessionalPortalPath(pathname)) markOpenProfessionalSession();
+    else if (isFamilyPortalPath(pathname)) markOpenFamilySession();
+    else if (isCommunityPortalPath(pathname)) markOpenCommunitySession();
     setUser(demoUserForPath(pathname, { useStoredSession: true }));
     setReady(true);
   }, [pathname]);
@@ -209,10 +224,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return result;
       }
       if (AUTH_OPEN_ACCESS) {
+        const expected = input.expectedRole;
         const demo =
-          input.expectedRole === "community" || input.expectedRole === "facility"
+          expected && isFacilityRole(expected)
             ? DEMO_COMMUNITY_USER
-            : DEMO_FAMILY_USER;
+            : expected === "professional"
+              ? DEMO_PROFESSIONAL_USER
+              : expected === "internal"
+                ? null
+                : DEMO_FAMILY_USER;
+        if (!demo) {
+          return {
+            ok: false as const,
+            error: "Open-access demo is not available for this role.",
+          };
+        }
+        if (demo.role === "professional") markOpenProfessionalSession();
+        else if (isFacilityRole(demo.role)) markOpenCommunitySession();
+        else markOpenFamilySession();
         setUser(demo);
         return { ok: true as const, data: demo };
       }

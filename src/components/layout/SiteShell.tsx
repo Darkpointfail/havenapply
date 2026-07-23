@@ -19,11 +19,12 @@ import {
   professionalNav,
 } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
+import { isFacilityRole } from "@/lib/auth-store";
 import {
   AUTH_OPEN_ACCESS,
-  isFamilyBrowsePath,
   isFamilyPortalPath,
   isProfessionalPortalPath,
+  isSharedBrowsePath,
 } from "@/lib/auth-open-access";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
@@ -31,8 +32,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
 
   const isCoreFamily = isFamilyPortalPath(pathname);
-  const isBrowse = isFamilyBrowsePath(pathname);
-  const isCommunity = pathname.startsWith("/community");
+  const isBrowse = isSharedBrowsePath(pathname);
+  const isCommunity = pathname.startsWith("/community") || pathname.startsWith("/admin");
   const isProfessional = isProfessionalPortalPath(pathname);
   const isInternal = pathname.startsWith("/internal");
   const isPortalAuth =
@@ -49,13 +50,20 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  // Family shell on portal routes, or on browse/detail only when signed in as family
-  const showFamilyShell = user?.role === "family" && (isCoreFamily || isBrowse);
+  const isProfessionalUser = user?.role === "professional";
+  const isFamilyUser = user?.role === "family";
+  const isCommunityUser = user ? isFacilityRole(user.role) : false;
+
+  // Shared browse keeps the active portal chrome (family or professional).
   const showProfessionalShell =
-    (user?.role === "professional" || AUTH_OPEN_ACCESS) && isProfessional;
+    isProfessionalUser && (isProfessional || isBrowse)
+      ? true
+      : AUTH_OPEN_ACCESS && isProfessional;
+
+  const showFamilyShell = isFamilyUser && (isCoreFamily || isBrowse);
 
   const communitySession =
-    (user?.role === "community" && user.communityStatus === "verified") ||
+    (isCommunityUser && user?.communityStatus === "verified") ||
     (AUTH_OPEN_ACCESS && isCommunity && !isPortalAuth && !isCommunityPending);
 
   if (showProfessionalShell) {
@@ -89,7 +97,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isCommunityPending && (user?.role === "community" || AUTH_OPEN_ACCESS)) {
+  if (isCommunityPending && (isCommunityUser || AUTH_OPEN_ACCESS)) {
     return (
       <>
         <PortalHeader

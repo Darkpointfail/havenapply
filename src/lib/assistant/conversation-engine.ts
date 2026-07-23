@@ -11,6 +11,7 @@ import {
   LIVING_SITUATIONS,
   RELATIONSHIP_OPTIONS,
   URGENCY_OPTIONS,
+  isSelfApplicant,
   seniorDisplayName,
 } from "@/lib/senior-profile";
 
@@ -165,8 +166,8 @@ export function welcomeMessage(): ChatMessage {
   return {
     id: "welcome",
     role: "assistant",
-    text: "Hi, I'm Haven. I'll help you build your loved one's application. This usually takes about 15 minutes, and you'll only need to do it once. Who are you helping today?",
-    suggestions: ["My mother", "My father", "My spouse", "Myself"],
+    text: "Hi, I'm Haven. I'll help you build a care profile—for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?",
+    suggestions: ["Myself", "My mother", "My father", "My spouse"],
   };
 }
 
@@ -191,17 +192,26 @@ export function processTurn(
       if (n.includes("spouse") || n.includes("husband") || n.includes("wife")) {
         relationship = "Spouse / partner";
       }
-      if (n.includes("myself") || n.includes("for myself")) relationship = "Self (I am the senior)";
+      if (n.includes("myself") || n.includes("for myself") || n === "me") {
+        relationship = "Myself (I'm the one looking)";
+      }
       const matched = RELATIONSHIP_OPTIONS.find((r) => normalize(r) === n);
       if (matched) relationship = matched;
 
+      const forSelf =
+        relationship === "Myself (I'm the one looking)" ||
+        relationship.toLowerCase().includes("myself") ||
+        relationship.toLowerCase().includes("self");
+
       return {
         phase: "personal_name",
-        reply: "Thank you. What is their full name?",
+        reply: forSelf
+          ? "Thank you. What is your full name?"
+          : "Thank you. What is their full name?",
         suggestions: [],
         seniorPatch: {
           relationship,
-          filledBy: relationship === "Self (I am the senior)" ? "I am the senior looking for myself" : "I am a family member",
+          filledBy: forSelf ? "I'm looking for myself" : "I'm a family member or friend",
         },
         setOnboardingStep: 2,
       };
@@ -456,14 +466,17 @@ export function processTurn(
     default:
       return {
         phase: "relationship",
-        reply: "Who are you helping today?",
-        suggestions: ["My mother", "My father", "My spouse"],
+        reply: "Who is this profile for?",
+        suggestions: ["Myself", "My mother", "My father", "My spouse"],
       };
   }
 }
 
 function buildSummaryPrompt(senior: SeniorProfile) {
-  const name = seniorDisplayName(senior) || "your loved one";
+  const forSelf = isSelfApplicant(senior);
+  const name = forSelf
+    ? "you"
+    : seniorDisplayName(senior) || "your loved one";
   const housing =
     senior.housingTypes.map((id) => HOUSING_TYPES.find((h) => h.id === id)?.label || id).join(", ") ||
     "to be confirmed";
@@ -474,7 +487,11 @@ function buildSummaryPrompt(senior: SeniorProfile) {
       ? `about $${Number(senior.budgetMin || 0).toLocaleString()}–$${Number(senior.budgetMax).toLocaleString()}/month`
       : "budget to confirm";
 
-  return `Here's what I have for ${name}:\n\n• Lives in ${[senior.city, senior.state].filter(Boolean).join(", ") || ","}\n• Looking for: ${housing}\n• Searching near: ${zone}\n• Budget: ${budget}\n\nDoes this look right? You can confirm the profile or ask me to change anything.`;
+  const header = forSelf
+    ? "Here's what I have for your profile:"
+    : `Here's what I have for ${name}:`;
+
+  return `${header}\n\n• Lives in ${[senior.city, senior.state].filter(Boolean).join(", ") || ","}\n• Looking for: ${housing}\n• Searching near: ${zone}\n• Budget: ${budget}\n\nDoes this look right? You can confirm the profile or ask me to change anything.`;
 }
 
 export function resumePhase(senior: SeniorProfile, care: CareNeeds): AssistantPhase {

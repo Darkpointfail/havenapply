@@ -14,7 +14,8 @@ export const DEMO_FAMILY_USER: SessionUser = {
   name: "Alex Martin",
   role: "family",
   emailConfirmed: true,
-  onboardingCompleted: true,
+  // False until the loved-one profile is finalized in onboarding/assistant.
+  onboardingCompleted: false,
 };
 
 export const DEMO_COMMUNITY_USER: SessionUser = {
@@ -46,12 +47,24 @@ export const DEMO_PROFESSIONAL_USER: SessionUser = {
 
 const OPEN_FAMILY_KEY = "haven-open-family";
 const OPEN_COMMUNITY_KEY = "haven-open-community";
+const OPEN_PROFESSIONAL_KEY = "haven-open-professional";
+
+function clearOtherOpenSessions(keep: "family" | "community" | "professional") {
+  if (typeof window === "undefined") return;
+  try {
+    if (keep !== "family") sessionStorage.removeItem(OPEN_FAMILY_KEY);
+    if (keep !== "community") sessionStorage.removeItem(OPEN_COMMUNITY_KEY);
+    if (keep !== "professional") sessionStorage.removeItem(OPEN_PROFESSIONAL_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function markOpenFamilySession() {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(OPEN_FAMILY_KEY, "1");
-    sessionStorage.removeItem(OPEN_COMMUNITY_KEY);
+    clearOtherOpenSessions("family");
   } catch {
     /* ignore */
   }
@@ -61,7 +74,17 @@ export function markOpenCommunitySession() {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(OPEN_COMMUNITY_KEY, "1");
-    sessionStorage.removeItem(OPEN_FAMILY_KEY);
+    clearOtherOpenSessions("community");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function markOpenProfessionalSession() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(OPEN_PROFESSIONAL_KEY, "1");
+    clearOtherOpenSessions("professional");
   } catch {
     /* ignore */
   }
@@ -72,6 +95,7 @@ export function clearOpenAccessSessions() {
   try {
     sessionStorage.removeItem(OPEN_FAMILY_KEY);
     sessionStorage.removeItem(OPEN_COMMUNITY_KEY);
+    sessionStorage.removeItem(OPEN_PROFESSIONAL_KEY);
   } catch {
     /* ignore */
   }
@@ -81,6 +105,24 @@ export function hasOpenFamilySession() {
   if (typeof window === "undefined") return false;
   try {
     return sessionStorage.getItem(OPEN_FAMILY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function hasOpenCommunitySession() {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(OPEN_COMMUNITY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function hasOpenProfessionalSession() {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(OPEN_PROFESSIONAL_KEY) === "1";
   } catch {
     return false;
   }
@@ -97,14 +139,22 @@ export function isCommunityDetailPath(pathname: string) {
   return /^\/(find-senior-living|residences)\/[^/]+\/?$/.test(pathname);
 }
 
-/** Browse surfaces that keep the family shell once logged in. */
-export function isFamilyBrowsePath(pathname: string) {
+/**
+ * Shared browse surfaces used by Family and Care Professional
+ * (search, profiles, compare, saved).
+ */
+export function isSharedBrowsePath(pathname: string) {
   return (
     pathname.startsWith("/find-senior-living") ||
     pathname.startsWith("/residences") ||
     pathname.startsWith("/compare") ||
     pathname.startsWith("/saved")
   );
+}
+
+/** @deprecated use isSharedBrowsePath — kept for existing imports */
+export function isFamilyBrowsePath(pathname: string) {
+  return isSharedBrowsePath(pathname);
 }
 
 /** Core family portal routes (not the public Find Senior Living list). */
@@ -124,13 +174,21 @@ export function isFamilyPortalPath(pathname: string) {
     pathname.startsWith("/tasks") ||
     pathname.startsWith("/notifications") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/calendar") ||
-    pathname.startsWith("/hospital")
+    pathname.startsWith("/calendar")
+  );
+}
+
+/** Apply flow — must not auto-open a demo session for anonymous visitors. */
+export function isFamilyApplyPath(pathname: string) {
+  return (
+    pathname.startsWith("/family/apply") ||
+    pathname === "/apply" ||
+    pathname.startsWith("/apply/")
   );
 }
 
 export function isCommunityPortalPath(pathname: string) {
-  if (!pathname.startsWith("/community")) return false;
+  if (!pathname.startsWith("/community") && !pathname.startsWith("/admin")) return false;
   if (
     pathname === "/community/sign-in" ||
     pathname === "/community/get-started" ||
@@ -142,7 +200,11 @@ export function isCommunityPortalPath(pathname: string) {
 }
 
 export function isProfessionalPortalPath(pathname: string) {
-  return pathname.startsWith("/professional");
+  return (
+    pathname.startsWith("/professional") ||
+    pathname === "/hospital" ||
+    pathname.startsWith("/hospital/")
+  );
 }
 
 /** Demo session for the current path. Pass useStoredSession only after mount (client). */
@@ -151,6 +213,13 @@ export function demoUserForPath(
   options?: { useStoredSession?: boolean },
 ): SessionUser | null {
   if (!AUTH_OPEN_ACCESS) return null;
+
+  // Apply requires an existing family session — never auto-admit anonymous visitors.
+  if (isFamilyApplyPath(pathname)) {
+    if (options?.useStoredSession && hasOpenFamilySession()) return DEMO_FAMILY_USER;
+    return null;
+  }
+
   if (isProfessionalPortalPath(pathname)) {
     return DEMO_PROFESSIONAL_USER;
   }
@@ -161,8 +230,9 @@ export function demoUserForPath(
     return DEMO_FAMILY_USER;
   }
   // sessionStorage is client-only — never read during SSR / first paint
-  if (options?.useStoredSession && hasOpenFamilySession() && isFamilyBrowsePath(pathname)) {
-    return DEMO_FAMILY_USER;
+  if (options?.useStoredSession && isSharedBrowsePath(pathname)) {
+    if (hasOpenProfessionalSession()) return DEMO_PROFESSIONAL_USER;
+    if (hasOpenFamilySession()) return DEMO_FAMILY_USER;
   }
   return null;
 }

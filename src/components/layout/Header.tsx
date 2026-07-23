@@ -62,13 +62,16 @@ export function Header() {
     pathname.startsWith("/community/sign-in") ||
     pathname.startsWith("/hospital-login");
 
+  const isCommunityUser =
+    user?.role === "community" || user?.role === "facility";
+
   const isPortal =
     pathname.startsWith("/community") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/hospital") ||
-    user?.role === "community";
+    isCommunityUser;
 
-  if (isPortal && user?.role === "community") {
+  if (isPortal && isCommunityUser) {
     return (
       <header className="sticky top-0 z-50 border-b border-line bg-surface/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center justify-between pl-0 pr-5 md:h-20 md:pr-8">

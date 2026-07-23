@@ -59,7 +59,7 @@ function HospitalInner() {
 
 export default function HospitalPage() {
   return (
-    <RequireAuth role="family">
+    <RequireAuth role="professional">
       <HospitalInner />
     </RequireAuth>
   );

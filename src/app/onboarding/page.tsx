@@ -37,6 +37,7 @@ import {
   labelForId,
   seniorAge,
   seniorDisplayName,
+  isSelfApplicant,
   type SearchZone,
   type SeniorProfile,
 } from "@/lib/senior-profile";
@@ -81,11 +82,21 @@ function OnboardingInner() {
 
   const patch = useCallback(
     (partial: Partial<SeniorProfile>) => {
-      updateSeniorDraft(partial);
+      const next: Partial<SeniorProfile> = { ...partial };
+      const filledBy = next.filledBy ?? data.senior.filledBy;
+      const relationship = next.relationship ?? data.senior.relationship;
+      if (
+        (next.filledBy != null || next.relationship != null) &&
+        isSelfApplicant({ filledBy, relationship })
+      ) {
+        next.seniorParticipates = next.seniorParticipates || "yes";
+        next.hasAuthorization = next.hasAuthorization || "yes";
+      }
+      updateSeniorDraft(next);
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 1200);
     },
-    [updateSeniorDraft],
+    [updateSeniorDraft, data.senior.filledBy, data.senior.relationship],
   );
 
   const goTo = useCallback(
@@ -312,10 +323,10 @@ function OnboardingInner() {
       <Card className="p-6 md:p-8">
         {stepMeta.id === "intro" && (
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Create a senior profile</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Create a care profile</h1>
             <p className="mt-3 text-ink-muted">
-              One calm dossier you can reuse across communities, complete what you know now, add
-              more later.
+              For yourself or a loved one. One calm dossier you can reuse across communities—complete
+              what you know now, add more later.
             </p>
             <ul className="mt-8 space-y-4">
               {[
@@ -357,9 +368,9 @@ function OnboardingInner() {
         {stepMeta.id === "relationship" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Your relationship</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Who is this for?</h1>
               <p className="mt-2 text-ink-muted">
-                Helps communities understand who they are speaking with.
+                You can create a profile for yourself, or for someone in your family.
               </p>
             </div>
             {Object.keys(errors).length > 0 && (
@@ -379,7 +390,11 @@ function OnboardingInner() {
                 ))}
               </select>
             </Field>
-            <Field label="Your relationship to the senior" required error={errors.relationship}>
+            <Field
+              label="Who is this profile for?"
+              required
+              error={errors.relationship}
+            >
               <select
                 className={fieldClass}
                 value={draft.relationship}
@@ -395,7 +410,8 @@ function OnboardingInner() {
             </Field>
             <div>
               <p className="text-sm font-medium">
-                Is the senior participating in this search? <span className="text-danger">*</span>
+                Is the person seeking care involved in this search?{" "}
+                <span className="text-danger">*</span>
               </p>
               {errors.seniorParticipates && (
                 <p className="mt-1 text-xs text-danger">{errors.seniorParticipates}</p>

@@ -7,19 +7,25 @@ import { ClipboardList, Sparkles } from "lucide-react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
+import { useFamilyData } from "@/lib/family-data";
 
 function StartChoiceInner() {
   const router = useRouter();
   const { user, ready } = useAuth();
+  const { data, ready: familyReady } = useFamilyData();
+
+  // Only leave this page when the loved-one profile is actually created.
+  // Account flag alone is not enough (open-access demo can mark onboarding done early).
+  const profileReady = Boolean(user?.onboardingCompleted && data.seniorCreated);
 
   useEffect(() => {
-    if (!ready || !user) return;
-    if (user.onboardingCompleted) {
+    if (!ready || !familyReady || !user) return;
+    if (profileReady) {
       router.replace("/family/dashboard");
     }
-  }, [ready, user, router]);
+  }, [ready, familyReady, user, profileReady, router]);
 
-  if (!ready || !user) {
+  if (!ready || !familyReady || !user) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="h-10 w-10 animate-pulse-soft rounded-full bg-brand-soft" />
@@ -27,7 +33,7 @@ function StartChoiceInner() {
     );
   }
 
-  if (user.onboardingCompleted) return null;
+  if (profileReady) return null;
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center px-5 py-12">
@@ -39,7 +45,8 @@ function StartChoiceInner() {
           How would you like to create the profile?
         </h1>
         <p className="mx-auto mt-3 max-w-lg text-ink-muted">
-          Build it once. Then discover communities and apply everywhere with almost no extra work.
+          For yourself or a loved one. Build it once, then discover communities and apply everywhere
+          with almost no extra work.
         </p>
       </div>
 

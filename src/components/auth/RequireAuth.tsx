@@ -5,10 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth, homeForUser, type UserRole } from "@/lib/auth";
 import {
   AUTH_OPEN_ACCESS,
-  DEMO_COMMUNITY_USER,
-  DEMO_FAMILY_USER,
-  DEMO_PROFESSIONAL_USER,
+  isCommunityPortalPath,
+  isProfessionalPortalPath,
 } from "@/lib/auth-open-access";
+import { isFacilityRole } from "@/lib/auth-store";
+import {
+  openAccessHomeForPath,
+  roleSatisfies,
+  signInPathForRole,
+} from "@/lib/permissions";
 
 export function RequireAuth({
   role,
@@ -16,7 +21,7 @@ export function RequireAuth({
   children,
 }: {
   role: UserRole;
-  /** When role is community, require verified organization (default true). */
+  /** When role is community/facility, require verified organization (default true). */
   requireCommunityVerified?: boolean;
   children: React.ReactNode;
 }) {
@@ -24,42 +29,26 @@ export function RequireAuth({
   const router = useRouter();
   const pathname = usePathname();
 
-  const effectiveUser =
-    AUTH_OPEN_ACCESS && role !== "internal"
-      ? role === "community"
-        ? DEMO_COMMUNITY_USER
-        : role === "professional"
-          ? DEMO_PROFESSIONAL_USER
-          : DEMO_FAMILY_USER
-      : user;
-
   useEffect(() => {
-    if (AUTH_OPEN_ACCESS && role !== "internal") return;
     if (!ready) return;
 
     if (!user) {
       const next = encodeURIComponent(pathname);
-      if (role === "community") router.replace(`/community/sign-in?next=${next}`);
-      else if (role === "internal") router.replace(`/internal/sign-in?next=${next}`);
-      else router.replace(`/sign-in?next=${next}`);
+      router.replace(`${signInPathForRole(role)}?next=${next}`);
       return;
     }
 
-    if (user.role !== role) {
+    if (!roleSatisfies(user.role, role)) {
       router.replace("/access-denied");
       return;
     }
 
-    if (role === "community" && requireCommunityVerified && user.communityStatus !== "verified") {
+    if (isFacilityRole(role) && requireCommunityVerified && user.communityStatus !== "verified") {
       router.replace("/community/pending");
     }
   }, [ready, user, role, requireCommunityVerified, router, pathname]);
 
-  if (AUTH_OPEN_ACCESS && role !== "internal") {
-    return <>{children}</>;
-  }
-
-  if (!ready || !effectiveUser) {
+  if (!ready || !user) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <div className="text-center">
@@ -70,7 +59,7 @@ export function RequireAuth({
     );
   }
 
-  if (effectiveUser.role !== role) {
+  if (!roleSatisfies(user.role, role)) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <p className="text-sm text-ink-muted">Redirecting…</p>
@@ -79,9 +68,9 @@ export function RequireAuth({
   }
 
   if (
-    role === "community" &&
+    isFacilityRole(role) &&
     requireCommunityVerified &&
-    effectiveUser.communityStatus !== "verified"
+    user.communityStatus !== "verified"
   ) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
@@ -108,7 +97,11 @@ export function RedirectIfAuthenticated({
 
   const openAccessHome =
     fallbackHref ||
-    (pathname.startsWith("/community") ? "/community/dashboard" : "/family/dashboard");
+    (isProfessionalPortalPath(pathname)
+      ? "/professional/dashboard"
+      : isCommunityPortalPath(pathname) || pathname.startsWith("/community")
+        ? "/community/dashboard"
+        : openAccessHomeForPath(pathname));
 
   const isRegistrationPath =
     pathname === "/get-started" ||

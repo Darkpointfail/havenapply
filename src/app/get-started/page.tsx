@@ -28,7 +28,7 @@ const ROLE_OPTIONS: {
   {
     id: "family",
     title: "Family",
-    subtitle: "Helping a loved one find the right care community.",
+    subtitle: "For yourself or a loved one looking for the right care community.",
     icon: HeartHandshake,
     accent: "brand",
   },
@@ -210,7 +210,7 @@ function GetStartedInner() {
                 </p>
               ) : (
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
-                  Families &amp; loved ones coordinating care.
+                  Yourself or a family member seeking care.
                 </p>
               )}
               <span

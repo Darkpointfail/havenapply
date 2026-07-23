@@ -6,6 +6,7 @@ import { Bookmark, GitCompare, MapPin, Star } from "lucide-react";
 import type { Residence } from "@/data/residences";
 import type { CompatibilityResult } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
+import { compareCommunitiesHref } from "@/lib/permissions";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ApplyButton } from "@/components/auth/ApplyButton";
 import { Badge } from "@/components/ui/Badge";
@@ -36,10 +37,10 @@ export function ResidenceCard({
   const saved = data.savedFavorites.some((f) => f.communityId === residence.id);
   const comparing = data.compareIds.includes(residence.id);
   const avail = availabilityLabel(residence);
-  const compareHref =
-    data.compareIds.length > 0
-      ? `/family/compare?ids=${[...new Set([...data.compareIds, residence.id])].slice(0, 4).join(",")}`
-      : `/family/compare?ids=${residence.id}`;
+  const compareHref = compareCommunitiesHref([
+    ...data.compareIds,
+    residence.id,
+  ]);
 
   return (
     <article

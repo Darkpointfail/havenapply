@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";
 import {

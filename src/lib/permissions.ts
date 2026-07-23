@@ -52,8 +52,20 @@ export function canStartApplication(user: SessionUser | null | undefined): boole
   return canUseFamilyApplyFlow(user) || canUseProfessionalApplyFlow(user);
 }
 
+/** Family and care professionals may message communities; guests cannot. */
+export function canMessageCommunity(user: SessionUser | null | undefined): boolean {
+  return canStartApplication(user);
+}
+
 export function applySignInHref(residenceId?: string): string {
   const next = residenceId ? `/family/apply/${residenceId}` : "/family/dashboard";
+  return `/sign-in?next=${encodeURIComponent(next)}`;
+}
+
+export function messageSignInHref(residenceId?: string): string {
+  const next = residenceId
+    ? `/family/messages?community=${encodeURIComponent(residenceId)}`
+    : "/family/messages";
   return `/sign-in?next=${encodeURIComponent(next)}`;
 }
 

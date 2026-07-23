@@ -187,6 +187,23 @@ export function isFamilyApplyPath(pathname: string) {
   );
 }
 
+/** Messaging a community — same rule as apply: account required first. */
+export function isFamilyMessagesPath(pathname: string) {
+  return (
+    pathname.startsWith("/family/messages") ||
+    pathname === "/messages" ||
+    pathname.startsWith("/messages/")
+  );
+}
+
+/**
+ * Family actions that must never mint an anonymous demo session
+ * (apply, message admissions, etc.).
+ */
+export function isFamilyAccountRequiredPath(pathname: string) {
+  return isFamilyApplyPath(pathname) || isFamilyMessagesPath(pathname);
+}
+
 export function isCommunityPortalPath(pathname: string) {
   if (!pathname.startsWith("/community") && !pathname.startsWith("/admin")) return false;
   if (
@@ -214,8 +231,8 @@ export function demoUserForPath(
 ): SessionUser | null {
   if (!AUTH_OPEN_ACCESS) return null;
 
-  // Apply requires an existing family session — never auto-admit anonymous visitors.
-  if (isFamilyApplyPath(pathname)) {
+  // Apply / message require an existing family session — never auto-admit guests.
+  if (isFamilyAccountRequiredPath(pathname)) {
     if (options?.useStoredSession && hasOpenFamilySession()) return DEMO_FAMILY_USER;
     return null;
   }

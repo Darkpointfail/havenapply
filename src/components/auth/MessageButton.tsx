@@ -2,7 +2,16 @@
 
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
+import {
+  canMessageCommunity,
+  canUseProfessionalApplyFlow,
+  messageSignInHref,
+} from "@/lib/permissions";
 
+/**
+ * Opens messaging with a community.
+ * Guests must sign in first — messaging is never available anonymously.
+ */
 export function MessageButton({
   className,
   size = "lg",
@@ -26,13 +35,10 @@ export function MessageButton({
     );
   }
 
-  if (!user) {
-    const next = residenceId
-      ? `/family/messages?community=${encodeURIComponent(residenceId)}`
-      : "/family/messages";
+  if (!canMessageCommunity(user)) {
     return (
       <Button
-        href={`/sign-in?next=${encodeURIComponent(next)}`}
+        href={messageSignInHref(residenceId)}
         variant={variant}
         size={size}
         className={className}
@@ -42,14 +48,13 @@ export function MessageButton({
     );
   }
 
-  const href =
-    user.role === "professional"
-      ? residenceId
-        ? `/professional/messages?community=${encodeURIComponent(residenceId)}`
-        : "/professional/messages"
-      : residenceId
-        ? `/family/messages?community=${encodeURIComponent(residenceId)}`
-        : "/family/messages";
+  const href = canUseProfessionalApplyFlow(user)
+    ? residenceId
+      ? `/professional/messages?community=${encodeURIComponent(residenceId)}`
+      : "/professional/messages"
+    : residenceId
+      ? `/family/messages?community=${encodeURIComponent(residenceId)}`
+      : "/family/messages";
 
   return (
     <Button href={href} variant={variant} size={size} className={className}>

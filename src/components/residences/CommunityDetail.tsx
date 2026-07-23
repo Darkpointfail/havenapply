@@ -24,7 +24,11 @@ import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { computeCompatibility } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
-import { compareCommunitiesHref } from "@/lib/permissions";
+import {
+  canMessageCommunity,
+  compareCommunitiesHref,
+  messageSignInHref,
+} from "@/lib/permissions";
 import type { CommunityDetail } from "@/lib/residence-detail";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -74,6 +78,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const backHref =
     user?.role === "professional" ? "/professional/communities" : "/find-senior-living";
+  const canContact = canMessageCommunity(user);
 
   const match = useMemo(
     () =>
@@ -96,6 +101,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
   };
 
   const submitContact = () => {
+    if (!canContact) return;
     setSent(true);
   };
 
@@ -740,9 +746,17 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {contactMode === "message" ? (
                     <MessageButton residenceId={community.id}>Open messages</MessageButton>
-                  ) : (
-                    <Button type="button" onClick={submitContact} disabled={contactMode === "tour" && slots.length === 0}>
+                  ) : canContact ? (
+                    <Button
+                      type="button"
+                      onClick={submitContact}
+                      disabled={contactMode === "tour" && slots.length === 0}
+                    >
                       {contactMode === "call" ? "Request a call back" : "Request selected visit times"}
+                    </Button>
+                  ) : (
+                    <Button href={messageSignInHref(community.id)}>
+                      Sign in to contact
                     </Button>
                   )}
                   <ApplyButton residenceId={community.id} variant="soft" size="md">

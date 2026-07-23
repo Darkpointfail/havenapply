@@ -41,7 +41,7 @@ import {
   demoUserForPath,
   hasOpenFamilySession,
   isCommunityPortalPath,
-  isFamilyApplyPath,
+  isFamilyAccountRequiredPath,
   isFamilyPortalPath,
   isProfessionalPortalPath,
   markOpenCommunitySession,
@@ -118,8 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!AUTH_OPEN_ACCESS) return;
 
-    // Do not mint a demo family session just by opening an apply URL while logged out.
-    if (isFamilyApplyPath(pathname) && !hasOpenFamilySession()) {
+    // Do not mint a demo family session just by opening apply/messages while logged out.
+    if (isFamilyAccountRequiredPath(pathname) && !hasOpenFamilySession()) {
       setUser(null);
       setReady(true);
       return;

@@ -11,6 +11,7 @@ export function AssistantShell({
   progress,
   children,
   sidebar,
+  headerActions,
   className,
 }: {
   title?: string;
@@ -18,6 +19,7 @@ export function AssistantShell({
   progress: ProgressItem[];
   children: React.ReactNode;
   sidebar?: React.ReactNode;
+  headerActions?: React.ReactNode;
   className?: string;
 }) {
   const doneCount = progress.filter((p) => p.done).length;
@@ -31,16 +33,21 @@ export function AssistantShell({
     >
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-6 md:px-6 md:py-10 lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-10">
         <div className="flex min-h-[70vh] flex-col">
-          <header className="mb-5 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-ink text-white">
-              <Sparkles size={16} />
-            </span>
-            <div>
-              <p className="font-semibold text-ink">{title}</p>
-              <p className="text-xs text-ink-muted">
-                {subtitle || `${doneCount}/${progress.length} sections ready`}
-              </p>
+          <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-ink text-white">
+                <Sparkles size={16} />
+              </span>
+              <div>
+                <p className="font-semibold text-ink">{title}</p>
+                <p className="text-xs text-ink-muted">
+                  {subtitle || `${doneCount}/${progress.length} sections ready`}
+                </p>
+              </div>
             </div>
+            {headerActions ? (
+              <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
+            ) : null}
           </header>
 
           <div className="mb-4 lg:hidden">

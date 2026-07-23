@@ -8,6 +8,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { AssistantShell } from "@/components/assistant/AssistantShell";
 import { Composer } from "@/components/assistant/Composer";
 import { MessageList } from "@/components/assistant/MessageList";
+import { SetupExitBar } from "@/components/assistant/SetupExitBar";
 import { SummaryCard } from "@/components/assistant/SummaryCard";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
@@ -30,6 +31,13 @@ type Mode = "setup" | "search" | "apply";
 function modeFromParam(raw: string | null): Mode {
   if (raw === "search" || raw === "apply") return raw;
   return "setup";
+}
+
+function manualHrefForProgress(items: { id: string; done: boolean }[]) {
+  const open = items.find((i) => !i.done);
+  if (!open) return "/family/profile?tab=details";
+  if (open.id === "care") return "/family/care-needs";
+  return "/family/profile?tab=details";
 }
 
 function ApplyHandoff({
@@ -135,8 +143,10 @@ function AssistantInner() {
   });
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   const progress = progressFromState(data.senior, data.careNeeds, phase);
+  const remaining = progress.filter((p) => !p.done);
   const summaryFields = useMemo(() => buildSummaryFields(data.senior), [data.senior]);
   const seniorName = seniorDisplayName(data.senior) || "your loved one";
 
@@ -151,6 +161,38 @@ function AssistantInner() {
     [data.seniorCreated, data.careNeeds.completedAt, data.documents, completeness],
   );
   const missingDocLabels = missingRequiredApplyDocs(data.documents).map((d) => d.label);
+
+  const saveDraftTimestamp = () => {
+    updateSeniorDraft({});
+    setOnboardingStep(
+      Math.min(
+        7,
+        phase === "done" || phase === "summary"
+          ? 7
+          : phase === "budget" || phase.startsWith("care")
+            ? 7
+            : phase === "location" || phase === "urgency"
+              ? 6
+              : phase === "housing" || phase === "living"
+                ? 4
+                : 2,
+      ),
+    );
+  };
+
+  const saveAndQuit = () => {
+    if (exiting) return;
+    setExiting(true);
+    saveDraftTimestamp();
+    router.push("/family/dashboard");
+  };
+
+  const switchToManual = () => {
+    if (exiting) return;
+    setExiting(true);
+    saveDraftTimestamp();
+    router.push(manualHrefForProgress(progress));
+  };
 
   const applyResult = (result: ReturnType<typeof processTurn>) => {
     if (result.seniorPatch) updateSeniorDraft(result.seniorPatch);
@@ -194,7 +236,12 @@ function AssistantInner() {
     window.setTimeout(() => {
       const n = text.toLowerCase();
 
-      if (mode === "apply" || n.includes("dossier") || n.includes("ready to apply") || n.includes("application")) {
+      if (
+        mode === "apply" ||
+        n.includes("dossier") ||
+        n.includes("ready to apply") ||
+        n.includes("application")
+      ) {
         if (n.includes("document")) {
           setBusy(false);
           router.push("/family/documents");
@@ -278,24 +325,82 @@ function AssistantInner() {
 
   const showSummary = mode === "setup" && phase === "summary";
   const title =
-    mode === "search" ? "Search with Haven" : mode === "apply" ? "Apply with Haven" : "Haven assistant";
+    mode === "search"
+      ? "Search with Haven"
+      : mode === "apply"
+        ? "Apply with Haven"
+        : "Haven assistant";
 
   return (
     <AssistantShell
       title={title}
       progress={progress}
+      headerActions={
+        mode === "setup" ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={exiting}
+              onClick={saveAndQuit}
+            >
+              Save & quit
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="soft"
+              disabled={exiting}
+              onClick={switchToManual}
+            >
+              Continue in forms
+            </Button>
+          </>
+        ) : null
+      }
       sidebar={
-        <div className="rounded-2xl border border-line/80 bg-surface/80 p-4 text-xs leading-relaxed text-ink-muted">
-          Classic forms stay available anytime for edits.
-          <Link href="/family/senior-profile" className="mt-2 block font-medium text-brand hover:underline">
-            Edit senior profile
-          </Link>
-          <Link href="/family/care-needs" className="mt-1 block font-medium text-brand hover:underline">
-            Edit care needs
-          </Link>
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-line/80 bg-surface/80 p-4 text-xs leading-relaxed text-ink-muted">
+            Answers are saved as you go. You can leave and come back, or finish in classic forms.
+            <button
+              type="button"
+              className="mt-2 block font-medium text-brand hover:underline"
+              onClick={switchToManual}
+            >
+              Open forms with remaining fields
+            </button>
+            <Link
+              href="/family/care-needs"
+              className="mt-1 block font-medium text-brand hover:underline"
+            >
+              Edit care needs
+            </Link>
+          </div>
+          {mode === "setup" && remaining.length > 0 ? (
+            <div className="rounded-2xl border border-line/80 bg-bg-soft/60 p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                Left to complete
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm text-ink-secondary">
+                {remaining.map((r) => (
+                  <li key={r.id}>• {r.label}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       }
     >
+      {mode === "setup" ? (
+        <SetupExitBar
+          remaining={remaining}
+          saving={exiting}
+          onSaveAndQuit={saveAndQuit}
+          onSwitchManual={switchToManual}
+        />
+      ) : null}
+
       {mode === "apply" ? (
         <ApplyHandoff
           seniorName={seniorName}

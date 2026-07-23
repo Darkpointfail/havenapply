@@ -149,6 +149,18 @@ function GetStartedInner() {
       );
       return;
     }
+    if (result.needsManualSignIn) {
+      router.push(
+        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(
+          role === "facility"
+            ? "/community/dashboard"
+            : role === "professional"
+              ? "/professional/dashboard"
+              : "/family/dashboard",
+        )}`,
+      );
+      return;
+    }
     router.push(
       role === "facility"
         ? "/community/dashboard"

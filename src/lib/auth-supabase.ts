@@ -15,11 +15,56 @@ import { createClient } from "@/lib/supabase/client";
 
 export type SignUpAuthResult = AuthResult<SessionUser> & {
   pendingConfirmation?: boolean;
+  /** Account was created but the browser session could not be opened yet. */
+  needsManualSignIn?: boolean;
 };
 
 function siteOrigin() {
   if (typeof window !== "undefined") return window.location.origin;
   return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
+
+function buildSessionFromInput(
+  userId: string,
+  input: SignUpWithRoleInput,
+  email: string,
+  emailConfirmed: boolean,
+): SessionUser {
+  return {
+    id: userId,
+    email,
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    name: `${input.firstName.trim()} ${input.lastName.trim()}`.trim() || email,
+    role: input.role === "facility" ? "facility" : input.role,
+    organization: input.organization?.trim(),
+    jobTitle: input.jobTitle?.trim(),
+    emailConfirmed,
+    communityStatus: input.role === "facility" ? "verified" : undefined,
+    onboardingCompleted: input.role !== "family",
+  };
+}
+
+async function signInAfterCreate(
+  email: string,
+  password: string,
+  attempts = 3,
+): Promise<{ user: User; errorMessage?: string; errorCode?: string } | { user: null; errorMessage: string; errorCode?: string }> {
+  const supabase = createClient();
+  let lastMessage = AUTH_MESSAGES.generic;
+  let lastCode: string | undefined;
+
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) {
+      await new Promise((r) => window.setTimeout(r, 400 * i));
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (data.user && !error) return { user: data.user };
+    lastMessage = error?.message || AUTH_MESSAGES.generic;
+    lastCode = error?.code;
+  }
+
+  return { user: null, errorMessage: lastMessage, errorCode: lastCode };
 }
 
 function metaString(meta: Record<string, unknown>, key: string) {
@@ -192,28 +237,32 @@ export async function signUpWithRoleSupabase(
     };
 
     if (adminRes.ok && adminJson.ok) {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: input.password,
-      });
-      if (error || !data.user) {
-        return {
-          ok: false,
-          error: mapAuthError(error?.message || AUTH_MESSAGES.generic, error?.code),
-        };
+      const signedIn = await signInAfterCreate(email, input.password);
+      if (signedIn.user) {
+        const sessionUser = sessionFromSignup(signedIn.user, {
+          email,
+          firstName: input.firstName.trim(),
+          lastName: input.lastName.trim(),
+          role: input.role,
+          organization: input.organization?.trim(),
+          jobTitle: input.jobTitle?.trim(),
+          communityStatus: input.role === "facility" ? "verified" : undefined,
+          onboardingCompleted: input.role !== "family",
+        });
+        return { ok: true, data: sessionUser };
       }
-      const sessionUser = sessionFromSignup(data.user, {
-        email,
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
-        role: input.role,
-        organization: input.organization?.trim(),
-        jobTitle: input.jobTitle?.trim(),
-        communityStatus: input.role === "facility" ? "verified" : undefined,
-        onboardingCompleted: input.role !== "family",
-      });
-      return { ok: true, data: sessionUser };
+
+      // Account exists in Auth — never show a hard failure that hides a successful signup.
+      console.warn(
+        "[auth] account created but auto sign-in failed:",
+        signedIn.errorMessage,
+        signedIn.errorCode,
+      );
+      return {
+        ok: true,
+        data: buildSessionFromInput("pending-session", input, email, true),
+        needsManualSignIn: true,
+      };
     }
 
     // No service role: keep trying client signup (works once custom SMTP / team email is set).

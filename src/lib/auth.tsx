@@ -176,7 +176,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Always persist real accounts (and role metadata) even when open-access demo is on.
       if (remote) {
         const result = await signUpWithRoleSupabase(input);
-        if (result.ok && !result.pendingConfirmation) setUser(result.data);
+        if (result.ok && !result.pendingConfirmation && !result.needsManualSignIn) {
+          setUser(result.data);
+        }
         return result;
       }
       const result = await signUpWithRoleAccount(input);

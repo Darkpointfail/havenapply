@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth, homeForUser } from "@/lib/auth";
+import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isFacilityRole } from "@/lib/auth-store";
 
 function SignInForm() {
@@ -20,7 +21,8 @@ function SignInForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next");
-  const [email, setEmail] = useState("");
+  const registered = params.get("registered") === "1";
+  const [email, setEmail] = useState(params.get("email") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +64,9 @@ function SignInForm() {
       />
       <Card className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
+          {registered && !error ? (
+            <AuthAlert tone="success">{AUTH_MESSAGES.accountCreatedSignIn}</AuthAlert>
+          ) : null}
           {error && <AuthAlert>{error}</AuthAlert>}
           <AuthField label="Email">
             <input

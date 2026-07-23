@@ -17,6 +17,8 @@ export const AUTH_MESSAGES = {
     "Your community is awaiting verification. You’ll get access once Haven reviews your organization.",
   alreadyConfirmed: "Your email is already confirmed. You can sign in.",
   confirmSent: "We’ve sent a confirmation link to your email.",
+  accountCreatedSignIn:
+    "Your account is ready. Sign in with the email and password you just created.",
   resetSent: "If an account exists for that email, you’ll receive a reset link shortly.",
   resetSuccess: "Your password has been updated. You can sign in now.",
   confirmSuccess: "Your email is confirmed. You can sign in now.",

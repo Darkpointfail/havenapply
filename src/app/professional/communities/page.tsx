@@ -11,10 +11,10 @@ import { Card } from "@/components/ui/Card";
 import { residences } from "@/data/residences";
 import { formatCurrency } from "@/lib/utils";
 import { useProfessional } from "@/lib/professional-store";
-import { patientName } from "@/lib/professional-data";
+import { patientDossierReadyForApply, patientName } from "@/lib/professional-data";
 
 function CommunitiesInner() {
-  const { patients, submitApplication } = useProfessional();
+  const { patients } = useProfessional();
   const params = useSearchParams();
   const patientId = params.get("patient") || "";
   const patient = patients.find((p) => p.id === patientId);
@@ -35,6 +35,7 @@ function CommunitiesInner() {
   }, [q, care]);
 
   const activePatient = patients.find((p) => p.id === selectedPatient) || patient;
+  const readiness = activePatient ? patientDossierReadyForApply(activePatient) : null;
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
@@ -83,13 +84,27 @@ function CommunitiesInner() {
       </div>
 
       {activePatient ? (
-        <p className="mb-4 text-sm text-ink-muted">
-          Applying with <span className="font-medium text-ink">{patientName(activePatient)}</span>
-          ’s profile.
-        </p>
+        <div className="mb-4 space-y-2">
+          <p className="text-sm text-ink-muted">
+            Applying with <span className="font-medium text-ink">{patientName(activePatient)}</span>
+            ’s profile — each Apply opens a review of what will be transmitted.
+          </p>
+          {readiness && !readiness.ok ? (
+            <p className="rounded-xl border border-warn/30 bg-warn-soft/40 px-3.5 py-2.5 text-sm text-ink-secondary">
+              Dossier incomplete.{" "}
+              <Link
+                href={`/professional/patients/${activePatient.id}`}
+                className="font-medium text-brand hover:underline"
+              >
+                Finish profile & documents
+              </Link>{" "}
+              before communities can receive the application.
+            </p>
+          ) : null}
+        </div>
       ) : (
         <p className="mb-4 text-sm text-ink-muted">
-          Select a patient to submit applications from this list.
+          Select a patient to review and submit applications from this list.
         </p>
       )}
 
@@ -126,15 +141,16 @@ function CommunitiesInner() {
                   Details
                 </Button>
                 <Button
+                  href={
+                    activePatient
+                      ? `/professional/apply/${r.id}?patient=${activePatient.id}`
+                      : undefined
+                  }
                   size="sm"
                   className="flex-1"
                   disabled={!activePatient}
-                  onClick={() => {
-                    if (!activePatient) return;
-                    submitApplication(activePatient.id, r.id, r.name);
-                  }}
                 >
-                  Apply
+                  Review & apply
                 </Button>
               </div>
               {activePatient?.applications.some((a) => a.communityId === r.id) ? (

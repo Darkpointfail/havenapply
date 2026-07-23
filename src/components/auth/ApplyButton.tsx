@@ -42,7 +42,7 @@ export function ApplyButton({
 
   if (canUseProfessionalApplyFlow(user)) {
     const href = residenceId
-      ? `/professional/communities?highlight=${encodeURIComponent(residenceId)}`
+      ? `/professional/apply/${residenceId}`
       : "/professional/communities";
     return (
       <Button href={href} size={size} variant={variant} className={cn(className)}>

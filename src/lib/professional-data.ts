@@ -216,7 +216,81 @@ export function missingChecklist(p: Patient) {
 }
 
 export function isReadyToApply(p: Patient) {
-  return missingChecklist(p).length === 0;
+  return patientDossierReadyForApply(p).ok;
+}
+
+/** Documents required before a care professional can submit an application. */
+export const PROFESSIONAL_HARD_DOCS: { category: DocCategory; label: string }[] = [
+  { category: "identity", label: "Identity document" },
+  { category: "insurance", label: "Insurance card / coverage" },
+  { category: "medication_list", label: "Medication list" },
+  { category: "consent_forms", label: "Consent forms" },
+];
+
+export function missingPatientDocuments(p: Patient) {
+  const present = new Set(p.documents.map((d) => d.category));
+  return PROFESSIONAL_HARD_DOCS.filter((req) => !present.has(req.category));
+}
+
+export function missingPatientProfile(p: Patient): string[] {
+  const missing: string[] = [];
+  if (!p.firstName.trim() || !p.lastName.trim()) missing.push("Patient full name");
+  if (!p.dateOfBirth) missing.push("Date of birth");
+  if (!p.familyContact.trim() && !p.emergencyContact.trim()) {
+    missing.push("Family or emergency contact");
+  }
+  return missing;
+}
+
+export function missingPatientCare(p: Patient): string[] {
+  const missing: string[] = [];
+  if (!p.care.diagnosis.trim()) missing.push("Primary diagnosis");
+  if (!p.care.requiredCareLevel.trim()) missing.push("Required care level");
+  if (!p.care.mobility.trim()) missing.push("Mobility");
+  if (!p.care.insurance.trim()) missing.push("Insurance / payer");
+  if (!p.care.preferredRegion.trim()) missing.push("Preferred region");
+  return missing;
+}
+
+/**
+ * Full gate before a care professional can transmit a dossier to a community.
+ * Requires profile, care needs, checklist, and required documents.
+ */
+export function patientDossierReadyForApply(p: Patient): {
+  ok: boolean;
+  reasons: string[];
+  missingChecklist: ChecklistKey[];
+  missingDocs: { category: DocCategory; label: string }[];
+  missingProfile: string[];
+  missingCare: string[];
+} {
+  const checklistMissing = missingChecklist(p);
+  const missingDocs = missingPatientDocuments(p);
+  const missingProfile = missingPatientProfile(p);
+  const missingCare = missingPatientCare(p);
+  const reasons: string[] = [];
+
+  if (missingProfile.length) {
+    reasons.push("Complete the patient profile fields.");
+  }
+  if (missingCare.length) {
+    reasons.push("Complete care needs that will be shared with the community.");
+  }
+  if (checklistMissing.length) {
+    reasons.push("Mark all required checklist items as complete.");
+  }
+  if (missingDocs.length) {
+    reasons.push("Upload the required documents that will be transmitted.");
+  }
+
+  return {
+    ok: reasons.length === 0,
+    reasons,
+    missingChecklist: checklistMissing,
+    missingDocs,
+    missingProfile,
+    missingCare,
+  };
 }
 
 export function statusTone(
@@ -493,6 +567,14 @@ export const SEED_PATIENTS: Patient[] = [
         name: "Driver license.pdf",
         uploadedBy: "Daniel Hayes",
         uploadedAt: daysAgo(4),
+        verified: true,
+      },
+      {
+        id: "d4b",
+        category: "insurance",
+        name: "Medicare Advantage card.pdf",
+        uploadedBy: "Daniel Hayes",
+        uploadedAt: daysAgo(3),
         verified: true,
       },
       {

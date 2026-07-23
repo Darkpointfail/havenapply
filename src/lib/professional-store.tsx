@@ -14,6 +14,7 @@ import {
   SEED_PATIENTS,
   SEED_PROFILE,
   isReadyToApply,
+  patientDossierReadyForApply,
   type ApplicationStatus,
   type FacilityContact,
   type Patient,
@@ -27,6 +28,14 @@ import {
 } from "@/lib/professional-data";
 
 export type ContactDraft = Omit<FacilityContact, "id" | "updatedAt">;
+
+export type SubmitApplicationResult =
+  | { ok: true; applicationId: string }
+  | {
+      ok: false;
+      error: string;
+      readiness?: ReturnType<typeof patientDossierReadyForApply>;
+    };
 
 type ProfessionalContextValue = {
   patients: Patient[];
@@ -45,7 +54,11 @@ type ProfessionalContextValue = {
   updateContact: (id: string, patch: Partial<ContactDraft>) => void;
   deleteContact: (id: string) => void;
   addMessage: (patientId: string, body: string) => void;
-  submitApplication: (patientId: string, communityId: string, communityName: string) => void;
+  submitApplication: (
+    patientId: string,
+    communityId: string,
+    communityName: string,
+  ) => SubmitApplicationResult;
   updateApplicationStatus: (
     patientId: string,
     applicationId: string,
@@ -276,12 +289,27 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
 
   const submitApplication = useCallback(
     (patientId: string, communityId: string, communityName: string) => {
+      const patient = patients.find((p) => p.id === patientId);
+      if (!patient) return { ok: false as const, error: "Patient not found." };
+      const readiness = patientDossierReadyForApply(patient);
+      if (!readiness.ok) {
+        return {
+          ok: false as const,
+          error: readiness.reasons[0] || "Complete the patient dossier before applying.",
+          readiness,
+        };
+      }
+      if (patient.applications.some((a) => a.communityId === communityId && a.status !== "declined")) {
+        return { ok: false as const, error: "An application was already submitted to this community." };
+      }
+
       const now = new Date().toISOString();
+      const appId = `app_${Date.now().toString(36)}`;
       setPatients((prev) =>
         prev.map((p) => {
           if (p.id !== patientId) return p;
           const app = {
-            id: `app_${Date.now().toString(36)}`,
+            id: appId,
             patientId,
             communityId,
             communityName,
@@ -311,8 +339,9 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
           };
         }),
       );
+      return { ok: true as const, applicationId: appId };
     },
-    [],
+    [patients],
   );
 
   const updateApplicationStatus = useCallback(

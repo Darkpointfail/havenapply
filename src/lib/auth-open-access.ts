@@ -1,10 +1,11 @@
 import type { SessionUser } from "@/lib/auth-store";
 
 /**
- * Temporary: skip accounts and open family + community portals directly.
- * Flip to `false` when real auth should return.
+ * When true: skip real accounts and open portals with demo sessions.
+ * Keep false in production so Supabase Auth is used (visible in the dashboard).
+ * Override locally with NEXT_PUBLIC_AUTH_OPEN_ACCESS=true if needed.
  */
-export const AUTH_OPEN_ACCESS = true;
+export const AUTH_OPEN_ACCESS = process.env.NEXT_PUBLIC_AUTH_OPEN_ACCESS === "true";
 
 export const DEMO_FAMILY_USER: SessionUser = {
   id: "demo_family",

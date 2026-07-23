@@ -190,7 +190,7 @@ export function Header() {
               <Button href="/sign-in" size="sm" variant="ghost">
                 Log in
               </Button>
-              <Button href="/get-started" size="sm">
+              <Button href="/get-started?next=/assistant" size="sm">
                 Start your application
               </Button>
             </>
@@ -237,7 +237,7 @@ export function Header() {
                 <Button href="/sign-in" variant="ghost" className="mt-2">
                   Log in
                 </Button>
-                <Button href="/get-started">Start your application</Button>
+                <Button href="/get-started?next=/assistant">Start your application</Button>
               </>
             )}
           </nav>

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export function AiAssistant() {
   const { open, setOpen, prompt, setPrompt } = useAi();
-  const { data } = useFamilyData();
+  const { data, completeness } = useFamilyData();
   const router = useRouter();
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string; href?: string }[]>([
     {
@@ -39,6 +39,9 @@ export function AiAssistant() {
       applications: data.applications,
       documents: data.documents,
       seniorName: seniorDisplayName(data.senior) || data.person.name || "your loved one",
+      seniorCreated: data.seniorCreated,
+      completeness,
+      careNeedsCompleted: Boolean(data.careNeeds.completedAt),
     });
     setMessages((m) => [...m, { role: "user", text: q }, { role: "ai", text: reply.text, href: reply.href }]);
     setPrompt("");

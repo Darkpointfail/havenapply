@@ -372,9 +372,9 @@ export function PortalHeader({
               size="sm"
               variant="soft"
               className="hidden sm:inline-flex"
-              href="/assistant"
+              href="/assistant?mode=setup"
             >
-              <Sparkles size={14} /> Assistant
+              <Sparkles size={14} /> Ask Haven
             </Button>
           )}
           <button

@@ -143,7 +143,7 @@ export default function FamilyDashboardPage() {
         id: "profile",
         title: profileTitle,
         detail: profileDetail,
-        href: needsSetup ? "/onboarding" : "/family/profile",
+        href: needsSetup ? "/assistant?mode=setup" : "/family/profile",
         done: profileDone && careDone,
         minutes: needsSetup ? 15 : 8,
       },
@@ -555,11 +555,7 @@ export default function FamilyDashboardPage() {
             {headline}
           </h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-            {profileIncomplete
-              ? "One profile, then you can find communities and apply everywhere without starting over."
-              : dossierComplete
-                ? "Browse suggestions, compare, then send the dossier in a few clicks."
-                : "Finish the required documents and care details before we suggest communities."}
+            Ask Haven anything—or continue with the next step below.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
@@ -721,11 +717,11 @@ export default function FamilyDashboardPage() {
                   <Sparkles size={16} />
                 </span>
                 <div>
-                  <p className="font-semibold">Need a hand?</p>
+                  <p className="font-semibold">Ask Haven anything</p>
                   <p className="mt-0.5 text-sm text-ink-muted">
                     {forSelf
-                      ? "Ask Haven for the next step on your profile."
-                      : `Ask Haven for the next step for ${lovedOne}.`}
+                      ? "Applications, documents, or the next step on your profile."
+                      : `Applications, documents, or the next step for ${lovedOne}.`}
                   </p>
                 </div>
               </div>
@@ -734,7 +730,7 @@ export default function FamilyDashboardPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() =>
-                  ask(`What communities fit best for ${lovedOne}?`)
+                  ask(`What should I do next for ${lovedOne}?`)
                 }
               >
                 Ask Haven

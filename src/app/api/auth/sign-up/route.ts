@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";
-import type { SignupRole } from "@/lib/auth-store";
+import {
+  accountTypeLabel,
+  type SignupRole,
+} from "@/lib/auth-store";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type Body = {
@@ -63,6 +65,7 @@ export async function POST(request: Request) {
     first_name: body.firstName.trim(),
     last_name: body.lastName.trim(),
     role: body.role,
+    account_type: accountTypeLabel(body.role),
     onboarding_completed: body.role !== "family",
   };
   if (needsOrg) {

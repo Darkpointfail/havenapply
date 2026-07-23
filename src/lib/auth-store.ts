@@ -38,6 +38,15 @@ export function isFacilityRole(role: UserRole) {
   return role === "facility" || role === "community";
 }
 
+/** Human-readable label stored in Auth user_metadata for the Supabase dashboard. */
+export function accountTypeLabel(role: UserRole | SignupRole): string {
+  if (role === "family") return "Family";
+  if (role === "professional") return "Care Professional";
+  if (role === "facility" || role === "community") return "Care Community";
+  if (role === "internal") return "Internal";
+  return "Other";
+}
+
 export type AccountRecord = {
   id: string;
   email: string;

@@ -10,7 +10,7 @@ import type {
   SignUpWithRoleInput,
   UserRole,
 } from "@/lib/auth-store";
-import { isFacilityRole, parseUserRole } from "@/lib/auth-store";
+import { isFacilityRole, parseUserRole, accountTypeLabel } from "@/lib/auth-store";
 import { createClient } from "@/lib/supabase/client";
 
 export type SignUpAuthResult = AuthResult<SessionUser> & {
@@ -242,6 +242,7 @@ export async function signUpWithRoleSupabase(
     first_name: input.firstName.trim(),
     last_name: input.lastName.trim(),
     role: input.role,
+    account_type: accountTypeLabel(input.role),
     onboarding_completed: input.role !== "family",
   };
 

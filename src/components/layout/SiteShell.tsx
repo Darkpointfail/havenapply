@@ -76,6 +76,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           signOutHref="/"
         />
         <main className="flex-1 page-enter">{children}</main>
+        <AiAssistant />
       </>
     );
   }

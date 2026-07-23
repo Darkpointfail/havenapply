@@ -18,14 +18,15 @@ export const metadata: Metadata = {
   description:
     "Senior living admissions, made clear. Build one profile, find the right communities, and apply with confidence.",
   icons: {
+    // Prefer PNG (Safari) with versioned filenames to bust aggressive favicon caches.
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/brand/favicon-32-v5.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/favicon-48-v5.png", sizes: "48x48", type: "image/png" },
-      { url: "/brand/icon-v5.png", sizes: "512x512", type: "image/png" },
+      { url: "/brand/favicon-32-v6.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-48-v6.png", sizes: "48x48", type: "image/png" },
+      { url: "/brand/favicon-v6.ico", sizes: "any" },
+      { url: "/brand/icon-v6.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/brand/apple-icon-v5.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/brand/apple-icon-v6.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/brand/favicon-v6.ico"],
   },
 };
 

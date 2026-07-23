@@ -38,6 +38,22 @@ const nextConfig: NextConfig = {
       { source: "/for-residences", destination: "/for-communities", permanent: false },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: "/favicon.ico",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        ],
+      },
+      {
+        source: "/brand/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

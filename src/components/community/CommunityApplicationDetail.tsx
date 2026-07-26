@@ -143,7 +143,7 @@ export function CommunityApplicationDetail() {
 
   const docsGrouped = useMemo(() => {
     if (!app) return {} as Record<string, CommunityApplication["documents"]>;
-    return app.documents.reduce<Record<string, CommunityApplication["documents"]>>(
+    return (app.documents || []).reduce<Record<string, CommunityApplication["documents"]>>(
       (acc, doc) => {
         const key = documentCategoryGroup(doc.category);
         (acc[key] ||= []).push(doc);
@@ -187,9 +187,18 @@ export function CommunityApplicationDetail() {
     return (
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-lg font-semibold">Application not found</p>
-        <Button href="/community/dashboard" className="mt-4" size="sm">
-          Back to queue
-        </Button>
+        <p className="mt-2 text-sm text-ink-muted">
+          This dossier isn’t in your community workspace. Open Transition for accepted cases, or
+          Admissions for the live review queue.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <Button href="/community/transition" size="sm">
+            Transition
+          </Button>
+          <Button href="/community/dashboard" size="sm" variant="secondary">
+            Admissions
+          </Button>
+        </div>
       </div>
     );
   }

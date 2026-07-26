@@ -555,7 +555,7 @@ export function formatPortalDate(iso: string) {
 
 export function applicationCareType(app: CommunityApplication) {
   if (app.careType) return app.careType;
-  const joined = app.careNeeds.join(" ").toLowerCase();
+  const joined = (app.careNeeds || []).join(" ").toLowerCase();
   if (joined.includes("memory") || joined.includes("alzheimer") || joined.includes("dementia")) {
     return "Memory care";
   }
@@ -563,6 +563,22 @@ export function applicationCareType(app: CommunityApplication) {
   if (joined.includes("rehab")) return "Rehabilitation";
   if (joined.includes("independent")) return "Independent living";
   return "Assisted living";
+}
+
+/**
+ * Keep demo seed dossiers available even when a workspace was created before
+ * they existed (deep links like /community/applications/capp-hist-accepted).
+ */
+export function ensureDemoApplications(ws: CommunityWorkspace): CommunityWorkspace {
+  const seeded = seedCommunityWorkspace(ws.residenceId);
+  const existingIds = new Set(ws.applications.map((a) => a.id));
+  const missing = seeded.applications.filter((a) => !existingIds.has(a.id));
+  if (!missing.length) return ws;
+  return {
+    ...ws,
+    applications: [...ws.applications, ...missing],
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export function applicationReferral(app: CommunityApplication): ReferralSource {

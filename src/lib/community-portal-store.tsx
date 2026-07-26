@@ -23,6 +23,7 @@ import {
 import {
   communityRoleHas,
   computeDashboardStats,
+  ensureDemoApplications,
   resolveCommunityResidenceId,
   seedCommunityWorkspace,
   type AvailabilityUnit,
@@ -36,7 +37,7 @@ import {
 } from "@/lib/community-portal";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v8";
+const STORAGE_KEY = "haven-community-portal-v9";
 
 type PortalContextValue = {
   ready: boolean;
@@ -125,14 +126,28 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     const residenceId = resolveCommunityResidenceId(user.organization, user.email);
     const map = readMap();
     let ws = map[residenceId];
-    if (!ws || !Array.isArray(ws.applications)) {
+    if (!ws || !Array.isArray(ws.applications) || ws.applications.length === 0) {
       ws = seedCommunityWorkspace(residenceId);
+    } else {
+      // Older workspaces may be missing later demo dossiers (e.g. Helen Brooks).
+      ws = ensureDemoApplications(ws);
     }
     // Merge live family submissions into intake list
     const mergedApps = mergeSharedIntoCommunityApps(residenceId, ws.applications).map((app) =>
       scrubDemoNamesDeep({
         ...app,
         seniorName: canonicalSeniorName(app.seniorName),
+        careNeeds: Array.isArray(app.careNeeds) ? app.careNeeds : [],
+        medicalHighlights: Array.isArray(app.medicalHighlights) ? app.medicalHighlights : [],
+        documents: Array.isArray(app.documents) ? app.documents : [],
+        auditLog: Array.isArray(app.auditLog) ? app.auditLog : [],
+        internalNotes: Array.isArray(app.internalNotes) ? app.internalNotes : [],
+        family: app.family || {
+          name: "Family contact",
+          email: "family@example.com",
+          phone: "",
+          relationship: "Family",
+        },
       }),
     );
     ws = normalizeWorkspace({

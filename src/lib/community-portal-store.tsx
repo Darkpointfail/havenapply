@@ -23,6 +23,7 @@ import {
 import {
   communityRoleHas,
   computeDashboardStats,
+  ensureOpenQueueApplications,
   resolveCommunityResidenceId,
   seedCommunityWorkspace,
   type AvailabilityUnit,
@@ -36,7 +37,7 @@ import {
 } from "@/lib/community-portal";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v7";
+const STORAGE_KEY = "haven-community-portal-v8";
 
 type PortalContextValue = {
   ready: boolean;
@@ -116,7 +117,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     const residenceId = resolveCommunityResidenceId(user.organization, user.email);
     const map = readMap();
     let ws = map[residenceId];
-    if (!ws || !Array.isArray(ws.applications)) {
+    if (!ws || !Array.isArray(ws.applications) || ws.applications.length === 0) {
       ws = seedCommunityWorkspace(residenceId);
     }
     // Merge live family submissions into intake list
@@ -126,11 +127,13 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         seniorName: canonicalSeniorName(app.seniorName),
       }),
     );
-    ws = normalizeWorkspace({
-      ...ws,
-      applications: mergedApps,
-      updatedAt: new Date().toISOString(),
-    });
+    ws = ensureOpenQueueApplications(
+      normalizeWorkspace({
+        ...ws,
+        applications: mergedApps,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
     map[residenceId] = ws;
     writeMap(map);
     setWorkspace(ws);

@@ -564,7 +564,49 @@ export function resolveCommunityResidenceId(
   email?: string,
 ): string {
   const ids = residencesForCommunityOrg(organization, email);
-  return ids[0] || "maple-grove";
+  if (ids[0]) return ids[0];
+
+  // New care communities: give each org its own seeded admissions workspace
+  // instead of sharing the maple-grove demo key (which can look empty).
+  const raw = (organization || email || "community").trim().toLowerCase();
+  const slug = raw
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return slug ? `org-${slug}` : "maple-grove";
+}
+
+/** Keep at least the demo open applications visible in the live review queue. */
+export function ensureOpenQueueApplications(ws: CommunityWorkspace): CommunityWorkspace {
+  const openCount = ws.applications.filter((a) => queueSectionFor(a) != null).length;
+  if (openCount > 0) return ws;
+
+  const seeded = seedCommunityWorkspace(ws.residenceId);
+  const seedOpen = seeded.applications.filter((a) => queueSectionFor(a) != null);
+  const existingIds = new Set(ws.applications.map((a) => a.id));
+  const missing = seedOpen.filter((a) => !existingIds.has(a.id));
+
+  if (!missing.length) {
+    // Seed open ids already present but decided — reintroduce fresh open copies
+    const refreshed = seedOpen.map((a) => ({
+      ...a,
+      id: `${a.id}-open`,
+      status: a.status === "submitted" ? ("submitted" as const) : ("received" as const),
+      reviewChecklist: {},
+      lastUpdated: new Date().toISOString(),
+    }));
+    return {
+      ...ws,
+      applications: [...refreshed, ...ws.applications],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  return {
+    ...ws,
+    applications: [...missing, ...ws.applications],
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace {

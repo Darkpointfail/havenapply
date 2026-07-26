@@ -197,7 +197,7 @@ export function CommunityApplicationDetail() {
 
   return (
     <div className="min-h-full bg-bg">
-      <div className="mx-auto grid max-w-[1120px] gap-8 px-5 py-8 md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="mx-auto max-w-[880px] space-y-10 px-5 py-8 md:px-8 md:py-10">
         <div className="space-y-10">
           <div>
             <Link
@@ -246,9 +246,8 @@ export function CommunityApplicationDetail() {
             )}
           </div>
 
-          <div className="lg:hidden">
-            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
-          </div>
+          {/* Always show the guided checklist first — easy to miss in the sidebar alone */}
+          <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
 
           <Section title="AI executive summary">
             <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
@@ -700,11 +699,6 @@ export function CommunityApplicationDetail() {
           </Section>
         </div>
 
-        <div className="hidden lg:block">
-          <div className="sticky top-24">
-            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
-          </div>
-        </div>
       </div>
 
       {/* Admission Audit modal */}

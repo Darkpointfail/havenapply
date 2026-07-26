@@ -15,35 +15,7 @@ import {
   reviewChecklistProgress,
   type AdmissionPriority,
   type CommunityApplication,
-  type QueueSection,
 } from "@/lib/community-portal";
-import { cn } from "@/lib/utils";
-
-const SECTIONS: {
-  id: QueueSection;
-  title: string;
-  hint: string;
-  dot: string;
-}[] = [
-  {
-    id: "high",
-    title: "High priority",
-    hint: "Hospital discharge, urgent referrals, or immediate placement.",
-    dot: "bg-rose-500",
-  },
-  {
-    id: "medium",
-    title: "Medium priority",
-    hint: "Standard applications ready for review.",
-    dot: "bg-amber-500",
-  },
-  {
-    id: "low",
-    title: "Low priority",
-    hint: "Flexible move-in dates, review when you have capacity.",
-    dot: "bg-emerald-500",
-  },
-];
 
 function priorityTone(p: AdmissionPriority) {
   if (p === "high") return "danger" as const;
@@ -109,22 +81,13 @@ export function CommunityDashboard() {
   } = useCommunityPortal();
 
   const apps = workspace?.applications ?? [];
-
-  const grouped = useMemo(() => {
-    const map: Record<QueueSection, CommunityApplication[]> = {
-      high: [],
-      medium: [],
-      low: [],
-    };
-    for (const app of apps) {
-      const section = queueSectionFor(app);
-      if (section) map[section].push(app);
-    }
-    for (const key of Object.keys(map) as QueueSection[]) {
-      map[key].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-    }
-    return map;
-  }, [apps]);
+  const openApps = useMemo(
+    () =>
+      apps
+        .filter((a) => queueSectionFor(a) != null)
+        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    [apps],
+  );
 
   if (!ready) {
     return (
@@ -148,8 +111,7 @@ export function CommunityDashboard() {
     );
   }
 
-  const openCount =
-    grouped.high.length + grouped.medium.length + grouped.low.length;
+  const openCount = openApps.length;
 
   return (
     <div className="min-h-full bg-bg">
@@ -157,21 +119,49 @@ export function CommunityDashboard() {
         <header>
           <p className="text-sm font-medium text-ink-muted">Admissions</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
-            Review queue
+            Dossiers in progress
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Admissions in progress — open each case, complete the guided checklist, then accept or
-            decline.
+            Open cases awaiting your decision. Click a candidate, complete the 6-point checklist,
+            then accept or decline.
           </p>
-          <p className="mt-3 text-xs tabular-nums text-ink-faint">
-            {openCount} awaiting review
+          <p className="mt-3 text-sm font-medium tabular-nums text-ink">
+            {openCount} open dossier{openCount === 1 ? "" : "s"}
           </p>
-          <div className="mt-4">
-            <Button href="/community/applications?filter=history" size="sm" variant="secondary">
-              View application history
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button href="/community/applications?filter=open" size="sm" variant="secondary">
+              All open applications
+            </Button>
+            <Button href="/community/applications?filter=history" size="sm" variant="ghost">
+              History
             </Button>
           </div>
         </header>
+
+        {openCount === 0 ? (
+          <section className="rounded-2xl border border-dashed border-line bg-surface px-5 py-10 text-center">
+            <p className="text-base font-semibold text-ink">No dossiers in progress</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
+              When families apply, their packets appear here. Refresh if you just created this
+              community account.
+            </p>
+            <Button href="/community/dashboard" size="sm" className="mt-5">
+              Refresh queue
+            </Button>
+          </section>
+        ) : (
+          <section className="space-y-3">
+            <div className="mb-1">
+              <h2 className="text-lg font-semibold tracking-tight text-ink">Open now</h2>
+              <p className="mt-0.5 text-sm text-ink-muted">
+                Start or continue the guided review for each candidate.
+              </p>
+            </div>
+            {openApps.map((app) => (
+              <ApplicationCard key={app.id} app={app} />
+            ))}
+          </section>
+        )}
 
         {unreadNotifications.length > 0 && (
           <section className="rounded-2xl border border-brand/25 bg-brand-soft/40 p-4">
@@ -216,42 +206,6 @@ export function CommunityDashboard() {
             </ul>
           </section>
         )}
-
-        <div className="space-y-10">
-          {SECTIONS.map((section) => {
-            const list = grouped[section.id];
-            return (
-              <section key={section.id}>
-                <div className="mb-4 flex items-start gap-2.5">
-                  <span
-                    className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", section.dot)}
-                    aria-hidden
-                  />
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight text-ink">
-                      {section.title}
-                      <span className="ml-2 text-sm font-normal tabular-nums text-ink-faint">
-                        {list.length}
-                      </span>
-                    </h2>
-                    <p className="mt-0.5 text-sm text-ink-muted">{section.hint}</p>
-                  </div>
-                </div>
-                {list.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
-                    No applications in this queue.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {list.map((app) => (
-                      <ApplicationCard key={app.id} app={app} />
-                    ))}
-                  </div>
-                )}
-              </section>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

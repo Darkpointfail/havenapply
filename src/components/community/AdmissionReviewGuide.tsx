@@ -29,9 +29,9 @@ export function AdmissionReviewGuide({
     <aside className="rounded-2xl border border-line bg-surface p-4 shadow-xs md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-ink">Admission in progress</p>
+          <p className="text-sm font-semibold text-ink">Dossier in progress</p>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Check every detail before you finalize.
+            Mark each item as you review the file, then accept or decline.
           </p>
         </div>
         <p className="shrink-0 text-sm font-semibold tabular-nums text-brand">

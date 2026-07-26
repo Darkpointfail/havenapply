@@ -3,78 +3,78 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* HavenApply, fresh wellness green × warm paper */
-  --bg: #faf7f2;
+  /* HavenApply — sober Care.com-inspired: clean white, cool gray, simple teal */
+  --bg: #f7f8fa;
   --bg-elevated: #ffffff;
-  --bg-soft: #f2ebe3;
-  --bg-mute: #e8dfd4;
-  --ink: #1e2a24;
-  --ink-secondary: #5a6560;
-  --ink-muted: #7d8882;
-  --ink-faint: #a8b0ab;
-  --line: #e5dbd0;
-  --line-strong: #d4c8ba;
-  --brand: #1f8a6a;
-  --brand-strong: #187a5c;
-  --brand-soft: #e3f5ee;
-  --brand-glow: rgba(31, 138, 106, 0.2);
-  --accent: #d4896a;
-  --accent-soft: #faf0ea;
-  --success: #2f9e5f;
-  --success-soft: #e6f6ec;
-  --warn: #d4a04a;
-  --warn-soft: #fbf5e8;
-  --danger: #c85a54;
-  --danger-soft: #f8eeed;
-  --info: #5b8aa8;
-  --info-soft: #eaf2f6;
-  --ai: #6d5f8a;
-  --ai-soft: #f2eff6;
-  --shadow-xs: 0 1px 2px rgba(30, 42, 36, 0.04);
-  --shadow-sm: 0 1px 2px rgba(30, 42, 36, 0.04), 0 4px 14px rgba(30, 42, 36, 0.05);
-  --shadow-md: 0 6px 24px rgba(30, 42, 36, 0.07);
-  --shadow-lg: 0 16px 40px rgba(30, 42, 36, 0.1);
+  --bg-soft: #eef1f4;
+  --bg-mute: #e4e8ed;
+  --ink: #1a1d23;
+  --ink-secondary: #4b5563;
+  --ink-muted: #6b7280;
+  --ink-faint: #9ca3af;
+  --line: #e5e7eb;
+  --line-strong: #d1d5db;
+  --brand: #0f8a8a;
+  --brand-strong: #0b7373;
+  --brand-soft: #e7f6f6;
+  --brand-glow: rgba(15, 138, 138, 0.16);
+  --accent: #0f8a8a;
+  --accent-soft: #e7f6f6;
+  --success: #1f9d63;
+  --success-soft: #e8f7ef;
+  --warn: #c4922a;
+  --warn-soft: #faf4e8;
+  --danger: #c24b4b;
+  --danger-soft: #f8ecec;
+  --info: #3d7ea6;
+  --info-soft: #eaf3f8;
+  --ai: #4a6478;
+  --ai-soft: #eef2f5;
+  --shadow-xs: 0 1px 2px rgba(26, 29, 35, 0.04);
+  --shadow-sm: 0 1px 2px rgba(26, 29, 35, 0.04), 0 4px 12px rgba(26, 29, 35, 0.04);
+  --shadow-md: 0 4px 18px rgba(26, 29, 35, 0.06);
+  --shadow-lg: 0 12px 32px rgba(26, 29, 35, 0.08);
   --radius-sm: 10px;
-  --radius: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --header-h: 80px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --grain-opacity: 0.045;
+  --grain-opacity: 0.02;
 }
 
 html.dark {
-  --bg: #121816;
-  --bg-elevated: #1a211e;
-  --bg-soft: #242c28;
-  --bg-mute: #2e3833;
-  --ink: #f0f4f1;
-  --ink-secondary: #c2ccc6;
-  --ink-muted: #8f9c95;
-  --ink-faint: #64706a;
-  --line: rgba(240, 244, 241, 0.1);
-  --line-strong: rgba(240, 244, 241, 0.16);
-  --brand: #4ec99a;
-  --brand-strong: #6fd9b0;
-  --brand-soft: rgba(78, 201, 154, 0.14);
-  --brand-glow: rgba(78, 201, 154, 0.24);
-  --accent: #e0a48a;
-  --accent-soft: rgba(224, 164, 138, 0.14);
-  --success: #5dce8a;
-  --success-soft: rgba(93, 206, 138, 0.14);
-  --warn: #e0b86a;
-  --warn-soft: rgba(224, 184, 106, 0.14);
-  --danger: #e08a84;
-  --danger-soft: rgba(224, 138, 132, 0.14);
-  --info: #7eaccc;
-  --info-soft: rgba(126, 172, 204, 0.14);
-  --ai: #b5a8c4;
-  --ai-soft: rgba(181, 168, 196, 0.14);
+  --bg: #121417;
+  --bg-elevated: #1a1d22;
+  --bg-soft: #23272e;
+  --bg-mute: #2c3139;
+  --ink: #f3f4f6;
+  --ink-secondary: #c4c9d1;
+  --ink-muted: #9aa1ab;
+  --ink-faint: #6b7280;
+  --line: rgba(243, 244, 246, 0.1);
+  --line-strong: rgba(243, 244, 246, 0.16);
+  --brand: #2bb5b5;
+  --brand-strong: #4ec9c9;
+  --brand-soft: rgba(43, 181, 181, 0.14);
+  --brand-glow: rgba(43, 181, 181, 0.22);
+  --accent: #2bb5b5;
+  --accent-soft: rgba(43, 181, 181, 0.14);
+  --success: #3dba78;
+  --success-soft: rgba(61, 186, 120, 0.14);
+  --warn: #d4a84b;
+  --warn-soft: rgba(212, 168, 75, 0.14);
+  --danger: #e07a7a;
+  --danger-soft: rgba(224, 122, 122, 0.14);
+  --info: #6ea8c9;
+  --info-soft: rgba(110, 168, 201, 0.14);
+  --ai: #8fa3b5;
+  --ai-soft: rgba(143, 163, 181, 0.14);
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 12px 40px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
-  --grain-opacity: 0.06;
+  --grain-opacity: 0.03;
 }
 
 @theme inline {
@@ -132,10 +132,7 @@ html {
 body {
   position: relative;
   isolation: isolate;
-  background:
-    radial-gradient(ellipse 90% 55% at 0% -10%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 50%),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   font-size: 16px;
@@ -144,7 +141,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Soft paper / linen grain, keeps the UI warm without looking flat */
+/* Very light grain — almost invisible, keeps surfaces from feeling plastic */
 body::before {
   content: "";
   pointer-events: none;
@@ -271,8 +268,7 @@ html.dark body::before {
 
 .gradient-mesh {
   background:
-    radial-gradient(ellipse 80% 60% at 10% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 55%),
-    radial-gradient(ellipse 60% 50% at 90% 10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 50%),
+    radial-gradient(ellipse 80% 55% at 8% 0%, color-mix(in srgb, var(--brand) 8%, transparent), transparent 55%),
     var(--bg);
 }
 

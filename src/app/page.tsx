@@ -548,7 +548,7 @@ export default function HomePage() {
 
       {/* Final CTA */}
       <section className="px-5 pb-24 md:px-8">
-        <div className="mx-auto max-w-[1400px] overflow-hidden rounded-[32px] bg-gradient-to-br from-brand-strong via-brand to-accent px-8 py-16 text-center text-white shadow-lift md:px-16 md:py-20">
+        <div className="mx-auto max-w-[1400px] overflow-hidden rounded-[32px] bg-brand px-8 py-16 text-center text-white shadow-card md:px-16 md:py-20">
           <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
             Ready to make senior living admissions simpler?
           </h2>

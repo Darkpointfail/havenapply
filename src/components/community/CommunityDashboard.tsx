@@ -12,6 +12,7 @@ import {
   initialsFromName,
   priorityBadgeLabel,
   queueSectionFor,
+  reviewChecklistProgress,
   type AdmissionPriority,
   type CommunityApplication,
   type QueueSection,
@@ -52,6 +53,7 @@ function priorityTone(p: AdmissionPriority) {
 
 function ApplicationCard({ app }: { app: CommunityApplication }) {
   const priority = applicationPriority(app);
+  const progress = reviewChecklistProgress(app);
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-line/80 bg-surface p-5 shadow-xs transition hover:border-line-strong hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3.5">
@@ -72,6 +74,18 @@ function ApplicationCard({ app }: { app: CommunityApplication }) {
             <span className="mx-1.5">·</span>
             Submitted {formatPortalDate(app.submittedAt)}
           </p>
+          <div className="mt-2.5 flex items-center gap-2">
+            <div className="h-1.5 w-28 overflow-hidden rounded-full bg-bg-soft">
+              <div
+                className="h-full rounded-full bg-brand transition-all"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+            <span className="text-xs tabular-nums text-ink-faint">
+              Review {progress.done}/{progress.total}
+              {progress.complete ? " · ready to decide" : " · in progress"}
+            </span>
+          </div>
         </div>
       </div>
       <Button
@@ -79,7 +93,7 @@ function ApplicationCard({ app }: { app: CommunityApplication }) {
         size="sm"
         className="shrink-0 self-start sm:self-center"
       >
-        Review application
+        {progress.done > 0 ? "Continue review" : "Start review"}
       </Button>
     </article>
   );
@@ -146,7 +160,8 @@ export function CommunityDashboard() {
             Review queue
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Complete applications ready for your decision, receive, review, discuss, decide.
+            Admissions in progress — open each case, complete the guided checklist, then accept or
+            decline.
           </p>
           <p className="mt-3 text-xs tabular-nums text-ink-faint">
             {openCount} awaiting review

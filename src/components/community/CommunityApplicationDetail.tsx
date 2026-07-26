@@ -11,6 +11,7 @@ import {
   MessageSquare,
   X,
 } from "lucide-react";
+import { AdmissionReviewGuide } from "@/components/community/AdmissionReviewGuide";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCommunityPortal } from "@/lib/community-portal-store";
@@ -22,9 +23,11 @@ import {
   formatPortalTime,
   initialsFromName,
   priorityBadgeLabel,
+  reviewChecklistProgress,
   reviewStatusLabel,
   type AdmissionPriority,
   type CommunityApplication,
+  type ReviewCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
 
@@ -37,13 +40,6 @@ const DECLINE_REASONS = [
   "Other",
 ] as const;
 
-const AUDIT_CHECKS = [
-  { id: "identity", label: "Identity verified" },
-  { id: "medical", label: "Medical documents reviewed" },
-  { id: "financial", label: "Financial documents reviewed" },
-  { id: "requirements", label: "Community requirements verified" },
-] as const;
-
 function priorityTone(p: AdmissionPriority) {
   if (p === "high") return "danger" as const;
   if (p === "medium") return "warn" as const;
@@ -51,14 +47,16 @@ function priorityTone(p: AdmissionPriority) {
 }
 
 function Section({
+  id,
   title,
   children,
 }: {
+  id?: string;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3">
+    <section id={id} className="scroll-mt-24 space-y-3">
       <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>
       {children}
     </section>
@@ -75,14 +73,19 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 }
 
 function SubCard({
+  id,
   title,
   children,
 }: {
+  id?: string;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
+    <div
+      id={id}
+      className="scroll-mt-24 rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6"
+    >
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
       <div className="mt-4">{children}</div>
     </div>
@@ -116,12 +119,12 @@ export function CommunityApplicationDetail() {
     getApplication,
     acceptApplication,
     declineApplication,
+    updateReviewChecklist,
   } = useCommunityPortal();
 
   const app = getApplication(id);
   const [auditOpen, setAuditOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
-  const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [auditNote, setAuditNote] = useState("");
   const [declineReason, setDeclineReason] = useState<string>(DECLINE_REASONS[0]);
   const [declineNote, setDeclineNote] = useState("");
@@ -140,11 +143,16 @@ export function CommunityApplicationDetail() {
   }, [app]);
 
   const dossier = app?.dossier;
-  const allChecked = AUDIT_CHECKS.every((c) => checks[c.id]);
+  const reviewProgress = app ? reviewChecklistProgress(app) : null;
 
   const flashMsg = (msg: string) => {
     setFlash(msg);
     window.setTimeout(() => setFlash(null), 2400);
+  };
+
+  const toggleCheck = (checkId: ReviewCheckId, value: boolean) => {
+    if (!app) return;
+    updateReviewChecklist(app.id, { [checkId]: value });
   };
 
   if (!ready || !workspace) {
@@ -189,7 +197,8 @@ export function CommunityApplicationDetail() {
 
   return (
     <div className="min-h-full bg-bg">
-      <div className="mx-auto max-w-[880px] space-y-10 px-5 py-8 md:px-8 md:py-10">
+      <div className="mx-auto grid max-w-[1120px] gap-8 px-5 py-8 md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-10">
           <div>
             <Link
               href="/community/dashboard"
@@ -211,6 +220,11 @@ export function CommunityApplicationDetail() {
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
                   <Badge tone="brand">{reviewStatusLabel(app)}</Badge>
+                  {reviewProgress && !decided ? (
+                    <Badge tone={reviewProgress.complete ? "success" : "warn"}>
+                      Review {reviewProgress.done}/{reviewProgress.total}
+                    </Badge>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-sm text-ink-muted">
                   Submitted {formatPortalDate(app.submittedAt)}
@@ -232,6 +246,10 @@ export function CommunityApplicationDetail() {
             )}
           </div>
 
+          <div className="lg:hidden">
+            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
+          </div>
+
           <Section title="AI executive summary">
             <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
               <p className="text-[15px] leading-relaxed text-ink-secondary whitespace-pre-line">
@@ -246,7 +264,7 @@ export function CommunityApplicationDetail() {
               and prior placements.
             </p>
             <div className="mt-4 space-y-4">
-              <SubCard title="Identity & demographics">
+              <SubCard id="section-identity" title="Identity & demographics">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field label="Full name" value={app.seniorName} />
                   <Field label="Age" value={`${app.seniorAge} years`} />
@@ -277,7 +295,7 @@ export function CommunityApplicationDetail() {
                 </div>
               </SubCard>
 
-              <SubCard title="Living situation & contacts">
+              <SubCard id="section-family" title="Living situation & contacts">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Current address" value={dossier?.currentAddress} />
                   <Field
@@ -316,7 +334,7 @@ export function CommunityApplicationDetail() {
                 </div>
               </SubCard>
 
-              <SubCard title="Pathologies & diagnoses">
+              <SubCard id="section-clinical" title="Pathologies & diagnoses">
                 {dossier?.pathologies?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[520px] text-left text-sm">
@@ -349,7 +367,7 @@ export function CommunityApplicationDetail() {
                 )}
               </SubCard>
 
-              <SubCard title="Medications">
+              <SubCard id="section-medications" title="Medications">
                 {dossier?.medications?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[640px] text-left text-sm">
@@ -510,7 +528,7 @@ export function CommunityApplicationDetail() {
             </div>
           </Section>
 
-          <Section title="Documents">
+          <Section id="section-documents" title="Documents">
             <p className="text-sm text-ink-muted">
               Verified before submission. Organized for review, not for collection.
             </p>
@@ -591,9 +609,9 @@ export function CommunityApplicationDetail() {
             </ol>
           </Section>
 
-          <Section title="Decision">
+          <Section id="section-decision" title="Decision">
             <p className="text-sm text-ink-muted">
-              Review the case, then choose one clear outcome.
+              Finish the guided checklist, then choose one clear outcome.
             </p>
             <div className="mt-4 rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
               {decided ? (
@@ -601,12 +619,23 @@ export function CommunityApplicationDetail() {
                   This application is {app.status === "approved" ? "approved" : "declined"}.
                 </p>
               ) : (
-                <div className="grid gap-3 md:grid-cols-3">
+                <>
+                  {!reviewProgress?.complete ? (
+                    <p className="mb-4 rounded-xl bg-warn-soft/50 px-3 py-2.5 text-sm text-ink-secondary">
+                      Review still in progress ({reviewProgress?.done}/{reviewProgress?.total}).
+                      Check identity, clinical file, medications, documents, family contacts, and
+                      program fit before approving.
+                    </p>
+                  ) : (
+                    <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
+                      All review checks complete — ready to finalize.
+                    </p>
+                  )}
+                  <div className="grid gap-3 md:grid-cols-3">
                   <button
                     type="button"
-                    disabled={!can("acceptDecline")}
+                    disabled={!can("acceptDecline") || !reviewProgress?.complete}
                     onClick={() => {
-                      setChecks({});
                       setAuditNote("");
                       setAuditOpen(true);
                     }}
@@ -618,7 +647,9 @@ export function CommunityApplicationDetail() {
                     <span>
                       <span className="block text-base font-semibold text-ink">Approve</span>
                       <span className="mt-0.5 block text-sm text-ink-muted">
-                        Run admission audit
+                        {reviewProgress?.complete
+                          ? "Confirm admission"
+                          : "Complete checklist first"}
                       </span>
                     </span>
                   </button>
@@ -663,9 +694,17 @@ export function CommunityApplicationDetail() {
                     </span>
                   </button>
                 </div>
+                </>
               )}
             </div>
           </Section>
+        </div>
+
+        <div className="hidden lg:block">
+          <div className="sticky top-24">
+            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
+          </div>
+        </div>
       </div>
 
       {/* Admission Audit modal */}
@@ -677,27 +716,32 @@ export function CommunityApplicationDetail() {
             aria-hidden
           />
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
-            <h2 className="text-xl font-semibold tracking-tight">Admission audit</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Confirm approval</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Confirm you have reviewed this complete application.
+              You completed the guided review. Confirm to accept this candidate.
             </p>
             <ul className="mt-5 space-y-2">
-              {AUDIT_CHECKS.map((c) => (
-                <label
-                  key={c.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl bg-bg-soft px-3 py-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={Boolean(checks[c.id])}
-                    onChange={(e) =>
-                      setChecks((prev) => ({ ...prev, [c.id]: e.target.checked }))
-                    }
-                    className="h-4 w-4 rounded border-line text-brand"
-                  />
-                  {c.label}
-                </label>
-              ))}
+              {(["identity", "clinical", "medications", "documents", "family", "fit"] as const).map(
+                (id) => {
+                  const labels: Record<string, string> = {
+                    identity: "Identity & demographics",
+                    clinical: "Clinical file",
+                    medications: "Medications & allergies",
+                    documents: "Documents packet",
+                    family: "Family & contacts",
+                    fit: "Program fit",
+                  };
+                  return (
+                    <li
+                      key={id}
+                      className="flex items-center gap-2 rounded-xl bg-success-soft/50 px-3 py-2.5 text-sm text-ink"
+                    >
+                      <Check size={14} className="text-success" />
+                      {labels[id]}
+                    </li>
+                  );
+                },
+              )}
             </ul>
             <label className="mt-4 block text-sm">
               Internal notes (optional)
@@ -721,7 +765,7 @@ export function CommunityApplicationDetail() {
               <Button
                 type="button"
                 className="flex-1"
-                disabled={!allChecked}
+                disabled={!reviewProgress?.complete}
                 onClick={confirmApprove}
               >
                 Approve admission

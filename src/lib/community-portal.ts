@@ -288,7 +288,68 @@ export type CommunityApplication = {
   submittedAt: string;
   lastUpdated: string;
   auditLog: AuditEntry[];
+  /** Guided admission review progress before accept/decline */
+  reviewChecklist?: Partial<Record<string, boolean>>;
 };
+
+/** Steps admissions staff should verify before finalizing a decision. */
+export const REVIEW_CHECK_ITEMS = [
+  {
+    id: "identity",
+    label: "Identity & demographics",
+    hint: "Name, DOB, and ID documents match.",
+    sectionId: "section-identity",
+    required: true,
+  },
+  {
+    id: "clinical",
+    label: "Clinical file",
+    hint: "Diagnoses, ADLs, cognition, and care needs.",
+    sectionId: "section-clinical",
+    required: true,
+  },
+  {
+    id: "medications",
+    label: "Medications & allergies",
+    hint: "Med list and allergy risks reviewed.",
+    sectionId: "section-medications",
+    required: true,
+  },
+  {
+    id: "documents",
+    label: "Documents packet",
+    hint: "Identity, medical, financial, and legal files.",
+    sectionId: "section-documents",
+    required: true,
+  },
+  {
+    id: "family",
+    label: "Family & contacts",
+    hint: "Primary contact, emergency contact, payer.",
+    sectionId: "section-family",
+    required: true,
+  },
+  {
+    id: "fit",
+    label: "Program fit",
+    hint: "Care level, criteria, and availability align.",
+    sectionId: "section-decision",
+    required: true,
+  },
+] as const;
+
+export type ReviewCheckId = (typeof REVIEW_CHECK_ITEMS)[number]["id"];
+
+export function reviewChecklistProgress(app: CommunityApplication) {
+  const required = REVIEW_CHECK_ITEMS.filter((c) => c.required);
+  const done = required.filter((c) => Boolean(app.reviewChecklist?.[c.id])).length;
+  return {
+    done,
+    total: required.length,
+    complete: done === required.length,
+    percent: required.length ? Math.round((done / required.length) * 100) : 0,
+  };
+}
 
 export type AvailabilityStatus = "confirmed" | "estimated";
 

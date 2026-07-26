@@ -57,6 +57,10 @@ type PortalContextValue = {
   changeStatus: (appId: string, status: ApplicationStatus) => { ok: boolean; error?: string };
   acceptApplication: (appId: string, note?: string) => { ok: boolean; error?: string };
   declineApplication: (appId: string, note?: string) => { ok: boolean; error?: string };
+  updateReviewChecklist: (
+    appId: string,
+    patch: Partial<Record<string, boolean>>,
+  ) => { ok: boolean; error?: string };
   updateProfile: (patch: Partial<CommunityProfile>) => { ok: boolean; error?: string };
   upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
   removeAvailability: (unitId: string) => { ok: boolean; error?: string };
@@ -447,6 +451,49 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     [mutateApp],
   );
 
+  const updateReviewChecklist = useCallback(
+    (appId: string, patch: Partial<Record<string, boolean>>) => {
+      if (!workspace?.applications.some((a) => a.id === appId)) {
+        return { ok: false, error: "Application not found." };
+      }
+      persist((ws) => ({
+        ...ws,
+        applications: ws.applications.map((a) => {
+          if (a.id !== appId) return a;
+          const prev = a.reviewChecklist || {};
+          const nextChecks = { ...prev, ...patch };
+          const wasEmpty = !Object.values(prev).some(Boolean);
+          const nowStarted = Object.values(nextChecks).some(Boolean);
+          const bumpStatus =
+            nowStarted && ["submitted", "received"].includes(a.status)
+              ? ("under_review" as ApplicationStatus)
+              : a.status;
+          return {
+            ...a,
+            reviewChecklist: nextChecks,
+            status: bumpStatus,
+            lastUpdated: new Date().toISOString(),
+            auditLog:
+              wasEmpty && nowStarted
+                ? [
+                    ...a.auditLog,
+                    {
+                      id: `aud-${Date.now()}`,
+                      at: new Date().toISOString(),
+                      actor: actorName,
+                      action: "Started guided admission review",
+                    },
+                  ]
+                : a.auditLog,
+          };
+        }),
+        updatedAt: new Date().toISOString(),
+      }));
+      return { ok: true };
+    },
+    [actorName, persist, workspace],
+  );
+
   const updateProfile = useCallback(
     (patch: Partial<CommunityProfile>) => {
       if (!can("editProfile") && !can("editPricing") && !can("editAdmissions")) {
@@ -584,6 +631,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       changeStatus,
       acceptApplication,
       declineApplication,
+      updateReviewChecklist,
       updateProfile,
       upsertAvailability,
       removeAvailability,
@@ -609,6 +657,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       changeStatus,
       acceptApplication,
       declineApplication,
+      updateReviewChecklist,
       updateProfile,
       upsertAvailability,
       removeAvailability,

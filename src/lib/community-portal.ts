@@ -297,6 +297,8 @@ export type CommunityApplication = {
   transitionChecklist?: Partial<Record<string, boolean>>;
   /** Confirmed move-in date once family and community agree (ISO date). */
   moveInConfirmed?: string | null;
+  /** Rich guided transition workspace (agreements, payments, family forms, scheduling). */
+  transitionWork?: import("@/lib/community-transition").TransitionWork;
 };
 
 /** Steps admissions staff should verify before finalizing a decision. */

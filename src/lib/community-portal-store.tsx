@@ -35,9 +35,15 @@ import {
   type CommunityWorkspace,
   type DashboardStats,
 } from "@/lib/community-portal";
+import {
+  deriveTransitionChecklist,
+  ensureTransitionWork,
+  type TransitionTimelineEntry,
+  type TransitionWork,
+} from "@/lib/community-transition";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v9";
+const STORAGE_KEY = "haven-community-portal-v10";
 
 type PortalContextValue = {
   ready: boolean;
@@ -71,6 +77,13 @@ type PortalContextValue = {
     date: string | null,
   ) => { ok: boolean; error?: string };
   completeTransition: (appId: string, note?: string) => { ok: boolean; error?: string };
+  saveTransitionWork: (
+    appId: string,
+    updater: (prev: TransitionWork) => TransitionWork,
+    timelineAction?: string,
+    timelineDetail?: string,
+    stepId?: import("@/lib/community-transition").TransitionStepId,
+  ) => { ok: boolean; error?: string };
   updateProfile: (patch: Partial<CommunityProfile>) => { ok: boolean; error?: string };
   upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
   removeAvailability: (unitId: string) => { ok: boolean; error?: string };
@@ -595,12 +608,77 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     [mutateApp],
   );
 
+  const saveTransitionWork = useCallback(
+    (
+      appId: string,
+      updater: (prev: TransitionWork) => TransitionWork,
+      timelineAction?: string,
+      timelineDetail?: string,
+      stepId?: import("@/lib/community-transition").TransitionStepId,
+    ) => {
+      if (!can("acceptDecline")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      const app = workspace?.applications.find((a) => a.id === appId);
+      if (!app) return { ok: false, error: "Application not found." };
+
+      persist((ws) => ({
+        ...ws,
+        applications: ws.applications.map((a) => {
+          if (a.id !== appId) return a;
+          const prev = ensureTransitionWork(a, ws.profile);
+          let next = updater(prev);
+          if (timelineAction) {
+            const entry: TransitionTimelineEntry = {
+              id: `tl-${Date.now()}`,
+              at: new Date().toISOString(),
+              actor: actorName,
+              action: timelineAction,
+              detail: timelineDetail,
+              stepId,
+            };
+            next = { ...next, timeline: [entry, ...next.timeline] };
+          }
+          const checks = deriveTransitionChecklist(next);
+          const moveInDone = checks.moveInDate;
+          return {
+            ...a,
+            transitionWork: next,
+            transitionChecklist: checks,
+            moveInConfirmed: next.moveIn.confirmedDate || a.moveInConfirmed || null,
+            status:
+              moveInDone && a.status === "approved"
+                ? ("move_in_scheduled" as ApplicationStatus)
+                : a.status,
+            lastUpdated: new Date().toISOString(),
+            auditLog: timelineAction
+              ? [
+                  ...a.auditLog,
+                  {
+                    id: `aud-${Date.now()}`,
+                    at: new Date().toISOString(),
+                    actor: actorName,
+                    action: timelineAction,
+                  },
+                ]
+              : a.auditLog,
+          };
+        }),
+        updatedAt: new Date().toISOString(),
+      }));
+      return { ok: true };
+    },
+    [actorName, can, persist, workspace],
+  );
+
   const completeTransition = useCallback(
     (appId: string, note?: string) => {
       const app = workspace?.applications.find((a) => a.id === appId);
       if (!app) return { ok: false, error: "Application not found." };
+      const work = ensureTransitionWork(app, workspace?.profile);
+      const checks = deriveTransitionChecklist(work);
       const required = ["contract", "payment", "familyDetails", "moveInDate"] as const;
-      const done = required.every((id) => Boolean(app.transitionChecklist?.[id]));
+      const done = required.every((id) => Boolean(checks[id]));
       if (!done) {
         return {
           ok: false,
@@ -610,13 +688,31 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       return mutateApp(
         appId,
         "acceptDecline",
-        (a) => ({ ...a, status: "closed" as ApplicationStatus }),
+        (a) => {
+          const prev = ensureTransitionWork(a, workspace?.profile);
+          const entry: TransitionTimelineEntry = {
+            id: `tl-${Date.now()}`,
+            at: new Date().toISOString(),
+            actor: actorName,
+            action: "Transition completed · dossier closed",
+            detail: note?.trim() || undefined,
+          };
+          return {
+            ...a,
+            status: "closed" as ApplicationStatus,
+            transitionChecklist: checks,
+            transitionWork: {
+              ...prev,
+              timeline: [entry, ...prev.timeline],
+            },
+          };
+        },
         note?.trim()
           ? `Transition complete · dossier closed · ${note.trim()}`
           : "Transition complete · dossier closed",
       );
     },
-    [mutateApp, workspace],
+    [actorName, mutateApp, workspace],
   );
 
   const updateProfile = useCallback(
@@ -760,6 +856,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       updateTransitionChecklist,
       setMoveInConfirmed,
       completeTransition,
+      saveTransitionWork,
       updateProfile,
       upsertAvailability,
       removeAvailability,
@@ -789,6 +886,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       updateTransitionChecklist,
       setMoveInConfirmed,
       completeTransition,
+      saveTransitionWork,
       updateProfile,
       upsertAvailability,
       removeAvailability,

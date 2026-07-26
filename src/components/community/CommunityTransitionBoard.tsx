@@ -60,7 +60,7 @@ function TransitionCard({ app }: { app: CommunityApplication }) {
         </div>
       </div>
       <Button
-        href={`/community/applications/${app.id}`}
+        href={`/community/transition/${app.id}`}
         size="sm"
         className="shrink-0 self-start sm:self-center"
       >

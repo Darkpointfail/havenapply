@@ -211,7 +211,7 @@ export function CommunityApplicationDetail() {
     if (r.ok) {
       setAuditOpen(false);
       flashMsg("Accepted — now in Transition for contracts & move-in");
-      window.setTimeout(() => router.push("/community/transition"), 900);
+      window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
   };
 
@@ -779,7 +779,7 @@ export function CommunityApplicationDetail() {
                     </button>
 
                     <Link
-                      href="/community/transition"
+                      href={`/community/transition/${app.id}`}
                       className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-brand/40 hover:bg-brand-soft/30"
                     >
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">

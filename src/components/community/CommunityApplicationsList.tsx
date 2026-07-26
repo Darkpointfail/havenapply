@@ -9,6 +9,7 @@ import { useCommunityPortal } from "@/lib/community-portal-store";
 import {
   formatPortalDate,
   formatPortalTime,
+  queueSectionFor,
   statusLabel,
   statusTone,
   type CommunityApplication,
@@ -17,11 +18,12 @@ import type { ApplicationStatus } from "@/data/applications";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
-  { id: "all", label: "All" },
+  { id: "open", label: "In progress" },
   { id: "new", label: "New" },
   { id: "pending", label: "In review" },
   { id: "info", label: "Need info" },
   { id: "history", label: "History" },
+  { id: "all", label: "All" },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
@@ -71,7 +73,7 @@ function ApplicationsListInner() {
   const params = useSearchParams();
   const raw = params.get("filter");
   const initial = (
-    raw === "decided" ? "history" : raw || "all"
+    raw === "decided" ? "history" : raw || "open"
   ) as FilterId;
   const { ready, workspace } = useCommunityPortal();
   const [filter, setFilter] = useState<FilterId>(
@@ -82,7 +84,9 @@ function ApplicationsListInner() {
   const apps = useMemo(() => {
     if (!workspace) return [];
     let list = [...workspace.applications];
-    if (filter === "new") {
+    if (filter === "open") {
+      list = list.filter((a) => queueSectionFor(a) != null);
+    } else if (filter === "new") {
       list = list.filter((a) => ["submitted", "received"].includes(a.status));
     } else if (filter === "pending") {
       list = list.filter((a) =>

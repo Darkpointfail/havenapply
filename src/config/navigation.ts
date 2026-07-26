@@ -102,7 +102,7 @@ export const familyMobileNav: NavItem[] = [
  * Admissions · Messages · Community · Team
  */
 export const communityNav: NavItem[] = [
-  { href: "/community/dashboard", label: "Admissions" },
+  { href: "/community/dashboard", label: "In progress" },
   { href: "/community/applications?filter=history", label: "History" },
   { href: "/community/messages", label: "Messages" },
   { href: "/community/profile", label: "Community" },

@@ -112,10 +112,24 @@ export function CommunityDashboard() {
     return map;
   }, [apps]);
 
-  if (!ready || !workspace) {
+  if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
         Opening admissions…
+      </div>
+    );
+  }
+
+  if (!workspace) {
+    return (
+      <div className="mx-auto flex min-h-[40vh] max-w-md flex-col items-center justify-center px-5 text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Admissions workspace unavailable</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          We couldn’t open your community workspace. Refresh the page, or sign out and back in.
+        </p>
+        <Button href="/community/dashboard" className="mt-6" size="sm">
+          Try again
+        </Button>
       </div>
     );
   }

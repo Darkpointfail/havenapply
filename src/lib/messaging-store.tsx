@@ -237,7 +237,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
   const markThreadRead = useCallback(
     (threadId: string) => {
       if (!user) return;
-      const asFamily = user.role !== "community";
+      const asFamily = !isFacilityRole(user.role);
       persist((prev) =>
         prev.map((t) => {
           if (t.id !== threadId) return t;
@@ -271,7 +271,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
   const archiveThread = useCallback(
     (threadId: string, archived = true) => {
       if (!user) return;
-      const asFamily = user.role !== "community";
+      const asFamily = !isFacilityRole(user.role);
       persist((prev) =>
         prev.map((t) => {
           if (t.id !== threadId) return t;

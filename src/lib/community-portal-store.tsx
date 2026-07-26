@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/lib/auth";
+import { isFacilityRole } from "@/lib/auth-store";
 import type { ApplicationStatus } from "@/data/applications";
 import {
   COMMUNITY_ADMISSIONS_EVENT,
@@ -102,7 +103,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!authReady) return;
-    if (!user || user.role !== "community") {
+    if (!user || !isFacilityRole(user.role)) {
       setWorkspace(null);
       setReady(true);
       return;
@@ -148,7 +149,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
 
   // Refresh shared applications when community returns to the tab or a family submits
   useEffect(() => {
-    if (!authReady || !user || user.role !== "community") return;
+    if (!authReady || !user || !isFacilityRole(user.role)) return;
     const refresh = () => {
       persist((ws) =>
         normalizeWorkspace({

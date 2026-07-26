@@ -16,8 +16,10 @@ import {
   isReadyToApply,
   patientDossierReadyForApply,
   type ApplicationStatus,
+  type DocCategory,
   type FacilityContact,
   type Patient,
+  type PatientDocument,
   type PatientDraft,
   type PatientMessage,
   type PatientStatus,
@@ -53,7 +55,29 @@ type ProfessionalContextValue = {
   addContact: (draft: ContactDraft) => FacilityContact;
   updateContact: (id: string, patch: Partial<ContactDraft>) => void;
   deleteContact: (id: string) => void;
-  addMessage: (patientId: string, body: string) => void;
+  addMessage: (patientId: string, body: string, audience?: PatientMessage["from"]) => void;
+  pushTimeline: (patientId: string, label: string, detail?: string) => void;
+  addDocument: (
+    patientId: string,
+    input: {
+      category: DocCategory;
+      name: string;
+      note?: string;
+      previewHint?: string;
+      verified?: boolean;
+    },
+  ) => PatientDocument | null;
+  updateDocument: (
+    patientId: string,
+    documentId: string,
+    patch: Partial<Pick<PatientDocument, "name" | "category" | "note" | "verified" | "previewHint">>,
+  ) => void;
+  removeDocument: (patientId: string, documentId: string) => void;
+  replaceDocument: (
+    patientId: string,
+    documentId: string,
+    input: { name: string; previewHint?: string },
+  ) => void;
   submitApplication: (
     patientId: string,
     communityId: string,
@@ -254,13 +278,182 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
     setContacts((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
+  const pushTimeline = useCallback((patientId: string, label: string, detail?: string) => {
+    const at = new Date().toISOString();
+    setPatients((prev) =>
+      prev.map((p) =>
+        p.id === patientId
+          ? {
+              ...p,
+              updatedAt: at,
+              timeline: [
+                ...p.timeline,
+                {
+                  id: `tl_${Date.now().toString(36)}`,
+                  at,
+                  label,
+                  detail,
+                },
+              ],
+            }
+          : p,
+      ),
+    );
+  }, []);
+
+  const addDocument = useCallback(
+    (
+      patientId: string,
+      input: {
+        category: DocCategory;
+        name: string;
+        note?: string;
+        previewHint?: string;
+        verified?: boolean;
+      },
+    ) => {
+      const at = new Date().toISOString();
+      const doc: PatientDocument = {
+        id: `doc_${Date.now().toString(36)}`,
+        category: input.category,
+        name: input.name.trim(),
+        uploadedBy: `${profile.firstName} ${profile.lastName}`.trim(),
+        uploadedAt: at,
+        verified: Boolean(input.verified),
+        note: input.note,
+        previewHint: input.previewHint,
+      };
+      setPatients((prev) =>
+        prev.map((p) =>
+          p.id === patientId
+            ? {
+                ...p,
+                documents: [doc, ...p.documents],
+                updatedAt: at,
+                timeline: [
+                  ...p.timeline,
+                  {
+                    id: `tl_${doc.id}`,
+                    at,
+                    label: "Document uploaded",
+                    detail: `${doc.name} · ${doc.category}`,
+                  },
+                ],
+              }
+            : p,
+        ),
+      );
+      return doc;
+    },
+    [profile.firstName, profile.lastName],
+  );
+
+  const updateDocument = useCallback(
+    (
+      patientId: string,
+      documentId: string,
+      patch: Partial<Pick<PatientDocument, "name" | "category" | "note" | "verified" | "previewHint">>,
+    ) => {
+      const at = new Date().toISOString();
+      setPatients((prev) =>
+        prev.map((p) => {
+          if (p.id !== patientId) return p;
+          const documents = p.documents.map((d) =>
+            d.id === documentId ? { ...d, ...patch } : d,
+          );
+          return {
+            ...p,
+            documents,
+            updatedAt: at,
+            timeline: [
+              ...p.timeline,
+              {
+                id: `tl_docedit_${Date.now().toString(36)}`,
+                at,
+                label: "Document modified",
+                detail: patch.name || documentId,
+              },
+            ],
+          };
+        }),
+      );
+    },
+    [],
+  );
+
+  const removeDocument = useCallback((patientId: string, documentId: string) => {
+    const at = new Date().toISOString();
+    setPatients((prev) =>
+      prev.map((p) => {
+        if (p.id !== patientId) return p;
+        const removed = p.documents.find((d) => d.id === documentId);
+        return {
+          ...p,
+          documents: p.documents.filter((d) => d.id !== documentId),
+          updatedAt: at,
+          timeline: [
+            ...p.timeline,
+            {
+              id: `tl_docdel_${Date.now().toString(36)}`,
+              at,
+              label: "Document deleted",
+              detail: removed?.name,
+            },
+          ],
+        };
+      }),
+    );
+  }, []);
+
+  const replaceDocument = useCallback(
+    (patientId: string, documentId: string, input: { name: string; previewHint?: string }) => {
+      const at = new Date().toISOString();
+      setPatients((prev) =>
+        prev.map((p) => {
+          if (p.id !== patientId) return p;
+          return {
+            ...p,
+            updatedAt: at,
+            documents: p.documents.map((d) =>
+              d.id === documentId
+                ? {
+                    ...d,
+                    name: input.name.trim(),
+                    previewHint: input.previewHint,
+                    uploadedAt: at,
+                    uploadedBy: `${profile.firstName} ${profile.lastName}`.trim(),
+                    verified: false,
+                  }
+                : d,
+            ),
+            timeline: [
+              ...p.timeline,
+              {
+                id: `tl_docrep_${Date.now().toString(36)}`,
+                at,
+                label: "Document replaced",
+                detail: input.name.trim(),
+              },
+            ],
+          };
+        }),
+      );
+    },
+    [profile.firstName, profile.lastName],
+  );
+
   const addMessage = useCallback(
-    (patientId: string, body: string) => {
+    (patientId: string, body: string, audience: PatientMessage["from"] = "professional") => {
       const msg: PatientMessage = {
         id: `msg_${Date.now().toString(36)}`,
         at: new Date().toISOString(),
-        from: "professional",
-        fromName: `${profile.firstName} ${profile.lastName}`.trim(),
+        from: audience === "professional" ? "professional" : audience,
+        fromName:
+          audience === "professional"
+            ? `${profile.firstName} ${profile.lastName}`.trim()
+            : audience === "family"
+              ? "Family"
+              : "Community",
         body: body.trim(),
       };
       setPatients((prev) =>
@@ -276,7 +469,12 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
                     id: `tl_${msg.id}`,
                     at: msg.at,
                     label: "Message sent",
-                    detail: "To patient thread",
+                    detail:
+                      audience === "family"
+                        ? "To family"
+                        : audience === "community"
+                          ? "To community"
+                          : "On patient thread",
                   },
                 ],
               }
@@ -381,6 +579,11 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
       updateContact,
       deleteContact,
       addMessage,
+      pushTimeline,
+      addDocument,
+      updateDocument,
+      removeDocument,
+      replaceDocument,
       submitApplication,
       updateApplicationStatus,
     }),
@@ -401,6 +604,11 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
       updateContact,
       deleteContact,
       addMessage,
+      pushTimeline,
+      addDocument,
+      updateDocument,
+      removeDocument,
+      replaceDocument,
       submitApplication,
       updateApplicationStatus,
     ],

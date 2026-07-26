@@ -29,6 +29,7 @@ export type DocCategory =
   | "care_assessment"
   | "power_of_attorney"
   | "consent_forms"
+  | "financial"
   | "other";
 
 export type ChecklistKey =
@@ -68,6 +69,9 @@ export type PatientDocument = {
   uploadedBy: string;
   uploadedAt: string;
   verified: boolean;
+  note?: string;
+  /** Local preview hint for demo uploads (file name / mime). */
+  previewHint?: string;
 };
 
 export type PatientApplication = {
@@ -109,6 +113,13 @@ export type Patient = {
   unit: string;
   currentLocation: string;
   language: string;
+  address?: string;
+  phone?: string;
+  pharmacy?: string;
+  pharmacyPhone?: string;
+  primaryPhysician?: string;
+  physicianPhone?: string;
+  allergies?: string;
   assignedProfessional: string;
   priority: Priority;
   status: PatientStatus;
@@ -188,14 +199,28 @@ export const DOC_CATEGORY_LABEL: Record<DocCategory, string> = {
   identity: "Identity",
   insurance: "Insurance",
   medication_list: "Medication list",
-  discharge_summary: "Hospital discharge summary",
-  physician_notes: "Physician notes",
-  functional_assessment: "Functional assessment",
+  discharge_summary: "Hospital records",
+  physician_notes: "Physician documents",
+  functional_assessment: "Assessments",
   care_assessment: "Care assessment",
   power_of_attorney: "Power of attorney",
   consent_forms: "Consent forms",
+  financial: "Financial documents",
   other: "Other",
 };
+
+/** Document folders shown in the living dossier Documents tab. */
+export const DOC_WORKSPACE_CATEGORIES: DocCategory[] = [
+  "identity",
+  "insurance",
+  "medication_list",
+  "physician_notes",
+  "discharge_summary",
+  "functional_assessment",
+  "consent_forms",
+  "financial",
+  "other",
+];
 
 export const CHECKLIST_LABEL: Record<ChecklistKey, string> = {
   identity: "Identity",
@@ -217,6 +242,74 @@ export function missingChecklist(p: Patient) {
 
 export function isReadyToApply(p: Patient) {
   return patientDossierReadyForApply(p).ok;
+}
+
+/** 0–100 completeness for the living patient dossier cockpit. */
+export function dossierCompleteness(p: Patient) {
+  const checks: boolean[] = [
+    Boolean(p.firstName.trim() && p.lastName.trim()),
+    Boolean(p.dateOfBirth),
+    Boolean(p.hospital.trim()),
+    Boolean(p.unit.trim()),
+    Boolean(p.language.trim()),
+    Boolean(p.familyContact.trim()),
+    Boolean(p.emergencyContact.trim()),
+    Boolean(p.care.diagnosis.trim()),
+    Boolean(p.care.mobility.trim()),
+    Boolean(p.care.memory.trim()),
+    Boolean(p.care.requiredCareLevel.trim()),
+    Boolean(p.care.insurance.trim()),
+    Boolean(p.care.preferredRegion.trim()),
+    Boolean(p.primaryPhysician?.trim() || p.checklist.physician),
+    Boolean(p.pharmacy?.trim()),
+    Boolean(p.allergies?.trim() || p.care.diet.trim()),
+    p.documents.some((d) => d.category === "identity"),
+    p.documents.some((d) => d.category === "insurance"),
+    p.documents.some((d) => d.category === "medication_list"),
+    p.documents.some((d) => d.category === "consent_forms"),
+  ];
+  const done = checks.filter(Boolean).length;
+  const total = checks.length;
+  return {
+    done,
+    total,
+    percent: Math.round((done / total) * 100),
+  };
+}
+
+export function dossierAiSuggestions(p: Patient): string[] {
+  const tips: string[] = [];
+  const completeness = dossierCompleteness(p);
+  const missingDocs = missingPatientDocuments(p);
+  const missingCare = missingPatientCare(p);
+  const missingProfile = missingPatientProfile(p);
+
+  tips.push(
+    `The dossier is ${completeness.percent}% complete (${completeness.done} of ${completeness.total} key items).`,
+  );
+  if (missingDocs.length) {
+    tips.push(
+      `Still missing required documents: ${missingDocs.map((d) => d.label).join(", ")}.`,
+    );
+  }
+  if (!p.primaryPhysician?.trim() && !p.checklist.physician) {
+    tips.push("The treating physician has not been recorded yet.");
+  }
+  if (!p.pharmacy?.trim()) {
+    tips.push("Pharmacy details are empty — communities often need this before move-in.");
+  }
+  if (missingCare.length) {
+    tips.push(`Care profile gaps: ${missingCare.slice(0, 3).join(", ")}.`);
+  }
+  if (missingProfile.length) {
+    tips.push(`Patient information gaps: ${missingProfile.join(", ")}.`);
+  }
+  if (completeness.percent >= 85 && missingDocs.length === 0) {
+    tips.push("This dossier looks ready to generate an application package.");
+  } else if (completeness.percent < 60) {
+    tips.push("Focus on identity, care needs, and hard documents before matching communities.");
+  }
+  return tips;
 }
 
 /** Documents required before a care professional can submit an application. */

@@ -111,7 +111,13 @@ export function RedirectIfAuthenticated({
     pathname === "/sign-in" ||
     pathname.startsWith("/sign-in/") ||
     pathname === "/login" ||
-    pathname.startsWith("/login/");
+    pathname.startsWith("/login/") ||
+    pathname === "/community/sign-in" ||
+    pathname.startsWith("/community/sign-in/") ||
+    pathname === "/community/get-started" ||
+    pathname.startsWith("/community/get-started/") ||
+    pathname === "/residence-login" ||
+    pathname.startsWith("/residence-login/");
 
   useEffect(() => {
     if (AUTH_OPEN_ACCESS) {

@@ -49,6 +49,18 @@ export function PortalHeader({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const headerMenusRef = useRef<HTMLDivElement>(null);
 
+  /** Full navigation avoids RequireAuth racing back into the portal after sign-out. */
+  const handleSignOut = () => {
+    signOut();
+    setOpen(false);
+    setOpenGroup(null);
+    if (typeof window !== "undefined") {
+      window.location.assign(signOutHref);
+      return;
+    }
+    router.push(signOutHref);
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -211,15 +223,7 @@ export function PortalHeader({
                     )}
                   </Link>
                 ))}
-            <Button
-              className="mt-auto"
-              variant="secondary"
-              onClick={() => {
-                signOut();
-                setOpen(false);
-                router.push(signOutHref);
-              }}
-            >
+            <Button className="mt-auto" variant="secondary" onClick={handleSignOut}>
               Sign out
             </Button>
           </nav>
@@ -447,11 +451,7 @@ export function PortalHeader({
                     type="button"
                     role="menuitem"
                     className="mt-0.5 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted hover:bg-bg-soft hover:text-ink"
-                    onClick={() => {
-                      setOpenGroup(null);
-                      signOut();
-                      router.push(signOutHref);
-                    }}
+                    onClick={handleSignOut}
                   >
                     <LogOut size={14} /> Sign out
                   </button>
@@ -467,10 +467,7 @@ export function PortalHeader({
                 size="sm"
                 variant="ghost"
                 className="hidden sm:inline-flex"
-                onClick={() => {
-                  signOut();
-                  router.push(signOutHref);
-                }}
+                onClick={handleSignOut}
               >
                 <LogOut size={14} /> Sign out
               </Button>

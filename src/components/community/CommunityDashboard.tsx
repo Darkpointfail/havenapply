@@ -166,9 +166,12 @@ export function CommunityDashboard() {
           <p className="mt-3 text-xs tabular-nums text-ink-faint">
             {openCount} awaiting review
           </p>
-          <div className="mt-4">
-            <Button href="/community/applications?filter=history" size="sm" variant="secondary">
-              View application history
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button href="/community/transition" size="sm" variant="secondary">
+              Transition (accepted)
+            </Button>
+            <Button href="/community/applications?filter=history" size="sm" variant="ghost">
+              History
             </Button>
           </div>
         </header>

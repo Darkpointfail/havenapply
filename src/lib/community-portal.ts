@@ -290,6 +290,13 @@ export type CommunityApplication = {
   auditLog: AuditEntry[];
   /** Guided admission review progress before accept/decline */
   reviewChecklist?: Partial<Record<string, boolean>>;
+  /**
+   * Post-accept move-in prep: contracts, payment, family logistics.
+   * Active while status is in the transition set; cleared when the dossier is closed.
+   */
+  transitionChecklist?: Partial<Record<string, boolean>>;
+  /** Confirmed move-in date once family and community agree (ISO date). */
+  moveInConfirmed?: string | null;
 };
 
 /** Steps admissions staff should verify before finalizing a decision. */
@@ -343,6 +350,71 @@ export type ReviewCheckId = (typeof REVIEW_CHECK_ITEMS)[number]["id"];
 export function reviewChecklistProgress(app: CommunityApplication) {
   const required = REVIEW_CHECK_ITEMS.filter((c) => c.required);
   const done = required.filter((c) => Boolean(app.reviewChecklist?.[c.id])).length;
+  return {
+    done,
+    total: required.length,
+    complete: done === required.length,
+    percent: required.length ? Math.round((done / required.length) * 100) : 0,
+  };
+}
+
+/** Accepted but not yet closed — final details with the family before move-in. */
+export const TRANSITION_STATUSES = [
+  "approved",
+  "conditionally_approved",
+  "offer_received",
+  "move_in_scheduled",
+] as const;
+
+/** Fully decided / archived — no more admissions work. */
+export const HISTORY_TERMINAL_STATUSES = [
+  "declined",
+  "waitlisted",
+  "withdrawn",
+  "closed",
+] as const;
+
+export function isTransitionApplication(app: Pick<CommunityApplication, "status">) {
+  return (TRANSITION_STATUSES as readonly string[]).includes(app.status);
+}
+
+export function isHistoryTerminalApplication(app: Pick<CommunityApplication, "status">) {
+  return (HISTORY_TERMINAL_STATUSES as readonly string[]).includes(app.status);
+}
+
+/** Steps between accept and closing the dossier. */
+export const TRANSITION_CHECK_ITEMS = [
+  {
+    id: "contract",
+    label: "Residency agreement",
+    hint: "Contract sent, reviewed, and signed with the family.",
+    required: true,
+  },
+  {
+    id: "payment",
+    label: "Deposit & payment",
+    hint: "Deposit received and payment method confirmed.",
+    required: true,
+  },
+  {
+    id: "familyDetails",
+    label: "Final family details",
+    hint: "Contacts, belongings, pharmacy, and logistics confirmed.",
+    required: true,
+  },
+  {
+    id: "moveInDate",
+    label: "Move-in date",
+    hint: "Agreed move-in date held on the calendar.",
+    required: true,
+  },
+] as const;
+
+export type TransitionCheckId = (typeof TRANSITION_CHECK_ITEMS)[number]["id"];
+
+export function transitionChecklistProgress(app: CommunityApplication) {
+  const required = TRANSITION_CHECK_ITEMS.filter((c) => c.required);
+  const done = required.filter((c) => Boolean(app.transitionChecklist?.[c.id])).length;
   return {
     done,
     total: required.length,
@@ -1331,6 +1403,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       },
       paymentMethod: "Private pay",
       moveInRequested: "2026-03-01",
+      moveInConfirmed: null,
       status: "approved",
       careType: "Assisted living",
       referralSource: "Family",
@@ -1345,10 +1418,25 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       waitlistPosition: null,
       submittedAt: "2026-02-10T14:00:00.000Z",
       lastUpdated: "2026-02-18T16:30:00.000Z",
+      reviewChecklist: {
+        identity: true,
+        clinical: true,
+        medications: true,
+        documents: true,
+        family: true,
+        fit: true,
+      },
+      transitionChecklist: {
+        contract: true,
+        payment: false,
+        familyDetails: false,
+        moveInDate: false,
+      },
       auditLog: [
         audit("System", "Application submitted"),
         audit("Jordan Lee", "Tour completed"),
         audit("Jordan Lee", "Accepted · room hold confirmed"),
+        audit("Jordan Lee", "Transition · residency agreement signed"),
       ],
     },
     {

@@ -9,8 +9,11 @@ import { useCommunityPortal } from "@/lib/community-portal-store";
 import {
   formatPortalDate,
   formatPortalTime,
+  isHistoryTerminalApplication,
+  isTransitionApplication,
   statusLabel,
   statusTone,
+  transitionChecklistProgress,
   type CommunityApplication,
 } from "@/lib/community-portal";
 import type { ApplicationStatus } from "@/data/applications";
@@ -21,25 +24,15 @@ const FILTERS = [
   { id: "new", label: "New" },
   { id: "pending", label: "In review" },
   { id: "info", label: "Need info" },
+  { id: "transition", label: "Transition" },
   { id: "history", label: "History" },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
 
-const HISTORY_STATUSES: ApplicationStatus[] = [
-  "approved",
-  "declined",
-  "conditionally_approved",
-  "offer_received",
-  "waitlisted",
-  "withdrawn",
-  "closed",
-  "move_in_scheduled",
-];
-
 function outcomeLabel(status: ApplicationStatus) {
   if (status === "approved" || status === "offer_received" || status === "move_in_scheduled") {
-    return "Accepted";
+    return "Accepted · transition";
   }
   if (status === "conditionally_approved") return "Conditionally accepted";
   if (status === "declined") return "Declined";
@@ -93,8 +86,10 @@ function ApplicationsListInner() {
         (a) =>
           a.status === "more_info" || Boolean(a.documentRequest) || Boolean(a.infoRequest),
       );
+    } else if (filter === "transition") {
+      list = list.filter(isTransitionApplication);
     } else if (filter === "history") {
-      list = list.filter((a) => HISTORY_STATUSES.includes(a.status));
+      list = list.filter(isHistoryTerminalApplication);
     }
     const query = q.trim().toLowerCase();
     if (query) {
@@ -116,17 +111,24 @@ function ApplicationsListInner() {
   }
 
   const isHistory = filter === "history";
+  const isTransition = filter === "transition";
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <div className="mb-6">
         <h1 className="text-3xl font-semibold tracking-tight">
-          {isHistory ? "Application history" : "Applications"}
+          {isHistory
+            ? "Application history"
+            : isTransition
+              ? "Transition"
+              : "Applications"}
         </h1>
         <p className="mt-1 text-ink-muted">
           {isHistory
-            ? "Candidates who already applied, with your community’s decision (accepted, declined, waitlisted)."
-            : "Complete digital admission packages. Review, message, decide."}
+            ? "Closed, declined, or withdrawn dossiers. Accepted candidates stay in Transition until move-in is complete."
+            : isTransition
+              ? "Accepted dossiers still finishing contracts, payment, and family details before close."
+              : "Complete digital admission packages. Review, message, decide."}
         </p>
       </div>
 
@@ -160,12 +162,15 @@ function ApplicationsListInner() {
         {apps.length === 0 ? (
           <Card className="p-8 text-center text-sm text-ink-muted">
             {isHistory
-              ? "No decided applications yet. When you accept or decline a candidate, they appear here."
-              : "No applications in this view."}
+              ? "No archived dossiers yet. Closed and declined applications appear here."
+              : isTransition
+                ? "No dossiers in transition. Accept a candidate from Admissions to start move-in prep."
+                : "No applications in this view."}
           </Card>
         ) : (
           apps.map((a) => {
             const note = isHistory ? decisionNote(a) : null;
+            const tProgress = isTransition ? transitionChecklistProgress(a) : null;
             return (
               <Link key={a.id} href={`/community/applications/${a.id}`}>
                 <Card className="flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-brand/30 hover:shadow-xs">
@@ -185,12 +190,18 @@ function ApplicationsListInner() {
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isHistory && (a.documentRequest || a.infoRequest) && (
+                    {!isHistory && !isTransition && (a.documentRequest || a.infoRequest) && (
                       <Badge tone="warn">Needs info</Badge>
                     )}
-                    <Badge tone={isHistory ? outcomeTone(a.status) : statusTone(a.status)}>
-                      {isHistory ? outcomeLabel(a.status) : statusLabel(a.status)}
-                    </Badge>
+                    {tProgress ? (
+                      <Badge tone={tProgress.complete ? "success" : "brand"}>
+                        Transition {tProgress.done}/{tProgress.total}
+                      </Badge>
+                    ) : (
+                      <Badge tone={isHistory ? outcomeTone(a.status) : statusTone(a.status)}>
+                        {isHistory ? outcomeLabel(a.status) : statusLabel(a.status)}
+                      </Badge>
+                    )}
                   </div>
                 </Card>
               </Link>

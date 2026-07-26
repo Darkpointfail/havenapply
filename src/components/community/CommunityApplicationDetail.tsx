@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { AdmissionReviewGuide } from "@/components/community/AdmissionReviewGuide";
+import { AdmissionTransitionGuide } from "@/components/community/AdmissionTransitionGuide";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCommunityPortal } from "@/lib/community-portal-store";
@@ -22,12 +23,16 @@ import {
   formatPortalDate,
   formatPortalTime,
   initialsFromName,
+  isHistoryTerminalApplication,
+  isTransitionApplication,
   priorityBadgeLabel,
   reviewChecklistProgress,
   reviewStatusLabel,
+  transitionChecklistProgress,
   type AdmissionPriority,
   type CommunityApplication,
   type ReviewCheckId,
+  type TransitionCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
 
@@ -120,14 +125,20 @@ export function CommunityApplicationDetail() {
     acceptApplication,
     declineApplication,
     updateReviewChecklist,
+    updateTransitionChecklist,
+    setMoveInConfirmed,
+    completeTransition,
   } = useCommunityPortal();
 
   const app = getApplication(id);
   const [auditOpen, setAuditOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
   const [auditNote, setAuditNote] = useState("");
   const [declineReason, setDeclineReason] = useState<string>(DECLINE_REASONS[0]);
   const [declineNote, setDeclineNote] = useState("");
+  const [closeNote, setCloseNote] = useState("");
+  const [moveInDraft, setMoveInDraft] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
 
   const docsGrouped = useMemo(() => {
@@ -144,15 +155,24 @@ export function CommunityApplicationDetail() {
 
   const dossier = app?.dossier;
   const reviewProgress = app ? reviewChecklistProgress(app) : null;
+  const transitionProgress = app ? transitionChecklistProgress(app) : null;
+  const inTransition = app ? isTransitionApplication(app) : false;
+  const isTerminal = app ? isHistoryTerminalApplication(app) : false;
+  const inReview = Boolean(app && !inTransition && !isTerminal);
 
   const flashMsg = (msg: string) => {
     setFlash(msg);
-    window.setTimeout(() => setFlash(null), 2400);
+    window.setTimeout(() => setFlash(null), 2800);
   };
 
   const toggleCheck = (checkId: ReviewCheckId, value: boolean) => {
     if (!app) return;
     updateReviewChecklist(app.id, { [checkId]: value });
+  };
+
+  const toggleTransitionCheck = (checkId: TransitionCheckId, value: boolean) => {
+    if (!app) return;
+    updateTransitionChecklist(app.id, { [checkId]: value });
   };
 
   if (!ready || !workspace) {
@@ -176,13 +196,13 @@ export function CommunityApplicationDetail() {
 
   const priority = applicationPriority(app);
   const messageHref = `/community/messages?family=${encodeURIComponent(app.family.email)}&application=${encodeURIComponent(app.id)}&senior=${encodeURIComponent(app.seniorName)}&residence=${encodeURIComponent(app.residenceId)}`;
-  const decided = ["approved", "declined"].includes(app.status);
 
   const confirmApprove = () => {
     const r = acceptApplication(app.id, auditNote.trim() || undefined);
     if (r.ok) {
       setAuditOpen(false);
-      flashMsg("Admission approved");
+      flashMsg("Accepted — now in Transition for contracts & move-in");
+      window.setTimeout(() => router.push("/community/transition"), 900);
     }
   };
 
@@ -195,20 +215,43 @@ export function CommunityApplicationDetail() {
     }
   };
 
+  const confirmClose = () => {
+    const r = completeTransition(app.id, closeNote.trim() || undefined);
+    if (r.ok) {
+      setCloseOpen(false);
+      flashMsg("Dossier closed — moved to History");
+      window.setTimeout(() => router.push("/community/applications?filter=history"), 900);
+    }
+  };
+
+  const saveMoveInDate = () => {
+    const date = moveInDraft.trim() || null;
+    const r = setMoveInConfirmed(app.id, date);
+    if (r.ok) {
+      flashMsg(date ? "Move-in date confirmed" : "Move-in date cleared");
+    }
+  };
+
   return (
     <div className="min-h-full bg-bg">
       <div className="mx-auto grid max-w-[1120px] gap-8 px-5 py-8 md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-10">
           <div>
             <Link
-              href="/community/dashboard"
+              href={inTransition ? "/community/transition" : "/community/dashboard"}
               className="inline-flex items-center gap-1.5 text-sm text-ink-muted transition hover:text-ink"
             >
               <ArrowLeft size={14} />
-              Admissions queue
+              {inTransition ? "Transition" : "Admissions queue"}
             </Link>
 
-            <p className="mt-5 text-sm font-medium text-ink-muted">Application review</p>
+            <p className="mt-5 text-sm font-medium text-ink-muted">
+              {inTransition
+                ? "Move-in transition"
+                : isTerminal
+                  ? "Archived dossier"
+                  : "Application review"}
+            </p>
             <div className="mt-2 flex flex-wrap items-start gap-3">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-lg font-semibold text-brand-strong">
                 {initialsFromName(app.seniorName)}
@@ -220,9 +263,19 @@ export function CommunityApplicationDetail() {
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
                   <Badge tone="brand">{reviewStatusLabel(app)}</Badge>
-                  {reviewProgress && !decided ? (
+                  {inReview && reviewProgress ? (
                     <Badge tone={reviewProgress.complete ? "success" : "warn"}>
                       Review {reviewProgress.done}/{reviewProgress.total}
+                    </Badge>
+                  ) : null}
+                  {inTransition && transitionProgress ? (
+                    <Badge tone={transitionProgress.complete ? "success" : "brand"}>
+                      Transition {transitionProgress.done}/{transitionProgress.total}
+                    </Badge>
+                  ) : null}
+                  {isTerminal ? (
+                    <Badge tone={app.status === "closed" ? "success" : "danger"}>
+                      {app.status === "closed" ? "Closed" : reviewStatusLabel(app)}
                     </Badge>
                   ) : null}
                 </div>
@@ -247,7 +300,15 @@ export function CommunityApplicationDetail() {
           </div>
 
           <div className="lg:hidden">
-            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
+            {inTransition ? (
+              <AdmissionTransitionGuide
+                app={app}
+                closed={false}
+                onToggle={toggleTransitionCheck}
+              />
+            ) : inReview ? (
+              <AdmissionReviewGuide app={app} decided={false} onToggle={toggleCheck} />
+            ) : null}
           </div>
 
           <Section title="AI executive summary">
@@ -609,15 +670,123 @@ export function CommunityApplicationDetail() {
             </ol>
           </Section>
 
-          <Section id="section-decision" title="Decision">
+          <Section
+            id="section-decision"
+            title={inTransition ? "Transition & close" : isTerminal ? "Outcome" : "Decision"}
+          >
             <p className="text-sm text-ink-muted">
-              Finish the guided checklist, then choose one clear outcome.
+              {inTransition
+                ? "Complete contracts, payment, and family logistics, then close the dossier."
+                : isTerminal
+                  ? "This dossier is archived."
+                  : "Finish the guided checklist, then choose one clear outcome."}
             </p>
             <div className="mt-4 rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
-              {decided ? (
+              {isTerminal ? (
                 <p className="rounded-xl bg-bg-soft px-3 py-3 text-sm text-ink-secondary">
-                  This application is {app.status === "approved" ? "approved" : "declined"}.
+                  {app.status === "closed"
+                    ? "Move-in transition complete — dossier closed."
+                    : `This application is ${app.status.replaceAll("_", " ")}.`}
                 </p>
+              ) : inTransition ? (
+                <>
+                  {!transitionProgress?.complete ? (
+                    <p className="mb-4 rounded-xl bg-brand-soft/50 px-3 py-2.5 text-sm text-ink-secondary">
+                      Transition in progress ({transitionProgress?.done}/{transitionProgress?.total}
+                      ). Finish the residency agreement, deposit, family details, and move-in date.
+                    </p>
+                  ) : (
+                    <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
+                      All transition steps complete — ready to close the dossier.
+                    </p>
+                  )}
+
+                  <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <div>
+                      <label className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+                        Confirmed move-in date
+                      </label>
+                      <input
+                        type="date"
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm"
+                        value={moveInDraft || app.moveInConfirmed || ""}
+                        onChange={(e) => setMoveInDraft(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={!can("acceptDecline")}
+                        onClick={saveMoveInDate}
+                      >
+                        Save date
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <button
+                      type="button"
+                      disabled={!can("acceptDecline") || !transitionProgress?.complete}
+                      onClick={() => {
+                        setCloseNote("");
+                        setCloseOpen(true);
+                      }}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-success/40 hover:bg-success-soft/40 disabled:opacity-50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-success-soft text-success">
+                        <Check size={18} />
+                      </span>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">
+                          Close dossier
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          {transitionProgress?.complete
+                            ? "Move-in ready · archive"
+                            : "Complete transition first"}
+                        </span>
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push(messageHref)}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-warn/40 hover:bg-warn-soft/30"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-warn-soft text-warn">
+                        <MessageSquare size={18} />
+                      </span>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">
+                          Message family
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          Contracts, payment, logistics
+                        </span>
+                      </span>
+                    </button>
+
+                    <Link
+                      href="/community/transition"
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-brand/40 hover:bg-brand-soft/30"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">
+                        <FileText size={18} />
+                      </span>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">
+                          Transition board
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          All accepted dossiers
+                        </span>
+                      </span>
+                    </Link>
+                  </div>
+                </>
               ) : (
                 <>
                   {!reviewProgress?.complete ? (
@@ -632,68 +801,68 @@ export function CommunityApplicationDetail() {
                     </p>
                   )}
                   <div className="grid gap-3 md:grid-cols-3">
-                  <button
-                    type="button"
-                    disabled={!can("acceptDecline") || !reviewProgress?.complete}
-                    onClick={() => {
-                      setAuditNote("");
-                      setAuditOpen(true);
-                    }}
-                    className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-success/40 hover:bg-success-soft/40 disabled:opacity-50"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-success-soft text-success">
-                      <Check size={18} />
-                    </span>
-                    <span>
-                      <span className="block text-base font-semibold text-ink">Approve</span>
-                      <span className="mt-0.5 block text-sm text-ink-muted">
-                        {reviewProgress?.complete
-                          ? "Confirm admission"
-                          : "Complete checklist first"}
+                    <button
+                      type="button"
+                      disabled={!can("acceptDecline") || !reviewProgress?.complete}
+                      onClick={() => {
+                        setAuditNote("");
+                        setAuditOpen(true);
+                      }}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-success/40 hover:bg-success-soft/40 disabled:opacity-50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-success-soft text-success">
+                        <Check size={18} />
                       </span>
-                    </span>
-                  </button>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">Approve</span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          {reviewProgress?.complete
+                            ? "Then open Transition"
+                            : "Complete checklist first"}
+                        </span>
+                      </span>
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={!can("requestInfo")}
-                    onClick={() => router.push(messageHref)}
-                    className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-warn/40 hover:bg-warn-soft/30 disabled:opacity-50"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-warn-soft text-warn">
-                      <MessageSquare size={18} />
-                    </span>
-                    <span>
-                      <span className="block text-base font-semibold text-ink">
-                        Request information
+                    <button
+                      type="button"
+                      disabled={!can("requestInfo")}
+                      onClick={() => router.push(messageHref)}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-warn/40 hover:bg-warn-soft/30 disabled:opacity-50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-warn-soft text-warn">
+                        <MessageSquare size={18} />
                       </span>
-                      <span className="mt-0.5 block text-sm text-ink-muted">
-                        Message the family
+                      <span>
+                        <span className="block text-base font-semibold text-ink">
+                          Request information
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          Message the family
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={!can("acceptDecline")}
-                    onClick={() => {
-                      setDeclineReason(DECLINE_REASONS[0]);
-                      setDeclineNote("");
-                      setDeclineOpen(true);
-                    }}
-                    className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-danger/40 hover:bg-danger-soft/25 disabled:opacity-50"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-danger-soft text-danger">
-                      <X size={18} />
-                    </span>
-                    <span>
-                      <span className="block text-base font-semibold text-ink">Decline</span>
-                      <span className="mt-0.5 block text-sm text-ink-muted">
-                        Select a reason
+                    <button
+                      type="button"
+                      disabled={!can("acceptDecline")}
+                      onClick={() => {
+                        setDeclineReason(DECLINE_REASONS[0]);
+                        setDeclineNote("");
+                        setDeclineOpen(true);
+                      }}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-danger/40 hover:bg-danger-soft/25 disabled:opacity-50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-danger-soft text-danger">
+                        <X size={18} />
                       </span>
-                    </span>
-                  </button>
-                </div>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">Decline</span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          Select a reason
+                        </span>
+                      </span>
+                    </button>
+                  </div>
                 </>
               )}
             </div>
@@ -702,7 +871,15 @@ export function CommunityApplicationDetail() {
 
         <div className="hidden lg:block">
           <div className="sticky top-24">
-            <AdmissionReviewGuide app={app} decided={decided} onToggle={toggleCheck} />
+            {inTransition ? (
+              <AdmissionTransitionGuide
+                app={app}
+                closed={false}
+                onToggle={toggleTransitionCheck}
+              />
+            ) : inReview ? (
+              <AdmissionReviewGuide app={app} decided={false} onToggle={toggleCheck} />
+            ) : null}
           </div>
         </div>
       </div>
@@ -718,7 +895,8 @@ export function CommunityApplicationDetail() {
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
             <h2 className="text-xl font-semibold tracking-tight">Confirm approval</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              You completed the guided review. Confirm to accept this candidate.
+              You completed the guided review. After accept, this dossier moves to Transition for
+              contracts, payment, and move-in details.
             </p>
             <ul className="mt-5 space-y-2">
               {(["identity", "clinical", "medications", "documents", "family", "fit"] as const).map(
@@ -830,6 +1008,70 @@ export function CommunityApplicationDetail() {
               </Button>
               <Button type="button" variant="danger" className="flex-1" onClick={confirmDecline}>
                 Decline
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close transition modal */}
+      {closeOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+          <div
+            className="absolute inset-0"
+            onClick={() => setCloseOpen(false)}
+            aria-hidden
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
+            <h2 className="text-xl font-semibold tracking-tight">Close dossier</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Confirm that contracts, payment, and move-in details are complete. The dossier moves
+              to History.
+            </p>
+            <ul className="mt-5 space-y-2">
+              {(
+                [
+                  ["contract", "Residency agreement"],
+                  ["payment", "Deposit & payment"],
+                  ["familyDetails", "Final family details"],
+                  ["moveInDate", "Move-in date"],
+                ] as const
+              ).map(([id, label]) => (
+                <li
+                  key={id}
+                  className="flex items-center gap-2 rounded-xl bg-success-soft/50 px-3 py-2.5 text-sm text-ink"
+                >
+                  <Check size={14} className="text-success" />
+                  {label}
+                </li>
+              ))}
+            </ul>
+            <label className="mt-4 block text-sm">
+              Closing note (optional)
+              <textarea
+                rows={3}
+                value={closeNote}
+                onChange={(e) => setCloseNote(e.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                placeholder="e.g. Move-in May 12 · deposit received"
+              />
+            </label>
+            <div className="mt-5 flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setCloseOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                disabled={!transitionProgress?.complete}
+                onClick={confirmClose}
+              >
+                Close dossier
               </Button>
             </div>
           </div>

@@ -36,7 +36,7 @@ import {
 } from "@/lib/community-portal";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v7";
+const STORAGE_KEY = "haven-community-portal-v8";
 
 type PortalContextValue = {
   ready: boolean;
@@ -61,6 +61,15 @@ type PortalContextValue = {
     appId: string,
     patch: Partial<Record<string, boolean>>,
   ) => { ok: boolean; error?: string };
+  updateTransitionChecklist: (
+    appId: string,
+    patch: Partial<Record<string, boolean>>,
+  ) => { ok: boolean; error?: string };
+  setMoveInConfirmed: (
+    appId: string,
+    date: string | null,
+  ) => { ok: boolean; error?: string };
+  completeTransition: (appId: string, note?: string) => { ok: boolean; error?: string };
   updateProfile: (patch: Partial<CommunityProfile>) => { ok: boolean; error?: string };
   upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
   removeAvailability: (unitId: string) => { ok: boolean; error?: string };
@@ -434,8 +443,15 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       mutateApp(
         appId,
         "acceptDecline",
-        (a) => ({ ...a, status: "approved" as ApplicationStatus }),
-        note?.trim() ? `Accepted · ${note.trim()}` : "Accepted application",
+        (a) => ({
+          ...a,
+          status: "approved" as ApplicationStatus,
+          transitionChecklist: a.transitionChecklist ?? {},
+          moveInConfirmed: a.moveInConfirmed ?? null,
+        }),
+        note?.trim()
+          ? `Accepted · ${note.trim()} · moved to transition`
+          : "Accepted · moved to transition",
       ),
     [mutateApp],
   );
@@ -492,6 +508,100 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     },
     [actorName, persist, workspace],
+  );
+
+  const updateTransitionChecklist = useCallback(
+    (appId: string, patch: Partial<Record<string, boolean>>) => {
+      if (!can("acceptDecline")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      if (!workspace?.applications.some((a) => a.id === appId)) {
+        return { ok: false, error: "Application not found." };
+      }
+      persist((ws) => ({
+        ...ws,
+        applications: ws.applications.map((a) => {
+          if (a.id !== appId) return a;
+          const prev = a.transitionChecklist || {};
+          const nextChecks = { ...prev, ...patch };
+          const moveInDone = Boolean(nextChecks.moveInDate);
+          const nextStatus =
+            moveInDone && a.status === "approved"
+              ? ("move_in_scheduled" as ApplicationStatus)
+              : a.status;
+          const flipped = Object.entries(patch).find(
+            ([key, value]) => Boolean(value) && !prev[key],
+          );
+          return {
+            ...a,
+            transitionChecklist: nextChecks,
+            status: nextStatus,
+            lastUpdated: new Date().toISOString(),
+            auditLog: flipped
+              ? [
+                  ...a.auditLog,
+                  {
+                    id: `aud-${Date.now()}`,
+                    at: new Date().toISOString(),
+                    actor: actorName,
+                    action: `Transition · ${flipped[0]} complete`,
+                  },
+                ]
+              : a.auditLog,
+          };
+        }),
+        updatedAt: new Date().toISOString(),
+      }));
+      return { ok: true };
+    },
+    [actorName, can, persist, workspace],
+  );
+
+  const setMoveInConfirmed = useCallback(
+    (appId: string, date: string | null) =>
+      mutateApp(
+        appId,
+        "acceptDecline",
+        (a) => ({
+          ...a,
+          moveInConfirmed: date,
+          transitionChecklist: {
+            ...(a.transitionChecklist || {}),
+            ...(date ? { moveInDate: true } : {}),
+          },
+          status: date
+            ? ("move_in_scheduled" as ApplicationStatus)
+            : a.status === "move_in_scheduled"
+              ? ("approved" as ApplicationStatus)
+              : a.status,
+        }),
+        date ? `Transition · move-in confirmed ${date}` : "Transition · move-in date cleared",
+      ),
+    [mutateApp],
+  );
+
+  const completeTransition = useCallback(
+    (appId: string, note?: string) => {
+      const app = workspace?.applications.find((a) => a.id === appId);
+      if (!app) return { ok: false, error: "Application not found." };
+      const required = ["contract", "payment", "familyDetails", "moveInDate"] as const;
+      const done = required.every((id) => Boolean(app.transitionChecklist?.[id]));
+      if (!done) {
+        return {
+          ok: false,
+          error: "Finish every transition step before closing the dossier.",
+        };
+      }
+      return mutateApp(
+        appId,
+        "acceptDecline",
+        (a) => ({ ...a, status: "closed" as ApplicationStatus }),
+        note?.trim()
+          ? `Transition complete · dossier closed · ${note.trim()}`
+          : "Transition complete · dossier closed",
+      );
+    },
+    [mutateApp, workspace],
   );
 
   const updateProfile = useCallback(
@@ -632,6 +742,9 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       acceptApplication,
       declineApplication,
       updateReviewChecklist,
+      updateTransitionChecklist,
+      setMoveInConfirmed,
+      completeTransition,
       updateProfile,
       upsertAvailability,
       removeAvailability,
@@ -658,6 +771,9 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       acceptApplication,
       declineApplication,
       updateReviewChecklist,
+      updateTransitionChecklist,
+      setMoveInConfirmed,
+      completeTransition,
       updateProfile,
       upsertAvailability,
       removeAvailability,

@@ -122,8 +122,8 @@ export function CommunityDashboard() {
             Dossiers in progress
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Candidates waiting for your review. Open a dossier, complete the checklist, then accept
-            or decline.
+            Open cases awaiting your decision. Click a candidate, complete the 6-point checklist,
+            then accept or decline.
           </p>
           <p className="mt-3 text-sm font-medium tabular-nums text-ink">
             {openCount} open dossier{openCount === 1 ? "" : "s"}

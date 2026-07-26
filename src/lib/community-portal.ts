@@ -1203,6 +1203,165 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
     },
   ];
 
+  // Past candidates (accepted / declined) — visible in History, not the live queue
+  const historyDossier: ClientDossier = {
+    dateOfBirth: "1940-01-01",
+    gender: "Female",
+    primaryLanguage: "English",
+    currentLivingSituation: "Private home with family support",
+    pathologies: [{ name: "Hypertension", status: "active", diagnosedYear: "2015" }],
+    medications: [
+      {
+        name: "Lisinopril",
+        dose: "10 mg",
+        frequency: "Once daily",
+        route: "Oral",
+        indication: "Hypertension",
+      },
+    ],
+    allergies: [{ substance: "None known", reaction: "—" }],
+    previousFacilities: [],
+  };
+
+  applications.push(
+    {
+      id: "capp-hist-accepted",
+      residenceId: r.id,
+      seniorName: "Helen Brooks",
+      seniorAge: 87,
+      relationship: "Mother",
+      summary: "Assisted living application — accepted after tour and clinical review.",
+      executiveSummary:
+        "Helen Brooks was accepted for assisted living following a complete packet review and family tour.",
+      careNeeds: ["Assisted living", "Medication management"],
+      medicalHighlights: ["Hypertension"],
+      insights: {
+        primaryDiagnoses: ["Hypertension"],
+        mobilityLevel: "Walker for distances",
+        cognitiveStatus: "Intact",
+        importantMedications: ["Lisinopril 10mg"],
+        allergies: ["None known"],
+        specialConsiderations: ["Daughter nearby for weekly visits"],
+      },
+      dossier: {
+        ...historyDossier,
+        dateOfBirth: "1938-06-14",
+        gender: "Female",
+      },
+      documents: [
+        {
+          id: "dh1",
+          name: "Photo ID",
+          category: "Identity",
+          shared: true,
+          aiSummary: "Valid identification.",
+        },
+      ],
+      family: {
+        name: "Rachel Brooks",
+        email: "rachel.brooks@example.com",
+        phone: "(512) 555-0144",
+        relationship: "Daughter · primary contact",
+      },
+      emergencyContact: {
+        name: "Rachel Brooks",
+        phone: "(512) 555-0144",
+        relationship: "Daughter",
+      },
+      paymentMethod: "Private pay",
+      moveInRequested: "2026-03-01",
+      status: "approved",
+      careType: "Assisted living",
+      referralSource: "Family",
+      priority: "medium",
+      assigneeId: "tm-jordan",
+      assigneeName: "Jordan Lee",
+      internalNotes: [],
+      infoRequest: null,
+      documentRequest: null,
+      tourProposal: null,
+      assessmentProposal: null,
+      waitlistPosition: null,
+      submittedAt: "2026-02-10T14:00:00.000Z",
+      lastUpdated: "2026-02-18T16:30:00.000Z",
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("Jordan Lee", "Tour completed"),
+        audit("Jordan Lee", "Accepted · room hold confirmed"),
+      ],
+    },
+    {
+      id: "capp-hist-declined",
+      residenceId: r.id,
+      seniorName: "Frank Nguyen",
+      seniorAge: 79,
+      relationship: "Father",
+      summary: "Memory care inquiry — declined; care needs above current program capacity.",
+      executiveSummary:
+        "Frank Nguyen’s application was declined after clinical review determined a higher acuity level than the community can support.",
+      careNeeds: ["Memory care", "Two-person transfers"],
+      medicalHighlights: ["Advanced dementia", "High fall risk"],
+      insights: {
+        primaryDiagnoses: ["Advanced dementia"],
+        mobilityLevel: "Two-person assist",
+        cognitiveStatus: "Advanced impairment · exit-seeking",
+        importantMedications: ["Donepezil 10mg", "Quetiapine 25mg PRN"],
+        allergies: ["None known"],
+        specialConsiderations: ["Needs secure unit and higher staffing ratio"],
+      },
+      dossier: {
+        ...historyDossier,
+        dateOfBirth: "1946-11-02",
+        gender: "Male",
+        pathologies: [
+          { name: "Advanced dementia", status: "active", diagnosedYear: "2020" },
+          { name: "High fall risk", status: "active", diagnosedYear: "2025" },
+        ],
+      },
+      documents: [
+        {
+          id: "dh2",
+          name: "Physician report",
+          category: "Medical",
+          shared: true,
+          aiSummary: "Documents advanced cognitive needs.",
+        },
+      ],
+      family: {
+        name: "Linh Nguyen",
+        email: "linh.nguyen@example.com",
+        phone: "(512) 555-0177",
+        relationship: "Daughter · primary contact",
+      },
+      emergencyContact: {
+        name: "Linh Nguyen",
+        phone: "(512) 555-0177",
+        relationship: "Daughter",
+      },
+      paymentMethod: "Private pay",
+      moveInRequested: "2026-02-20",
+      status: "declined",
+      careType: "Memory care",
+      referralSource: "Hospital",
+      priority: "high",
+      assigneeId: "tm-sofia",
+      assigneeName: "Sofia Nguyen",
+      internalNotes: [],
+      infoRequest: null,
+      documentRequest: null,
+      tourProposal: null,
+      assessmentProposal: null,
+      waitlistPosition: null,
+      submittedAt: "2026-02-05T11:00:00.000Z",
+      lastUpdated: "2026-02-12T09:45:00.000Z",
+      auditLog: [
+        audit("System", "Application submitted"),
+        audit("Sofia Nguyen", "Clinical review completed"),
+        audit("Sofia Nguyen", "Declined · care needs exceed program capacity"),
+      ],
+    },
+  );
+
   const availability: AvailabilityUnit[] = [
     {
       id: "av-1",

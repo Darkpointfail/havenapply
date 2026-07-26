@@ -6,7 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { useCommunityPortal } from "@/lib/community-portal-store";
-import { formatPortalTime, statusLabel, statusTone } from "@/lib/community-portal";
+import {
+  formatPortalDate,
+  formatPortalTime,
+  statusLabel,
+  statusTone,
+  type CommunityApplication,
+} from "@/lib/community-portal";
+import type { ApplicationStatus } from "@/data/applications";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
@@ -14,14 +21,58 @@ const FILTERS = [
   { id: "new", label: "New" },
   { id: "pending", label: "In review" },
   { id: "info", label: "Need info" },
-  { id: "decided", label: "Decided" },
+  { id: "history", label: "History" },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
 
+const HISTORY_STATUSES: ApplicationStatus[] = [
+  "approved",
+  "declined",
+  "conditionally_approved",
+  "offer_received",
+  "waitlisted",
+  "withdrawn",
+  "closed",
+  "move_in_scheduled",
+];
+
+function outcomeLabel(status: ApplicationStatus) {
+  if (status === "approved" || status === "offer_received" || status === "move_in_scheduled") {
+    return "Accepted";
+  }
+  if (status === "conditionally_approved") return "Conditionally accepted";
+  if (status === "declined") return "Declined";
+  if (status === "waitlisted") return "Waitlisted";
+  if (status === "withdrawn") return "Withdrawn";
+  if (status === "closed") return "Closed";
+  return statusLabel(status);
+}
+
+function outcomeTone(status: ApplicationStatus) {
+  if (status === "approved" || status === "offer_received" || status === "move_in_scheduled") {
+    return "success" as const;
+  }
+  if (status === "conditionally_approved" || status === "waitlisted") return "warn" as const;
+  if (status === "declined" || status === "withdrawn" || status === "closed") {
+    return "danger" as const;
+  }
+  return statusTone(status);
+}
+
+function decisionNote(app: CommunityApplication) {
+  const hit = [...app.auditLog]
+    .reverse()
+    .find((e) => /accept|declin|waitlist|withdraw|approv/i.test(e.action));
+  return hit?.action ?? null;
+}
+
 function ApplicationsListInner() {
   const params = useSearchParams();
-  const initial = (params.get("filter") || "all") as FilterId;
+  const raw = params.get("filter");
+  const initial = (
+    raw === "decided" ? "history" : raw || "all"
+  ) as FilterId;
   const { ready, workspace } = useCommunityPortal();
   const [filter, setFilter] = useState<FilterId>(
     FILTERS.some((f) => f.id === initial) ? initial : "all",
@@ -42,12 +93,8 @@ function ApplicationsListInner() {
         (a) =>
           a.status === "more_info" || Boolean(a.documentRequest) || Boolean(a.infoRequest),
       );
-    } else if (filter === "decided") {
-      list = list.filter((a) =>
-        ["approved", "declined", "conditionally_approved", "offer_received", "waitlisted"].includes(
-          a.status,
-        ),
-      );
+    } else if (filter === "history") {
+      list = list.filter((a) => HISTORY_STATUSES.includes(a.status));
     }
     const query = q.trim().toLowerCase();
     if (query) {
@@ -68,12 +115,18 @@ function ApplicationsListInner() {
     );
   }
 
+  const isHistory = filter === "history";
+
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <div className="mb-6">
-        <h1 className="text-3xl font-semibold tracking-tight">Applications</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {isHistory ? "Application history" : "Applications"}
+        </h1>
         <p className="mt-1 text-ink-muted">
-          Complete digital admission packages. Review, message, decide.
+          {isHistory
+            ? "Candidates who already applied, with your community’s decision (accepted, declined, waitlisted)."
+            : "Complete digital admission packages. Review, message, decide."}
         </p>
       </div>
 
@@ -106,27 +159,43 @@ function ApplicationsListInner() {
       <div className="space-y-3">
         {apps.length === 0 ? (
           <Card className="p-8 text-center text-sm text-ink-muted">
-            No applications in this view.
+            {isHistory
+              ? "No decided applications yet. When you accept or decline a candidate, they appear here."
+              : "No applications in this view."}
           </Card>
         ) : (
-          apps.map((a) => (
-            <Link key={a.id} href={`/community/applications/${a.id}`}>
-              <Card className="flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-brand/30 hover:shadow-xs">
-                <div className="min-w-0">
-                  <p className="font-semibold">{a.seniorName}</p>
-                  <p className="mt-0.5 text-sm text-ink-muted">
-                    {a.family.name} · {a.relationship} · updated {formatPortalTime(a.lastUpdated)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(a.documentRequest || a.infoRequest) && (
-                    <Badge tone="warn">Needs info</Badge>
-                  )}
-                  <Badge tone={statusTone(a.status)}>{statusLabel(a.status)}</Badge>
-                </div>
-              </Card>
-            </Link>
-          ))
+          apps.map((a) => {
+            const note = isHistory ? decisionNote(a) : null;
+            return (
+              <Link key={a.id} href={`/community/applications/${a.id}`}>
+                <Card className="flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-brand/30 hover:shadow-xs">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{a.seniorName}</p>
+                    <p className="mt-0.5 text-sm text-ink-muted">
+                      {a.family.name} · {a.relationship}
+                      {a.careType ? ` · ${a.careType}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-faint">
+                      Applied {formatPortalDate(a.submittedAt)}
+                      <span className="mx-1.5">·</span>
+                      Updated {formatPortalTime(a.lastUpdated)}
+                    </p>
+                    {note ? (
+                      <p className="mt-1.5 text-xs text-ink-secondary">{note}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!isHistory && (a.documentRequest || a.infoRequest) && (
+                      <Badge tone="warn">Needs info</Badge>
+                    )}
+                    <Badge tone={isHistory ? outcomeTone(a.status) : statusTone(a.status)}>
+                      {isHistory ? outcomeLabel(a.status) : statusLabel(a.status)}
+                    </Badge>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })
         )}
       </div>
     </div>

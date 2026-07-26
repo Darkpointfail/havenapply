@@ -36,7 +36,7 @@ import {
 } from "@/lib/community-portal";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 
-const STORAGE_KEY = "haven-community-portal-v6";
+const STORAGE_KEY = "haven-community-portal-v7";
 
 type PortalContextValue = {
   ready: boolean;

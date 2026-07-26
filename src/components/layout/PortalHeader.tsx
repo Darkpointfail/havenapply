@@ -15,7 +15,8 @@ import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 function pathMatches(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(href + "/");
+  const pathOnly = href.split("?")[0];
+  return pathname === pathOnly || pathname.startsWith(pathOnly + "/");
 }
 
 function groupIsActive(pathname: string, group: NavGroup) {

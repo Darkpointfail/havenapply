@@ -151,6 +151,11 @@ export function CommunityDashboard() {
           <p className="mt-3 text-xs tabular-nums text-ink-faint">
             {openCount} awaiting review
           </p>
+          <div className="mt-4">
+            <Button href="/community/applications?filter=history" size="sm" variant="secondary">
+              View application history
+            </Button>
+          </div>
         </header>
 
         {unreadNotifications.length > 0 && (

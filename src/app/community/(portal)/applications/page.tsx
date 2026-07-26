@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { CommunityApplicationsList } from "@/components/community/CommunityApplicationsList";
 
-/** Admissions inbox lives on the dashboard */
+/** Full applications inbox + history (accepted / declined / waitlisted). */
 export default function CommunityApplicationsPage() {
-  redirect("/community/dashboard");
+  return <CommunityApplicationsList />;
 }

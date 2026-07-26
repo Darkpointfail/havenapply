@@ -202,7 +202,7 @@ function GoogleCommunitiesMap({
                   ? {
                       path: google.maps.SymbolPath.CIRCLE,
                       scale: active ? 11 : 8,
-                      fillColor: active ? "#1f8a6a" : "#d4896a",
+                      fillColor: active ? "#0f8a8a" : "#6b7280",
                       fillOpacity: 1,
                       strokeColor: "#ffffff",
                       strokeWeight: 2,

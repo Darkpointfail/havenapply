@@ -1,27 +1,109 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowUp, Sparkles } from "lucide-react";
+import { Suspense, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FileText, Search } from "lucide-react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { AssistantShell } from "@/components/assistant/AssistantShell";
+import { Composer } from "@/components/assistant/Composer";
+import { MessageList } from "@/components/assistant/MessageList";
+import { SetupExitBar } from "@/components/assistant/SetupExitBar";
+import { SummaryCard } from "@/components/assistant/SummaryCard";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
-import { useFamilyData } from "@/lib/family-data";
 import {
   type AssistantPhase,
   type ChatMessage,
+  buildSummaryFields,
   processTurn,
   progressFromState,
   resumePhase,
   welcomeMessage,
 } from "@/lib/assistant/conversation-engine";
 import { parseSearchIntent } from "@/lib/assistant/search-intent";
-import { cn } from "@/lib/utils";
+import { dossierReadyForApply, missingRequiredApplyDocs } from "@/lib/family-applications";
+import { useFamilyData } from "@/lib/family-data";
+import { seniorDisplayName } from "@/lib/senior-profile";
+
+type Mode = "setup" | "search" | "apply";
+
+function modeFromParam(raw: string | null): Mode {
+  if (raw === "search" || raw === "apply") return raw;
+  return "setup";
+}
+
+function manualHrefForProgress(items: { id: string; done: boolean }[]) {
+  const open = items.find((i) => !i.done);
+  if (!open) return "/family/profile?tab=details";
+  if (open.id === "care") return "/family/care-needs";
+  return "/family/profile?tab=details";
+}
+
+function ApplyHandoff({
+  seniorName,
+  ready,
+  missing,
+}: {
+  seniorName: string;
+  ready: boolean;
+  missing: string[];
+}) {
+  return (
+    <div className="mb-4 rounded-3xl border border-line bg-surface p-5 shadow-xs">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+          <FileText size={16} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-ink">Prepare applications</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            {ready
+              ? `The dossier for ${seniorName} looks ready to send. Pick communities, then review before you submit.`
+              : `Before applying for ${seniorName}, finish the items below so communities receive a complete packet.`}
+          </p>
+          {!ready && missing.length > 0 ? (
+            <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-ink-secondary">
+              {missing.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ready ? (
+              <>
+                <Button href="/find-senior-living" size="sm">
+                  <Search size={14} /> Find communities
+                </Button>
+                <Button href="/family/find-communities" size="sm" variant="secondary">
+                  Browse list
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button href="/family/documents" size="sm">
+                  Open documents
+                </Button>
+                <Button href="/family/care-needs" size="sm" variant="secondary">
+                  Care needs
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AssistantInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const mode = modeFromParam(params.get("mode"));
   const { completeOnboarding } = useAuth();
   const {
     data,
+    completeness,
     updateSeniorDraft,
     updateCareNeeds,
     setOnboardingStep,
@@ -30,19 +112,87 @@ function AssistantInner() {
   } = useFamilyData();
 
   const [phase, setPhase] = useState<AssistantPhase>(() =>
-    resumePhase(data.senior, data.careNeeds),
+    mode === "setup" ? resumePhase(data.senior, data.careNeeds) : "done",
   );
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (mode === "search") {
+      return [
+        {
+          id: "search-welcome",
+          role: "assistant",
+          text: "Tell me what you're looking for—city, miles, budget, or care type—and I'll open search with those filters.",
+          suggestions: [
+            "Within 20 miles of Boston under $7,000",
+            "Memory care near Austin",
+            "Assisted living available now",
+          ],
+        },
+      ];
+    }
+    if (mode === "apply") {
+      return [
+        {
+          id: "apply-welcome",
+          role: "assistant",
+          text: "I can check whether the dossier is ready to apply, then send you to communities or the document vault.",
+          suggestions: ["Is my dossier ready?", "Find communities", "Open documents"],
+        },
+      ];
+    }
+    return [welcomeMessage()];
+  });
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, busy]);
+  const [exiting, setExiting] = useState(false);
 
   const progress = progressFromState(data.senior, data.careNeeds, phase);
-  const doneCount = progress.filter((p) => p.done).length;
+  const remaining = progress.filter((p) => !p.done);
+  const summaryFields = useMemo(() => buildSummaryFields(data.senior), [data.senior]);
+  const seniorName = seniorDisplayName(data.senior) || "your loved one";
+
+  const applyReadiness = useMemo(
+    () =>
+      dossierReadyForApply({
+        seniorCreated: data.seniorCreated,
+        completeness,
+        careNeedsCompleted: Boolean(data.careNeeds.completedAt),
+        documents: data.documents,
+      }),
+    [data.seniorCreated, data.careNeeds.completedAt, data.documents, completeness],
+  );
+  const missingDocLabels = missingRequiredApplyDocs(data.documents).map((d) => d.label);
+
+  const saveDraftTimestamp = () => {
+    updateSeniorDraft({});
+    setOnboardingStep(
+      Math.min(
+        7,
+        phase === "done" || phase === "summary"
+          ? 7
+          : phase === "budget" || phase.startsWith("care")
+            ? 7
+            : phase === "location" || phase === "urgency"
+              ? 6
+              : phase === "housing" || phase === "living"
+                ? 4
+                : 2,
+      ),
+    );
+  };
+
+  const saveAndQuit = () => {
+    if (exiting) return;
+    setExiting(true);
+    saveDraftTimestamp();
+    router.push("/family/dashboard");
+  };
+
+  const switchToManual = () => {
+    if (exiting) return;
+    setExiting(true);
+    saveDraftTimestamp();
+    router.push(manualHrefForProgress(progress));
+  };
 
   const applyResult = (result: ReturnType<typeof processTurn>) => {
     if (result.seniorPatch) updateSeniorDraft(result.seniorPatch);
@@ -63,6 +213,17 @@ function AssistantInner() {
         suggestions: result.suggestions,
       },
     ]);
+    return result;
+  };
+
+  const goSearch = (text: string) => {
+    const filters = parseSearchIntent(text);
+    const qs = new URLSearchParams();
+    if (filters.query) qs.set("q", filters.query);
+    if (filters.maxMiles) qs.set("miles", String(filters.maxMiles));
+    if (filters.budgetMax) qs.set("budget", String(filters.budgetMax));
+    if (filters.careTypes[0]) qs.set("care", filters.careTypes[0]);
+    router.push(`/find-senior-living?${qs.toString()}`);
   };
 
   const send = (raw: string) => {
@@ -75,7 +236,52 @@ function AssistantInner() {
     window.setTimeout(() => {
       const n = text.toLowerCase();
 
-      if (phase === "done" || n.includes("find communities") || n.includes("under $") || n.includes("miles")) {
+      if (
+        mode === "apply" ||
+        n.includes("dossier") ||
+        n.includes("ready to apply") ||
+        n.includes("application")
+      ) {
+        if (n.includes("document")) {
+          setBusy(false);
+          router.push("/family/documents");
+          return;
+        }
+        if (n.includes("find") || n.includes("communit")) {
+          setBusy(false);
+          router.push("/find-senior-living");
+          return;
+        }
+        if (n.includes("ready") || n.includes("dossier") || mode === "apply") {
+          const missing = [
+            ...applyReadiness.reasons,
+            ...missingDocLabels.map((l) => `Upload: ${l}`),
+          ];
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `a-${Date.now()}`,
+              role: "assistant",
+              text: applyReadiness.ok
+                ? `Yes—${seniorName}'s dossier looks ready. Browse communities, then use Apply to review and send.`
+                : `Not quite yet. ${missing.slice(0, 4).join(" ")}`,
+              suggestions: applyReadiness.ok
+                ? ["Find communities", "Go to my dashboard"]
+                : ["Open documents", "Continue setup"],
+            },
+          ]);
+          setBusy(false);
+          return;
+        }
+      }
+
+      if (
+        mode === "search" ||
+        phase === "done" ||
+        n.includes("find communities") ||
+        n.includes("under $") ||
+        (n.includes("mile") && (n.includes("near") || n.includes("within")))
+      ) {
         if (n.includes("dashboard")) {
           setBusy(false);
           router.push("/family/dashboard");
@@ -86,140 +292,181 @@ function AssistantInner() {
           router.push("/family/documents");
           return;
         }
+        if (n.includes("apply") && !n.includes("application status")) {
+          setBusy(false);
+          router.push("/assistant?mode=apply");
+          return;
+        }
         if (
+          mode === "search" ||
           phase === "done" ||
           n.includes("find") ||
           n.includes("mile") ||
           n.includes("under") ||
           n.includes("near")
         ) {
-          const filters = parseSearchIntent(text);
-          const params = new URLSearchParams();
-          if (filters.query) params.set("q", filters.query);
-          if (filters.maxMiles) params.set("miles", String(filters.maxMiles));
-          if (filters.budgetMax) params.set("budget", String(filters.budgetMax));
-          if (filters.careTypes[0]) params.set("care", filters.careTypes[0]);
           setBusy(false);
-          router.push(`/find-senior-living?${params.toString()}`);
+          goSearch(text);
           return;
         }
       }
 
-      applyResult(processTurn(phase, text, data.senior));
+      const result = applyResult(processTurn(phase, text, data.senior));
       setBusy(false);
-    }, 400);
+      if (result.handoffSearch && (n.includes("find") || n.includes("search"))) {
+        goSearch(text);
+      }
+    }, 380);
   };
 
   const latestSuggestions =
     [...messages].reverse().find((m) => m.role === "assistant" && m.suggestions?.length)
       ?.suggestions || [];
 
+  const showSummary = mode === "setup" && phase === "summary";
+  const title =
+    mode === "search"
+      ? "Search with Haven"
+      : mode === "apply"
+        ? "Apply with Haven"
+        : "Haven assistant";
+
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-[radial-gradient(ellipse_at_top,_var(--brand-soft)_0%,_var(--bg)_50%)]">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 md:px-6 md:py-8">
-        <header className="mb-6 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-ink text-white">
-            <Sparkles size={16} />
-          </span>
-          <div>
-            <p className="font-semibold text-ink">Haven assistant</p>
-            <p className="text-xs text-ink-muted">
-              {doneCount}/{progress.length} sections ready
-            </p>
-          </div>
-        </header>
-
-        {/* Simple progress dots */}
-        <div className="mb-6 flex gap-1.5">
-          {progress.map((p) => (
-            <div
-              key={p.id}
-              title={p.label}
-              className={cn(
-                "h-1.5 flex-1 rounded-full transition",
-                p.done ? "bg-brand" : "bg-line",
-              )}
-            />
-          ))}
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto pb-4">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+    <AssistantShell
+      title={title}
+      progress={progress}
+      headerActions={
+        mode === "setup" ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={exiting}
+              onClick={saveAndQuit}
             >
-              <div
-                className={cn(
-                  "max-w-[min(100%,34rem)] whitespace-pre-wrap rounded-3xl px-4 py-3 text-[15px] leading-relaxed",
-                  m.role === "user"
-                    ? "bg-ink text-white"
-                    : "bg-surface text-ink shadow-xs ring-1 ring-line/50",
-                )}
-              >
-                {m.text}
-              </div>
-            </div>
-          ))}
-          {busy && (
-            <div className="text-sm text-ink-faint">Haven is typing…</div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {latestSuggestions.length > 0 && !busy && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {latestSuggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => send(s)}
-                className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink-secondary hover:border-brand/40 hover:text-ink"
-              >
-                {s}
-              </button>
-            ))}
+              Save & quit
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="soft"
+              disabled={exiting}
+              onClick={switchToManual}
+            >
+              Continue in forms
+            </Button>
+          </>
+        ) : null
+      }
+      sidebar={
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-line/80 bg-surface/80 p-4 text-xs leading-relaxed text-ink-muted">
+            Answers are saved as you go. You can leave and come back, or finish in classic forms.
+            <button
+              type="button"
+              className="mt-2 block font-medium text-brand hover:underline"
+              onClick={switchToManual}
+            >
+              Open forms with remaining fields
+            </button>
+            <Link
+              href="/family/care-needs"
+              className="mt-1 block font-medium text-brand hover:underline"
+            >
+              Edit care needs
+            </Link>
           </div>
-        )}
+          {mode === "setup" && remaining.length > 0 ? (
+            <div className="rounded-2xl border border-line/80 bg-bg-soft/60 p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                Left to complete
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm text-ink-secondary">
+                {remaining.map((r) => (
+                  <li key={r.id}>• {r.label}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      }
+    >
+      {mode === "setup" ? (
+        <SetupExitBar
+          remaining={remaining}
+          saving={exiting}
+          onSaveAndQuit={saveAndQuit}
+          onSwitchManual={switchToManual}
+        />
+      ) : null}
 
-        <form
-          className="flex items-end gap-2 rounded-[1.25rem] border border-line bg-surface p-2 shadow-sm"
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(input);
-          }}
-        >
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            rows={1}
-            placeholder="Type your answer…"
-            className="max-h-32 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none placeholder:text-ink-faint"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(input);
-              }
-            }}
+      {mode === "apply" ? (
+        <ApplyHandoff
+          seniorName={seniorName}
+          ready={applyReadiness.ok}
+          missing={[...applyReadiness.reasons, ...missingDocLabels]}
+        />
+      ) : null}
+
+      <MessageList messages={messages} busy={busy} />
+
+      {showSummary ? (
+        <div className="mb-4">
+          <SummaryCard
+            title={`Review ${seniorName}'s profile`}
+            fields={summaryFields}
+            confirming={busy}
+            onConfirm={() => send("Looks good, confirm profile")}
+            onEdit={(hint) => send(hint)}
           />
-          <button
-            type="submit"
-            disabled={!input.trim() || busy}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white disabled:opacity-40"
-            aria-label="Send"
-          >
-            <ArrowUp size={18} />
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      ) : null}
+
+      {phase === "done" && mode === "setup" ? (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button href="/find-senior-living" size="sm">
+            Find communities
+          </Button>
+          <Button href="/assistant?mode=apply" size="sm" variant="secondary">
+            Prepare to apply
+          </Button>
+          <Button href="/family/dashboard" size="sm" variant="ghost">
+            Dashboard
+          </Button>
+        </div>
+      ) : null}
+
+      <Composer
+        value={input}
+        onChange={setInput}
+        onSend={send}
+        suggestions={latestSuggestions}
+        busy={busy}
+        placeholder={
+          mode === "search"
+            ? 'e.g. "within 20 miles of Boston under $7,000"'
+            : mode === "apply"
+              ? "Ask about readiness, documents, or search…"
+              : "Type your answer…"
+        }
+      />
+    </AssistantShell>
   );
 }
 
 export default function AssistantPage() {
   return (
     <RequireAuth role="family">
-      <AssistantInner />
+      <Suspense
+        fallback={
+          <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
+            Loading…
+          </div>
+        }
+      >
+        <AssistantInner />
+      </Suspense>
     </RequireAuth>
   );
 }

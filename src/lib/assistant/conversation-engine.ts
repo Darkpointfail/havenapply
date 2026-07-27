@@ -472,26 +472,90 @@ export function processTurn(
   }
 }
 
-function buildSummaryPrompt(senior: SeniorProfile) {
-  const forSelf = isSelfApplicant(senior);
-  const name = forSelf
-    ? "you"
-    : seniorDisplayName(senior) || "your loved one";
+export type SummaryField = {
+  id: string;
+  label: string;
+  value: string;
+  editHint: string;
+};
+
+/** Structured summary for the review card UI. */
+export function buildSummaryFields(senior: SeniorProfile): SummaryField[] {
   const housing =
     senior.housingTypes.map((id) => HOUSING_TYPES.find((h) => h.id === id)?.label || id).join(", ") ||
-    "to be confirmed";
-  const zone = senior.searchZones[0]?.query || "your search area";
+    "To confirm";
+  const zone = senior.searchZones[0]
+    ? `${senior.searchZones[0].query}${
+        senior.searchZones[0].radiusMiles ? ` · ${senior.searchZones[0].radiusMiles} mi` : ""
+      }`
+    : "To confirm";
   const budget = senior.budgetUnsure
-    ? "budget still open"
+    ? "Not sure yet"
     : senior.budgetMax
-      ? `about $${Number(senior.budgetMin || 0).toLocaleString()}–$${Number(senior.budgetMax).toLocaleString()}/month`
-      : "budget to confirm";
+      ? `$${Number(senior.budgetMin || 0).toLocaleString()}–$${Number(senior.budgetMax).toLocaleString()}/mo`
+      : "To confirm";
+  const urgency =
+    URGENCY_OPTIONS.find((u) => u.id === senior.urgency)?.label || senior.urgency || "To confirm";
+  const living =
+    LIVING_SITUATIONS.find((l) => l.id === senior.livingSituation)?.label ||
+    senior.livingSituationOther ||
+    "To confirm";
 
+  return [
+    {
+      id: "name",
+      label: "Name",
+      value: seniorDisplayName(senior) || "—",
+      editHint: "Change the name",
+    },
+    {
+      id: "location",
+      label: "Lives in",
+      value: [senior.city, senior.state].filter(Boolean).join(", ") || "—",
+      editHint: "Change the search area",
+    },
+    {
+      id: "living",
+      label: "Living situation",
+      value: living,
+      editHint: "Change housing type",
+    },
+    {
+      id: "housing",
+      label: "Looking for",
+      value: housing,
+      editHint: "Change housing type",
+    },
+    {
+      id: "urgency",
+      label: "Timeline",
+      value: urgency,
+      editHint: "Change the search area",
+    },
+    {
+      id: "search",
+      label: "Search area",
+      value: zone,
+      editHint: "Change the search area",
+    },
+    {
+      id: "budget",
+      label: "Budget",
+      value: budget,
+      editHint: "Change the budget",
+    },
+  ];
+}
+
+function buildSummaryPrompt(senior: SeniorProfile) {
+  const forSelf = isSelfApplicant(senior);
+  const name = forSelf ? "you" : seniorDisplayName(senior) || "your loved one";
+  const fields = buildSummaryFields(senior);
   const header = forSelf
     ? "Here's what I have for your profile:"
     : `Here's what I have for ${name}:`;
-
-  return `${header}\n\n• Lives in ${[senior.city, senior.state].filter(Boolean).join(", ") || ","}\n• Looking for: ${housing}\n• Searching near: ${zone}\n• Budget: ${budget}\n\nDoes this look right? You can confirm the profile or ask me to change anything.`;
+  const lines = fields.map((f) => `• ${f.label}: ${f.value}`).join("\n");
+  return `${header}\n\n${lines}\n\nDoes this look right? You can confirm the profile or ask me to change anything.`;
 }
 
 export function resumePhase(senior: SeniorProfile, care: CareNeeds): AssistantPhase {

@@ -92,6 +92,7 @@ function GetStartedInner() {
   const params = useSearchParams();
   const formId = useId();
   const formRef = useRef<HTMLDivElement>(null);
+  const nextParam = params.get("next")?.trim() || "";
 
   const [role, setRole] = useState<SignupRole | null>(() => roleFromQuery(params.get("as")));
   const [submitting, setSubmitting] = useState(false);
@@ -149,25 +150,20 @@ function GetStartedInner() {
       );
       return;
     }
-    if (result.needsManualSignIn) {
-      router.push(
-        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(
-          role === "facility"
-            ? "/community/dashboard"
-            : role === "professional"
-              ? "/professional/dashboard"
-              : "/family/dashboard",
-        )}`,
-      );
-      return;
-    }
-    router.push(
+    const familyHome = nextParam || "/assistant?mode=setup";
+    const dest =
       role === "facility"
         ? "/community/dashboard"
         : role === "professional"
           ? "/professional/dashboard"
-          : "/family/dashboard",
-    );
+          : familyHome;
+    if (result.needsManualSignIn) {
+      router.push(
+        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(dest)}`,
+      );
+      return;
+    }
+    router.push(dest);
   };
 
   if (!ready) {
@@ -407,7 +403,7 @@ function GetStartedInner() {
 
 export default function GetStartedPage() {
   return (
-    <RedirectIfAuthenticated fallbackHref="/family/dashboard">
+    <RedirectIfAuthenticated fallbackHref="/assistant?mode=setup">
       <Suspense
         fallback={
           <div className="flex min-h-[50vh] items-center justify-center">

@@ -52,7 +52,7 @@ function StartChoiceInner() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Link
-          href="/assistant"
+          href="/assistant?mode=setup"
           className="group flex flex-col rounded-[1.5rem] border border-brand/25 bg-gradient-to-b from-brand-soft/60 to-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink text-white">
@@ -69,7 +69,7 @@ function StartChoiceInner() {
         </Link>
 
         <Link
-          href="/onboarding"
+          href="/family/senior-profile"
           className="group flex flex-col rounded-[1.5rem] border border-line bg-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-bg-soft text-ink">

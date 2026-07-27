@@ -9,6 +9,7 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
+import { useAi } from "@/lib/ai";
 import { useMessaging } from "@/lib/messaging-store";
 import { useNotificationsTasksOptional } from "@/lib/notifications-tasks-store";
 import { useTheme } from "@/lib/theme";
@@ -40,6 +41,7 @@ export function PortalHeader({
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { setOpen: openAi } = useAi();
   const { unreadTotal } = useMessaging();
   const notifTasks = useNotificationsTasksOptional();
   const notifUnread = notifTasks?.unreadCount ?? 0;
@@ -372,14 +374,15 @@ export function PortalHeader({
         </div>
 
         <div className="flex shrink-0 items-center justify-self-end gap-1">
-          {homeHref.startsWith("/family") && (
+          {(homeHref.startsWith("/family") || homeHref.startsWith("/professional")) && (
             <Button
               size="sm"
               variant="soft"
               className="hidden sm:inline-flex"
-              href="/assistant"
+              type="button"
+              onClick={() => openAi(true)}
             >
-              <Sparkles size={14} /> Assistant
+              <Sparkles size={14} /> Ask Haven
             </Button>
           )}
           <button

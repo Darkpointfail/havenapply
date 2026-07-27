@@ -137,8 +137,8 @@ export default function HomePage() {
               several senior living communities, and follow every application from one calm place.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button href="/get-started" size="lg">
-                Build your profile
+              <Button href="/get-started?next=/assistant" size="lg">
+                Start your application
                 <ArrowRight size={18} />
               </Button>
               <Button href="/find-senior-living" size="lg" variant="secondary">
@@ -556,7 +556,7 @@ export default function HomePage() {
             Build one secure profile. Apply with confidence. Track every admission from one place.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button href="/get-started" size="lg" variant="onDark">
+            <Button href="/get-started?next=/assistant" size="lg" variant="onDark">
               Start your application
               <ArrowRight size={18} />
             </Button>

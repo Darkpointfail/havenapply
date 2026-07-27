@@ -1,7 +1,11 @@
 import type { FamilyApplication } from "@/lib/family-applications";
-import type { VaultDocument } from "@/lib/document-vault";
+import {
+  dossierReadyForApply,
+  missingRequiredApplyDocs,
+  toDisplayApplication,
+} from "@/lib/family-applications";
 import { statusLabel } from "@/data/applications";
-import { toDisplayApplication } from "@/lib/family-applications";
+import type { VaultDocument } from "@/lib/document-vault";
 
 export type CopilotReply = {
   text: string;
@@ -13,9 +17,13 @@ export function answerCopilot(input: {
   applications: FamilyApplication[];
   documents: VaultDocument[];
   seniorName: string;
+  seniorCreated?: boolean;
+  completeness?: number;
+  careNeedsCompleted?: boolean;
 }): CopilotReply {
   const q = input.question.toLowerCase();
   const apps = input.applications.filter((a) => a.status !== "draft");
+  const name = input.seniorName || "your loved one";
 
   if (q.includes("application") || q.includes("where is") || q.includes("status")) {
     if (!apps.length) {
@@ -34,16 +42,41 @@ export function answerCopilot(input: {
     };
   }
 
-  if (q.includes("document") || q.includes("missing") || q.includes("paperwork")) {
-    const needed = ["Insurance card", "Physician report", "ID"];
-    const have = new Set(input.documents.map((d) => d.name.toLowerCase()));
-    const missing = needed.filter((n) => ![...have].some((h) => h.includes(n.toLowerCase().split(" ")[0])));
+  if (
+    q.includes("document") ||
+    q.includes("missing") ||
+    q.includes("paperwork") ||
+    q.includes("ready to apply") ||
+    q.includes("dossier")
+  ) {
+    const missingDocs = missingRequiredApplyDocs(input.documents);
     const fromApps = apps.flatMap((a) => a.requestedDocuments || []);
-    const allMissing = [...new Set([...missing, ...fromApps])];
+    const readiness =
+      input.seniorCreated != null
+        ? dossierReadyForApply({
+            seniorCreated: Boolean(input.seniorCreated),
+            completeness: input.completeness ?? 0,
+            careNeedsCompleted: Boolean(input.careNeedsCompleted),
+            documents: input.documents,
+          })
+        : null;
+
+    if (readiness && !readiness.ok) {
+      const docLines = missingDocs.map((d) => `• ${d.label}`);
+      const extra = readiness.reasons.filter((r) => !r.toLowerCase().includes("document"));
+      return {
+        text: `Before applying for ${name}:\n${[...extra.map((r) => `• ${r}`), ...docLines].join("\n") || "• Finish the remaining dossier items."}`,
+        href: missingDocs.length ? "/family/documents" : "/assistant?mode=apply",
+      };
+    }
+
+    const allMissing = [
+      ...new Set([...missingDocs.map((d) => d.label), ...fromApps]),
+    ];
     if (!allMissing.length) {
       return {
-        text: `Documents for ${input.seniorName || "your loved one"} look in good shape. You can still add files anytime in the vault.`,
-        href: "/family/documents",
+        text: `Documents for ${name} look in good shape. You can still add files anytime in the vault, or prepare an application.`,
+        href: "/assistant?mode=apply",
       };
     }
     return {
@@ -52,10 +85,10 @@ export function answerCopilot(input: {
     };
   }
 
-  if (q.includes("cheap") || q.includes("budget") || q.includes("price") || q.includes("cost")) {
+  if (q.includes("cheap") || q.includes("budget") || q.includes("price") || q.includes("cost") || q.includes("fit")) {
     return {
       text: "Open search and sort by fit. I can also apply a budget filter if you tell me a monthly maximum, for example “under $7000 near Boston”.",
-      href: "/find-senior-living",
+      href: "/assistant?mode=search",
     };
   }
 
@@ -66,15 +99,22 @@ export function answerCopilot(input: {
     };
   }
 
-  if (q.includes("profile") || q.includes("continue") || q.includes("setup")) {
+  if (q.includes("profile") || q.includes("continue") || q.includes("setup") || q.includes("next step")) {
     return {
       text: "Let's continue building the profile together in the assistant.",
-      href: "/assistant",
+      href: "/assistant?mode=setup",
+    };
+  }
+
+  if (q.includes("apply") || q.includes("submit")) {
+    return {
+      text: "I can check whether the dossier is ready, then guide you to communities to apply.",
+      href: "/assistant?mode=apply",
     };
   }
 
   return {
     text: "I can check application status, missing documents, or help you search. Try asking “Where is my application?” or “What document am I missing?”",
-    href: "/assistant",
+    href: "/assistant?mode=setup",
   };
 }

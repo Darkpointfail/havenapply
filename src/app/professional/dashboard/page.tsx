@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useAi } from "@/lib/ai";
 import { formatRelative } from "@/lib/format-relative";
 import {
   PATIENT_STATUS_LABEL,
@@ -17,6 +18,7 @@ import { useProfessional } from "@/lib/professional-store";
 
 export default function ProfessionalDashboardPage() {
   const { patients } = useProfessional();
+  const { ask } = useAi();
 
   const missingDocs = patients.filter((p) => missingChecklist(p).length > 0);
   const needMoreInfo = patients.filter((p) =>
@@ -74,10 +76,15 @@ export default function ProfessionalDashboardPage() {
         description="What needs attention to move patients toward the right senior living community."
         breadcrumbs={[{ label: "Care professional" }, { label: "Dashboard" }]}
         actions={
-          <Button href="/professional/patients/new">
-            Add patient
-            <ArrowRight size={16} />
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => ask("Who needs documents?")}>
+              Ask Haven
+            </Button>
+            <Button href="/professional/patients/new">
+              Add patient
+              <ArrowRight size={16} />
+            </Button>
+          </div>
         }
       />
 

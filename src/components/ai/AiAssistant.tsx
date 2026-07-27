@@ -6,26 +6,48 @@ import { useRouter } from "next/navigation";
 import { ArrowUp, Sparkles, X } from "lucide-react";
 import { useAi } from "@/lib/ai";
 import { answerCopilot } from "@/lib/assistant/copilot-intents";
+import { answerProfessionalCopilot } from "@/lib/assistant/professional-copilot-intents";
+import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
+import { useProfessional } from "@/lib/professional-store";
 import { seniorDisplayName } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
 
+const FAMILY_CHIPS = [
+  "Where is my application?",
+  "What document am I missing?",
+  "Continue setup",
+];
+
+const PRO_CHIPS = [
+  "Who needs documents?",
+  "Where are my applications?",
+  "Which patients are ready?",
+];
+
 export function AiAssistant() {
+  const { user } = useAuth();
+  const isProfessional = user?.role === "professional";
   const { open, setOpen, prompt, setPrompt } = useAi();
-  const { data } = useFamilyData();
+  const { data, completeness } = useFamilyData();
+  const { patients } = useProfessional();
   const router = useRouter();
-  const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string; href?: string }[]>([
-    {
-      role: "ai",
-      text: "I'm Haven. Ask me about applications, missing documents, or say “continue setup” to keep building the profile.",
-    },
-  ]);
+
+  const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string; href?: string }[]>(
+    () => [
+      {
+        role: "ai",
+        text: isProfessional
+          ? "I'm Haven. Ask about patient readiness, missing documents, application status, or communities."
+          : "I'm Haven. Ask me about applications, missing documents, or say “continue setup” to keep building the profile.",
+      },
+    ],
+  );
 
   useEffect(() => {
     if (open && prompt.trim()) {
       const q = prompt.trim();
       setPrompt("");
-      // Defer so panel is open
       window.setTimeout(() => send(q), 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -34,13 +56,24 @@ export function AiAssistant() {
   const send = (text: string) => {
     const q = text.trim();
     if (!q) return;
-    const reply = answerCopilot({
-      question: q,
-      applications: data.applications,
-      documents: data.documents,
-      seniorName: seniorDisplayName(data.senior) || data.person.name || "your loved one",
-    });
-    setMessages((m) => [...m, { role: "user", text: q }, { role: "ai", text: reply.text, href: reply.href }]);
+
+    const reply = isProfessional
+      ? answerProfessionalCopilot({ question: q, patients })
+      : answerCopilot({
+          question: q,
+          applications: data.applications,
+          documents: data.documents,
+          seniorName: seniorDisplayName(data.senior) || data.person.name || "your loved one",
+          seniorCreated: data.seniorCreated,
+          completeness,
+          careNeedsCompleted: Boolean(data.careNeeds.completedAt),
+        });
+
+    setMessages((m) => [
+      ...m,
+      { role: "user", text: q },
+      { role: "ai", text: reply.text, href: reply.href },
+    ]);
     setPrompt("");
   };
 
@@ -48,6 +81,11 @@ export function AiAssistant() {
     e.preventDefault();
     send(prompt);
   };
+
+  const chips = isProfessional ? PRO_CHIPS : FAMILY_CHIPS;
+  const fullAssistantHref = isProfessional
+    ? "/professional/dashboard"
+    : "/assistant?mode=setup";
 
   return (
     <>
@@ -77,7 +115,9 @@ export function AiAssistant() {
             </span>
             <div>
               <p className="font-semibold">Haven</p>
-              <p className="text-xs text-ink-muted">Admission co-pilot</p>
+              <p className="text-xs text-ink-muted">
+                {isProfessional ? "Care professional co-pilot" : "Admission co-pilot"}
+              </p>
             </div>
           </div>
           <button
@@ -119,24 +159,26 @@ export function AiAssistant() {
 
         <div className="border-t border-line p-3">
           <div className="mb-2 flex flex-wrap gap-1.5">
-            {["Where is my application?", "What document am I missing?", "Continue setup"].map(
-              (s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => send(s)}
-                  className="rounded-full border border-line px-2.5 py-1 text-[11px] text-ink-muted hover:border-brand/30"
-                >
-                  {s}
-                </button>
-              ),
-            )}
+            {chips.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => send(s)}
+                className="rounded-full border border-line px-2.5 py-1 text-[11px] text-ink-muted hover:border-brand/30"
+              >
+                {s}
+              </button>
+            ))}
           </div>
           <form onSubmit={onSubmit} className="flex gap-2">
             <input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ask Haven…"
+              placeholder={
+                isProfessional
+                  ? "Ask about patients, docs, applications…"
+                  : "Ask Haven…"
+              }
               className="flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
             />
             <button
@@ -147,13 +189,19 @@ export function AiAssistant() {
               <ArrowUp size={16} />
             </button>
           </form>
-          <Link
-            href="/assistant"
-            className="mt-2 block text-center text-xs font-medium text-brand"
-            onClick={() => setOpen(false)}
-          >
-            Open full assistant
-          </Link>
+          {!isProfessional ? (
+            <Link
+              href={fullAssistantHref}
+              className="mt-2 block text-center text-xs font-medium text-brand"
+              onClick={() => setOpen(false)}
+            >
+              Open full assistant
+            </Link>
+          ) : (
+            <p className="mt-2 text-center text-[11px] text-ink-faint">
+              Tips: name a patient to check their dossier
+            </p>
+          )}
         </div>
       </div>
     </>

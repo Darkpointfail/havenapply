@@ -365,7 +365,8 @@ function FindCommunitiesInner() {
             className="shrink-0"
           >
             <SlidersHorizontal size={14} />
-            Filters{activeFilterCount ? ` · ${activeFilterCount}` : ""}
+            {t("Filters")}
+            {activeFilterCount ? ` · ${activeFilterCount}` : ""}
           </Button>
           <div className="flex shrink-0 rounded-lg border border-line bg-bg p-0.5">
             {(
@@ -631,7 +632,7 @@ function FindCommunitiesInner() {
             <>
               <span className="font-medium text-ink">{matched.length}</span>{" "}
               {matched.length === 1 ? "community" : "communities"}
-              {hasQueryOrFilters ? " match your search" : ""}
+              {hasQueryOrFilters ? t(" match your search") : ""}
             </>
           )}
         </p>
@@ -645,7 +646,7 @@ function FindCommunitiesInner() {
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface px-5 py-12 text-center">
           <LayoutGrid className="mx-auto text-ink-faint" size={28} />
           <h2 className="mt-3 text-lg font-semibold">
-            {restrictiveEmpty ? "Filters look too restrictive" : "No communities found"}
+            {restrictiveEmpty ? t("Filters look too restrictive") : t("No communities found")}
           </h2>
           <p className="mx-auto mt-1.5 max-w-md text-sm text-ink-muted">
             {restrictiveEmpty

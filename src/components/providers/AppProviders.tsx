@@ -10,30 +10,33 @@ import { MessagingProvider } from "@/lib/messaging-store";
 import { NotificationsTasksProvider } from "@/lib/notifications-tasks-store";
 import { PrivacySecurityProvider } from "@/lib/privacy-security-store";
 import { ProfessionalProvider } from "@/lib/professional-store";
+import { LocaleProvider } from "@/lib/i18n/locale";
 import { ThemeProvider } from "@/lib/theme";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <FamilyDataProvider>
-          <ProfessionalProvider>
-            <MessagingProvider>
-              <FamilyCollaborationProvider>
-                <CommunityPortalProvider>
-                  <InternalAdminProvider>
-                    <NotificationsTasksProvider>
-                      <PrivacySecurityProvider>
-                        <AiProvider>{children}</AiProvider>
-                      </PrivacySecurityProvider>
-                    </NotificationsTasksProvider>
-                  </InternalAdminProvider>
-                </CommunityPortalProvider>
-              </FamilyCollaborationProvider>
-            </MessagingProvider>
-          </ProfessionalProvider>
-        </FamilyDataProvider>
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <FamilyDataProvider>
+            <ProfessionalProvider>
+              <MessagingProvider>
+                <FamilyCollaborationProvider>
+                  <CommunityPortalProvider>
+                    <InternalAdminProvider>
+                      <NotificationsTasksProvider>
+                        <PrivacySecurityProvider>
+                          <AiProvider>{children}</AiProvider>
+                        </PrivacySecurityProvider>
+                      </NotificationsTasksProvider>
+                    </InternalAdminProvider>
+                  </CommunityPortalProvider>
+                </FamilyCollaborationProvider>
+              </MessagingProvider>
+            </ProfessionalProvider>
+          </FamilyDataProvider>
+        </AuthProvider>
+      </LocaleProvider>
     </ThemeProvider>
   );
 }

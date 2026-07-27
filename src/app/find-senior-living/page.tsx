@@ -31,6 +31,7 @@ import {
   savedCommunitiesHref,
 } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type ViewMode = "list" | "map";
 
@@ -131,6 +132,7 @@ function FindCommunitiesInner() {
   const { data } = useFamilyData();
   const searchParams = useSearchParams();
   const isProfessional = user?.role === "professional";
+  const t = useT();
 
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const base = emptySearchFilters();
@@ -227,10 +229,10 @@ function FindCommunitiesInner() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="max-w-xl">
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
-            Find senior living
+            {t("Find senior living")}
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Search by postal code, city, or name, then refine by care type, budget, and distance.
+            {t("Search by postal code, city, or name, then refine by care type, budget, and distance.")}
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -238,25 +240,26 @@ function FindCommunitiesInner() {
             <>
               {!isProfessional ? (
                 <Button href={savedCommunitiesHref()} variant="ghost" size="sm">
-                  Saved
+                  {t("Saved")}
                 </Button>
               ) : null}
               <Button href={applicationsHrefForUser(user)} variant="ghost" size="sm">
-                {isProfessional ? "Applications" : "My applications"}
+                {isProfessional ? t("Applications") : t("My applications")}
               </Button>
             </>
           ) : (
             <>
               <Button href="/get-started" size="sm">
-                Build a profile
+                {t("Build a profile")}
               </Button>
               <Button href="/sign-in" variant="ghost" size="sm">
-                Sign in
+                {t("Sign in")}
               </Button>
             </>
           )}
           <Button href={compareLink} variant="secondary" size="sm">
-            Compare{data.compareIds.length ? ` (${data.compareIds.length})` : ""}
+            {t("Compare")}
+            {data.compareIds.length ? ` (${data.compareIds.length})` : ""}
           </Button>
         </div>
       </div>
@@ -266,20 +269,18 @@ function FindCommunitiesInner() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink">
-                Browse freely, build a profile for better matches
+                {t("Browse freely, build a profile for better matches")}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-ink-muted">
-                You can explore communities by postal code and filters right now. Create a short
-                profile so Haven can suggest the best residences for your loved one’s care needs,
-                budget, and preferred area.
+                {t("You can explore communities by postal code and filters right now. Create a short profile so Haven can suggest the best residences for your loved one’s care needs, budget, and preferred area.")}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               <Button href="/get-started" size="sm">
-                Build a profile
+                {t("Build a profile")}
               </Button>
               <Button href="/sign-in" size="sm" variant="secondary">
-                Sign in
+                {t("Sign in")}
               </Button>
             </div>
           </div>
@@ -299,12 +300,12 @@ function FindCommunitiesInner() {
           <input
             value={ask}
             onChange={(e) => setAsk(e.target.value)}
-            placeholder='Ask Haven: "within 20 miles of Boston under $7,000"'
+            placeholder={t('Ask Haven: "within 20 miles of Boston under $7,000"')}
             className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
           />
         </div>
         <Button type="submit" size="sm" variant="soft">
-          Apply
+          {t("Apply")}
         </Button>
       </form>
       {(filters.query || filters.postalCode || filters.budgetMax || filters.maxMiles) && (
@@ -319,9 +320,9 @@ function FindCommunitiesInner() {
             <input
               value={filters.postalCode}
               onChange={(e) => patch({ postalCode: e.target.value })}
-              placeholder="Postal / ZIP"
+              placeholder={t("Postal / ZIP")}
               className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
-              aria-label="Postal or ZIP code"
+              aria-label={t("Postal or ZIP code")}
               inputMode="text"
               autoComplete="postal-code"
             />
@@ -330,7 +331,7 @@ function FindCommunitiesInner() {
                 type="button"
                 className="rounded-full p-1 text-ink-faint hover:bg-bg-soft hover:text-ink"
                 onClick={() => patch({ postalCode: "" })}
-                aria-label="Clear postal code"
+                aria-label={t("Clear postal code")}
               >
                 <X size={14} />
               </button>
@@ -341,16 +342,16 @@ function FindCommunitiesInner() {
             <input
               value={filters.query}
               onChange={(e) => patch({ query: e.target.value })}
-              placeholder="City, community name, or keyword"
+              placeholder={t("City, community name, or keyword")}
               className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
-              aria-label="Search"
+              aria-label={t("Search")}
             />
             {filters.query && (
               <button
                 type="button"
                 className="rounded-full p-1 text-ink-faint hover:bg-bg-soft hover:text-ink"
                 onClick={() => patch({ query: "" })}
-                aria-label="Clear search"
+                aria-label={t("Clear search")}
               >
                 <X size={14} />
               </button>
@@ -391,14 +392,13 @@ function FindCommunitiesInner() {
         </div>
         {postalOrigin ? (
           <p className="mt-2 text-xs text-ink-muted">
-            Showing communities near <span className="font-medium text-ink">{postalOrigin.label}</span>
-            {filters.maxMiles != null ? ` · within ${filters.maxMiles} miles` : ""}.
-            {!user ? " Build a profile to rank these by care fit." : ""}
+            {t("Showing communities near {label}", { label: postalOrigin.label })}
+            {filters.maxMiles != null ? t(" · within {miles} miles", { miles: filters.maxMiles }) : ""}.
+            {!user ? t(" Build a profile to rank these by care fit.") : ""}
           </p>
         ) : filters.postalCode.trim().length >= 3 ? (
           <p className="mt-2 text-xs text-warn">
-            We couldn’t pinpoint that postal code yet, try a nearby ZIP (e.g. 78731) or add a city
-            name.
+            {t("We couldn’t pinpoint that postal code yet, try a nearby ZIP (e.g. 78731) or add a city name.")}
           </p>
         ) : null}
 
@@ -430,7 +430,7 @@ function FindCommunitiesInner() {
                   className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
                   value={filters.postalCode}
                   onChange={(e) => patch({ postalCode: e.target.value })}
-                  placeholder="e.g. 78731"
+                  placeholder={t("e.g. 78731")}
                 />
               </label>
               <label className="block">
@@ -654,15 +654,15 @@ function FindCommunitiesInner() {
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button type="button" size="sm" onClick={resetFilters}>
-              Clear filters
+              {t("Clear filters")}
             </Button>
             {user ? (
               <Button href="/family/care-needs" variant="secondary" size="sm">
-                Update care needs
+                {t("Update care needs")}
               </Button>
             ) : (
               <Button href="/get-started" variant="secondary" size="sm">
-                Build a profile for better matches
+                {t("Build a profile for better matches")}
               </Button>
             )}
           </div>

@@ -6,9 +6,11 @@ import { ChevronDown, LogOut, Menu, Moon, Sparkles, Sun, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n/locale";
 import { useMessaging } from "@/lib/messaging-store";
 import { useNotificationsTasksOptional } from "@/lib/notifications-tasks-store";
 import { useTheme } from "@/lib/theme";
@@ -44,6 +46,7 @@ export function PortalHeader({
   const notifTasks = useNotificationsTasksOptional();
   const notifUnread = notifTasks?.unreadCount ?? 0;
   const { theme, toggle } = useTheme();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -137,7 +140,7 @@ export function PortalHeader({
             "absolute inset-0 bg-ink/50 backdrop-blur-[2px] transition-opacity duration-300",
             open ? "opacity-100" : "opacity-0",
           )}
-          aria-label="Close menu"
+          aria-label={t("Close menu")}
           onClick={() => setOpen(false)}
         />
         <aside
@@ -147,19 +150,19 @@ export function PortalHeader({
           )}
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation menu"
+          aria-label={t("Navigation menu")}
         >
           <div className="flex min-h-16 items-center justify-between gap-3 border-b border-line px-5 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="flex min-w-0 items-center gap-2">
               <Logo href={homeHref} size="md" className="!ml-0 !translate-y-0" />
               <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand-strong">
-                {badge}
+                {t(badge)}
               </span>
             </div>
             <button
               type="button"
               className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-soft text-ink"
-              aria-label="Close menu"
+              aria-label={t("Close menu")}
               onClick={() => setOpen(false)}
             >
               <X size={18} />
@@ -173,7 +176,7 @@ export function PortalHeader({
               ? groups!.map((group) => (
                   <div key={group.id}>
                     <p className="px-3 pb-1.5 text-sm font-semibold tracking-tight text-ink">
-                      {group.id === "account" && user?.name ? user.name : group.label}
+                      {group.id === "account" && user?.name ? user.name : t(group.label)}
                     </p>
                     <div className="flex flex-col gap-0.5">
                       {group.children.map((link) => (
@@ -188,7 +191,7 @@ export function PortalHeader({
                               : "text-ink hover:bg-bg-soft",
                           )}
                         >
-                          <span>{link.label}</span>
+                          <span>{t(link.label)}</span>
                           {badgeForHref(link.href) > 0 && (
                             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
                               {badgeForHref(link.href) > 9
@@ -213,7 +216,7 @@ export function PortalHeader({
                         : "text-ink hover:bg-bg-soft",
                     )}
                   >
-                    <span>{link.label}</span>
+                    <span>{t(link.label)}</span>
                     {badgeForHref(link.href) > 0 && (
                       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-semibold text-white">
                         {badgeForHref(link.href) > 9
@@ -223,8 +226,11 @@ export function PortalHeader({
                     )}
                   </Link>
                 ))}
+            <div className="mt-3 flex justify-center">
+              <LanguageSwitcher />
+            </div>
             <Button className="mt-auto" variant="secondary" onClick={handleSignOut}>
-              Sign out
+              {t("Sign out")}
             </Button>
           </nav>
         </aside>
@@ -252,7 +258,7 @@ export function PortalHeader({
         <div className="hidden min-w-0 flex-1 flex-nowrap items-center gap-3 md:gap-6 lg:flex">
           <Logo href={homeHref} size="lg" />
           <span className="hidden shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold leading-none text-brand-strong sm:inline">
-            {badge}
+            {t(badge)}
           </span>
           <nav className="hidden flex-nowrap items-center gap-0.5 lg:flex" aria-label="Portal">
           {useGroups
@@ -274,7 +280,7 @@ export function PortalHeader({
                           : "text-ink-muted hover:bg-bg-soft hover:text-ink",
                       )}
                     >
-                      {group.label}
+                      {t(group.label)}
                       {count > 0 && (
                         <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                           {count > 9 ? "9+" : count}
@@ -299,7 +305,7 @@ export function PortalHeader({
                           : "text-ink-muted hover:bg-bg-soft hover:text-ink",
                       )}
                     >
-                      {group.label}
+                      {t(group.label)}
                       {groupBadge > 0 && (
                         <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                           {groupBadge > 9 ? "9+" : groupBadge}
@@ -331,7 +337,7 @@ export function PortalHeader({
                                   : "text-ink hover:bg-bg-soft",
                               )}
                             >
-                              <span>{child.label}</span>
+                              <span>{t(child.label)}</span>
                               {childBadge > 0 && (
                                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                                   {childBadge > 9 ? "9+" : childBadge}
@@ -359,7 +365,7 @@ export function PortalHeader({
                         : "text-ink-muted hover:bg-bg-soft hover:text-ink",
                     )}
                   >
-                    {link.label}
+                    {t(link.label)}
                     {count > 0 && (
                       <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                         {count > 9 ? "9+" : count}
@@ -379,14 +385,15 @@ export function PortalHeader({
               className="hidden sm:inline-flex"
               href="/assistant"
             >
-              <Sparkles size={14} /> Assistant
+              <Sparkles size={14} /> {t("Assistant")}
             </Button>
           )}
+          <LanguageSwitcher compact className="hidden sm:inline-flex" />
           <button
             type="button"
             onClick={toggle}
             className="hidden rounded-xl p-2 text-ink-muted hover:bg-bg-soft sm:inline-flex"
-            aria-label="Toggle theme"
+            aria-label={t("Toggle theme")}
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -397,7 +404,7 @@ export function PortalHeader({
                 type="button"
                 aria-expanded={accountExpanded}
                 aria-haspopup="menu"
-                aria-label="Account menu"
+                aria-label={t("Account menu")}
                 onClick={() => setOpenGroup(accountExpanded ? null : "account")}
                 className={cn(
                   "inline-flex max-w-[160px] items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold leading-none transition-colors",
@@ -438,7 +445,7 @@ export function PortalHeader({
                             : "text-ink hover:bg-bg-soft",
                         )}
                       >
-                        <span>{child.label}</span>
+                        <span>{t(child.label)}</span>
                         {childBadge > 0 && (
                           <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                             {childBadge > 9 ? "9+" : childBadge}
@@ -453,7 +460,7 @@ export function PortalHeader({
                     className="mt-0.5 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-muted hover:bg-bg-soft hover:text-ink"
                     onClick={handleSignOut}
                   >
-                    <LogOut size={14} /> Sign out
+                    <LogOut size={14} /> {t("Sign out")}
                   </button>
                 </div>
               )}
@@ -469,7 +476,7 @@ export function PortalHeader({
                 className="hidden sm:inline-flex"
                 onClick={handleSignOut}
               >
-                <LogOut size={14} /> Sign out
+                <LogOut size={14} /> {t("Sign out")}
               </Button>
             </>
           )}
@@ -477,7 +484,7 @@ export function PortalHeader({
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-soft lg:hidden"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t("Close menu") : t("Open menu")}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >

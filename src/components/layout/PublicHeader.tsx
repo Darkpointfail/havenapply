@@ -6,14 +6,17 @@ import { Menu, Moon, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
 import { publicAuthLinks, publicNav } from "@/config/navigation";
+import { useT } from "@/lib/i18n/locale";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export function PublicHeader() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -55,7 +58,7 @@ export function PublicHeader() {
             "absolute inset-0 bg-ink/50 backdrop-blur-[2px] transition-opacity duration-300",
             open ? "opacity-100" : "opacity-0",
           )}
-          aria-label="Close menu"
+          aria-label={t("Close menu")}
           onClick={() => setOpen(false)}
         />
         <aside
@@ -65,14 +68,14 @@ export function PublicHeader() {
           )}
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation menu"
+          aria-label={t("Navigation menu")}
         >
           <div className="flex min-h-16 items-center justify-between border-b border-line px-5 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <Logo href="/" size="md" className="!ml-0 !translate-y-0" />
             <button
               type="button"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-soft text-ink"
-              aria-label="Close menu"
+              aria-label={t("Close menu")}
               onClick={() => setOpen(false)}
             >
               <X size={18} />
@@ -99,16 +102,19 @@ export function PublicHeader() {
                       : "font-medium text-ink hover:bg-bg-soft",
                   )}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               );
             })}
             <div className="mt-auto space-y-2 border-t border-line pt-5">
+              <div className="flex justify-center pb-1">
+                <LanguageSwitcher />
+              </div>
               <Button href={publicAuthLinks.signIn} variant="secondary" className="w-full">
-                Log in
+                {t("Log in")}
               </Button>
               <Button href={publicAuthLinks.register} className="w-full">
-                Register
+                {t("Register")}
               </Button>
               <button
                 type="button"
@@ -116,7 +122,7 @@ export function PublicHeader() {
                 className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm text-ink-muted hover:bg-bg-soft"
               >
                 {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === "dark" ? "Light mode" : "Dark mode"}
+                {theme === "dark" ? t("Light mode") : t("Dark mode")}
               </button>
             </div>
           </nav>
@@ -161,7 +167,7 @@ export function PublicHeader() {
                         : "text-ink-muted hover:bg-bg-soft hover:text-ink",
                     )}
                   >
-                    {link.label}
+                    {t(link.label)}
                   </Link>
                 );
               })}
@@ -169,27 +175,28 @@ export function PublicHeader() {
         </div>
 
         <div className="flex items-center justify-self-end gap-1.5">
+          <LanguageSwitcher compact className="hidden sm:inline-flex" />
           <div className="hidden shrink-0 items-center gap-2.5 lg:flex">
             <button
               type="button"
               onClick={toggle}
               className="rounded-lg p-2 text-ink-muted hover:bg-bg-soft"
-              aria-label="Toggle theme"
+              aria-label={t("Toggle theme")}
             >
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <Button href={publicAuthLinks.signIn} size="sm" variant="ghost">
-              Log in
+              {t("Log in")}
             </Button>
             <Button href={publicAuthLinks.register} size="sm" className="shadow-xs">
-              Register
+              {t("Register")}
             </Button>
           </div>
 
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-soft lg:hidden"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t("Close menu") : t("Open menu")}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >

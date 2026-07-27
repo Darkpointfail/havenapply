@@ -11,6 +11,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 const topics = [
@@ -25,6 +26,7 @@ const fieldClass =
   "mt-2 w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/40 focus:ring-4 focus:ring-brand/10";
 
 export default function ContactPage() {
+  const t = useT();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [topic, setTopic] = useState<TopicId>("family");
@@ -53,9 +55,9 @@ export default function ContactPage() {
         />
 
         <div className="relative mx-auto max-w-[1040px] px-5 pb-10 pt-12 md:px-8 md:pb-14 md:pt-16">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">Contact</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">{t("Contact")}</p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
-            Tell us how we can help
+            {t("Tell us how we can help")}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
             Whether you’re navigating senior living for a loved one or reviewing applications as a
@@ -135,7 +137,7 @@ export default function ContactPage() {
                   <span className="font-medium text-ink">{email}</span> soon.
                 </p>
                 <Button type="button" variant="secondary" className="mt-8" onClick={reset}>
-                  Send another message
+                  {t("Send another message")}
                 </Button>
               </div>
             ) : (

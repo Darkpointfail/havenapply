@@ -15,10 +15,12 @@ import {
   welcomeMessage,
 } from "@/lib/assistant/conversation-engine";
 import { parseSearchIntent } from "@/lib/assistant/search-intent";
+import { useI18n } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 function AssistantInner() {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const { completeOnboarding } = useAuth();
   const {
     data,
@@ -36,6 +38,15 @@ function AssistantInner() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0]?.id === "welcome") {
+        return [welcomeMessage(locale)];
+      }
+      return prev;
+    });
+  }, [locale]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,9 +133,12 @@ function AssistantInner() {
             <Sparkles size={16} />
           </span>
           <div>
-            <p className="font-semibold text-ink">Haven assistant</p>
+            <p className="font-semibold text-ink">{t("Haven assistant")}</p>
             <p className="text-xs text-ink-muted">
-              {doneCount}/{progress.length} sections ready
+              {t("{done}/{total} sections ready", {
+                done: doneCount,
+                total: progress.length,
+              })}
             </p>
           </div>
         </header>
@@ -162,7 +176,7 @@ function AssistantInner() {
             </div>
           ))}
           {busy && (
-            <div className="text-sm text-ink-faint">Haven is typing…</div>
+            <div className="text-sm text-ink-faint">{t("Haven is typing…")}</div>
           )}
           <div ref={bottomRef} />
         </div>
@@ -193,7 +207,7 @@ function AssistantInner() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={1}
-            placeholder="Type your answer…"
+            placeholder={t("Type your answer…")}
             className="max-h-32 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none placeholder:text-ink-faint"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -206,7 +220,7 @@ function AssistantInner() {
             type="submit"
             disabled={!input.trim() || busy}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white disabled:opacity-40"
-            aria-label="Send"
+            aria-label={t("Send")}
           >
             <ArrowUp size={18} />
           </button>

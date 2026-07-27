@@ -162,12 +162,20 @@ export function progressFromState(
   ];
 }
 
-export function welcomeMessage(): ChatMessage {
+export function welcomeMessage(locale: "en" | "fr" = "en"): ChatMessage {
+  const text =
+    locale === "fr"
+      ? "Bonjour, je suis Haven. Je vais vous aider à créer un profil de soins, pour vous ou pour un proche. Cela prend environ 15 minutes, et vous n’aurez à le faire qu’une fois. Pour qui est ce profil ?"
+      : "Hi, I'm Haven. I'll help you build a care profile, for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?";
+  const suggestions =
+    locale === "fr"
+      ? ["Pour moi", "Ma mère", "Mon père", "Mon conjoint"]
+      : ["Myself", "My mother", "My father", "My spouse"];
   return {
     id: "welcome",
     role: "assistant",
-    text: "Hi, I'm Haven. I'll help you build a care profile, for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?",
-    suggestions: ["Myself", "My mother", "My father", "My spouse"],
+    text,
+    suggestions,
   };
 }
 
@@ -187,12 +195,44 @@ export function processTurn(
     case "welcome":
     case "relationship": {
       let relationship = text;
-      if (n.includes("mother") || n.includes("mom")) relationship = "Daughter";
-      if (n.includes("father") || n.includes("dad")) relationship = "Son";
-      if (n.includes("spouse") || n.includes("husband") || n.includes("wife")) {
+      if (
+        n.includes("mother") ||
+        n.includes("mom") ||
+        n.includes("mère") ||
+        n.includes("mere") ||
+        n.includes("maman")
+      ) {
+        relationship = "Daughter";
+      }
+      if (
+        n.includes("father") ||
+        n.includes("dad") ||
+        n.includes("père") ||
+        n.includes("pere") ||
+        n.includes("papa")
+      ) {
+        relationship = "Son";
+      }
+      if (
+        n.includes("spouse") ||
+        n.includes("husband") ||
+        n.includes("wife") ||
+        n.includes("conjoint") ||
+        n.includes("épouse") ||
+        n.includes("epouse") ||
+        n.includes("époux") ||
+        n.includes("epoux") ||
+        n.includes("mari")
+      ) {
         relationship = "Spouse / partner";
       }
-      if (n.includes("myself") || n.includes("for myself") || n === "me") {
+      if (
+        n.includes("myself") ||
+        n.includes("for myself") ||
+        n === "me" ||
+        n.includes("pour moi") ||
+        n === "moi"
+      ) {
         relationship = "Myself (I'm the one looking)";
       }
       const matched = RELATIONSHIP_OPTIONS.find((r) => normalize(r) === n);

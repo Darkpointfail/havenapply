@@ -41,10 +41,12 @@ import {
   type SearchZone,
   type SeniorProfile,
 } from "@/lib/senior-profile";
+import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 function OnboardingInner() {
   const router = useRouter();
+  const t = useT();
   const { completeOnboarding, user } = useAuth();
   const {
     ready,
@@ -323,32 +325,31 @@ function OnboardingInner() {
       <Card className="p-6 md:p-8">
         {stepMeta.id === "intro" && (
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Create a care profile</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{t("Create a care profile")}</h1>
             <p className="mt-3 text-ink-muted">
-              For yourself or a loved one. One calm dossier you can reuse across communities, complete
-              what you know now, add more later.
+              {t("For yourself or a loved one. One calm dossier you can reuse across communities, complete what you know now, add more later.")}
             </p>
             <ul className="mt-8 space-y-4">
               {[
                 {
                   icon: Users,
-                  title: "One profile, many communities",
-                  text: "Apply without retyping the same story for every facility.",
+                  title: t("One profile, many communities"),
+                  text: t("Apply without retyping the same story for every facility."),
                 },
                 {
                   icon: CheckCircle2,
-                  title: "Finish later anytime",
-                  text: "Skip optional fields. Autosave keeps your place.",
+                  title: t("Finish later anytime"),
+                  text: t("Skip optional fields. Autosave keeps your place."),
                 },
                 {
                   icon: Lock,
-                  title: "Sensitive data stays private",
-                  text: "Medical and personal details are protected by default.",
+                  title: t("Sensitive data stays private"),
+                  text: t("Medical and personal details are protected by default."),
                 },
                 {
                   icon: ShieldCheck,
-                  title: "You control who sees what",
-                  text: "Choose which communities receive each part of the dossier.",
+                  title: t("You control who sees what"),
+                  text: t("Choose which communities receive each part of the dossier."),
                 },
               ].map((item) => (
                 <li key={item.title} className="flex gap-3">
@@ -368,15 +369,15 @@ function OnboardingInner() {
         {stepMeta.id === "relationship" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Who is this for?</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">{t("Who is this for?")}</h1>
               <p className="mt-2 text-ink-muted">
-                You can create a profile for yourself, or for someone in your family.
+                {t("You can create a profile for yourself, or for someone in your family.")}
               </p>
             </div>
             {Object.keys(errors).length > 0 && (
-              <AuthAlert>Please complete the required fields below.</AuthAlert>
+              <AuthAlert>{t("Please complete the required fields below.")}</AuthAlert>
             )}
-            <Field label="Who is filling out this profile?" required error={errors.filledBy}>
+            <Field label={t("Who is filling out this profile?")} required error={errors.filledBy}>
               <select
                 className={fieldClass}
                 value={draft.filledBy}
@@ -467,7 +468,7 @@ function OnboardingInner() {
               </p>
             </div>
             {Object.keys(errors).length > 0 && (
-              <AuthAlert>Please complete the required fields below.</AuthAlert>
+              <AuthAlert>{t("Please complete the required fields below.")}</AuthAlert>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="First name" required error={errors.firstName}>

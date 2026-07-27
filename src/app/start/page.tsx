@@ -8,11 +8,13 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
+import { useT } from "@/lib/i18n/locale";
 
 function StartChoiceInner() {
   const router = useRouter();
   const { user, ready } = useAuth();
   const { data, ready: familyReady } = useFamilyData();
+  const t = useT();
 
   // Only leave this page when the loved-one profile is actually created.
   // Account flag alone is not enough (open-access demo can mark onboarding done early).
@@ -35,18 +37,23 @@ function StartChoiceInner() {
 
   if (profileReady) return null;
 
+  const welcome = user.firstName
+    ? t("Welcome, {name}", { name: user.firstName })
+    : t("Welcome");
+
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center px-5 py-12">
       <div className="mb-10 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">
-          Welcome{user.firstName ? `, ${user.firstName}` : ""}
+          {welcome}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-          How would you like to create the profile?
+          {t("How would you like to create the profile?")}
         </h1>
         <p className="mx-auto mt-3 max-w-lg text-ink-muted">
-          For yourself or a loved one. Build it once, then discover communities and apply everywhere
-          with almost no extra work.
+          {t(
+            "For yourself or a loved one. Build it once, then discover communities and apply everywhere with almost no extra work.",
+          )}
         </p>
       </div>
 
@@ -58,12 +65,14 @@ function StartChoiceInner() {
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink text-white">
             <Sparkles size={20} />
           </span>
-          <h2 className="mt-4 text-xl font-semibold tracking-tight">Chat with Haven</h2>
+          <h2 className="mt-4 text-xl font-semibold tracking-tight">{t("Chat with Haven")}</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
-            Haven asks natural questions and fills the profile for you. Best if you prefer a guided conversation.
+            {t(
+              "Haven asks natural questions and fills the profile for you. Best if you prefer a guided conversation.",
+            )}
           </p>
           <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand">
-            Start with AI
+            {t("Start with AI")}
             <span className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>
@@ -75,21 +84,30 @@ function StartChoiceInner() {
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-bg-soft text-ink">
             <ClipboardList size={20} />
           </span>
-          <h2 className="mt-4 text-xl font-semibold tracking-tight">Fill forms yourself</h2>
+          <h2 className="mt-4 text-xl font-semibold tracking-tight">
+            {t("Fill forms yourself")}
+          </h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
-            Step-by-step forms if you already know the details and want full control over every field.
+            {t(
+              "Step-by-step forms if you already know the details and want full control over every field.",
+            )}
           </p>
           <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink">
-            Use manual forms
+            {t("Use manual forms")}
             <span className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>
       </div>
 
       <p className="mt-8 text-center text-sm text-ink-muted">
-        You can switch methods anytime.{" "}
-        <Button href="/family/dashboard" variant="ghost" size="sm" className="inline h-auto p-0 text-brand">
-          Skip to dashboard
+        {t("You can switch methods anytime.")}{" "}
+        <Button
+          href="/family/dashboard"
+          variant="ghost"
+          size="sm"
+          className="inline h-auto p-0 text-brand"
+        >
+          {t("Skip to dashboard")}
         </Button>
       </p>
     </div>

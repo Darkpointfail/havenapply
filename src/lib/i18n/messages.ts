@@ -456,6 +456,62 @@ export const frMessages: Record<string, string> = {
   "How it works": "Comment ça marche",
   "Create a family profile": "Créer un profil famille",
 
+  // Start / profile creation choice
+  Welcome: "Bienvenue",
+  "Welcome, {name}": "Bienvenue, {name}",
+  "How would you like to create the profile?":
+    "Comment souhaitez-vous créer le profil ?",
+  "For yourself or a loved one. Build it once, then discover communities and apply everywhere with almost no extra work.":
+    "Pour vous ou pour un proche. Créez-le une fois, puis trouvez des établissements et postulez partout, presque sans travail supplémentaire.",
+  "Chat with Haven": "Discutez avec Haven",
+  "Haven asks natural questions and fills the profile for you. Best if you prefer a guided conversation.":
+    "Haven pose des questions naturelles et remplit le profil pour vous. Idéal si vous préférez une conversation guidée.",
+  "Start with AI": "Commencer avec l’IA",
+  "Fill forms yourself": "Remplir les formulaires vous-même",
+  "Step-by-step forms if you already know the details and want full control over every field.":
+    "Des formulaires étape par étape si vous connaissez déjà les détails et voulez tout contrôler.",
+  "Use manual forms": "Utiliser les formulaires",
+  "You can switch methods anytime.": "Vous pouvez changer de méthode à tout moment.",
+  "Skip to dashboard": "Aller au tableau de bord",
+
+  // Assistant chrome
+  "Haven assistant": "Assistant Haven",
+  "{done}/{total} sections ready": "{done}/{total} sections prêtes",
+  "Haven is typing…": "Haven écrit…",
+  "Type your answer…": "Écrivez votre réponse…",
+  "Hi, I'm Haven. I'll help you build a care profile, for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?":
+    "Bonjour, je suis Haven. Je vais vous aider à créer un profil de soins, pour vous ou pour un proche. Cela prend environ 15 minutes, et vous n’aurez à le faire qu’une fois. Pour qui est ce profil ?",
+  Myself: "Pour moi",
+  "My mother": "Ma mère",
+  "My father": "Mon père",
+  "My spouse": "Mon conjoint",
+
+  // Onboarding intro
+  "Create a care profile": "Créer un profil de soins",
+  "For yourself or a loved one. One calm dossier you can reuse across communities, complete what you know now, add more later.":
+    "Pour vous ou pour un proche. Un dossier clair, réutilisable dans plusieurs établissements : complétez ce que vous savez maintenant, ajoutez le reste plus tard.",
+  "One profile, many communities": "Un profil, plusieurs établissements",
+  "Apply without retyping the same story for every facility.":
+    "Postulez sans ressaisir la même histoire pour chaque établissement.",
+  "Finish later anytime": "Reprenez plus tard quand vous voulez",
+  "Skip optional fields. Autosave keeps your place.":
+    "Ignorez les champs optionnels. L’enregistrement automatique garde votre place.",
+  "Sensitive data stays private": "Les données sensibles restent privées",
+  "Medical and personal details are protected by default.":
+    "Les renseignements médicaux et personnels sont protégés par défaut.",
+  "You control who sees what": "Vous contrôlez qui voit quoi",
+  "Choose which communities receive each part of the dossier.":
+    "Choisissez quels établissements reçoivent chaque partie du dossier.",
+  Continue: "Continuer",
+  Back: "Retour",
+  "Save & continue": "Enregistrer et continuer",
+  "Who is this for?": "Pour qui est ce profil ?",
+  "You can create a profile for yourself, or for someone in your family.":
+    "Vous pouvez créer un profil pour vous-même, ou pour un membre de votre famille.",
+  "Please complete the required fields below.":
+    "Veuillez remplir les champs obligatoires ci-dessous.",
+  "Who is filling out this profile?": "Qui remplit ce profil ?",
+
 };
 
 export function translate(locale: Locale, key: string): string {

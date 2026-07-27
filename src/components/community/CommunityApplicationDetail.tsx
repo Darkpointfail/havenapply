@@ -210,7 +210,7 @@ export function CommunityApplicationDetail() {
     const r = acceptApplication(app.id, auditNote.trim() || undefined);
     if (r.ok) {
       setAuditOpen(false);
-      flashMsg("Accepted — now in Transition for contracts & move-in");
+      flashMsg("Accepted, now in Transition for contracts & move-in");
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
   };
@@ -228,7 +228,7 @@ export function CommunityApplicationDetail() {
     const r = completeTransition(app.id, closeNote.trim() || undefined);
     if (r.ok) {
       setCloseOpen(false);
-      flashMsg("Dossier closed — moved to History");
+      flashMsg("Dossier closed, moved to History");
       window.setTimeout(() => router.push("/community/applications?filter=history"), 900);
     }
   };
@@ -694,7 +694,7 @@ export function CommunityApplicationDetail() {
               {isTerminal ? (
                 <p className="rounded-xl bg-bg-soft px-3 py-3 text-sm text-ink-secondary">
                   {app.status === "closed"
-                    ? "Move-in transition complete — dossier closed."
+                    ? "Move-in transition complete, dossier closed."
                     : `This application is ${app.status.replaceAll("_", " ")}.`}
                 </p>
               ) : inTransition ? (
@@ -706,7 +706,7 @@ export function CommunityApplicationDetail() {
                     </p>
                   ) : (
                     <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
-                      All transition steps complete — ready to close the dossier.
+                      All transition steps complete, ready to close the dossier.
                     </p>
                   )}
 
@@ -806,7 +806,7 @@ export function CommunityApplicationDetail() {
                     </p>
                   ) : (
                     <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
-                      All review checks complete — ready to finalize.
+                      All review checks complete, ready to finalize.
                     </p>
                   )}
                   <div className="grid gap-3 md:grid-cols-3">

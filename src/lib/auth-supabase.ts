@@ -252,7 +252,7 @@ export async function signUpWithRoleSupabase(
         return { ok: true, data: sessionUser };
       }
 
-      // Account exists in Auth — never show a hard failure that hides a successful signup.
+      // Account exists in Auth, never show a hard failure that hides a successful signup.
       console.warn(
         "[auth] account created but auto sign-in failed:",
         signedIn.errorMessage,

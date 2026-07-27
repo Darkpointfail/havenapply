@@ -160,7 +160,7 @@ export function CommunityDashboard() {
             Review queue
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Admissions in progress — open each case, complete the guided checklist, then accept or
+            Admissions in progress, open each case, complete the guided checklist, then accept or
             decline.
           </p>
           <p className="mt-3 text-xs tabular-nums text-ink-faint">

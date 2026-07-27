@@ -66,10 +66,10 @@ function answerFor(prompt: string, patient: Patient): string {
     return `Family summary for ${name}: We are coordinating senior living placement from ${patient.hospital}. Current focus: ${patient.nextAction}. Please help us collect any outstanding documents and confirm preferred communities in ${patient.care.preferredRegion || "your area"}.`;
   }
   if (q.includes("community summary") || q.includes("résidence") || q.includes("residence")) {
-    return `Community packet summary — ${name}, ${patient.age}. Diagnosis: ${patient.care.diagnosis || "—"}. Care level: ${patient.care.requiredCareLevel || "—"}. Mobility: ${patient.care.mobility || "—"}. Memory: ${patient.care.memory || "—"}. Fall risk: ${patient.care.fallRisk || "—"}. Payer: ${patient.care.insurance || "—"}. Documents on file: ${patient.documents.length}.`;
+    return `Community packet summary, ${name}, ${patient.age}. Diagnosis: ${patient.care.diagnosis || "—"}. Care level: ${patient.care.requiredCareLevel || "—"}. Mobility: ${patient.care.mobility || "—"}. Memory: ${patient.care.memory || "—"}. Fall risk: ${patient.care.fallRisk || "—"}. Payer: ${patient.care.insurance || "—"}. Documents on file: ${patient.documents.length}.`;
   }
   if (q.includes("medication")) {
-    return `Hi — to complete ${name}'s admission packet, could you please send the current medication list (name, dose, frequency)? You can reply here or upload it in HavenApply. Thank you.`;
+    return `Hi, to complete ${name}'s admission packet, could you please send the current medication list (name, dose, frequency)? You can reply here or upload it in HavenApply. Thank you.`;
   }
   if (q.includes("blocker") || q.includes("risk") || q.includes("consistency")) {
     const risks: string[] = [];

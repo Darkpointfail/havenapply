@@ -203,7 +203,7 @@ export function CommunityTransitionWorkspace() {
     const r = completeTransition(app.id, closeNote.trim() || undefined);
     if (r.ok) {
       setCloseOpen(false);
-      setFlash("Dossier closed — moved to History");
+      setFlash("Dossier closed, moved to History");
       window.setTimeout(() => router.push("/community/applications?filter=history"), 900);
     } else {
       setFlash(r.error || "Could not close");

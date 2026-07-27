@@ -166,7 +166,7 @@ export function welcomeMessage(): ChatMessage {
   return {
     id: "welcome",
     role: "assistant",
-    text: "Hi, I'm Haven. I'll help you build a care profile—for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?",
+    text: "Hi, I'm Haven. I'll help you build a care profile, for yourself or someone you love. This usually takes about 15 minutes, and you'll only need to do it once. Who is this profile for?",
     suggestions: ["Myself", "My mother", "My father", "My spouse"],
   };
 }

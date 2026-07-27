@@ -173,7 +173,7 @@ export const internalNavGroups: NavGroup[] = [
 ];
 
 /**
- * Care professional portal — discharge planners, social workers, care coordinators.
+ * Care professional portal, discharge planners, social workers, care coordinators.
  * Focus: patients, placement status, applications, messages, facility contacts.
  */
 export const professionalNav: NavItem[] = [

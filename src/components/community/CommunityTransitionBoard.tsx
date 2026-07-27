@@ -109,7 +109,7 @@ export function CommunityTransitionBoard() {
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
             Accepted candidates preparing for move-in. Open a dossier to generate contracts, request
-            deposits, collect family details, and confirm the arrival date — all inside HavenApply.
+            deposits, collect family details, and confirm the arrival date, all inside HavenApply.
           </p>
           <p className="mt-3 text-sm font-medium tabular-nums text-ink">
             {apps.length} dossier{apps.length === 1 ? "" : "s"} in transition

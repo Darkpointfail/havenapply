@@ -103,7 +103,7 @@ export const APPLY_REQUIRED_DOCS: { category: DocCategoryId; label: string }[] =
   { category: "power_of_attorney", label: "Power of attorney (if applicable)" },
 ];
 
-/** Hard gate before submit — POA stays optional ("if applicable"). */
+/** Hard gate before submit, POA stays optional ("if applicable"). */
 export const APPLY_HARD_REQUIRED_DOCS = APPLY_REQUIRED_DOCS.filter(
   (d) => d.category !== "power_of_attorney",
 );

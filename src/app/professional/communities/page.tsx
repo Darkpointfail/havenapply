@@ -87,7 +87,7 @@ function CommunitiesInner() {
         <div className="mb-4 space-y-2">
           <p className="text-sm text-ink-muted">
             Applying with <span className="font-medium text-ink">{patientName(activePatient)}</span>
-            ’s profile — each Apply opens a review of what will be transmitted.
+            ’s profile, each Apply opens a review of what will be transmitted.
           </p>
           {readiness && !readiness.ok ? (
             <p className="rounded-xl border border-warn/30 bg-warn-soft/40 px-3.5 py-2.5 text-sm text-ink-secondary">

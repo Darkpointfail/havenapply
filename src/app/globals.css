@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* HavenApply — sober Care.com-inspired: clean white, cool gray, simple teal */
+  /* HavenApply, sober Care.com-inspired: clean white, cool gray, simple teal */
   --bg: #f7f8fa;
   --bg-elevated: #ffffff;
   --bg-soft: #eef1f4;
@@ -141,7 +141,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Very light grain — almost invisible, keeps surfaces from feeling plastic */
+/* Very light grain, almost invisible, keeps surfaces from feeling plastic */
 body::before {
   content: "";
   pointer-events: none;

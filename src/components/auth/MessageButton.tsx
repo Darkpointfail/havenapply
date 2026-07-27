@@ -10,7 +10,7 @@ import {
 
 /**
  * Opens messaging with a community.
- * Guests must sign in first — messaging is never available anonymously.
+ * Guests must sign in first, messaging is never available anonymously.
  */
 export function MessageButton({
   className,

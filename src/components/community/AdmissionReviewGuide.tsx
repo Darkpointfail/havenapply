@@ -97,7 +97,7 @@ export function AdmissionReviewGuide({
       {!decided ? (
         <p className="mt-4 text-xs leading-relaxed text-ink-faint">
           {progress.complete
-            ? "All checks complete — you can approve or decline below."
+            ? "All checks complete, you can approve or decline below."
             : "Mark each item after you review it. Approve unlocks when all required checks are done."}
         </p>
       ) : null}

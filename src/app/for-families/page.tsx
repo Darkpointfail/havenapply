@@ -24,7 +24,7 @@ const trustItems = [
 const journey = [
   {
     title: "Create",
-    body: "Build a care profile for yourself or a loved one—with AI help or step-by-step forms.",
+    body: "Build a care profile for yourself or a loved one, with AI help or step-by-step forms.",
   },
   {
     title: "Discover",

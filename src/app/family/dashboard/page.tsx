@@ -133,7 +133,7 @@ export default function FamilyDashboardPage() {
         : `Complete the profile for ${lovedOne}`;
 
     const profileDetail = needsSetup
-      ? "For yourself or a loved one—a few questions so Haven understands the care needs."
+      ? "For yourself or a loved one, a few questions so Haven understands the care needs."
       : careDone
         ? "Add the last details for more accurate applications."
         : "Fill in care needs to better match communities.";
@@ -536,7 +536,7 @@ export default function FamilyDashboardPage() {
         ? "One more step on your profile"
         : "A few steps to finish your care profile"
       : dossierComplete
-        ? "Your profile is ready—explore communities"
+        ? "Your profile is ready, explore communities"
         : "Keep building your care dossier"
     : profileIncomplete
       ? remaining.length <= 1

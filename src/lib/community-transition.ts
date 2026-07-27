@@ -140,7 +140,7 @@ export type TransitionWork = {
 };
 
 export const AGREEMENT_TEMPLATES = [
-  { id: "al-standard", label: "Assisted living — standard residency agreement" },
+  { id: "al-standard", label: "Assisted living, standard residency agreement" },
   { id: "al-memory", label: "Memory care addendum + residency agreement" },
   { id: "il-lease", label: "Independent living lease" },
 ] as const;
@@ -527,7 +527,7 @@ export function emailTemplates() {
       body: "We’ve proposed a move-in date and time. Please confirm if this works, or suggest an alternative that fits your family.",
     },
     movein_confirm: {
-      subject: "Move-in confirmed — see you soon",
+      subject: "Move-in confirmed, see you soon",
       body: "Your move-in date and time are confirmed. We’ll send a reminder before arrival day with parking and welcome details.",
     },
     movein_reminder: {

@@ -296,7 +296,7 @@ export function dossierAiSuggestions(p: Patient): string[] {
     tips.push("The treating physician has not been recorded yet.");
   }
   if (!p.pharmacy?.trim()) {
-    tips.push("Pharmacy details are empty — communities often need this before move-in.");
+    tips.push("Pharmacy details are empty, communities often need this before move-in.");
   }
   if (missingCare.length) {
     tips.push(`Care profile gaps: ${missingCare.slice(0, 3).join(", ")}.`);
@@ -791,7 +791,7 @@ export const SEED_PATIENTS: Patient[] = [
         submittedAt: daysAgo(2),
         nextAction: "Awaiting admissions review",
         assignedStaff: "Priya Shah",
-        lastMessage: "Application received — review in progress.",
+        lastMessage: "Application received, review in progress.",
         updatedAt: daysAgo(1),
       },
       {

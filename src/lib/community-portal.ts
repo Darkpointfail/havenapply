@@ -360,7 +360,7 @@ export function reviewChecklistProgress(app: CommunityApplication) {
   };
 }
 
-/** Accepted but not yet closed — final details with the family before move-in. */
+/** Accepted but not yet closed, final details with the family before move-in. */
 export const TRANSITION_STATUSES = [
   "approved",
   "conditionally_approved",
@@ -368,7 +368,7 @@ export const TRANSITION_STATUSES = [
   "move_in_scheduled",
 ] as const;
 
-/** Fully decided / archived — no more admissions work. */
+/** Fully decided / archived, no more admissions work. */
 export const HISTORY_TERMINAL_STATUSES = [
   "declined",
   "waitlisted",
@@ -1354,7 +1354,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
     },
   ];
 
-  // Past candidates (accepted / declined) — visible in History, not the live queue
+  // Past candidates (accepted / declined), visible in History, not the live queue
   const historyDossier: ClientDossier = {
     dateOfBirth: "1940-01-01",
     gender: "Female",
@@ -1381,7 +1381,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       seniorName: "Helen Brooks",
       seniorAge: 87,
       relationship: "Mother",
-      summary: "Assisted living application — accepted after tour and clinical review.",
+      summary: "Assisted living application, accepted after tour and clinical review.",
       executiveSummary:
         "Helen Brooks was accepted for assisted living following a complete packet review and family tour.",
       careNeeds: ["Assisted living", "Medication management"],
@@ -1463,7 +1463,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       seniorName: "Frank Nguyen",
       seniorAge: 79,
       relationship: "Father",
-      summary: "Memory care inquiry — declined; care needs above current program capacity.",
+      summary: "Memory care inquiry, declined; care needs above current program capacity.",
       executiveSummary:
         "Frank Nguyen’s application was declined after clinical review determined a higher acuity level than the community can support.",
       careNeeds: ["Memory care", "Two-person transfers"],

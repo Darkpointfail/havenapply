@@ -230,7 +230,7 @@ function FindCommunitiesInner() {
             Find senior living
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Search by postal code, city, or name — then refine by care type, budget, and distance.
+            Search by postal code, city, or name, then refine by care type, budget, and distance.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -266,7 +266,7 @@ function FindCommunitiesInner() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink">
-                Browse freely — build a profile for better matches
+                Browse freely, build a profile for better matches
               </p>
               <p className="mt-1 text-sm leading-relaxed text-ink-muted">
                 You can explore communities by postal code and filters right now. Create a short
@@ -397,7 +397,7 @@ function FindCommunitiesInner() {
           </p>
         ) : filters.postalCode.trim().length >= 3 ? (
           <p className="mt-2 text-xs text-warn">
-            We couldn’t pinpoint that postal code yet — try a nearby ZIP (e.g. 78731) or add a city
+            We couldn’t pinpoint that postal code yet, try a nearby ZIP (e.g. 78731) or add a city
             name.
           </p>
         ) : null}

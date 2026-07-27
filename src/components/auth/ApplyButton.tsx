@@ -11,7 +11,7 @@ import {
 
 /**
  * Navigates to the role-appropriate apply flow.
- * Guests must sign in first — Apply is never available anonymously.
+ * Guests must sign in first, Apply is never available anonymously.
  */
 export function ApplyButton({
   residenceId,
@@ -25,7 +25,7 @@ export function ApplyButton({
   className?: string;
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "soft";
-  /** @deprecated ignored — apply always goes to the review page */
+  /** @deprecated ignored, apply always goes to the review page */
   inline?: boolean;
   /** @deprecated ignored */
   autoOpen?: boolean;

@@ -153,7 +153,7 @@ export function isSharedBrowsePath(pathname: string) {
   );
 }
 
-/** @deprecated use isSharedBrowsePath — kept for existing imports */
+/** @deprecated use isSharedBrowsePath, kept for existing imports */
 export function isFamilyBrowsePath(pathname: string) {
   return isSharedBrowsePath(pathname);
 }
@@ -179,7 +179,7 @@ export function isFamilyPortalPath(pathname: string) {
   );
 }
 
-/** Apply flow — must not auto-open a demo session for anonymous visitors. */
+/** Apply flow, must not auto-open a demo session for anonymous visitors. */
 export function isFamilyApplyPath(pathname: string) {
   return (
     pathname.startsWith("/family/apply") ||
@@ -188,7 +188,7 @@ export function isFamilyApplyPath(pathname: string) {
   );
 }
 
-/** Messaging a community — same rule as apply: account required first. */
+/** Messaging a community, same rule as apply: account required first. */
 export function isFamilyMessagesPath(pathname: string) {
   return (
     pathname.startsWith("/family/messages") ||
@@ -232,7 +232,7 @@ export function demoUserForPath(
 ): SessionUser | null {
   if (!AUTH_OPEN_ACCESS) return null;
 
-  // Apply / message require an existing family session — never auto-admit guests.
+  // Apply / message require an existing family session, never auto-admit guests.
   if (isFamilyAccountRequiredPath(pathname)) {
     if (options?.useStoredSession && hasOpenFamilySession()) return DEMO_FAMILY_USER;
     return null;
@@ -247,7 +247,7 @@ export function demoUserForPath(
   if (isFamilyPortalPath(pathname)) {
     return DEMO_FAMILY_USER;
   }
-  // sessionStorage is client-only — never read during SSR / first paint
+  // sessionStorage is client-only, never read during SSR / first paint
   if (options?.useStoredSession && isSharedBrowsePath(pathname)) {
     if (hasOpenProfessionalSession()) return DEMO_PROFESSIONAL_USER;
     if (hasOpenFamilySession()) return DEMO_FAMILY_USER;

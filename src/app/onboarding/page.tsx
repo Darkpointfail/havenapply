@@ -325,7 +325,7 @@ function OnboardingInner() {
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Create a care profile</h1>
             <p className="mt-3 text-ink-muted">
-              For yourself or a loved one. One calm dossier you can reuse across communities—complete
+              For yourself or a loved one. One calm dossier you can reuse across communities, complete
               what you know now, add more later.
             </p>
             <ul className="mt-8 space-y-4">

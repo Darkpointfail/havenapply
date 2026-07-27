@@ -799,7 +799,7 @@ export function PatientWorkspace() {
                               <p className="font-medium text-ink">Preview · {d.name}</p>
                               <p className="mt-1">
                                 {d.previewHint ||
-                                  "PDF preview placeholder — file stays attached to this dossier."}
+                                  "PDF preview placeholder, file stays attached to this dossier."}
                               </p>
                               <div className="mt-2 flex gap-2">
                                 <Button
@@ -927,7 +927,7 @@ export function PatientWorkspace() {
               <div>
                 <p className="font-semibold text-ink">Messages</p>
                 <p className="text-sm text-ink-muted">
-                  Family, communities, and care team — all tied to this dossier.
+                  Family, communities, and care team, all tied to this dossier.
                 </p>
               </div>
               <div className="flex gap-1 rounded-lg bg-bg-soft p-1">

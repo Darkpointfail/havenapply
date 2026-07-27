@@ -85,7 +85,7 @@ export function AdmissionTransitionGuide({
       {!closed ? (
         <p className="mt-4 text-xs leading-relaxed text-ink-faint">
           {progress.complete
-            ? "All transition steps done — you can close the dossier."
+            ? "All transition steps done, you can close the dossier."
             : "Work these items with the family. Closing unlocks when every required step is done."}
         </p>
       ) : null}

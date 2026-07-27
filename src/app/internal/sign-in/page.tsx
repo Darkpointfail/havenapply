@@ -13,8 +13,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth, homeForUser } from "@/lib/auth";
+import { useT } from "@/lib/i18n/locale";
 
 function InternalSignInForm() {
+  const t = useT();
   const { signInInternal } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -45,14 +47,14 @@ function InternalSignInForm() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Internal admin"
+        title={t("Internal admin")}
         description="Haven operations sign-in, platform administration only."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Internal sign-in" }]}
       />
       <Card className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
           {error && <AuthAlert>{error}</AuthAlert>}
-          <AuthField label="Email">
+          <AuthField label={t("Email")}>
             <input
               required
               type="email"
@@ -62,7 +64,7 @@ function InternalSignInForm() {
               autoComplete="email"
             />
           </AuthField>
-          <AuthField label="Password">
+          <AuthField label={t("Password")}>
             <input
               required
               type="password"
@@ -79,7 +81,7 @@ function InternalSignInForm() {
       </Card>
       <p className="mt-6 text-center text-sm text-ink-muted">
         <Link href="/sign-in" className="text-brand">
-          Back to sign in
+          {t("Back to sign in")}
         </Link>
       </p>
     </div>
@@ -87,7 +89,8 @@ function InternalSignInForm() {
 }
 
 export default function InternalSignInPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense>
       <RedirectIfAuthenticated>
         <InternalSignInForm />

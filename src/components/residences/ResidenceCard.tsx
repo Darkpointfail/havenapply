@@ -11,6 +11,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { ApplyButton } from "@/components/auth/ApplyButton";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/locale";
 
 function availabilityLabel(r: Residence) {
   if (r.availableNow && r.availabilityConfirmed) return { text: "Available now", tone: "success" as const };
@@ -33,6 +34,7 @@ export function ResidenceCard({
   onSelect?: () => void;
   compact?: boolean;
 }) {
+  const t = useT();
   const { data, toggleSavedCommunity, toggleCompareCommunity } = useFamilyData();
   const saved = data.savedFavorites.some((f) => f.communityId === residence.id);
   const comparing = data.compareIds.includes(residence.id);
@@ -137,7 +139,7 @@ export function ResidenceCard({
         {match && !compact && (
           <div className="rounded-xl bg-bg px-3 py-2.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-              Why this may fit
+              {t("Why this may fit")}
             </p>
             <ul className="mt-1.5 space-y-1">
               {match.reasons.slice(0, 2).map((r) => (
@@ -177,7 +179,7 @@ export function ResidenceCard({
           onClick={(e) => e.stopPropagation()}
         >
           <Button href={`/find-senior-living/${residence.id}`} size="sm" variant="soft" className="w-full">
-            View Community
+            {t("View Community")}
           </Button>
           <Button
             type="button"
@@ -192,16 +194,16 @@ export function ResidenceCard({
           {!compact && (
             <>
               <Button href={compareHref} size="sm" variant="secondary" className="w-full sm:col-span-1">
-                Open compare
+                {t("Open compare")}
               </Button>
               <ApplyButton residenceId={residence.id} size="sm" className="w-full">
-                Start Application
+                {t("Start Application")}
               </ApplyButton>
             </>
           )}
           {compact && (
             <ApplyButton residenceId={residence.id} size="sm" className="col-span-2 w-full">
-              Start Application
+              {t("Start Application")}
             </ApplyButton>
           )}
         </div>

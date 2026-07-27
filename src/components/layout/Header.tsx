@@ -25,6 +25,7 @@ import { useAi } from "@/lib/ai";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const marketingLinks = [
   { href: "/#problem", label: "Why Haven" },
@@ -44,7 +45,8 @@ const familyLinks = [
 ];
 
 export function Header() {
-  const pathname = usePathname();
+
+  const t = useT();  const pathname = usePathname();
   const router = useRouter();
   const { user, ready, signOut } = useAuth();
   const { theme, toggle } = useTheme();
@@ -78,7 +80,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             <Logo href="/community/dashboard" size="lg" />
             <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold leading-none text-accent">
-              Community portal
+              {t("Community portal")}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -86,7 +88,7 @@ export function Header() {
               type="button"
               onClick={toggle}
               className="rounded-xl p-2 text-ink-muted hover:bg-bg-soft"
-              aria-label="Toggle theme"
+              aria-label={t("Toggle theme")}
             >
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
@@ -120,7 +122,7 @@ export function Header() {
           <Logo href={isFamily ? "/family/dashboard" : "/"} size="lg" />
           <nav
             className="hidden flex-nowrap items-center gap-0.5 lg:flex"
-            aria-label="Primary"
+            aria-label={t("Primary")}
           >
             {links.map((link) => {
               const active =
@@ -149,7 +151,7 @@ export function Header() {
             type="button"
             onClick={toggle}
             className="rounded-xl p-2.5 text-ink-muted hover:bg-bg-soft hover:text-ink"
-            aria-label="Toggle theme"
+            aria-label={t("Toggle theme")}
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -160,7 +162,7 @@ export function Header() {
                 type="button"
                 onClick={() => openAi(true)}
                 className="rounded-xl p-2.5 text-ink-muted hover:bg-ai-soft hover:text-ai"
-                aria-label="Ask AI"
+                aria-label={t("Ask AI")}
               >
                 <Sparkles size={16} />
               </button>
@@ -192,10 +194,10 @@ export function Header() {
           ) : !isAuthPage ? (
             <>
               <Button href="/sign-in" size="sm" variant="ghost">
-                Log in
+                {t("Log in")}
               </Button>
               <Button href="/get-started" size="sm">
-                Start your application
+                {t("Start your application")}
               </Button>
             </>
           ) : null}
@@ -234,12 +236,12 @@ export function Header() {
                   router.push("/");
                 }}
               >
-                Sign out
+                {t("Sign out")}
               </Button>
             ) : (
               <>
                 <Button href="/sign-in" variant="ghost" className="mt-2">
-                  Log in
+                  {t("Log in")}
                 </Button>
                 <Button href="/get-started">Start your application</Button>
               </>

@@ -18,6 +18,7 @@ import {
   type QueueSection,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const SECTIONS: {
   id: QueueSection;
@@ -100,7 +101,8 @@ function ApplicationCard({ app }: { app: CommunityApplication }) {
 }
 
 export function CommunityDashboard() {
-  const {
+
+  const t = useT();  const {
     ready,
     workspace,
     unreadNotifications,
@@ -129,7 +131,7 @@ export function CommunityDashboard() {
   if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Opening admissions…
+        {t("Opening admissions…")}
       </div>
     );
   }
@@ -139,10 +141,10 @@ export function CommunityDashboard() {
       <div className="mx-auto flex min-h-[40vh] max-w-md flex-col items-center justify-center px-5 text-center">
         <h1 className="text-xl font-semibold tracking-tight text-ink">Admissions workspace unavailable</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          We couldn’t open your community workspace. Refresh the page, or sign out and back in.
+          {t("We couldn’t open your community workspace. Refresh the page, or sign out and back in.")}
         </p>
         <Button href="/community/dashboard" className="mt-6" size="sm">
-          Try again
+          {t("Try again")}
         </Button>
       </div>
     );
@@ -157,10 +159,10 @@ export function CommunityDashboard() {
         <header>
           <p className="text-sm font-medium text-ink-muted">Admissions</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
-            Review queue
+            {t("Review queue")}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Admissions in progress, open each case, complete the guided checklist, then accept or
+            {t("Admissions in progress, open each case, complete the guided checklist, then accept or")}
             decline.
           </p>
           <p className="mt-3 text-xs tabular-nums text-ink-faint">
@@ -171,7 +173,7 @@ export function CommunityDashboard() {
               Transition (accepted)
             </Button>
             <Button href="/community/applications?filter=history" size="sm" variant="ghost">
-              History
+              {t("History")}
             </Button>
           </div>
         </header>
@@ -185,7 +187,7 @@ export function CommunityDashboard() {
                   {unreadNotifications.length === 1 ? "" : "s"}
                 </p>
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  Submitted by families via Haven.
+                  {t("Submitted by families via Haven.")}
                 </p>
               </div>
               <Button
@@ -194,7 +196,7 @@ export function CommunityDashboard() {
                 variant="ghost"
                 onClick={markAllNotificationsRead}
               >
-                Dismiss all
+                {t("Dismiss all")}
               </Button>
             </div>
             <ul className="mt-3 space-y-2">
@@ -212,7 +214,7 @@ export function CommunityDashboard() {
                     onClick={() => markNotificationRead(n.id)}
                     className="inline-flex h-9 shrink-0 items-center justify-center rounded-[10px] bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:bg-brand-strong"
                   >
-                    Review
+                    {t("Review")}
                   </Link>
                 </li>
               ))}
@@ -242,7 +244,7 @@ export function CommunityDashboard() {
                 </div>
                 {list.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
-                    No applications in this queue.
+                    {t("No applications in this queue.")}
                   </p>
                 ) : (
                   <div className="space-y-3">

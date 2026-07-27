@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth, homeForUser } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { useT } from "@/lib/i18n/locale";
 
 export default function AccessDeniedPage() {
-  const { user, signOut } = useAuth();
+
+  const t = useT();  const { user, signOut } = useAuth();
   const home = user ? homeForUser(user) : "/";
 
   return (
@@ -30,11 +32,11 @@ export default function AccessDeniedPage() {
                 window.location.href = "/sign-in";
               }}
             >
-              Sign out and switch account
+              {t("Sign out and switch account")}
             </Button>
           ) : (
             <Button href="/sign-in" variant="ghost">
-              Sign In
+              {t("Sign In")}
             </Button>
           )}
         </div>

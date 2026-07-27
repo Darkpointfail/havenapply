@@ -8,6 +8,7 @@ import {
   type ReviewCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 export function AdmissionReviewGuide({
   app,
@@ -18,6 +19,7 @@ export function AdmissionReviewGuide({
   decided?: boolean;
   onToggle: (id: ReviewCheckId, value: boolean) => void;
 }) {
+  const t = useT();
   const progress = reviewChecklistProgress(app);
 
   const scrollTo = (sectionId: string) => {
@@ -31,7 +33,7 @@ export function AdmissionReviewGuide({
         <div>
           <p className="text-sm font-semibold text-ink">Admission in progress</p>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Check every detail before you finalize.
+            {t("Check every detail before you finalize.")}
           </p>
         </div>
         <p className="shrink-0 text-sm font-semibold tabular-nums text-brand">

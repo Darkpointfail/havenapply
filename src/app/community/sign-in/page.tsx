@@ -15,8 +15,10 @@ import { Card } from "@/components/ui/Card";
 import { useAuth, homeForUser } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isFacilityRole } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n/locale";
 
 function CommunitySignInForm() {
+  const t = useT();
   const { signIn } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -65,7 +67,7 @@ function CommunitySignInForm() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Community sign in"
+        title={t("Community sign in")}
         description="Access your HavenApply admissions workspace."
         breadcrumbs={[
           { label: "Home", href: "/" },
@@ -81,7 +83,7 @@ function CommunitySignInForm() {
             <AuthAlert tone="success">{AUTH_MESSAGES.accountCreatedSignIn}</AuthAlert>
           ) : null}
           {error && <AuthAlert>{error}</AuthAlert>}
-          <AuthField label="Work email">
+          <AuthField label={t("Work email")}>
             <input
               required
               type="email"
@@ -91,7 +93,7 @@ function CommunitySignInForm() {
               autoComplete="email"
             />
           </AuthField>
-          <AuthField label="Password">
+          <AuthField label={t("Password")}>
             <input
               required
               type="password"
@@ -103,7 +105,7 @@ function CommunitySignInForm() {
           </AuthField>
           <div className="flex justify-end">
             <Link href="/forgot-password" className="text-sm font-medium text-brand">
-              Forgot password?
+              {t("Forgot password?")}
             </Link>
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
@@ -114,11 +116,11 @@ function CommunitySignInForm() {
       <p className="mt-6 text-center text-sm text-ink-muted">
         New community?{" "}
         <Link href="/community/get-started" className="font-medium text-brand">
-          Get started
+          {t("Get started")}
         </Link>
         <span className="mx-2 text-ink-faint">·</span>
         <Link href="/sign-in" className="font-medium text-brand">
-          Family / other login
+          {t("Family / other login")}
         </Link>
       </p>
     </div>
@@ -126,7 +128,8 @@ function CommunitySignInForm() {
 }
 
 export default function CommunitySignInPage() {
-  return (
+
+  const t = useT();  return (
     <RedirectIfAuthenticated fallbackHref="/community/dashboard">
       <Suspense
         fallback={

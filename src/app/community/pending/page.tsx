@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { useT } from "@/lib/i18n/locale";
 
 function PendingInner() {
+  const t = useT();
   const { user, signOut } = useAuth();
 
   return (
     <div className="mx-auto max-w-lg px-5 py-12 md:py-16">
       <PageHeader
-        title="Community verification"
+        title={t("Community verification")}
         description="Your account is ready, Haven still needs to verify your organization."
         breadcrumbs={[{ label: "Community" }, { label: "Pending verification" }]}
       />
@@ -32,7 +34,7 @@ function PendingInner() {
         </p>
         <div className="mt-8 flex flex-col gap-2 sm:flex-row">
           <Button href="/" variant="secondary">
-            Back to Haven
+            {t("Back to Haven")}
           </Button>
           <Button
             variant="ghost"
@@ -41,7 +43,7 @@ function PendingInner() {
               window.location.href = "/community/sign-in";
             }}
           >
-            Sign out
+            {t("Sign out")}
           </Button>
         </div>
       </Card>
@@ -50,7 +52,8 @@ function PendingInner() {
 }
 
 export default function CommunityPendingPage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="community" requireCommunityVerified={false}>
       <PendingInner />
     </RequireAuth>

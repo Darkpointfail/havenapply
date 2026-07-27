@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n/locale";
 import {
   canMessageCommunity,
   canUseProfessionalApplyFlow,
@@ -25,7 +26,8 @@ export function MessageButton({
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "soft";
 }) {
-  const { user, ready } = useAuth();
+
+  const t = useT();  const { user, ready } = useAuth();
 
   if (!ready) {
     return (
@@ -43,7 +45,7 @@ export function MessageButton({
         size={size}
         className={className}
       >
-        Sign in to message
+        {t("Sign in to message")}
       </Button>
     );
   }

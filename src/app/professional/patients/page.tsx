@@ -17,10 +17,12 @@ import {
 } from "@/lib/professional-data";
 import { useProfessional } from "@/lib/professional-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const statuses = Object.keys(PATIENT_STATUS_LABEL) as PatientStatus[];
 
 function PatientsInner() {
+  const t = useT();
   const { patients, organization } = useProfessional();
   const params = useSearchParams();
   const initialStatus = params.get("status") as PatientStatus | null;
@@ -56,7 +58,7 @@ function PatientsInner() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Patients"
+        title={t("Patients")}
         description="Every admissions folder you’re preparing for senior living placement."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -65,7 +67,7 @@ function PatientsInner() {
         actions={
           <Button href="/professional/patients/new">
             <Plus size={16} />
-            Add patient
+            {t("Add patient")}
           </Button>
         }
       />
@@ -76,7 +78,7 @@ function PatientsInner() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search patient, family, hospital, community…"
+            placeholder={t("Search patient, family, hospital, community…")}
             className="w-full rounded-xl border border-line bg-bg px-9 py-2.5 text-sm outline-none focus:border-brand"
           />
         </div>
@@ -169,7 +171,7 @@ function PatientsInner() {
 
       {filtered.length === 0 ? (
         <Card className="mt-6 p-8 text-center text-sm text-ink-muted">
-          No patients match these filters.
+          {t("No patients match these filters.")}
         </Card>
       ) : null}
     </div>
@@ -177,7 +179,8 @@ function PatientsInner() {
 }
 
 export default function ProfessionalPatientsPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">

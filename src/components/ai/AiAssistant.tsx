@@ -9,9 +9,11 @@ import { answerCopilot } from "@/lib/assistant/copilot-intents";
 import { useFamilyData } from "@/lib/family-data";
 import { seniorDisplayName } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 export function AiAssistant() {
-  const { open, setOpen, prompt, setPrompt } = useAi();
+
+  const t = useT();  const { open, setOpen, prompt, setPrompt } = useAi();
   const { data } = useFamilyData();
   const router = useRouter();
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string; href?: string }[]>([
@@ -58,10 +60,10 @@ export function AiAssistant() {
           "fixed bottom-5 right-5 z-[60] flex h-14 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white shadow-lift transition-all hover:-translate-y-0.5",
           open && "pointer-events-none opacity-0",
         )}
-        aria-label="Open Haven AI"
+        aria-label={t("Open Haven AI")}
       >
         <Sparkles size={18} className="text-brand" />
-        Ask Haven
+        {t("Ask Haven")}
       </button>
 
       <div
@@ -84,7 +86,7 @@ export function AiAssistant() {
             type="button"
             onClick={() => setOpen(false)}
             className="rounded-xl p-2 text-ink-muted hover:bg-bg-soft"
-            aria-label="Close"
+            aria-label={t("Close")}
           >
             <X size={18} />
           </button>
@@ -109,7 +111,7 @@ export function AiAssistant() {
                       router.push(m.href!);
                     }}
                   >
-                    Open →
+                    {t("Open →")}
                   </button>
                 )}
               </div>
@@ -136,13 +138,13 @@ export function AiAssistant() {
             <input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ask Haven…"
+              placeholder={t("Ask Haven…")}
               className="flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
             />
             <button
               type="submit"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-white"
-              aria-label="Send"
+              aria-label={t("Send")}
             >
               <ArrowUp size={16} />
             </button>
@@ -152,7 +154,7 @@ export function AiAssistant() {
             className="mt-2 block text-center text-xs font-medium text-brand"
             onClick={() => setOpen(false)}
           >
-            Open full assistant
+            {t("Open full assistant")}
           </Link>
         </div>
       </div>

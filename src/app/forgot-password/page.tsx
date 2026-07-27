@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { useT } from "@/lib/i18n/locale";
 
 export default function ForgotPasswordPage() {
-  const { forgotPassword } = useAuth();
+
+  const t = useT();  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -40,7 +42,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Forgot password"
+        title={t("Forgot password")}
         description="Enter your email and we’ll send a link to reset your password."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Forgot password" }]}
       />
@@ -59,13 +61,13 @@ export default function ForgotPasswordPage() {
               </p>
             )}
             <Button href="/sign-in" className="w-full">
-              Back to Sign In
+              {t("Back to Sign In")}
             </Button>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             {error && <AuthAlert>{error}</AuthAlert>}
-            <AuthField label="Email">
+            <AuthField label={t("Email")}>
               <input
                 required
                 type="email"
@@ -80,7 +82,7 @@ export default function ForgotPasswordPage() {
             </Button>
             <p className="text-center text-sm text-ink-muted">
               <Link href="/sign-in" className="text-brand">
-                Back to Sign In
+                {t("Back to Sign In")}
               </Link>
             </p>
           </form>

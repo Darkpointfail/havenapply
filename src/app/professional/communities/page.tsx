@@ -12,8 +12,10 @@ import { residences } from "@/data/residences";
 import { formatCurrency } from "@/lib/utils";
 import { useProfessional } from "@/lib/professional-store";
 import { patientDossierReadyForApply, patientName } from "@/lib/professional-data";
+import { useT } from "@/lib/i18n/locale";
 
 function CommunitiesInner() {
+  const t = useT();
   const { patients } = useProfessional();
   const params = useSearchParams();
   const patientId = params.get("patient") || "";
@@ -40,7 +42,7 @@ function CommunitiesInner() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Communities"
+        title={t("Communities")}
         description="Find senior living options that fit care needs, then apply with the same patient profile."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -54,7 +56,7 @@ function CommunitiesInner() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search communities…"
+            placeholder={t("Search communities…")}
             className="w-full rounded-xl border border-line bg-bg px-9 py-2.5 text-sm outline-none focus:border-brand"
           />
         </div>
@@ -96,7 +98,7 @@ function CommunitiesInner() {
                 href={`/professional/patients/${activePatient.id}`}
                 className="font-medium text-brand hover:underline"
               >
-                Finish profile & documents
+                {t("Finish profile & documents")}
               </Link>{" "}
               before communities can receive the application.
             </p>
@@ -104,7 +106,7 @@ function CommunitiesInner() {
         </div>
       ) : (
         <p className="mb-4 text-sm text-ink-muted">
-          Select a patient to review and submit applications from this list.
+          {t("Select a patient to review and submit applications from this list.")}
         </p>
       )}
 
@@ -138,7 +140,7 @@ function CommunitiesInner() {
                   size="sm"
                   className="flex-1"
                 >
-                  Details
+                  {t("Details")}
                 </Button>
                 <Button
                   href={
@@ -150,7 +152,7 @@ function CommunitiesInner() {
                   className="flex-1"
                   disabled={!activePatient}
                 >
-                  Review & apply
+                  {t("Review & apply")}
                 </Button>
               </div>
               {activePatient?.applications.some((a) => a.communityId === r.id) ? (
@@ -164,7 +166,7 @@ function CommunitiesInner() {
       <p className="mt-8 text-center text-sm text-ink-muted">
         Prefer the full map view?{" "}
         <Link href="/find-senior-living" className="font-medium text-brand hover:underline">
-          Open Find Senior Living
+          {t("Open Find Senior Living")}
         </Link>
       </p>
     </div>
@@ -172,7 +174,8 @@ function CommunitiesInner() {
 }
 
 export default function ProfessionalCommunitiesPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">

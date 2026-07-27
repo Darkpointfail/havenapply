@@ -26,6 +26,7 @@ import {
   type TransitionWork,
 } from "@/lib/community-transition";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const STEP_META: {
   id: TransitionStepId;
@@ -135,7 +136,8 @@ function missingFor(stepId: TransitionStepId, work: TransitionWork): string[] {
 }
 
 export function CommunityTransitionWorkspace() {
-  const params = useParams();
+
+  const t = useT();  const params = useParams();
   const router = useRouter();
   const id = String(params.id || "");
   const { ready, workspace, getApplication, saveTransitionWork, completeTransition } =
@@ -157,7 +159,7 @@ export function CommunityTransitionWorkspace() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Opening transition…
+        {t("Opening transition…")}
       </div>
     );
   }
@@ -167,7 +169,7 @@ export function CommunityTransitionWorkspace() {
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-lg font-semibold">Transition dossier not found</p>
         <Button href="/community/transition" className="mt-4" size="sm">
-          Back to Transition
+          {t("Back to Transition")}
         </Button>
       </div>
     );
@@ -178,7 +180,7 @@ export function CommunityTransitionWorkspace() {
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-lg font-semibold">This dossier is not in transition</p>
         <Button href={`/community/applications/${app.id}`} className="mt-4" size="sm">
-          Open application
+          {t("Open application")}
         </Button>
       </div>
     );
@@ -219,7 +221,7 @@ export function CommunityTransitionWorkspace() {
             className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
           >
             <ArrowLeft size={14} />
-            All transitions
+            {t("All transitions")}
           </Link>
 
           <div className="mt-5 flex flex-wrap items-start gap-3">
@@ -237,7 +239,7 @@ export function CommunityTransitionWorkspace() {
               </p>
             </div>
             <Button href={`/community/applications/${app.id}`} size="sm" variant="secondary">
-              Full dossier
+              {t("Full dossier")}
             </Button>
           </div>
         </div>
@@ -285,7 +287,7 @@ export function CommunityTransitionWorkspace() {
             </Button>
           ) : (
             <Button type="button" size="sm" className="mt-4" onClick={() => setCloseOpen(true)}>
-              Close dossier
+              {t("Close dossier")}
             </Button>
           )}
         </section>
@@ -352,7 +354,7 @@ export function CommunityTransitionWorkspace() {
               disabled={!progress.allComplete}
               onClick={() => setCloseOpen(true)}
             >
-              Close dossier
+              {t("Close dossier")}
             </Button>
           </div>
           <ol className="mt-5 space-y-0">
@@ -401,7 +403,7 @@ export function CommunityTransitionWorkspace() {
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
             <h2 className="text-xl font-semibold tracking-tight">Close dossier</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Confirm that move-in preparation is complete. The resident can move to upcoming
+              {t("Confirm that move-in preparation is complete. The resident can move to upcoming")}
               move-ins and this admission file is archived.
             </p>
             <ul className="mt-5 space-y-2">
@@ -427,7 +429,7 @@ export function CommunityTransitionWorkspace() {
                 value={closeNote}
                 onChange={(e) => setCloseNote(e.target.value)}
                 className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm"
-                placeholder="e.g. Suite 214 · family confirmed parking"
+                placeholder={t("e.g. Suite 214 · family confirmed parking")}
               />
             </label>
             <div className="mt-5 flex gap-2">
@@ -437,7 +439,7 @@ export function CommunityTransitionWorkspace() {
                 className="flex-1"
                 onClick={() => setCloseOpen(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 type="button"
@@ -445,7 +447,7 @@ export function CommunityTransitionWorkspace() {
                 disabled={!progress.allComplete}
                 onClick={confirmClose}
               >
-                Confirm close
+                {t("Confirm close")}
               </Button>
             </div>
           </div>

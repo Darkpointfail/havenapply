@@ -23,10 +23,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useFamilyData } from "@/lib/family-data";
 import { toDisplayApplication } from "@/lib/family-applications";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type ViewMode = "table" | "cards" | "timeline";
 
 function ApplicationsHub() {
+  const t = useT();
   const params = useSearchParams();
   const { data } = useFamilyData();
   const rawView = params.get("view") || "cards";
@@ -45,7 +47,7 @@ function ApplicationsHub() {
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="My applications"
+        title={t("My applications")}
         description="Track every destination, status, documents, appointments, and next steps in one place."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -86,7 +88,7 @@ function ApplicationsHub() {
         <div className="rounded-[1.5rem] border border-dashed border-line px-6 py-16 text-center">
           <p className="text-xl font-semibold">No applications yet</p>
           <p className="mt-2 text-ink-muted">
-            Open a community profile to apply, then track each dossier here.
+            {t("Open a community profile to apply, then track each dossier here.")}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Button href="/family/find-communities">Browse communities</Button>
@@ -262,11 +264,12 @@ function TimelineView({ apps }: { apps: Application[] }) {
 }
 
 export default function ApplicationsPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-          Loading applications…
+          {t("Loading applications…")}
         </div>
       }
     >

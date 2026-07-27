@@ -14,6 +14,7 @@ import {
   type TaskStatus,
 } from "@/lib/notifications-tasks";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function priorityTone(p: TaskPriority): "danger" | "warn" | "neutral" {
   if (p === "High") return "danger";

@@ -15,8 +15,10 @@ import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
+import { useT } from "@/lib/i18n/locale";
 
 function ResetPasswordInner() {
+  const t = useT();
   const { resetPassword } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") || "";
@@ -84,7 +86,7 @@ function ResetPasswordInner() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Reset password"
+        title={t("Reset password")}
         description="Choose a new password for your Haven account."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Reset password" }]}
       />
@@ -93,7 +95,7 @@ function ResetPasswordInner() {
           <div className="space-y-4">
             <AuthAlert tone="success">{AUTH_MESSAGES.resetSuccess}</AuthAlert>
             <Button href="/sign-in" className="w-full" size="lg">
-              Sign In
+              {t("Sign In")}
             </Button>
           </div>
         ) : (
@@ -106,7 +108,7 @@ function ResetPasswordInner() {
                   : AUTH_MESSAGES.resetInvalid}
               </AuthAlert>
             )}
-            <AuthField label="New password" hint="At least 8 characters">
+            <AuthField label={t("New password")} hint="At least 8 characters">
               <input
                 required
                 type="password"
@@ -118,7 +120,7 @@ function ResetPasswordInner() {
                 disabled={!canSubmit}
               />
             </AuthField>
-            <AuthField label="Confirm new password">
+            <AuthField label={t("Confirm new password")}>
               <input
                 required
                 type="password"
@@ -140,7 +142,7 @@ function ResetPasswordInner() {
             </Button>
             <p className="text-center text-sm text-ink-muted">
               <Link href="/sign-in" className="text-brand">
-                Back to Sign In
+                {t("Back to Sign In")}
               </Link>
             </p>
           </form>
@@ -151,7 +153,8 @@ function ResetPasswordInner() {
 }
 
 export default function ResetPasswordPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense>
       <ResetPasswordInner />
     </Suspense>

@@ -27,9 +27,11 @@ import {
   type FavoriteTagId,
 } from "@/lib/saved-communities";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 export default function SavedCommunitiesPage() {
-  const {
+
+  const t = useT();  const {
     data,
     toggleSavedCommunity,
     updateSavedFavorite,
@@ -112,7 +114,7 @@ export default function SavedCommunitiesPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Saved Communities"
+        title={t("Saved Communities")}
         description="Shortlist, tag, rank, and share favorites with family, then compare or apply."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -121,7 +123,7 @@ export default function SavedCommunitiesPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             <Button href="/family/find-communities" variant="secondary">
-              Find communities
+              {t("Find communities")}
             </Button>
             <Button href={compareHref}>
               <GitCompare size={16} /> Compare
@@ -179,11 +181,11 @@ export default function SavedCommunitiesPage() {
           </p>
           {filterTag !== "all" ? (
             <Button type="button" className="mt-6" variant="secondary" onClick={() => setFilterTag("all")}>
-              Clear filter
+              {t("Clear filter")}
             </Button>
           ) : (
             <Button href="/family/find-communities" className="mt-6">
-              Browse communities
+              {t("Browse communities")}
             </Button>
           )}
         </div>
@@ -206,17 +208,17 @@ export default function SavedCommunitiesPage() {
               </Button>
               <Button type="button" size="sm" variant="secondary" onClick={shareSelection}>
                 <Share2 size={14} />
-                Share with family
+                {t("Share with family")}
               </Button>
               <Button type="button" size="sm" variant="soft" onClick={addSelectedToCompare}>
                 <GitCompare size={14} />
-                Add to compare
+                {t("Add to compare")}
               </Button>
             </div>
           </div>
           {shareFlash && (
             <p className="mb-3 text-sm text-success">
-              Selection marked as shared with family on this device.
+              {t("Selection marked as shared with family on this device.")}
             </p>
           )}
 
@@ -276,7 +278,7 @@ export default function SavedCommunitiesPage() {
                           type="button"
                           size="sm"
                           variant="ghost"
-                          aria-label="Move up"
+                          aria-label={t("Move up")}
                           disabled={index === 0}
                           onClick={() => move(residence.id, -1)}
                         >
@@ -286,7 +288,7 @@ export default function SavedCommunitiesPage() {
                           type="button"
                           size="sm"
                           variant="ghost"
-                          aria-label="Move down"
+                          aria-label={t("Move down")}
                           disabled={index === favorites.length - 1}
                           onClick={() => move(residence.id, 1)}
                         >
@@ -323,7 +325,7 @@ export default function SavedCommunitiesPage() {
 
                     <label className="mt-3 block">
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                        Private note
+                        {t("Private note")}
                       </span>
                       <textarea
                         value={fav.note}
@@ -331,14 +333,14 @@ export default function SavedCommunitiesPage() {
                           updateSavedFavorite(residence.id, { note: e.target.value })
                         }
                         rows={2}
-                        placeholder="Only visible to you on this device…"
+                        placeholder={t("Only visible to you on this device…")}
                         className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
                       />
                     </label>
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       <ApplyButton residenceId={residence.id} size="sm">
-                        Start Application
+                        {t("Start Application")}
                       </ApplyButton>
                       <Button
                         type="button"
@@ -367,7 +369,7 @@ export default function SavedCommunitiesPage() {
                         className="text-danger"
                         onClick={() => toggleSavedCommunity(residence.id)}
                       >
-                        Remove
+                        {t("Remove")}
                       </Button>
                     </div>
                     {fav.tags.length > 0 && (

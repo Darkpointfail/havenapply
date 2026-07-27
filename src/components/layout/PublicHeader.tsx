@@ -83,7 +83,7 @@ export function PublicHeader() {
           </div>
           <nav
             className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-            aria-label="Public mobile"
+            aria-label={t("Public mobile")}
           >
             {publicNav.map((link) => {
               const active =
@@ -147,7 +147,7 @@ export function PublicHeader() {
           </div>
           <nav
             className="hidden flex-nowrap items-center justify-center gap-0.5 lg:flex"
-            aria-label="Public"
+            aria-label={t("Public")}
           >
             {publicNav
               .filter((l) => l.href !== "/")

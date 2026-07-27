@@ -29,6 +29,7 @@ import {
   isSelfApplicant,
 } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 /** Kinship phrase for the welcome message, without repeating the name. */
 function lovedOnePhrase(senior: SeniorProfile): string {
@@ -92,7 +93,8 @@ type JourneyStep = {
 };
 
 export default function FamilyDashboardPage() {
-  const { user } = useAuth();
+
+  const t = useT();  const { user } = useAuth();
   const { ask } = useAi();
   const { data, completeness, toggleSavedCommunity } = useFamilyData();
   const { visibleThreads } = useMessaging();
@@ -313,7 +315,7 @@ export default function FamilyDashboardPage() {
           {needsActionApps.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                Do this now
+                {t("Do this now")}
               </h2>
               <div className="mt-4 space-y-2">
                 {needsActionApps.map((app) => {
@@ -350,7 +352,7 @@ export default function FamilyDashboardPage() {
             <div className="mb-4 flex items-end justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                  Applications
+                  {t("Applications")}
                 </h2>
                 <p className="mt-1 text-lg font-semibold tracking-tight">
                   {forSelf
@@ -362,7 +364,7 @@ export default function FamilyDashboardPage() {
                 href="/family/applications"
                 className="text-sm font-medium text-brand hover:underline"
               >
-                View all
+                {t("View all")}
               </Link>
             </div>
             <div className="space-y-2">
@@ -391,7 +393,7 @@ export default function FamilyDashboardPage() {
           <section>
             <div className="mb-4 flex items-end justify-between gap-3">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                Messages
+                {t("Messages")}
               </h2>
               <Link
                 href="/family/messages"
@@ -402,7 +404,7 @@ export default function FamilyDashboardPage() {
             </div>
             {recentMessages.length === 0 ? (
               <Card className="p-5 text-sm text-ink-muted">
-                Conversations with communities will show up here.
+                {t("Conversations with communities will show up here.")}
               </Card>
             ) : (
               <div className="space-y-2">
@@ -439,7 +441,7 @@ export default function FamilyDashboardPage() {
               <div className="mb-4 flex items-end justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                    Keep going
+                    {t("Keep going")}
                   </h2>
                   <p className="mt-1 text-lg font-semibold tracking-tight">
                     {forSelf ? "More communities for you" : `More communities for ${lovedOne}`}
@@ -504,7 +506,7 @@ export default function FamilyDashboardPage() {
               <div>
                 <p className="font-semibold">Question about an application?</p>
                 <p className="mt-0.5 text-sm text-ink-muted">
-                  Haven can explain a status or the next step.
+                  {t("Haven can explain a status or the next step.")}
                 </p>
               </div>
             </div>
@@ -520,7 +522,7 @@ export default function FamilyDashboardPage() {
                 )
               }
             >
-              Ask Haven
+              {t("Ask Haven")}
             </Button>
           </Card>
         </div>
@@ -583,7 +585,7 @@ export default function FamilyDashboardPage() {
 
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-            Your journey
+            {t("Your journey")}
           </h2>
           <ol className="mt-4 space-y-3">
             {steps.map((step, index) => {
@@ -656,7 +658,7 @@ export default function FamilyDashboardPage() {
                   href="/family/find-communities"
                   className="text-sm font-medium text-brand hover:underline"
                 >
-                  Browse all
+                  {t("Browse all")}
                 </Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -693,7 +695,7 @@ export default function FamilyDashboardPage() {
                             href={`/family/apply/${r.id}`}
                             size="sm"
                             variant="soft"
-                            aria-label="Apply"
+                            aria-label={t("Apply")}
                           >
                             <Send size={14} />
                           </Button>
@@ -706,7 +708,7 @@ export default function FamilyDashboardPage() {
               {activeApps.length === 0 && (
                 <Card className="mt-4 p-5">
                   <p className="text-sm text-ink-muted">
-                    Ready to apply? Open a community and send the dossier from its profile.
+                    {t("Ready to apply? Open a community and send the dossier from its profile.")}
                   </p>
                   <Button href="/family/find-communities" size="sm" className="mt-3">
                     <Search size={14} /> Browse communities
@@ -737,7 +739,7 @@ export default function FamilyDashboardPage() {
                   ask(`What communities fit best for ${lovedOne}?`)
                 }
               >
-                Ask Haven
+                {t("Ask Haven")}
               </Button>
             </Card>
           </>

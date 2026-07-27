@@ -26,6 +26,7 @@ import {
 } from "@/lib/community-transition";
 import { TransitionEmailComposer } from "@/components/community/transition/TransitionEmailComposer";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type SaveFn = (
   updater: (prev: TransitionWork) => TransitionWork,

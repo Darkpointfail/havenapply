@@ -10,6 +10,7 @@ import { formatRelative } from "@/lib/format-relative";
 import { contactName, type FacilityContact } from "@/lib/professional-data";
 import { useProfessional } from "@/lib/professional-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const emptyDraft = {
   firstName: "",
@@ -22,7 +23,8 @@ const emptyDraft = {
 };
 
 export default function ProfessionalContactsPage() {
-  const { contacts, addContact, updateContact, deleteContact } = useProfessional();
+
+  const t = useT();  const { contacts, addContact, updateContact, deleteContact } = useProfessional();
   const [q, setQ] = useState("");
   const [facilityFilter, setFacilityFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | "new" | null>(null);
@@ -88,7 +90,7 @@ export default function ProfessionalContactsPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Contacts"
+        title={t("Contacts")}
         description="Keep admissions contacts for each community in one place, and attach them to the right establishments."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -97,7 +99,7 @@ export default function ProfessionalContactsPage() {
         actions={
           <Button onClick={openNew}>
             <Plus size={16} />
-            Add contact
+            {t("Add contact")}
           </Button>
         }
       />
@@ -108,7 +110,7 @@ export default function ProfessionalContactsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search name, role, community…"
+            placeholder={t("Search name, role, community…")}
             className="w-full rounded-xl border border-line bg-bg px-9 py-2.5 text-sm outline-none focus:border-brand"
           />
         </div>
@@ -134,7 +136,7 @@ export default function ProfessionalContactsPage() {
           <form onSubmit={onSave} className="mt-4 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium">
-                First name
+                {t("First name")}
                 <input
                   required
                   className={inputClass}
@@ -143,7 +145,7 @@ export default function ProfessionalContactsPage() {
                 />
               </label>
               <label className="text-sm font-medium">
-                Last name
+                {t("Last name")}
                 <input
                   required
                   className={inputClass}
@@ -154,16 +156,16 @@ export default function ProfessionalContactsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium">
-                Job title
+                {t("Job title")}
                 <input
                   className={inputClass}
                   value={draft.jobTitle}
                   onChange={(e) => setDraft((d) => ({ ...d, jobTitle: e.target.value }))}
-                  placeholder="Director of Admissions"
+                  placeholder={t("Director of Admissions")}
                 />
               </label>
               <label className="text-sm font-medium">
-                Phone
+                {t("Phone")}
                 <input
                   className={inputClass}
                   value={draft.phone}
@@ -172,7 +174,7 @@ export default function ProfessionalContactsPage() {
               </label>
             </div>
             <label className="block text-sm font-medium">
-              Email
+              {t("Email")}
               <input
                 type="email"
                 className={inputClass}
@@ -181,20 +183,20 @@ export default function ProfessionalContactsPage() {
               />
             </label>
             <label className="block text-sm font-medium">
-              Notes
+              {t("Notes")}
               <textarea
                 rows={3}
                 className={inputClass}
                 value={draft.notes}
                 onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-                placeholder="Preferred contact times, document preferences…"
+                placeholder={t("Preferred contact times, document preferences…")}
               />
             </label>
 
             <div>
               <p className="text-sm font-medium text-ink">Associated establishments</p>
               <p className="mt-1 text-xs text-ink-muted">
-                Select one or more communities this contact works with.
+                {t("Select one or more communities this contact works with.")}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {residences.map((r) => {
@@ -233,7 +235,7 @@ export default function ProfessionalContactsPage() {
                   setDraft(emptyDraft);
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit">Save contact</Button>
             </div>
@@ -251,11 +253,11 @@ export default function ProfessionalContactsPage() {
               </div>
               <div className="flex gap-1">
                 <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
-                  Edit
+                  {t("Edit")}
                 </Button>
                 <button
                   type="button"
-                  aria-label="Delete contact"
+                  aria-label={t("Delete contact")}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-faint hover:bg-danger-soft hover:text-danger"
                   onClick={() => deleteContact(c.id)}
                 >
@@ -270,7 +272,7 @@ export default function ProfessionalContactsPage() {
             <div className="mt-3 flex flex-wrap gap-1.5">
               {c.facilityIds.length === 0 ? (
                 <span className="rounded-full bg-warn-soft px-2.5 py-1 text-xs font-medium text-warn">
-                  No establishment linked
+                  {t("No establishment linked")}
                 </span>
               ) : (
                 c.facilityIds.map((id) => (
@@ -291,7 +293,7 @@ export default function ProfessionalContactsPage() {
 
       {filtered.length === 0 ? (
         <Card className="mt-4 p-8 text-center text-sm text-ink-muted">
-          No contacts yet. Add admissions staff and link them to communities.
+          {t("No contacts yet. Add admissions staff and link them to communities.")}
         </Card>
       ) : null}
     </div>

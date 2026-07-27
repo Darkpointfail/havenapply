@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useTheme } from "@/lib/theme";
+import { useT } from "@/lib/i18n/locale";
 
 const sections: { label: string; href?: string; soon?: boolean }[] = [
   { label: "Profile", href: "/family/senior-profile" },
@@ -19,12 +20,13 @@ const sections: { label: string; href?: string; soon?: boolean }[] = [
 ];
 
 function SettingsInner() {
+  const t = useT();
   const { theme, toggle } = useTheme();
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Settings"
+        title={t("Settings")}
         description="Control privacy, security, and how Haven works for your family."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -70,7 +72,8 @@ function SettingsInner() {
 }
 
 export default function SettingsPage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="family">
       <SettingsInner />
     </RequireAuth>

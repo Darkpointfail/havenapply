@@ -15,8 +15,10 @@ import { Card } from "@/components/ui/Card";
 import { useAuth, homeForUser } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isFacilityRole } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n/locale";
 
 function SignInForm() {
+  const t = useT();
   const { signIn } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -58,7 +60,7 @@ function SignInForm() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Log in"
+        title={t("Log in")}
         description="Access your HavenApply account."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Log in" }]}
       />
@@ -68,7 +70,7 @@ function SignInForm() {
             <AuthAlert tone="success">{AUTH_MESSAGES.accountCreatedSignIn}</AuthAlert>
           ) : null}
           {error && <AuthAlert>{error}</AuthAlert>}
-          <AuthField label="Email">
+          <AuthField label={t("Email")}>
             <input
               required
               type="email"
@@ -78,7 +80,7 @@ function SignInForm() {
               autoComplete="email"
             />
           </AuthField>
-          <AuthField label="Password">
+          <AuthField label={t("Password")}>
             <input
               required
               type="password"
@@ -90,7 +92,7 @@ function SignInForm() {
           </AuthField>
           <div className="flex justify-end">
             <Link href="/forgot-password" className="text-sm font-medium text-brand">
-              Forgot password?
+              {t("Forgot password?")}
             </Link>
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
@@ -109,7 +111,8 @@ function SignInForm() {
 }
 
 export default function SignInPage() {
-  return (
+
+  const t = useT();  return (
     <RedirectIfAuthenticated fallbackHref="/family/dashboard">
       <Suspense
         fallback={

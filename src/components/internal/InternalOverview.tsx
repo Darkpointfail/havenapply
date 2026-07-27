@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
 import { formatAdminTime } from "@/lib/internal-admin";
+import { useT } from "@/lib/i18n/locale";
 
 export function InternalOverview() {
-  const { ready, workspace } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace } = useInternalAdmin();
 
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading admin console…
+        {t("Loading admin console…")}
       </div>
     );
   }
@@ -64,7 +66,7 @@ export function InternalOverview() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Overview"
+        title={t("Overview")}
         description="Platform operations console, users, partnerships, admissions health, and audit."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
@@ -72,7 +74,7 @@ export function InternalOverview() {
         ]}
         actions={
           <Button href="/internal/audit-logs" size="sm" variant="secondary">
-            Audit logs
+            {t("Audit logs")}
           </Button>
         }
       />
@@ -105,7 +107,7 @@ export function InternalOverview() {
                     </Badge>
                   </span>
                   <Link href="/internal/communities" className="text-brand hover:underline">
-                    Review
+                    {t("Review")}
                   </Link>
                 </li>
               ))}

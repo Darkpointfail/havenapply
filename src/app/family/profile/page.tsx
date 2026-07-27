@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import DocumentsPage from "@/app/documents/page";
 import MedicalProfilePage from "@/app/profile/page";
+import { useT } from "@/lib/i18n/locale";
 
 type TabId = "overview" | "details" | "documents";
 
@@ -37,6 +38,7 @@ const TABS: { id: TabId; label: string; icon: typeof UserRound }[] = [
 ];
 
 function ProfileHubInner() {
+  const t = useT();
   const params = useSearchParams();
   const tabParam = params.get("tab");
   const tab: TabId =
@@ -86,7 +88,7 @@ function ProfileHubInner() {
       <div className="mb-6">
         <h1 className="text-3xl font-semibold tracking-tight">Manage profile</h1>
         <p className="mt-1 text-ink-muted">
-          One place to view, edit, and attach documents. Created once, reused everywhere.
+          {t("One place to view, edit, and attach documents. Created once, reused everywhere.")}
         </p>
       </div>
 
@@ -174,7 +176,7 @@ function ProfileHubInner() {
                 <Upload size={14} /> Manage documents
               </Button>
               <Button href="/family/care-needs" size="sm" variant="ghost">
-                Care needs
+                {t("Care needs")}
               </Button>
             </div>
           </Card>
@@ -182,7 +184,7 @@ function ProfileHubInner() {
           <Card className="p-5">
             <h2 className="font-semibold">Readiness checklist</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Clear these before applying so communities get a complete packet.
+              {t("Clear these before applying so communities get a complete packet.")}
             </p>
             <ul className="mt-4 space-y-2">
               {checklist.map((item) => (
@@ -212,7 +214,7 @@ function ProfileHubInner() {
           <div className="flex flex-wrap gap-2">
             <Button href="/family/find-communities">Browse communities</Button>
             <Button href="/family/applications" variant="secondary">
-              My applications
+              {t("My applications")}
             </Button>
           </div>
         </div>
@@ -234,7 +236,8 @@ function ProfileHubInner() {
 }
 
 export default function FamilyProfilePage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">

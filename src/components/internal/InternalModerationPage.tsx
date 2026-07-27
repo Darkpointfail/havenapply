@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
+import { useT } from "@/lib/i18n/locale";
 import {
   MODERATION_KIND_LABELS,
   formatAdminTime,
@@ -13,7 +14,8 @@ import {
 } from "@/lib/internal-admin";
 
 export function InternalModerationPage() {
-  const { ready, workspace, resolveModeration } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace, resolveModeration } = useInternalAdmin();
   const [kind, setKind] = useState<"all" | ModerationKind>("all");
   const [onlyOpen, setOnlyOpen] = useState(true);
 
@@ -28,7 +30,7 @@ export function InternalModerationPage() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading moderation…
+        {t("Loading moderation…")}
       </div>
     );
   }
@@ -36,7 +38,7 @@ export function InternalModerationPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Moderation"
+        title={t("Moderation")}
         description="Reviews, photos, descriptions, reports, messages, fake profiles, and misleading claims."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
@@ -55,7 +57,7 @@ export function InternalModerationPage() {
                 : "text-ink-muted hover:bg-bg-soft"
             }`}
           >
-            All types
+            {t("All types")}
           </button>
           {(Object.keys(MODERATION_KIND_LABELS) as ModerationKind[]).map((k) => (
             <button
@@ -78,7 +80,7 @@ export function InternalModerationPage() {
             checked={onlyOpen}
             onChange={(e) => setOnlyOpen(e.target.checked)}
           />
-          Open only
+          {t("Open only")}
         </label>
       </div>
 

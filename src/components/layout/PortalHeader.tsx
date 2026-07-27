@@ -170,7 +170,7 @@ export function PortalHeader({
           </div>
           <nav
             className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-            aria-label="Portal mobile"
+            aria-label={t("Portal mobile")}
           >
             {useGroups
               ? groups!.map((group) => (
@@ -265,7 +265,7 @@ export function PortalHeader({
           <span className="hidden shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold leading-none text-brand-strong sm:inline">
             {t(badge)}
           </span>
-          <nav className="hidden flex-nowrap items-center gap-0.5 lg:flex" aria-label="Portal">
+          <nav className="hidden flex-nowrap items-center gap-0.5 lg:flex" aria-label={t("Portal")}>
           {useGroups
             ? mainGroups.map((group) => {
                 const active = groupIsActive(pathname, group);

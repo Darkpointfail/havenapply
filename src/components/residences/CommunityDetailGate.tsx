@@ -9,6 +9,7 @@ import { isFacilityRole } from "@/lib/auth-store";
 import { canViewCommunityProfiles } from "@/lib/permissions";
 import { CommunityDetailView } from "@/components/residences/CommunityDetail";
 import type { CommunityDetail } from "@/lib/residence-detail";
+import { useT } from "@/lib/i18n/locale";
 
 /**
  * Community profiles are publicly viewable.
@@ -16,7 +17,8 @@ import type { CommunityDetail } from "@/lib/residence-detail";
  * Community and internal portal users are steered back to their own tools.
  */
 export function CommunityDetailGate({ community }: { community: CommunityDetail }) {
-  const { user, ready } = useAuth();
+
+  const t = useT();  const { user, ready } = useAuth();
 
   if (!ready) {
     return (
@@ -36,7 +38,7 @@ export function CommunityDetailGate({ community }: { community: CommunityDetail 
           </span>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight">Different portal</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            Community profiles are for families and care professionals. Continue in your own
+            {t("Community profiles are for families and care professionals. Continue in your own")}
             portal to manage admissions.
           </p>
           <div className="mt-6">
@@ -65,12 +67,12 @@ export function CommunityDetailGate({ community }: { community: CommunityDetail 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button href="/get-started">Get started</Button>
           <Button href="/sign-in" variant="secondary">
-            Sign in
+            {t("Sign in")}
           </Button>
         </div>
         <p className="mt-4 text-xs text-ink-faint">
           <Link href="/find-senior-living" className="underline-offset-2 hover:underline">
-            Back to Find Senior Living
+            {t("Back to Find Senior Living")}
           </Link>
         </p>
       </Card>

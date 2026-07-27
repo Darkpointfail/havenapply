@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { useT } from "@/lib/i18n/locale";
 
 function CheckEmailInner() {
+  const t = useT();
   const { resendConfirmationEmail } = useAuth();
   const params = useSearchParams();
   const email = params.get("email") || "";
@@ -41,7 +43,7 @@ function CheckEmailInner() {
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
       <PageHeader
-        title="Confirm your email"
+        title={t("Confirm your email")}
         description="We sent a confirmation link. Confirm your address before signing in."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Confirm email" }]}
       />
@@ -63,7 +65,7 @@ function CheckEmailInner() {
             {submitting ? "Sending…" : "Resend confirmation email"}
           </Button>
           <Button href={`/sign-in?next=${encodeURIComponent(next)}`} variant="ghost" className="w-full">
-            Back to Sign In
+            {t("Back to Sign In")}
           </Button>
         </form>
         {confirmToken ? (
@@ -80,7 +82,7 @@ function CheckEmailInner() {
       <p className="mt-6 text-center text-sm text-ink-muted">
         Wrong email?{" "}
         <Link href="/get-started" className="font-medium text-brand">
-          Start over
+          {t("Start over")}
         </Link>
       </p>
     </div>
@@ -88,7 +90,8 @@ function CheckEmailInner() {
 }
 
 export default function CheckEmailPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense>
       <CheckEmailInner />
     </Suspense>

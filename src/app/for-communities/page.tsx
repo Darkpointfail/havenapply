@@ -265,7 +265,7 @@ export default function ForCommunitiesPage() {
                         {p.name}
                         {p.you ? (
                           <span className="ml-1.5 text-xs font-medium text-ink-faint">
-                            {t("(you)")}
+                            (you)
                           </span>
                         ) : null}
                       </p>

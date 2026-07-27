@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useProfessional } from "@/lib/professional-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const steps = ["Basics", "Care profile", "Documents", "Review"] as const;
 
 export default function AddPatientPage() {
-  const router = useRouter();
+
+  const t = useT();  const router = useRouter();
   const { addPatient, organization } = useProfessional();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -68,7 +70,7 @@ export default function AddPatientPage() {
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 md:px-8">
       <PageHeader
-        title="Add patient"
+        title={t("Add patient")}
         description="Build one admissions folder. You’ll reuse it across communities."
         breadcrumbs={[
           { label: "Patients", href: "/professional/patients" },
@@ -105,17 +107,17 @@ export default function AddPatientPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium">
-                  First name
+                  {t("First name")}
                   <input required className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </label>
                 <label className="text-sm font-medium">
-                  Last name
+                  {t("Last name")}
                   <input required className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium">
-                  Date of birth
+                  {t("Date of birth")}
                   <input required type="date" className={inputClass} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
                 </label>
                 <label className="text-sm font-medium">
@@ -129,7 +131,7 @@ export default function AddPatientPage() {
                 </label>
               </div>
               <label className="block text-sm font-medium">
-                Current location
+                {t("Current location")}
                 <input
                   className={inputClass}
                   value={currentLocation}
@@ -147,24 +149,24 @@ export default function AddPatientPage() {
                   </select>
                 </label>
                 <label className="text-sm font-medium">
-                  Primary language
+                  {t("Primary language")}
                   <input className={inputClass} value={language} onChange={(e) => setLanguage(e.target.value)} />
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium">
-                  Emergency contact
+                  {t("Emergency contact")}
                   <input required className={inputClass} value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} />
                 </label>
                 <label className="text-sm font-medium">
-                  Phone
+                  {t("Phone")}
                   <input required className={inputClass} value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} />
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium">
-                  Family representative
-                  <input className={inputClass} value={familyContact} onChange={(e) => setFamilyContact(e.target.value)} placeholder="Defaults to emergency contact" />
+                  {t("Family representative")}
+                  <input className={inputClass} value={familyContact} onChange={(e) => setFamilyContact(e.target.value)} placeholder={t("Defaults to emergency contact")} />
                 </label>
                 <label className="text-sm font-medium">
                   Relation
@@ -192,7 +194,7 @@ export default function AddPatientPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-medium">
-                  Required care level
+                  {t("Required care level")}
                   <select className={inputClass} value={careLevel} onChange={(e) => setCareLevel(e.target.value)}>
                     <option>Assisted living</option>
                     <option>Memory care</option>
@@ -211,7 +213,7 @@ export default function AddPatientPage() {
                   <input className={inputClass} value={budget} onChange={(e) => setBudget(e.target.value)} />
                 </label>
                 <label className="text-sm font-medium">
-                  Preferred location
+                  {t("Preferred location")}
                   <input className={inputClass} value={region} onChange={(e) => setRegion(e.target.value)} />
                 </label>
               </div>
@@ -222,7 +224,7 @@ export default function AddPatientPage() {
             <div className="rounded-2xl border border-dashed border-line bg-bg-soft/60 px-5 py-10 text-center">
               <p className="font-medium text-ink">Upload documents</p>
               <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
-                Drag & drop discharge summaries, medication lists, and insurance cards. Haven can
+                {t("Drag & drop discharge summaries, medication lists, and insurance cards. Haven can")}
                 suggest structured fields, you always review before anything is shared.
               </p>
               <label className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-ink-secondary">
@@ -231,7 +233,7 @@ export default function AddPatientPage() {
                   checked={docsNoted}
                   onChange={(e) => setDocsNoted(e.target.checked)}
                 />
-                I’ll upload documents from the patient folder next
+                {t("I’ll upload documents from the patient folder next")}
               </label>
             </div>
           ) : null}
@@ -249,7 +251,7 @@ export default function AddPatientPage() {
                 Family: {familyContact || emergencyContact} · Care level: {careLevel || "—"}
               </p>
               <p className="rounded-xl bg-brand-soft/60 px-3 py-2 text-brand-strong">
-                The patient will open as Building profile until the checklist is complete. When
+                {t("The patient will open as Building profile until the checklist is complete. When")}
                 everything required is done, status becomes Ready to apply.
               </p>
             </div>
@@ -262,7 +264,7 @@ export default function AddPatientPage() {
               disabled={step === 0}
               onClick={() => setStep((s) => Math.max(0, s - 1))}
             >
-              Back
+              {t("Back")}
             </Button>
             <Button type="submit">
               {step === steps.length - 1 ? "Create patient" : "Continue"}

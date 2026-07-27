@@ -114,11 +114,12 @@ function ToggleChip({
 }
 
 export default function FindCommunitiesPage() {
+  const t = useT();
   return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-          Loading search…
+          {t("Loading search…")}
         </div>
       }
     >
@@ -399,7 +400,7 @@ function FindCommunitiesInner() {
           </p>
         ) : filters.postalCode.trim().length >= 3 ? (
           <p className="mt-2 text-xs text-warn">
-            {t("We couldn’t pinpoint that postal code yet, try a nearby ZIP (e.g. 78731) or add a city name.")}
+            We couldn’t pinpoint that postal code yet, try a nearby ZIP (e.g. 78731) or add a city name.
           </p>
         ) : null}
 
@@ -407,7 +408,7 @@ function FindCommunitiesInner() {
           <div className="mt-3 space-y-3 border-t border-line pt-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-                Care type
+                {t("Care type")}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {CARE_OPTIONS.map((c) => (
@@ -425,7 +426,7 @@ function FindCommunitiesInner() {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <label className="block">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-                  Postal / ZIP code
+                  {t("Postal / ZIP code")}
                 </span>
                 <input
                   className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
@@ -436,7 +437,7 @@ function FindCommunitiesInner() {
               </label>
               <label className="block">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-                  Monthly budget max
+                  {t("Monthly budget max")}
                 </span>
                 <select
                   className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
@@ -506,35 +507,35 @@ function FindCommunitiesInner() {
 
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-                More filters
+                {t("More filters")}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <ToggleChip
                   active={filters.secureMemoryCare}
                   onClick={() => patch({ secureMemoryCare: !filters.secureMemoryCare })}
                 >
-                  Secure memory care
+                  {t("Secure memory care")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.medicaid}
                   onClick={() => patch({ medicaid: !filters.medicaid })}
                 >
-                  Accepts Medicaid
+                  {t("Accepts Medicaid")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.veterans}
                   onClick={() => patch({ veterans: !filters.veterans })}
                 >
-                  Veterans Benefits
+                  {t("Veterans Benefits")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.medicalServices}
                   onClick={() => patch({ medicalServices: !filters.medicalServices })}
                 >
-                  Medical services
+                  {t("Medical services")}
                 </ToggleChip>
                 <ToggleChip active={filters.pets} onClick={() => patch({ pets: !filters.pets })}>
-                  Pets accepted
+                  {t("Pets accepted")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.amenities}
@@ -546,7 +547,7 @@ function FindCommunitiesInner() {
                   active={filters.specialMeals}
                   onClick={() => patch({ specialMeals: !filters.specialMeals })}
                 >
-                  Specialized meals
+                  {t("Specialized meals")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.transport}
@@ -558,25 +559,25 @@ function FindCommunitiesInner() {
                   active={filters.couples}
                   onClick={() => patch({ couples: !filters.couples })}
                 >
-                  Couples welcome
+                  {t("Couples welcome")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.respite}
                   onClick={() => patch({ respite: !filters.respite })}
                 >
-                  Temporary / respite
+                  {t("Temporary / respite")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.immediateOnly}
                   onClick={() => patch({ immediateOnly: !filters.immediateOnly })}
                 >
-                  Immediate availability
+                  {t("Immediate availability")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.partnersOnly}
                   onClick={() => patch({ partnersOnly: !filters.partnersOnly })}
                 >
-                  Partners only
+                  {t("Partners only")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.minRating === 4.5}
@@ -584,20 +585,20 @@ function FindCommunitiesInner() {
                     patch({ minRating: filters.minRating === 4.5 ? null : 4.5 })
                   }
                 >
-                  Rating 4.5+
+                  {t("Rating 4.5+")}
                 </ToggleChip>
                 <ToggleChip
                   active={filters.minRating === 4}
                   onClick={() => patch({ minRating: filters.minRating === 4 ? null : 4 })}
                 >
-                  Rating 4.0+
+                  {t("Rating 4.0+")}
                 </ToggleChip>
               </div>
             </div>
 
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-                Languages spoken
+                {t("Languages spoken")}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {LANGUAGE_OPTIONS.map((l) => (
@@ -615,7 +616,7 @@ function FindCommunitiesInner() {
             {activeFilterCount > 0 && (
               <div className="flex justify-end">
                 <Button type="button" variant="ghost" size="sm" onClick={resetFilters}>
-                  Clear all filters
+                  {t("Clear all filters")}
                 </Button>
               </div>
             )}
@@ -723,7 +724,7 @@ function FindCommunitiesInner() {
       )}
 
       <p className="mt-8 max-w-2xl text-[11px] leading-relaxed text-ink-faint">
-        Compatibility scores are a search aid, not an admission guarantee. Pricing and availability
+        {t("Compatibility scores are a search aid, not an admission guarantee. Pricing and availability")}
         can change, always verify with the community.
       </p>
     </div>

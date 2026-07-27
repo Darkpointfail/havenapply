@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
 import { formatAdminTime } from "@/lib/internal-admin";
+import { useT } from "@/lib/i18n/locale";
 
 export default function Page() {
-  const { ready, workspace } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace } = useInternalAdmin();
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
@@ -20,7 +22,7 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Families"
+        title={t("Families")}
         description={`${workspace.analytics.families.toLocaleString()} family accounts on the platform · showing directory sample.`}
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },

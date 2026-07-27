@@ -60,7 +60,7 @@ export default function ContactPage() {
             {t("Tell us how we can help")}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
-            Whether you’re navigating senior living for a loved one or reviewing applications as a
+            {t("Whether you’re navigating senior living for a loved one or reviewing applications as a")}
             community, we’re happy to answer.
           </p>
         </div>
@@ -80,14 +80,14 @@ export default function ContactPage() {
                 hello@havenapply.com
               </a>
               <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-                We usually reply within one business day.
+                {t("We usually reply within one business day.")}
               </p>
             </div>
 
             <div className="space-y-5 px-6 py-6 md:px-7">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                  Quick links
+                  {t("Quick links")}
                 </p>
                 <ul className="mt-3 space-y-2">
                   {[
@@ -115,7 +115,7 @@ export default function ContactPage() {
               <div className="rounded-2xl border border-line bg-bg-soft/60 px-4 py-4">
                 <p className="text-sm font-semibold text-ink">Built for trust</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-                  Haven helps families and communities share applications with clarity, without
+                  {t("Haven helps families and communities share applications with clarity, without")}
                   scattering documents across email.
                 </p>
               </div>
@@ -130,7 +130,7 @@ export default function ContactPage() {
                   <CheckCircle2 size={28} />
                 </span>
                 <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink">
-                  Message received
+                  {t("Message received")}
                 </h2>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-ink-muted">
                   Thanks{name ? `, ${name.split(" ")[0]}` : ""}. We’ll reply to{" "}
@@ -175,7 +175,7 @@ export default function ContactPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className={fieldClass}
-                      placeholder="Your name"
+                      placeholder={t("Your name")}
                       autoComplete="name"
                     />
                   </label>
@@ -187,7 +187,7 @@ export default function ContactPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={fieldClass}
-                      placeholder="you@email.com"
+                      placeholder={t("you@email.com")}
                       autoComplete="email"
                     />
                   </label>
@@ -201,16 +201,16 @@ export default function ContactPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className={cn(fieldClass, "resize-y min-h-[9rem]")}
-                    placeholder="Tell us a bit about what you need…"
+                    placeholder={t("Tell us a bit about what you need…")}
                   />
                 </label>
 
                 <div className="flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs leading-relaxed text-ink-faint sm:max-w-[16rem]">
-                    By sending, you agree we may reply to the email you provide.
+                    {t("By sending, you agree we may reply to the email you provide.")}
                   </p>
                   <Button type="submit" size="lg" className="w-full sm:w-auto">
-                    Send message
+                    {t("Send message")}
                     <ArrowRight size={16} />
                   </Button>
                 </div>

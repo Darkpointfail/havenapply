@@ -28,13 +28,15 @@ import {
 import { getResidence, residences } from "@/data/residences";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { useT } from "@/lib/i18n/locale";
 
 export function MessagingInbox({
   portal = "family",
 }: {
   portal?: "family" | "community";
 }) {
-  const { user } = useAuth();
+
+  const t = useT();  const { user } = useAuth();
   const params = useSearchParams();
   const {
     ready,
@@ -172,7 +174,7 @@ export function MessagingInbox({
   if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading messages…
+        {t("Loading messages…")}
       </div>
     );
   }
@@ -180,7 +182,7 @@ export function MessagingInbox({
   return (
     <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Messages"
+        title={t("Messages")}
         description={
           portal === "community"
             ? "Private conversations with applicant families, only your community’s threads."
@@ -211,7 +213,7 @@ export function MessagingInbox({
 
       <div className="mb-3 flex items-start gap-2 rounded-xl border border-line bg-bg px-3 py-2 text-xs text-ink-muted">
         <Lock size={14} className="mt-0.5 shrink-0 text-brand" />
-        Conversations are private. Communities only see their own threads. Family members only see
+        {t("Conversations are private. Communities only see their own threads. Family members only see")}
         threads they’re authorized for. Sensitive IDs and account numbers trigger a send warning.
       </div>
 
@@ -224,7 +226,7 @@ export function MessagingInbox({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search conversations…"
+                placeholder={t("Search conversations…")}
                 className="w-full bg-transparent text-sm outline-none"
               />
             </label>
@@ -291,7 +293,7 @@ export function MessagingInbox({
         {/* Thread */}
         {!active ? (
           <div className="flex items-center justify-center text-sm text-ink-muted">
-            Select a conversation
+            {t("Select a conversation")}
           </div>
         ) : (
           <div className="flex min-h-0 flex-col">
@@ -372,16 +374,16 @@ export function MessagingInbox({
                         {m.senderName} · {m.senderRole}
                       </p>
                       {m.type === "document-request" && (
-                        <TypeChip mine={mine} icon={<FileText size={12} />} label="Document request" />
+                        <TypeChip mine={mine} icon={<FileText size={12} />} label={t("Document request")} />
                       )}
                       {m.type === "visit" && (
-                        <TypeChip mine={mine} icon={<Calendar size={12} />} label="Visit" />
+                        <TypeChip mine={mine} icon={<Calendar size={12} />} label={t("Visit")} />
                       )}
                       {m.type === "admission" && (
-                        <TypeChip mine={mine} icon={<BadgeCheck size={12} />} label="Admission" />
+                        <TypeChip mine={mine} icon={<BadgeCheck size={12} />} label={t("Admission")} />
                       )}
                       {m.type === "attachment" && (
-                        <TypeChip mine={mine} icon={<Paperclip size={12} />} label="Attachment" />
+                        <TypeChip mine={mine} icon={<Paperclip size={12} />} label={t("Attachment")} />
                       )}
                       <p className="mt-1 text-[15px] leading-relaxed">{m.text}</p>
                       {m.meta && (
@@ -433,7 +435,7 @@ export function MessagingInbox({
                 </p>
                 <div className="mt-2 flex gap-2">
                   <Button type="button" size="sm" variant="secondary" onClick={() => setSensitiveWarn(null)}>
-                    Edit message
+                    {t("Edit message")}
                   </Button>
                   <Button
                     type="button"
@@ -450,7 +452,7 @@ export function MessagingInbox({
                       doSend(true);
                     }}
                   >
-                    Send anyway
+                    {t("Send anyway")}
                   </Button>
                 </div>
               </div>
@@ -486,7 +488,7 @@ export function MessagingInbox({
                 <p className="mb-2 text-xs text-ink-muted">
                   Attached: {attachName}{" "}
                   <button type="button" className="text-brand" onClick={() => setAttachName(null)}>
-                    Remove
+                    {t("Remove")}
                   </button>
                 </p>
               )}
@@ -494,7 +496,7 @@ export function MessagingInbox({
                 <button
                   type="button"
                   className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-muted hover:bg-surface"
-                  aria-label="Attach file"
+                  aria-label={t("Attach file")}
                   onClick={() => fileRef.current?.click()}
                 >
                   <Paperclip size={18} />
@@ -521,7 +523,7 @@ export function MessagingInbox({
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   rows={2}
-                  placeholder="Write a calm, clear message…"
+                  placeholder={t("Write a calm, clear message…")}
                   className="max-h-28 flex-1 resize-none bg-transparent py-2 text-sm outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
@@ -533,7 +535,7 @@ export function MessagingInbox({
                 <Button
                   size="sm"
                   type="button"
-                  aria-label="Send"
+                  aria-label={t("Send")}
                   disabled={!draft.trim()}
                   onClick={() => doSend()}
                 >
@@ -586,6 +588,7 @@ function TypeChip({
 }
 
 function NewConversationButton({ onCreated }: { onCreated: (id: string) => void }) {
+  const t = useT();
   const { startConversation } = useMessaging();
   const [open, setOpen] = useState(false);
   const [residenceId, setResidenceId] = useState(residences[0]?.id || "");
@@ -597,7 +600,7 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
   return (
     <div className="relative">
       <Button type="button" size="sm" variant="secondary" onClick={() => setOpen((v) => !v)}>
-        New conversation
+        {t("New conversation")}
       </Button>
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-80 rounded-2xl border border-line bg-surface p-4 shadow-card">
@@ -627,7 +630,7 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
           <textarea
             className="mt-2 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
             rows={3}
-            placeholder="First message…"
+            placeholder={t("First message…")}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />

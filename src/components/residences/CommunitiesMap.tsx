@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import type { Residence } from "@/data/residences";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const mapContainerStyle = { width: "100%", height: "100%", minHeight: "420px" };
 
@@ -44,6 +45,7 @@ function StylizedMap({
   onSelect?: (id: string) => void;
   className?: string;
 }) {
+  const t = useT();
   const lats = residences.map((r) => r.lat);
   const lngs = residences.map((r) => r.lng);
   const minLat = Math.min(...lats, 30.1);
@@ -74,7 +76,7 @@ function StylizedMap({
         }}
       />
       <p className="absolute left-3 top-3 z-20 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-ink-muted shadow-xs">
-        Demo map · add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for Google Maps
+        {t("Demo map · add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for Google Maps")}
       </p>
       {residences.map((r) => {
         const pos = toPos(r);
@@ -101,7 +103,7 @@ function StylizedMap({
       })}
       {residences.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-ink-muted">
-          No communities in this map view, loosen filters to see pins.
+          {t("No communities in this map view, loosen filters to see pins.")}
         </div>
       )}
     </div>
@@ -121,6 +123,7 @@ function GoogleCommunitiesMap({
   className?: string;
   apiKey: string;
 }) {
+  const t = useT();
   const { isLoaded, loadError } = useJsApiLoader({
     id: "havenapply-google-maps",
     googleMapsApiKey: apiKey,
@@ -153,7 +156,7 @@ function GoogleCommunitiesMap({
           className,
         )}
       >
-        Couldn’t load Google Maps. Check your API key and that Maps JavaScript API is enabled.
+        {t("Couldn’t load Google Maps. Check your API key and that Maps JavaScript API is enabled.")}
       </div>
     );
   }
@@ -166,7 +169,7 @@ function GoogleCommunitiesMap({
           className,
         )}
       >
-        Loading map…
+        {t("Loading map…")}
       </div>
     );
   }
@@ -235,7 +238,7 @@ function GoogleCommunitiesMap({
                 className="mt-2 inline-block text-xs font-semibold text-brand hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                View community →
+                {t("View community →")}
               </a>
             </div>
           </InfoWindowF>
@@ -244,7 +247,7 @@ function GoogleCommunitiesMap({
 
       {residences.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/50 p-6 text-center text-sm text-ink-muted">
-          No communities in this map view, loosen filters to see pins.
+          {t("No communities in this map view, loosen filters to see pins.")}
         </div>
       )}
     </div>
@@ -262,6 +265,7 @@ export function CommunitiesMap({
   onSelect?: (id: string) => void;
   className?: string;
 }) {
+  const t = useT();
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
 
   if (!apiKey) {

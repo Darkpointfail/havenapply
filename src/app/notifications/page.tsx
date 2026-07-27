@@ -17,8 +17,10 @@ import {
   type NotificationType,
 } from "@/lib/notifications-tasks";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function NotificationsInner() {
+  const t = useT();
   const {
     ready,
     visibleNotifications,
@@ -42,7 +44,7 @@ function NotificationsInner() {
   if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading notifications…
+        {t("Loading notifications…")}
       </div>
     );
   }
@@ -50,7 +52,7 @@ function NotificationsInner() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Notifications"
+        title={t("Notifications")}
         description={
           unreadCount > 0
             ? `${unreadCount} unread · stay on top of applications, documents, and family invites.`
@@ -71,7 +73,7 @@ function NotificationsInner() {
             </Button>
             {unreadCount > 0 && (
               <Button size="sm" variant="ghost" onClick={markAllRead}>
-                Mark all read
+                {t("Mark all read")}
               </Button>
             )}
           </div>
@@ -89,7 +91,7 @@ function NotificationsInner() {
                 setPreferences({ ...preferences, inApp: e.target.checked })
               }
             />
-            In-app notifications
+            {t("In-app notifications")}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -99,7 +101,7 @@ function NotificationsInner() {
                 setPreferences({ ...preferences, email: e.target.checked })
               }
             />
-            Email notifications
+            {t("Email notifications")}
           </label>
           <div className="grid gap-2 sm:grid-cols-2">
             {ALL_NOTIFICATION_TYPES.map((t) => (
@@ -202,11 +204,11 @@ function NotificationsInner() {
                   onClick={() => markRead(n.id)}
                   className="inline-flex h-9 items-center justify-center rounded-[10px] bg-brand px-3.5 text-sm font-medium text-white"
                 >
-                  Open
+                  {t("Open")}
                 </Link>
                 {!n.read && (
                   <Button size="sm" variant="ghost" onClick={() => markRead(n.id)}>
-                    Mark read
+                    {t("Mark read")}
                   </Button>
                 )}
               </div>
@@ -218,7 +220,7 @@ function NotificationsInner() {
             <Bell size={28} className="text-ink-faint" />
             <p>No notifications in this view.</p>
             <Link href="/family/dashboard" className="text-sm text-brand hover:underline">
-              Back to dashboard
+              {t("Back to dashboard")}
             </Link>
           </Card>
         )}
@@ -228,7 +230,8 @@ function NotificationsInner() {
 }
 
 export default function NotificationsPage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="family">
       <NotificationsInner />
     </RequireAuth>

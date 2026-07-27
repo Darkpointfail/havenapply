@@ -8,8 +8,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useFamilyCollaboration } from "@/lib/family-collaboration-store";
+import { useT } from "@/lib/i18n/locale";
 
 function AcceptInviteInner() {
+  const t = useT();
   const params = useSearchParams();
   const token = params.get("token") || "";
   const router = useRouter();
@@ -36,7 +38,7 @@ function AcceptInviteInner() {
   return (
     <div className="mx-auto max-w-lg px-5 py-10">
       <PageHeader
-        title="Accept invitation"
+        title={t("Accept invitation")}
         description="Join a family household with your own Haven login, passwords are never shared."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -52,7 +54,7 @@ function AcceptInviteInner() {
         {status === "ok" && <p className="text-sm text-success">{message}</p>}
         {status === "error" && <p className="text-sm text-danger">{message}</p>}
         <Button className="mt-4" href="/family/family-members" size="sm">
-          Go to Family Members
+          {t("Go to Family Members")}
         </Button>
         {status === "error" && (
           <Button
@@ -61,7 +63,7 @@ function AcceptInviteInner() {
             size="sm"
             onClick={() => router.push("/sign-in")}
           >
-            Switch account
+            {t("Switch account")}
           </Button>
         )}
       </Card>
@@ -70,7 +72,8 @@ function AcceptInviteInner() {
 }
 
 export default function AcceptInvitePage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="family">
       <Suspense
         fallback={

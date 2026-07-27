@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import type { SignupRole } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const ROLE_OPTIONS: {
   id: SignupRole;
@@ -87,6 +88,7 @@ function accentClasses(accent: "brand" | "soft" | "accent", selected: boolean) {
 }
 
 function GetStartedInner() {
+  const t = useT();
   const { signUp, ready } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -181,7 +183,7 @@ function GetStartedInner() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 md:py-16">
       <PageHeader
-        title="Who are you using HavenApply as?"
+        title={t("Who are you using HavenApply as?")}
         description="Choose your role once, then create your account."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Get Started" }]}
       />
@@ -222,7 +224,7 @@ function GetStartedInner() {
                 </p>
               ) : (
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
-                  Yourself or a family member seeking care.
+                  {t("Yourself or a family member seeking care.")}
                 </p>
               )}
               <span
@@ -251,13 +253,13 @@ function GetStartedInner() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                  Create account
+                  {t("Create account")}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-ink">
                   {selectedMeta ? `${selectedMeta.title} registration` : "Registration"}
                 </h2>
                 <p className="mt-1 text-sm text-ink-muted">
-                  Your role is saved with your account for future access.
+                  {t("Your role is saved with your account for future access.")}
                 </p>
               </div>
               {role ? (
@@ -269,7 +271,7 @@ function GetStartedInner() {
                     setError(null);
                   }}
                 >
-                  Change role
+                  {t("Change role")}
                 </button>
               ) : null}
             </div>
@@ -278,7 +280,7 @@ function GetStartedInner() {
               {error ? <AuthAlert>{error}</AuthAlert> : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <AuthField label="First name">
+                <AuthField label={t("First name")}>
                   <input
                     required
                     className={authInputClass}
@@ -287,7 +289,7 @@ function GetStartedInner() {
                     autoComplete="given-name"
                   />
                 </AuthField>
-                <AuthField label="Last name">
+                <AuthField label={t("Last name")}>
                   <input
                     required
                     className={authInputClass}
@@ -298,7 +300,7 @@ function GetStartedInner() {
                 </AuthField>
               </div>
 
-              <AuthField label="Email">
+              <AuthField label={t("Email")}>
                 <input
                   required
                   type="email"
@@ -326,7 +328,7 @@ function GetStartedInner() {
                     />
                   </AuthField>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <AuthField label="Job title">
+                    <AuthField label={t("Job title")}>
                       <input
                         required
                         className={authInputClass}
@@ -338,7 +340,7 @@ function GetStartedInner() {
                         }
                       />
                     </AuthField>
-                    <AuthField label="Phone" hint="Optional">
+                    <AuthField label={t("Phone")} hint="Optional">
                       <input
                         type="tel"
                         className={authInputClass}
@@ -351,7 +353,7 @@ function GetStartedInner() {
                 </>
               ) : null}
 
-              <AuthField label="Password" hint="At least 8 characters">
+              <AuthField label={t("Password")} hint="At least 8 characters">
                 <input
                   required
                   type="password"
@@ -362,7 +364,7 @@ function GetStartedInner() {
                   autoComplete="new-password"
                 />
               </AuthField>
-              <AuthField label="Confirm password">
+              <AuthField label={t("Confirm password")}>
                 <input
                   required
                   type="password"
@@ -398,7 +400,7 @@ function GetStartedInner() {
       <p className="mt-8 text-center text-sm text-ink-muted">
         Already have an account?{" "}
         <Link href="/sign-in" className="font-medium text-brand hover:underline">
-          Log in
+          {t("Log in")}
         </Link>
       </p>
     </div>
@@ -406,7 +408,8 @@ function GetStartedInner() {
 }
 
 export default function GetStartedPage() {
-  return (
+
+  const t = useT();  return (
     <RedirectIfAuthenticated fallbackHref="/family/dashboard">
       <Suspense
         fallback={

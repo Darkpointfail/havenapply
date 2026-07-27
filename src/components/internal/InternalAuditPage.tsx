@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
+import { useT } from "@/lib/i18n/locale";
 import {
   AUDIT_TYPE_LABELS,
   formatAdminTime,
@@ -12,7 +13,8 @@ import {
 } from "@/lib/internal-admin";
 
 export function InternalAuditPage() {
-  const { ready, workspace } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace } = useInternalAdmin();
   const [type, setType] = useState<"all" | AuditActionType>("all");
   const [q, setQ] = useState("");
 
@@ -35,7 +37,7 @@ export function InternalAuditPage() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading audit logs…
+        {t("Loading audit logs…")}
       </div>
     );
   }
@@ -43,7 +45,7 @@ export function InternalAuditPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Audit logs"
+        title={t("Audit logs")}
         description="Sensitive actions across the platform. Clinical and identity details stay redacted."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
@@ -52,14 +54,14 @@ export function InternalAuditPage() {
       />
 
       <Card className="mb-4 border-brand/20 bg-brand-soft/30 p-4 text-sm text-ink">
-        Logged: login · sensitive views · document add/delete · permission changes ·
+        {t("Logged: login · sensitive views · document add/delete · permission changes ·")}
         application submit · status changes · downloads · admin actions.
       </Card>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm sm:max-w-sm"
-          placeholder="Search actor, summary, resource…"
+          placeholder={t("Search actor, summary, resource…")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />

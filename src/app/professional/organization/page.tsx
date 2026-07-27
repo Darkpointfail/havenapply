@@ -5,12 +5,14 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useProfessional } from "@/lib/professional-store";
+import { useT } from "@/lib/i18n/locale";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand";
 
 export default function ProfessionalOrganizationPage() {
-  const { organization, profile, patients, updateOrganization, updateProfile } =
+
+  const t = useT();  const { organization, profile, patients, updateOrganization, updateProfile } =
     useProfessional();
   const [orgDraft, setOrgDraft] = useState(organization);
   const [profileDraft, setProfileDraft] = useState(profile);
@@ -49,7 +51,7 @@ export default function ProfessionalOrganizationPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 md:px-8">
       <PageHeader
-        title="My organization"
+        title={t("My organization")}
         description="Edit your workplace and personal details. Changes stay with your care professional workspace."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -65,12 +67,12 @@ export default function ProfessionalOrganizationPage() {
 
       <Card className="p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          Your profile
+          {t("Your profile")}
         </p>
         <form onSubmit={saveProfile} className="mt-4 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
-              First name
+              {t("First name")}
               <input
                 className={inputClass}
                 value={profileDraft.firstName}
@@ -80,7 +82,7 @@ export default function ProfessionalOrganizationPage() {
               />
             </label>
             <label className="text-sm font-medium">
-              Last name
+              {t("Last name")}
               <input
                 className={inputClass}
                 value={profileDraft.lastName}
@@ -92,7 +94,7 @@ export default function ProfessionalOrganizationPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
-              Job title
+              {t("Job title")}
               <input
                 className={inputClass}
                 value={profileDraft.jobTitle}
@@ -102,7 +104,7 @@ export default function ProfessionalOrganizationPage() {
               />
             </label>
             <label className="text-sm font-medium">
-              Phone
+              {t("Phone")}
               <input
                 className={inputClass}
                 value={profileDraft.phone}
@@ -111,7 +113,7 @@ export default function ProfessionalOrganizationPage() {
             </label>
           </div>
           <label className="block text-sm font-medium">
-            Email
+            {t("Email")}
             <input
               type="email"
               className={inputClass}
@@ -132,7 +134,7 @@ export default function ProfessionalOrganizationPage() {
         <p className="mt-1 text-sm text-ink-muted">{patients.length} active patients on caseload</p>
         <form onSubmit={saveOrg} className="mt-4 space-y-4">
           <label className="block text-sm font-medium">
-            Name
+            {t("Name")}
             <input
               className={inputClass}
               value={orgDraft.name}
@@ -149,7 +151,7 @@ export default function ProfessionalOrganizationPage() {
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
-              City
+              {t("City")}
               <input
                 className={inputClass}
                 value={orgDraft.city}
@@ -157,7 +159,7 @@ export default function ProfessionalOrganizationPage() {
               />
             </label>
             <label className="text-sm font-medium">
-              Phone
+              {t("Phone")}
               <input
                 className={inputClass}
                 value={orgDraft.phone}

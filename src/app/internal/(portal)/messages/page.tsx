@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
+import { useT } from "@/lib/i18n/locale";
 
 export default function Page() {
-  const { ready, workspace } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace } = useInternalAdmin();
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
@@ -19,7 +21,7 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Messages"
+        title={t("Messages")}
         description="Oversight of flagged threads only, message bodies stay redacted."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
@@ -27,7 +29,7 @@ export default function Page() {
         ]}
         actions={
           <Button href="/internal/content" size="sm" variant="secondary">
-            Full moderation
+            {t("Full moderation")}
           </Button>
         }
       />

@@ -42,6 +42,7 @@ import {
   type TransitionWork,
 } from "@/lib/community-transition";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
+import { useT } from "@/lib/i18n/locale";
 
 const STORAGE_KEY = "haven-community-portal-v10";
 

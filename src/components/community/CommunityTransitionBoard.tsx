@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCommunityPortal } from "@/lib/community-portal-store";
+import { useT } from "@/lib/i18n/locale";
 import {
   applicationCareType,
   formatPortalDate,
@@ -71,7 +72,8 @@ function TransitionCard({ app }: { app: CommunityApplication }) {
 }
 
 export function CommunityTransitionBoard() {
-  const { ready, workspace } = useCommunityPortal();
+
+  const t = useT();  const { ready, workspace } = useCommunityPortal();
 
   const apps = useMemo(() => {
     const list = workspace?.applications ?? [];
@@ -83,7 +85,7 @@ export function CommunityTransitionBoard() {
   if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Opening transition workspace…
+        {t("Opening transition workspace…")}
       </div>
     );
   }
@@ -93,7 +95,7 @@ export function CommunityTransitionBoard() {
       <div className="mx-auto flex min-h-[40vh] max-w-md flex-col items-center justify-center px-5 text-center">
         <h1 className="text-xl font-semibold tracking-tight text-ink">Workspace unavailable</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          We couldn’t open your community workspace. Refresh, or sign out and back in.
+          {t("We couldn’t open your community workspace. Refresh, or sign out and back in.")}
         </p>
       </div>
     );
@@ -105,10 +107,10 @@ export function CommunityTransitionBoard() {
         <header>
           <p className="text-sm font-medium text-ink-muted">Admissions</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
-            Transition
+            {t("Transition")}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Accepted candidates preparing for move-in. Open a dossier to generate contracts, request
+            {t("Accepted candidates preparing for move-in. Open a dossier to generate contracts, request")}
             deposits, collect family details, and confirm the arrival date, all inside HavenApply.
           </p>
           <p className="mt-3 text-sm font-medium tabular-nums text-ink">
@@ -116,10 +118,10 @@ export function CommunityTransitionBoard() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button href="/community/dashboard" size="sm" variant="secondary">
-              Review queue
+              {t("Review queue")}
             </Button>
             <Button href="/community/applications?filter=history" size="sm" variant="ghost">
-              History
+              {t("History")}
             </Button>
           </div>
         </header>
@@ -128,11 +130,11 @@ export function CommunityTransitionBoard() {
           <section className="rounded-2xl border border-dashed border-line bg-surface px-5 py-10 text-center">
             <p className="text-base font-semibold text-ink">No dossiers in transition</p>
             <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
-              When you accept a candidate from the review queue, they appear here until contracts,
+              {t("When you accept a candidate from the review queue, they appear here until contracts,")}
               payment, and move-in details are complete.
             </p>
             <Button href="/community/dashboard" size="sm" className="mt-5">
-              Go to review queue
+              {t("Go to review queue")}
             </Button>
           </section>
         ) : (
@@ -146,7 +148,7 @@ export function CommunityTransitionBoard() {
         <p className="text-center text-xs text-ink-faint">
           Need to message a family?{" "}
           <Link href="/community/messages" className="font-medium text-brand hover:underline">
-            Open messages
+            {t("Open messages")}
           </Link>
         </p>
       </div>

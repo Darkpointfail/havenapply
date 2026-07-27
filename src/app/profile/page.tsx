@@ -17,6 +17,7 @@ import {
   seniorDisplayName,
 } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 /** Sidebar groups: 4–5 main titles, sections as subtitles */
 const PROFILE_GROUPS: { id: string; title: string; sectionIds: string[] }[] = [
@@ -48,7 +49,8 @@ const PROFILE_GROUPS: { id: string; title: string; sectionIds: string[] }[] = [
 ];
 
 export default function MedicalProfilePage() {
-  const {
+
+  const t = useT();  const {
     ready,
     data,
     completeness,
@@ -108,14 +110,14 @@ export default function MedicalProfilePage() {
   if (!ready || !section) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading your profile…
+        {t("Loading your profile…")}
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
-      <nav aria-label="Breadcrumb" className="mb-3">
+      <nav aria-label={t("Breadcrumb")} className="mb-3">
         <ol className="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
           <li className="flex items-center gap-1">
             <Link href="/family/dashboard" className="hover:text-brand">
@@ -217,17 +219,17 @@ export default function MedicalProfilePage() {
                 flashSaved();
               }}
             >
-              Save person
+              {t("Save person")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditingPerson(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
           </div>
         </Card>
       )}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[240px_1fr]">
-        <nav className="space-y-4 lg:sticky lg:top-20 lg:self-start" aria-label="Profile sections">
+        <nav className="space-y-4 lg:sticky lg:top-20 lg:self-start" aria-label={t("Profile sections")}>
           {PROFILE_GROUPS.map((group) => {
             const groupSections = group.sectionIds
               .map((id) => data.sections.find((s) => s.id === id))
@@ -309,10 +311,10 @@ export default function MedicalProfilePage() {
                           flashSaved();
                         }}
                       >
-                        Save
+                        {t("Save")}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditingIndex(null)}>
-                        Cancel
+                        {t("Cancel")}
                       </Button>
                     </div>
                   </div>
@@ -323,7 +325,7 @@ export default function MedicalProfilePage() {
                       <button
                         type="button"
                         className="rounded-lg p-1.5 text-ink-muted hover:bg-surface hover:text-ink"
-                        aria-label="Edit"
+                        aria-label={t("Edit")}
                         onClick={() => {
                           setEditingIndex(index);
                           setEditText(item);
@@ -334,7 +336,7 @@ export default function MedicalProfilePage() {
                       <button
                         type="button"
                         className="rounded-lg p-1.5 text-ink-muted hover:bg-coral-soft hover:text-coral"
-                        aria-label="Remove"
+                        aria-label={t("Remove")}
                         onClick={() => {
                           removeItem(section.id, index);
                           flashSaved();
@@ -370,7 +372,7 @@ export default function MedicalProfilePage() {
 
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-sky-soft px-3 py-2 text-xs text-ink">
             <ShieldCheck size={16} className="shrink-0 text-sky" />
-            Saved on this device. Communities only see what you share when applying.
+            {t("Saved on this device. Communities only see what you share when applying.")}
           </div>
         </Card>
       </div>

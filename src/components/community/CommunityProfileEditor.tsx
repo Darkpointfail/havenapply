@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import type { CommunityProfile } from "@/lib/community-portal";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const CARE_OPTIONS = [
   "Independent Living",
@@ -45,7 +46,8 @@ function Section({
 }
 
 export function CommunityProfileEditor() {
-  const { ready, workspace, can, updateProfile } = useCommunityPortal();
+
+  const t = useT();  const { ready, workspace, can, updateProfile } = useCommunityPortal();
   const [draft, setDraft] = useState<CommunityProfile | null>(null);
   const [saved, setSaved] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
@@ -73,7 +75,7 @@ export function CommunityProfileEditor() {
   if (!ready || !workspace || !draft) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading community…
+        {t("Loading community…")}
       </div>
     );
   }
@@ -129,7 +131,7 @@ export function CommunityProfileEditor() {
             <p className="text-sm font-medium text-ink-muted">Community</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{draft.name}</h1>
             <p className="mt-2 max-w-xl text-sm text-ink-muted">
-              Photos, room pricing, care services, and admission rules, what families see when
+              {t("Photos, room pricing, care services, and admission rules, what families see when")}
               they apply.
             </p>
           </div>
@@ -142,7 +144,7 @@ export function CommunityProfileEditor() {
 
         {/* 1. Photos */}
         <Section
-          title="Photos"
+          title={t("Photos")}
           hint="Show the building, common areas, and rooms. The first photo is your cover image."
         >
           <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
@@ -192,14 +194,14 @@ export function CommunityProfileEditor() {
                             onClick={() => setCover(index)}
                             className="flex-1 rounded-lg bg-white/95 px-2 py-1 text-[11px] font-medium text-ink"
                           >
-                            Set cover
+                            {t("Set cover")}
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => removePhoto(index)}
                           className="rounded-lg bg-white/95 p-1.5 text-danger"
-                          aria-label="Remove photo"
+                          aria-label={t("Remove photo")}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -216,7 +218,7 @@ export function CommunityProfileEditor() {
                   className={cn(inputClass, "mt-0 flex-1")}
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="Paste image URL…"
+                  placeholder={t("Paste image URL…")}
                 />
                 <Button
                   type="button"
@@ -226,7 +228,7 @@ export function CommunityProfileEditor() {
                   disabled={!photoUrl.trim()}
                 >
                   <ImagePlus size={14} />
-                  Add photo
+                  {t("Add photo")}
                 </Button>
               </div>
             )}
@@ -234,7 +236,7 @@ export function CommunityProfileEditor() {
         </Section>
 
         {/* 2. About */}
-        <Section title="About" hint="A short description families read first.">
+        <Section title={t("About")} hint="A short description families read first.">
           <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
             <label className="block text-sm">
               Description
@@ -244,17 +246,17 @@ export function CommunityProfileEditor() {
                 value={draft.description}
                 disabled={!can("editProfile")}
                 onChange={(e) => patch({ description: e.target.value })}
-                placeholder="Describe your community, atmosphere, and who you serve…"
+                placeholder={t("Describe your community, atmosphere, and who you serve…")}
               />
             </label>
           </div>
         </Section>
 
         {/* 3. Contact & location */}
-        <Section title="Contact & location">
+        <Section title={t("Contact & location")}>
           <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
             <label className="block text-sm">
-              Community name
+              {t("Community name")}
               <input
                 className={inputClass}
                 value={draft.name}
@@ -264,7 +266,7 @@ export function CommunityProfileEditor() {
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm sm:col-span-2">
-                Street address
+                {t("Street address")}
                 <input
                   className={inputClass}
                   value={draft.address}
@@ -273,7 +275,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label className="block text-sm">
-                City
+                {t("City")}
                 <input
                   className={inputClass}
                   value={draft.city}
@@ -302,7 +304,7 @@ export function CommunityProfileEditor() {
                 </label>
               </div>
               <label className="block text-sm">
-                Phone
+                {t("Phone")}
                 <input
                   className={inputClass}
                   value={draft.phone}
@@ -311,7 +313,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label className="block text-sm">
-                Admissions email
+                {t("Admissions email")}
                 <input
                   className={inputClass}
                   value={draft.email}
@@ -325,13 +327,13 @@ export function CommunityProfileEditor() {
 
         {/* 4. Rooms & pricing */}
         <Section
-          title="Rooms & pricing"
+          title={t("Rooms & pricing")}
           hint="Monthly rates families see on your listing. Keep units simple, not a bed board."
         >
           <div className="space-y-3">
             {draft.roomTypes.length === 0 && (
               <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
-                No room types yet. Add your first rate card below.
+                {t("No room types yet. Add your first rate card below.")}
               </p>
             )}
             {draft.roomTypes.map((room, index) => (
@@ -342,7 +344,7 @@ export function CommunityProfileEditor() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <label className="block text-sm">
-                      Room type
+                      {t("Room type")}
                       <input
                         className={cn(inputClass, "font-medium")}
                         value={room.name}
@@ -352,7 +354,7 @@ export function CommunityProfileEditor() {
                           roomTypes[index] = { ...room, name: e.target.value };
                           patch({ roomTypes });
                         }}
-                        placeholder="Studio, One bedroom, Memory care suite…"
+                        placeholder={t("Studio, One bedroom, Memory care suite…")}
                       />
                     </label>
                   </div>
@@ -385,7 +387,7 @@ export function CommunityProfileEditor() {
                     />
                   </label>
                   <label className="block text-sm text-ink-muted">
-                    Available units
+                    {t("Available units")}
                     <input
                       type="number"
                       className={inputClass}
@@ -403,7 +405,7 @@ export function CommunityProfileEditor() {
                   </label>
                 </div>
                 <label className="mt-3 block text-sm text-ink-muted">
-                  Notes
+                  {t("Notes")}
                   <input
                     className={inputClass}
                     value={room.notes}
@@ -413,7 +415,7 @@ export function CommunityProfileEditor() {
                       roomTypes[index] = { ...room, notes: e.target.value };
                       patch({ roomTypes });
                     }}
-                    placeholder="Includes meals, second person fee, etc."
+                    placeholder={t("Includes meals, second person fee, etc.")}
                   />
                 </label>
                 {can("editPricing") && (
@@ -426,7 +428,7 @@ export function CommunityProfileEditor() {
                       })
                     }
                   >
-                    Remove room type
+                    {t("Remove room type")}
                   </button>
                 )}
               </div>
@@ -450,14 +452,14 @@ export function CommunityProfileEditor() {
                   })
                 }
               >
-                Add room type
+                {t("Add room type")}
               </Button>
             )}
           </div>
         </Section>
 
         {/* 5. Care services */}
-        <Section title="Care services" hint="What levels of care you offer.">
+        <Section title={t("Care services")} hint="What levels of care you offer.">
           <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
             <div className="grid gap-1 sm:grid-cols-2">
               {CARE_OPTIONS.map((opt) => {
@@ -485,7 +487,7 @@ export function CommunityProfileEditor() {
         </Section>
 
         {/* 6. Amenities */}
-        <Section title="Amenities" hint="One amenity per line, shown on your public listing.">
+        <Section title={t("Amenities")} hint="One amenity per line, shown on your public listing.">
           <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
             <textarea
               rows={5}
@@ -507,7 +509,7 @@ export function CommunityProfileEditor() {
 
         {/* 7. Admission criteria */}
         <Section
-          title="Admission criteria"
+          title={t("Admission criteria")}
           hint="Basic rules your team uses when reviewing applications."
         >
           <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
@@ -550,7 +552,7 @@ export function CommunityProfileEditor() {
             ))}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
-                Smoking policy
+                {t("Smoking policy")}
                 <input
                   className={inputClass}
                   value={flags.smoking}
@@ -561,7 +563,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label className="block text-sm">
-                Minimum age
+                {t("Minimum age")}
                 <input
                   type="number"
                   className={inputClass}
@@ -576,7 +578,7 @@ export function CommunityProfileEditor() {
               </label>
             </div>
             <label className="block text-sm">
-              Notes
+              {t("Notes")}
               <textarea
                 rows={3}
                 className={inputClass}

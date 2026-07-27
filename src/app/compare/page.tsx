@@ -19,6 +19,7 @@ import {
   savedCommunitiesHref,
 } from "@/lib/permissions";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function toneClass(tone: CompareCellTone) {
   switch (tone) {
@@ -36,6 +37,7 @@ function toneClass(tone: CompareCellTone) {
 }
 
 function CompareInner() {
+  const t = useT();
   const params = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -122,12 +124,12 @@ function CompareInner() {
       <div className="mx-auto max-w-3xl px-5 py-16 text-center">
         <p className="text-xl font-semibold">Nothing to compare yet</p>
         <p className="mt-2 text-ink-muted">
-          Save communities or tap Compare on search results, up to four at a time.
+          {t("Save communities or tap Compare on search results, up to four at a time.")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {!isProfessional ? (
             <Button href={savedCommunitiesHref()} variant="secondary">
-              Open saved
+              {t("Open saved")}
             </Button>
           ) : null}
           <Button href={browseHref}>Browse communities</Button>
@@ -140,7 +142,7 @@ function CompareInner() {
     <div className="mx-auto max-w-[1440px] px-5 py-8 md:px-8 md:py-10">
       <div className="print:hidden">
         <PageHeader
-          title="Compare communities"
+          title={t("Compare communities")}
           description="Side-by-side view of up to four communities. Highlights show best fits, gaps, and missing data."
           breadcrumbs={[
             { label: portalLabel, href: portalHome },
@@ -150,16 +152,16 @@ function CompareInner() {
             <div className="flex flex-wrap gap-2">
               {!isProfessional ? (
                 <Button href={savedCommunitiesHref()} variant="secondary">
-                  From saved
+                  {t("From saved")}
                 </Button>
               ) : null}
               {cols[0] ? (
                 <ApplyButton residenceId={cols[0].id} size="md">
-                  Apply on profile
+                  {t("Apply on profile")}
                 </ApplyButton>
               ) : null}
               <Button href={browseHref} variant="secondary">
-                Add from search
+                {t("Add from search")}
               </Button>
               <Button type="button" variant="soft" onClick={exportText}>
                 <Download size={16} /> Export
@@ -264,7 +266,7 @@ function CompareInner() {
               </p>
               <div className="mt-3 flex flex-col gap-1.5 print:hidden">
                 <ApplyButton residenceId={r.id} size="sm" className="w-full">
-                  Apply
+                  {t("Apply")}
                 </ApplyButton>
                 <Button
                   type="button"
@@ -312,7 +314,7 @@ function CompareInner() {
                   )}
                   {cell.tone === "missing" && (
                     <span className="mt-1 block text-[10px] font-medium text-ink-faint">
-                      Missing / confirm
+                      {t("Missing / confirm")}
                     </span>
                   )}
                   {cell.hint && (
@@ -326,7 +328,7 @@ function CompareInner() {
       </div>
 
       <p className="mt-6 max-w-3xl text-xs leading-relaxed text-ink-faint print:mt-4">
-        Highlights mark the strongest value per row, missing public data, and mismatches with the
+        {t("Highlights mark the strongest value per row, missing public data, and mismatches with the")}
         senior profile or care needs when available. Compatibility is a search aid, not a guarantee
         of admission, clinical fit, or bed availability. Comparing {cols.length} of up to 4 ·{" "}
         {residences.length} communities in this demo.
@@ -336,11 +338,12 @@ function CompareInner() {
 }
 
 export default function ComparePage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-          Loading comparison…
+          {t("Loading comparison…")}
         </div>
       }
     >

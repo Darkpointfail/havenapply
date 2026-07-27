@@ -25,8 +25,10 @@ import {
 import { useProfessional } from "@/lib/professional-store";
 import { getCommunityDetail } from "@/lib/residence-detail";
 import { formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function ApplyReviewInner({ communityId }: { communityId: string }) {
+  const t = useT();
   const { patients, submitApplication } = useProfessional();
   const params = useSearchParams();
   const patientFromQuery = params.get("patient") || "";
@@ -57,7 +59,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
       <div className="mx-auto max-w-2xl px-5 py-16 text-center">
         <h1 className="text-2xl font-semibold">Community not found</h1>
         <Button href="/professional/communities" className="mt-6">
-          Browse communities
+          {t("Browse communities")}
         </Button>
       </div>
     );
@@ -81,7 +83,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
             <div className="mt-6">
               <p className="text-sm text-ink-secondary">No patients yet.</p>
               <Button href="/professional/patients" className="mt-4">
-                Add a patient
+                {t("Add a patient")}
               </Button>
             </div>
           ) : (
@@ -134,7 +136,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
               {readiness.missingProfile.length > 0 && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                    Profile
+                    {t("Profile")}
                   </p>
                   <ul className="mt-1 list-inside list-disc text-ink-secondary">
                     {readiness.missingProfile.map((m) => (
@@ -146,7 +148,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
               {readiness.missingCare.length > 0 && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                    Care needs
+                    {t("Care needs")}
                   </p>
                   <ul className="mt-1 list-inside list-disc text-ink-secondary">
                     {readiness.missingCare.map((m) => (
@@ -170,7 +172,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
               {readiness.missingDocs.length > 0 && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                    Documents
+                    {t("Documents")}
                   </p>
                   <ul className="mt-1 list-inside list-disc text-ink-secondary">
                     {readiness.missingDocs.map((d) => (
@@ -184,7 +186,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
           <div className="mt-6 flex flex-wrap gap-2">
             <Button href={`/professional/patients/${patient.id}`}>Complete dossier</Button>
             <Button href={`/find-senior-living/${communityId}`} variant="secondary">
-              Back
+              {t("Back")}
             </Button>
           </div>
         </Card>
@@ -217,7 +219,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button href="/professional/applications">Track applications</Button>
           <Button href="/professional/communities" variant="secondary">
-            Browse more
+            {t("Browse more")}
           </Button>
         </div>
       </div>
@@ -238,7 +240,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
           </Link>
           <p className="mt-4 text-sm font-medium text-ink-muted">Apply as care professional</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.1rem]">
-            Review before you send
+            {t("Review before you send")}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-ink-muted">
             Confirm the patient profile and documents that will be transmitted to{" "}
@@ -295,7 +297,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
                   </div>
                 </dl>
                 <Button href={`/find-senior-living/${communityId}`} variant="secondary" size="sm">
-                  Full community profile
+                  {t("Full community profile")}
                 </Button>
               </div>
             </Card>
@@ -353,7 +355,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
                 size="sm"
                 className="mt-4"
               >
-                Edit patient dossier
+                {t("Edit patient dossier")}
               </Button>
             </Card>
           </div>
@@ -385,7 +387,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
               </ul>
               <div className="mt-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                  Checklist complete
+                  {t("Checklist complete")}
                 </p>
                 <ul className="mt-2 flex flex-wrap gap-1.5">
                   {checklistKeys.map((k) => (
@@ -411,7 +413,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
                   className="mt-0.5 h-4 w-4 rounded border-line text-brand"
                 />
                 <span>
-                  I confirm this dossier is accurate and authorize Haven to share the patient
+                  {t("I confirm this dossier is accurate and authorize Haven to share the patient")}
                   profile and documents with {residence.name}.
                 </span>
               </label>
@@ -442,7 +444,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
                   href={`/professional/communities?patient=${patient.id}`}
                   className="hover:underline"
                 >
-                  Other communities
+                  {t("Other communities")}
                 </Link>
               </p>
             </Card>
@@ -458,7 +460,8 @@ export default function ProfessionalApplyReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+
+  const t = useT();  const { id } = use(params);
   return (
     <Suspense
       fallback={

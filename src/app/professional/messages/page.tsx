@@ -8,9 +8,11 @@ import { formatRelative } from "@/lib/format-relative";
 import { patientName } from "@/lib/professional-data";
 import { useProfessional } from "@/lib/professional-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 export default function ProfessionalMessagesPage() {
-  const { patients } = useProfessional();
+
+  const t = useT();  const { patients } = useProfessional();
   const threads = useMemo(
     () =>
       patients
@@ -28,7 +30,7 @@ export default function ProfessionalMessagesPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Messages"
+        title={t("Messages")}
         description="One conversation per patient, with family and communities together."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -73,7 +75,7 @@ export default function ProfessionalMessagesPage() {
                   href={`/professional/patients/${active.id}?tab=messages`}
                   className="text-sm font-medium text-brand hover:underline"
                 >
-                  Open folder
+                  {t("Open folder")}
                 </Link>
               </div>
               <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { useT } from "@/lib/i18n/locale";
 
 type Props = {
   searchParams: Promise<{ residence?: string; ids?: string }>;

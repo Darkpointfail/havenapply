@@ -38,11 +38,13 @@ import { useFamilyData } from "@/lib/family-data";
 import { SENSITIVE_WARNING } from "@/lib/privacy-security";
 import { usePrivacySecurityOptional } from "@/lib/privacy-security-store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type FilterStatus = "all" | DocStatus | "missing_prep";
 
 export default function DocumentsPage() {
-  const {
+
+  const t = useT();  const {
     ready,
     data,
     addDocument,
@@ -266,7 +268,7 @@ export default function DocumentsPage() {
   if (!ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading your document center…
+        {t("Loading your document center…")}
       </div>
     );
   }
@@ -276,7 +278,7 @@ export default function DocumentsPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Document center"
+        title={t("Document center")}
         description="Store admissions paperwork privately. Nothing is shared with a community until you attach it to an application."
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -310,7 +312,7 @@ export default function DocumentsPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.14em] text-brand">
-                Preparation checklist
+                {t("Preparation checklist")}
               </p>
               <h2 className="mt-1 text-xl font-semibold">Admissions readiness</h2>
             </div>
@@ -419,7 +421,7 @@ export default function DocumentsPage() {
         <Card className="flex flex-col p-5">
           <h2 className="text-lg font-semibold">Facility requests</h2>
           <p className="mt-1 text-sm text-ink-muted">
-            Documents asked for by communities on active applications.
+            {t("Documents asked for by communities on active applications.")}
           </p>
           <ul className="mt-4 flex-1 space-y-3">
             {(data.documentRequests || []).map((req) => {
@@ -478,11 +480,11 @@ export default function DocumentsPage() {
         <Upload className="mx-auto text-brand" size={32} />
         <p className="mt-3 text-lg font-semibold">Drag & drop a file here</p>
         <p className="mt-1 text-sm text-ink-muted">
-          PDF, JPG, PNG · up to 4 MB · stored only on this device for the demo
+          {t("PDF, JPG, PNG · up to 4 MB · stored only on this device for the demo")}
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <Button type="button" variant="secondary" onClick={() => fileRef.current?.click()}>
-            Browse files
+            {t("Browse files")}
           </Button>
           <Button type="button" variant="soft" onClick={() => cameraRef.current?.click()}>
             <Camera size={16} /> Take or import photo
@@ -584,7 +586,7 @@ export default function DocumentsPage() {
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional notes for your family"
+                placeholder={t("Optional notes for your family")}
                 className="mt-1.5 w-full rounded-xl border border-line bg-bg-soft px-3 py-2.5 outline-none focus:border-brand"
               />
             </label>
@@ -594,7 +596,7 @@ export default function DocumentsPage() {
               </Button>
               {!pendingFile && (
                 <Button type="button" variant="secondary" onClick={() => fileRef.current?.click()}>
-                  Choose file instead
+                  {t("Choose file instead")}
                 </Button>
               )}
             </div>
@@ -642,7 +644,7 @@ export default function DocumentsPage() {
             statusFilter === "all" ? "bg-ink text-white" : "bg-bg-soft text-ink-muted",
           )}
         >
-          Any status
+          {t("Any status")}
         </button>
         {DOC_STATUSES.map((s) => (
           <button
@@ -700,7 +702,7 @@ export default function DocumentsPage() {
               {accessId === doc.id && (
                 <div className="mt-3 space-y-2 rounded-2xl bg-bg-soft p-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                    Who can access
+                    {t("Who can access")}
                   </p>
                   <p className="text-sm text-ink-muted">
                     {doc.sharedWith.length === 0
@@ -760,7 +762,7 @@ export default function DocumentsPage() {
                     );
                   })}
                   <p className="text-xs text-ink-faint">
-                    Checking a box explicitly attaches this document for that application.
+                    {t("Checking a box explicitly attaches this document for that application.")}
                   </p>
                 </div>
               )}
@@ -827,7 +829,7 @@ export default function DocumentsPage() {
                   variant="ghost"
                   onClick={() => setEditId(editId === doc.id ? null : doc.id)}
                 >
-                  Edit
+                  {t("Edit")}
                 </Button>
                 <Button
                   size="sm"
@@ -894,12 +896,12 @@ export default function DocumentsPage() {
                   <iframe title={previewDoc.name} src={previewUrl} className="h-[65vh] w-full rounded-xl bg-white" />
                 ) : (
                   <p className="p-8 text-center text-sm text-ink-muted">
-                    Preview not available for this file type. Use Download instead.
+                    {t("Preview not available for this file type. Use Download instead.")}
                   </p>
                 )
               ) : (
                 <p className="p-8 text-center text-sm text-ink-muted">
-                  No file blob stored for preview. Replace/upload a file to enable preview and
+                  {t("No file blob stored for preview. Replace/upload a file to enable preview and")}
                   download.
                 </p>
               )}
@@ -909,7 +911,7 @@ export default function DocumentsPage() {
                 <Download size={14} /> Download
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setPreviewId(null)}>
-                Close
+                {t("Close")}
               </Button>
             </div>
           </Card>

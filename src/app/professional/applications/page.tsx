@@ -15,8 +15,10 @@ import {
   type ApplicationStatus,
 } from "@/lib/professional-data";
 import { useProfessional } from "@/lib/professional-store";
+import { useT } from "@/lib/i18n/locale";
 
 function ApplicationsInner() {
+  const t = useT();
   const { patients } = useProfessional();
   const params = useSearchParams();
   const initial = (params.get("status") as ApplicationStatus | null) || "all";
@@ -37,7 +39,7 @@ function ApplicationsInner() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Applications"
+        title={t("Applications")}
         description="Every community submission across your caseload, in one place."
         breadcrumbs={[
           { label: "Care professional", href: "/professional/dashboard" },
@@ -92,7 +94,7 @@ function ApplicationsInner() {
 
       {rows.length === 0 ? (
         <Card className="mt-6 p-8 text-center text-sm text-ink-muted">
-          No applications match this filter.
+          {t("No applications match this filter.")}
         </Card>
       ) : null}
     </div>
@@ -100,7 +102,8 @@ function ApplicationsInner() {
 }
 
 export default function ProfessionalApplicationsPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">

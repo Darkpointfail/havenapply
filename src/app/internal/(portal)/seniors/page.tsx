@@ -3,9 +3,11 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
+import { useT } from "@/lib/i18n/locale";
 
 export default function Page() {
-  const { ready, workspace } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace } = useInternalAdmin();
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
@@ -22,7 +24,7 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Seniors"
+        title={t("Seniors")}
         description={`${workspace.analytics.seniors.toLocaleString()} senior profiles · ${workspace.analytics.profilesCompleted.toLocaleString()} completed. Identifiers minimized.`}
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },

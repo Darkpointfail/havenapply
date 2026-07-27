@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { EmailTemplateId } from "@/lib/community-transition";
 import { emailTemplates } from "@/lib/community-transition";
+import { useT } from "@/lib/i18n/locale";
 
 export function TransitionEmailComposer({
   to,
@@ -16,6 +17,7 @@ export function TransitionEmailComposer({
   onCancel: () => void;
   onSend: (payload: { to: string; subject: string; body: string; template: string }) => void;
 }) {
+  const t = useT();
   const templates = emailTemplates();
   const base = templates[templateId];
   const [recipient, setRecipient] = useState(to);
@@ -28,7 +30,7 @@ export function TransitionEmailComposer({
       <div className="relative w-full max-w-lg rounded-2xl bg-surface p-6 shadow-lg">
         <h2 className="text-xl font-semibold tracking-tight text-ink">Review email</h2>
         <p className="mt-1 text-sm text-ink-muted">
-          Sent from HavenApply and logged on this dossier’s timeline.
+          {t("Sent from HavenApply and logged on this dossier’s timeline.")}
         </p>
 
         <label className="mt-5 block text-sm">
@@ -70,7 +72,7 @@ export function TransitionEmailComposer({
 
         <div className="mt-5 flex gap-2">
           <Button type="button" variant="secondary" className="flex-1" onClick={onCancel}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             type="button"
@@ -85,7 +87,7 @@ export function TransitionEmailComposer({
               })
             }
           >
-            Send email
+            {t("Send email")}
           </Button>
         </div>
       </div>

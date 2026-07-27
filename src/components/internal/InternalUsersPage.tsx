@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
 import { formatAdminTime } from "@/lib/internal-admin";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function roleTone(role: string): "brand" | "accent" | "neutral" {
   if (role === "internal") return "brand";
@@ -22,7 +23,8 @@ function statusTone(status: string): "success" | "danger" | "warn" {
 }
 
 export function InternalUsersPage() {
-  const { ready, workspace, suspendUser, reactivateUser } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace, suspendUser, reactivateUser } = useInternalAdmin();
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -45,7 +47,7 @@ export function InternalUsersPage() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading users…
+        {t("Loading users…")}
       </div>
     );
   }
@@ -53,7 +55,7 @@ export function InternalUsersPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Users"
+        title={t("Users")}
         description="Search accounts, verify roles, suspend or reactivate access, and review incidents."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },
@@ -64,7 +66,7 @@ export function InternalUsersPage() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm sm:max-w-sm"
-          placeholder="Search name, email, org…"
+          placeholder={t("Search name, email, org…")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />

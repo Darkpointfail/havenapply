@@ -8,6 +8,7 @@ import {
   type TransitionCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 export function AdmissionTransitionGuide({
   app,
@@ -18,6 +19,7 @@ export function AdmissionTransitionGuide({
   closed?: boolean;
   onToggle: (id: TransitionCheckId, value: boolean) => void;
 }) {
+  const t = useT();
   const progress = transitionChecklistProgress(app);
 
   return (
@@ -26,7 +28,7 @@ export function AdmissionTransitionGuide({
         <div>
           <p className="text-sm font-semibold text-ink">Move-in transition</p>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Finish contracts, payment, and family details before closing the dossier.
+            {t("Finish contracts, payment, and family details before closing the dossier.")}
           </p>
         </div>
         <p className="shrink-0 text-sm font-semibold tabular-nums text-brand">

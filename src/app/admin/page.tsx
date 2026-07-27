@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const inbox = applications.filter((a) =>
   ["submitted", "received", "more_info", "under_review", "waitlisted", "tour_requested"].includes(
@@ -49,7 +50,8 @@ const visits = [
 ];
 
 export default function AdminPage() {
-  const { user, signOut } = useAuth();
+
+  const t = useT();  const { user, signOut } = useAuth();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
@@ -67,7 +69,7 @@ export default function AdminPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-sky">
-            Residence portal
+            {t("Residence portal")}
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
             {user?.organization ?? "Residence"} · Intake
@@ -132,7 +134,7 @@ export default function AdminPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search applicants…"
+              placeholder={t("Search applicants…")}
               className="w-full bg-transparent text-sm outline-none"
             />
           </label>

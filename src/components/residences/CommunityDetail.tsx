@@ -31,6 +31,7 @@ import {
 } from "@/lib/permissions";
 import type { CommunityDetail } from "@/lib/residence-detail";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const SECTIONS = [
   { id: "overview", label: "Overview" },
@@ -70,7 +71,8 @@ function SectionTitle({
 }
 
 export function CommunityDetailView({ community }: { community: CommunityDetail }) {
-  const { user } = useAuth();
+
+  const t = useT();  const { user } = useAuth();
   const { data, toggleSavedCommunity, toggleCompareCommunity } = useFamilyData();
   const [slots, setSlots] = useState<string[]>([]);
   const [contactMode, setContactMode] = useState<"message" | "call" | "tour">("tour");
@@ -153,7 +155,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
           className="mt-2 text-xs font-medium text-brand hover:underline"
           onClick={() => setGalleryOpen(true)}
         >
-          View photo gallery
+          {t("View photo gallery")}
         </button>
 
         {/* Header */}
@@ -213,13 +215,13 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               {comparing ? "In compare" : "Compare"}
             </Button>
             <Button href={compareHref} size="sm" variant="ghost">
-              Open compare
+              {t("Open compare")}
             </Button>
             <MessageButton residenceId={community.id} size="sm">
               Message
             </MessageButton>
             <ApplyButton residenceId={community.id} size="sm">
-              Apply
+              {t("Apply")}
             </ApplyButton>
           </div>
         </div>
@@ -229,7 +231,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                Compatibility score
+                {t("Compatibility score")}
               </p>
               <p className="mt-1 text-2xl font-semibold text-ai">{match.score}%</p>
             </div>
@@ -255,7 +257,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
         {/* Section nav */}
         <nav
           className="sticky top-16 z-20 -mx-5 mt-6 overflow-x-auto border-y border-line bg-surface/95 px-5 py-2 backdrop-blur md:-mx-0 md:rounded-xl md:border md:px-2"
-          aria-label="Page sections"
+          aria-label={t("Page sections")}
         >
           <ul className="flex min-w-max gap-1">
             {SECTIONS.map((s) => (
@@ -277,7 +279,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="overview"
-                title="Overview"
+                title={t("Overview")}
                 subtitle="Description, philosophy, and community facts."
               />
               <p className="mt-4 leading-relaxed text-ink">{community.about}</p>
@@ -302,7 +304,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               </dl>
               <div className="mt-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                  Licenses & certifications
+                  {t("Licenses & certifications")}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {community.licenses.map((lic) => (
@@ -323,7 +325,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="care"
-                title="Care Services"
+                title={t("Care Services")}
                 subtitle="What daily and clinical support looks like here."
               />
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -372,7 +374,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="pricing"
-                title="Rooms and Pricing"
+                title={t("Rooms and Pricing")}
                 subtitle="Base rents, fees, deposits, and what’s included."
               />
               {community.pricingNote && (
@@ -452,7 +454,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                           </div>
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                              Extra services
+                              {t("Extra services")}
                             </p>
                             <ul className="mt-1 space-y-0.5 text-sm text-ink-muted">
                               {room.extras.map((i) => (
@@ -472,7 +474,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="availability"
-                title="Availability"
+                title={t("Availability")}
                 subtitle="Current status and how to move forward."
               />
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -495,7 +497,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                   <div>
                     <h3 className="font-semibold">Contact the community</h3>
                     <p className="mt-1 text-sm text-ink-muted">
-                      Message admissions, request a call, or book a tour below.
+                      {t("Message admissions, request a call, or book a tour below.")}
                     </p>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -503,7 +505,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                       Message
                     </MessageButton>
                     <Button href="#contact" size="sm" variant="secondary">
-                      Request call / tour
+                      {t("Request call / tour")}
                     </Button>
                   </div>
                 </Card>
@@ -514,7 +516,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="amenities"
-                title="Amenities"
+                title={t("Amenities")}
                 subtitle="Daily life beyond clinical care."
               />
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -535,7 +537,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="admission"
-                title="Admission Requirements"
+                title={t("Admission Requirements")}
                 subtitle="Documents, clinical fit, and financial criteria."
               />
               <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -592,7 +594,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="reviews"
-                title="Reviews"
+                title={t("Reviews")}
                 subtitle="Family feedback, not a clinical or admission decision."
               />
               <div className="mt-4 flex flex-wrap items-end gap-6">
@@ -639,7 +641,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="location"
-                title="Location"
+                title={t("Location")}
                 subtitle="Map context and nearby services."
               />
               <div className="mt-4">
@@ -679,7 +681,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             <section>
               <SectionTitle
                 id="contact"
-                title="Contact and Tour"
+                title={t("Contact and Tour")}
                 subtitle="Message, request a call, pick tour times, or start an application."
               />
               <div className="mt-4 flex flex-wrap gap-2">
@@ -756,16 +758,16 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                     </Button>
                   ) : (
                     <Button href={messageSignInHref(community.id)}>
-                      Sign in to contact
+                      {t("Sign in to contact")}
                     </Button>
                   )}
                   <ApplyButton residenceId={community.id} variant="soft" size="md">
-                    Apply here
+                    {t("Apply here")}
                   </ApplyButton>
                 </div>
                 {sent && (
                   <p className="mt-3 text-sm text-success">
-                    Request saved for this demo. In production, admissions would receive it on Haven.
+                    {t("Request saved for this demo. In production, admissions would receive it on Haven.")}
                   </p>
                 )}
               </Card>
@@ -794,11 +796,11 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               </p>
               {!community.partner && (
                 <p className="mt-2 text-xs text-ink-faint">
-                  Non-partner listing, some Haven flows may be limited.
+                  {t("Non-partner listing, some Haven flows may be limited.")}
                 </p>
               )}
               <ApplyButton residenceId={community.id} size="lg" className="mt-5 w-full">
-                Apply here
+                {t("Apply here")}
               </ApplyButton>
               <MessageButton residenceId={community.id} size="md" className="mt-2 w-full">
                 Message
@@ -820,11 +822,11 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                   className="w-full"
                   onClick={() => toggleCompareCommunity(community.id)}
                 >
-                  Compare
+                  {t("Compare")}
                 </Button>
               </div>
               <Button href="#contact" size="sm" variant="ghost" className="mt-2 w-full">
-                Request a tour
+                {t("Request a tour")}
               </Button>
             </Card>
           </aside>
@@ -849,7 +851,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               Message
             </MessageButton>
             <ApplyButton residenceId={community.id} size="sm">
-              Apply
+              {t("Apply")}
             </ApplyButton>
           </div>
         </div>
@@ -872,7 +874,7 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                 type="button"
                 className="rounded-lg p-2 hover:bg-bg-soft"
                 onClick={() => setGalleryOpen(false)}
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <X size={18} />
               </button>

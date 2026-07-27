@@ -31,6 +31,7 @@ import {
 import { getCommunityDetail } from "@/lib/residence-detail";
 import { labelForId, URGENCY_OPTIONS } from "@/lib/senior-profile";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 function reasonIcon(tone: MatchReason["tone"]) {
   if (tone === "fit") return <ThumbsUp size={14} className="text-success" />;
@@ -58,6 +59,7 @@ function aiVerdict(score: number, fits: number, gaps: number): string {
 }
 
 function ApplyReviewInner({ residenceId }: { residenceId: string }) {
+  const t = useT();
   const { user } = useAuth();
   const { ready, data, completeness, submitApplicationBatch } = useFamilyData();
   const [consent, setConsent] = useState(false);
@@ -114,7 +116,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
       <div className="mx-auto max-w-2xl px-5 py-16 text-center">
         <h1 className="text-2xl font-semibold">Community not found</h1>
         <Button href="/family/find-communities" className="mt-6">
-          Browse communities
+          {t("Browse communities")}
         </Button>
       </div>
     );
@@ -148,7 +150,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
           <div className="mt-6 flex flex-wrap gap-2">
             <Button href={fixHref}>Complete dossier</Button>
             <Button href={`/find-senior-living/${residenceId}`} variant="secondary">
-              Back
+              {t("Back")}
             </Button>
           </div>
         </Card>
@@ -205,7 +207,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button href={trackHref}>Track application</Button>
           <Button href="/family/find-communities" variant="secondary">
-            Browse more
+            {t("Browse more")}
           </Button>
         </div>
       </div>
@@ -224,10 +226,10 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
           </Link>
           <p className="mt-4 text-sm font-medium text-ink-muted">Apply</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink md:text-[2.1rem]">
-            Review before you send
+            {t("Review before you send")}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-ink-muted">
-            Check the community details and Haven’s fit analysis for your client, then submit the
+            {t("Check the community details and Haven’s fit analysis for your client, then submit the")}
             complete dossier.
           </p>
         </div>
@@ -316,7 +318,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
               </div>
 
               <Button href={`/find-senior-living/${residenceId}`} variant="secondary" size="sm">
-                Full community profile
+                {t("Full community profile")}
               </Button>
             </div>
           </Card>
@@ -330,7 +332,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
                 </span>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ai">
-                    AI fit review
+                    {t("AI fit review")}
                   </p>
                   <p className="mt-1 text-3xl font-semibold tabular-nums text-ink">
                     {match?.score ?? 0}%
@@ -419,7 +421,8 @@ export default function FamilyApplyReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+
+  const t = useT();  const { id } = use(params);
   return (
     <RequireAuth role="family">
       <ApplyReviewInner residenceId={id} />

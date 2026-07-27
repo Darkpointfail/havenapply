@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -76,7 +77,8 @@ function EditableField({
 }
 
 export function PatientWorkspace() {
-  const { id } = useParams<{ id: string }>();
+
+  const t = useT();  const { id } = useParams<{ id: string }>();
   const params = useSearchParams();
   const router = useRouter();
   const {
@@ -122,7 +124,7 @@ export function PatientWorkspace() {
       <div className="mx-auto max-w-3xl px-5 py-16 text-center">
         <p className="text-ink-muted">Patient not found.</p>
         <Button href="/professional/patients" className="mt-4" variant="secondary">
-          Back to patients
+          {t("Back to patients")}
         </Button>
       </div>
     );
@@ -234,7 +236,7 @@ export function PatientWorkspace() {
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="soft" onClick={() => setAiOpen(true)}>
-                Open AI Assistant
+                {t("Open AI Assistant")}
               </Button>
               <Button
                 type="button"
@@ -247,7 +249,7 @@ export function PatientWorkspace() {
                   notify("Open Messages to share with family");
                 }}
               >
-                Share with family
+                {t("Share with family")}
               </Button>
               <Button
                 type="button"
@@ -263,17 +265,17 @@ export function PatientWorkspace() {
                   setTabAndUrl("applications");
                 }}
               >
-                Generate application package
+                {t("Generate application package")}
               </Button>
               <Button href={`/professional/communities?patient=${patient.id}`} size="sm">
-                Find matching communities
+                {t("Find matching communities")}
               </Button>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-[1180px] px-5 md:px-8">
-          <nav className="flex gap-1 overflow-x-auto pb-px" aria-label="Patient dossier">
+          <nav className="flex gap-1 overflow-x-auto pb-px" aria-label={t("Patient dossier")}>
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -304,7 +306,7 @@ export function PatientWorkspace() {
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <Card className="space-y-4 p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                Overview
+                {t("Overview")}
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -330,7 +332,7 @@ export function PatientWorkspace() {
                 </div>
               </div>
               <label className="block text-sm font-medium text-ink">
-                Placement status
+                {t("Placement status")}
                 <select
                   className={fieldClass}
                   value={patient.status}
@@ -357,7 +359,7 @@ export function PatientWorkspace() {
 
             <Card className="p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                AI snapshot
+                {t("AI snapshot")}
               </p>
               <p className="mt-2 text-lg font-semibold text-ink">
                 {completeness.percent}% complete
@@ -379,21 +381,21 @@ export function PatientWorkspace() {
                 variant="soft"
                 onClick={() => setAiOpen(true)}
               >
-                Open AI Assistant
+                {t("Open AI Assistant")}
               </Button>
             </Card>
 
             <Card className="p-6 lg:col-span-2">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                  Latest activity
+                  {t("Latest activity")}
                 </p>
                 <button
                   type="button"
                   className="text-sm font-medium text-brand"
                   onClick={() => setTabAndUrl("timeline")}
                 >
-                  Full timeline
+                  {t("Full timeline")}
                 </button>
               </div>
               <ol className="mt-4 space-y-3">
@@ -424,7 +426,7 @@ export function PatientWorkspace() {
               <h2 className="text-lg font-semibold text-ink">Identity</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <EditableField
-                  label="First name"
+                  label={t("First name")}
                   value={patient.firstName}
                   onChange={(v) => updatePatient(patient.id, { firstName: v })}
                   onBlur={() => {
@@ -433,38 +435,38 @@ export function PatientWorkspace() {
                   }}
                 />
                 <EditableField
-                  label="Last name"
+                  label={t("Last name")}
                   value={patient.lastName}
                   onChange={(v) => updatePatient(patient.id, { lastName: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Date of birth"
+                  label={t("Date of birth")}
                   value={patient.dateOfBirth}
                   onChange={(v) => updatePatient(patient.id, { dateOfBirth: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Gender"
+                  label={t("Gender")}
                   value={patient.gender}
                   onChange={(v) => updatePatient(patient.id, { gender: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Language"
+                  label={t("Language")}
                   value={patient.language}
                   onChange={(v) => updatePatient(patient.id, { language: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Phone"
+                  label={t("Phone")}
                   value={patient.phone || ""}
                   onChange={(v) => updatePatient(patient.id, { phone: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <div className="sm:col-span-2">
                   <EditableField
-                    label="Address"
+                    label={t("Address")}
                     value={patient.address || ""}
                     onChange={(v) => updatePatient(patient.id, { address: v })}
                     onBlur={() => notify("Saved")}
@@ -477,25 +479,25 @@ export function PatientWorkspace() {
               <h2 className="text-lg font-semibold text-ink">Hospital & ownership</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <EditableField
-                  label="Current hospital"
+                  label={t("Current hospital")}
                   value={patient.hospital}
                   onChange={(v) => updatePatient(patient.id, { hospital: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Unit / service"
+                  label={t("Unit / service")}
                   value={patient.unit}
                   onChange={(v) => updatePatient(patient.id, { unit: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Current location"
+                  label={t("Current location")}
                   value={patient.currentLocation}
                   onChange={(v) => updatePatient(patient.id, { currentLocation: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Case owner"
+                  label={t("Case owner")}
                   value={patient.assignedProfessional}
                   onChange={(v) => updatePatient(patient.id, { assignedProfessional: v })}
                   onBlur={() => notify("Saved")}
@@ -507,25 +509,25 @@ export function PatientWorkspace() {
               <h2 className="text-lg font-semibold text-ink">Family & contacts</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <EditableField
-                  label="Family contact"
+                  label={t("Family contact")}
                   value={patient.familyContact}
                   onChange={(v) => updatePatient(patient.id, { familyContact: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Relationship"
+                  label={t("Relationship")}
                   value={patient.familyRelation}
                   onChange={(v) => updatePatient(patient.id, { familyRelation: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Emergency contact"
+                  label={t("Emergency contact")}
                   value={patient.emergencyContact}
                   onChange={(v) => updatePatient(patient.id, { emergencyContact: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Emergency phone"
+                  label={t("Emergency phone")}
                   value={patient.emergencyPhone}
                   onChange={(v) => updatePatient(patient.id, { emergencyPhone: v })}
                   onBlur={() => notify("Saved")}
@@ -537,36 +539,36 @@ export function PatientWorkspace() {
               <h2 className="text-lg font-semibold text-ink">Physician, pharmacy & insurance</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <EditableField
-                  label="Primary physician"
+                  label={t("Primary physician")}
                   value={patient.primaryPhysician || ""}
                   onChange={(v) => updatePatient(patient.id, { primaryPhysician: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Physician phone"
+                  label={t("Physician phone")}
                   value={patient.physicianPhone || ""}
                   onChange={(v) => updatePatient(patient.id, { physicianPhone: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Pharmacy"
+                  label={t("Pharmacy")}
                   value={patient.pharmacy || ""}
                   onChange={(v) => updatePatient(patient.id, { pharmacy: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Pharmacy phone"
+                  label={t("Pharmacy phone")}
                   value={patient.pharmacyPhone || ""}
                   onChange={(v) => updatePatient(patient.id, { pharmacyPhone: v })}
                   onBlur={() => notify("Saved")}
                 />
                 <EditableField
-                  label="Insurance / payer"
+                  label={t("Insurance / payer")}
                   value={patient.care.insurance}
                   onChange={(v) => saveCare({ insurance: v })}
                 />
                 <EditableField
-                  label="Allergies"
+                  label={t("Allergies")}
                   value={patient.allergies || ""}
                   onChange={(v) => updatePatient(patient.id, { allergies: v })}
                   onBlur={() => notify("Saved")}
@@ -580,7 +582,7 @@ export function PatientWorkspace() {
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-ink">Care information</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Update clinical details as the stay evolves. Nothing is shared until you apply.
+              {t("Update clinical details as the stay evolves. Nothing is shared until you apply.")}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {careFields.map(({ key, label }) => (
@@ -607,11 +609,11 @@ export function PatientWorkspace() {
                 <div>
                   <h2 className="text-lg font-semibold text-ink">Documents</h2>
                   <p className="mt-1 text-sm text-ink-muted">
-                    Drag & drop, browse, or scan into the right folder.
+                    {t("Drag & drop, browse, or scan into the right folder.")}
                   </p>
                 </div>
                 <label className="text-sm font-medium text-ink">
-                  Upload to
+                  {t("Upload to")}
                   <select
                     className={fieldClass}
                     value={uploadCategory}
@@ -646,7 +648,7 @@ export function PatientWorkspace() {
                 <p className="mt-1 text-xs text-ink-faint">PDF, images, or scans</p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
-                    Browse files
+                    {t("Browse files")}
                   </Button>
                   <Button
                     type="button"
@@ -662,7 +664,7 @@ export function PatientWorkspace() {
                       notify("Scan added");
                     }}
                   >
-                    Scan document
+                    {t("Scan document")}
                   </Button>
                   <Button
                     type="button"
@@ -677,7 +679,7 @@ export function PatientWorkspace() {
                       notify("Folder placeholder created");
                     }}
                   >
-                    Create in folder
+                    {t("Create in folder")}
                   </Button>
                 </div>
                 <input
@@ -737,7 +739,7 @@ export function PatientWorkspace() {
                               </p>
                               <input
                                 className="mt-2 w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
-                                placeholder="Add a note…"
+                                placeholder={t("Add a note…")}
                                 value={d.note || ""}
                                 onChange={(e) =>
                                   updateDocument(patient.id, d.id, { note: e.target.value })
@@ -790,7 +792,7 @@ export function PatientWorkspace() {
                                   notify("Document deleted");
                                 }}
                               >
-                                Delete
+                                {t("Delete")}
                               </Button>
                             </div>
                           </div>
@@ -816,7 +818,7 @@ export function PatientWorkspace() {
                                   variant="ghost"
                                   onClick={() => setPreviewDoc(null)}
                                 >
-                                  Close preview
+                                  {t("Close preview")}
                                 </Button>
                               </div>
                             </div>
@@ -835,7 +837,7 @@ export function PatientWorkspace() {
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-ink">Timeline</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Every meaningful change on this living dossier.
+              {t("Every meaningful change on this living dossier.")}
             </p>
             <ol className="mt-6 space-y-0">
               {[...patient.timeline]
@@ -867,16 +869,16 @@ export function PatientWorkspace() {
               <div>
                 <h2 className="text-lg font-semibold text-ink">Applications</h2>
                 <p className="mt-1 text-sm text-ink-muted">
-                  Track every community submission from this dossier.
+                  {t("Track every community submission from this dossier.")}
                 </p>
               </div>
               <Button href={`/professional/communities?patient=${patient.id}`} size="sm">
-                Send new application
+                {t("Send new application")}
               </Button>
             </Card>
             {patient.applications.length === 0 ? (
               <Card className="p-6 text-sm text-ink-muted">
-                No applications yet. Find matching communities to transmit this dossier.
+                {t("No applications yet. Find matching communities to transmit this dossier.")}
               </Card>
             ) : (
               patient.applications.map((a) => (
@@ -904,7 +906,7 @@ export function PatientWorkspace() {
                       size="sm"
                       variant="secondary"
                     >
-                      Open messages
+                      {t("Open messages")}
                     </Button>
                     <Button
                       type="button"
@@ -912,7 +914,7 @@ export function PatientWorkspace() {
                       variant="ghost"
                       onClick={() => setTabAndUrl("documents")}
                     >
-                      Documents sent
+                      {t("Documents sent")}
                     </Button>
                   </div>
                 </Card>
@@ -927,7 +929,7 @@ export function PatientWorkspace() {
               <div>
                 <p className="font-semibold text-ink">Messages</p>
                 <p className="text-sm text-ink-muted">
-                  Family, communities, and care team, all tied to this dossier.
+                  {t("Family, communities, and care team, all tied to this dossier.")}
                 </p>
               </div>
               <div className="flex gap-1 rounded-lg bg-bg-soft p-1">
@@ -989,7 +991,7 @@ export function PatientWorkspace() {
                 className="flex-1 rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
               />
               <Button type="submit" disabled={!draft.trim()}>
-                Send
+                {t("Send")}
               </Button>
             </form>
           </Card>

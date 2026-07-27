@@ -14,9 +14,11 @@ import {
   statusTone,
 } from "@/lib/professional-data";
 import { useProfessional } from "@/lib/professional-store";
+import { useT } from "@/lib/i18n/locale";
 
 export default function ProfessionalDashboardPage() {
-  const { patients } = useProfessional();
+
+  const t = useT();  const { patients } = useProfessional();
 
   const missingDocs = patients.filter((p) => missingChecklist(p).length > 0);
   const needMoreInfo = patients.filter((p) =>
@@ -70,12 +72,12 @@ export default function ProfessionalDashboardPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8">
       <PageHeader
-        title="Today’s priorities"
+        title={t("Today’s priorities")}
         description="What needs attention to move patients toward the right senior living community."
         breadcrumbs={[{ label: "Care professional" }, { label: "Dashboard" }]}
         actions={
           <Button href="/professional/patients/new">
-            Add patient
+            {t("Add patient")}
             <ArrowRight size={16} />
           </Button>
         }
@@ -103,7 +105,7 @@ export default function ProfessionalDashboardPage() {
               </p>
             </div>
             <Button href="/professional/patients?status=ready_to_apply" variant="secondary" size="sm">
-              Review
+              {t("Review")}
             </Button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -125,7 +127,7 @@ export default function ProfessionalDashboardPage() {
           <div className="mb-4 flex items-end justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Patients</h2>
             <Link href="/professional/patients" className="text-sm font-medium text-brand hover:underline">
-              View all
+              {t("View all")}
             </Link>
           </div>
           <div className="overflow-hidden rounded-2xl border border-line bg-surface">

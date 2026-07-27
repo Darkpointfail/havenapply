@@ -19,8 +19,10 @@ import { applications } from "@/data/applications";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import { useAi } from "@/lib/ai";
+import { useT } from "@/lib/i18n/locale";
 
 function DashboardInner() {
+  const t = useT();
   const { user } = useAuth();
   const { data, completeness } = useFamilyData();
   const { ask } = useAi();
@@ -67,7 +69,7 @@ function DashboardInner() {
         <div>
           <p className="text-sm text-ink-muted">Good to see you, {user?.name?.split(" ")[0]}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight md:text-4xl">
-            Your admissions home
+            {t("Your admissions home")}
           </h1>
           <p className="mt-2 text-ink-muted">
             {data.person.name || "Loved one"} · profile {completeness}% ·{" "}
@@ -76,7 +78,7 @@ function DashboardInner() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button href="/residences" variant="secondary">
-            Find communities
+            {t("Find communities")}
           </Button>
           <Button href="/apply">
             Apply <ArrowRight size={16} />
@@ -116,7 +118,7 @@ function DashboardInner() {
             </div>
             <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
               Based on wait times and care fit, prioritize Maple Grove (accepted) and keep Cedar Memory
-              Care warm, position #4.
+              {t("Care warm, position #4.")}
             </p>
             <Button
               size="sm"
@@ -124,7 +126,7 @@ function DashboardInner() {
               className="mt-4"
               onClick={() => ask("What should I do next for Paul Gilbert’s admissions?")}
             >
-              Ask what to do next
+              {t("Ask what to do next")}
             </Button>
           </div>
           <div className="space-y-3 border-t border-line p-5">
@@ -139,7 +141,7 @@ function DashboardInner() {
               />
             </div>
             <Button href="/profile" size="sm" variant="soft" className="w-full">
-              Continue medical profile
+              {t("Continue medical profile")}
             </Button>
           </div>
         </Card>
@@ -150,7 +152,7 @@ function DashboardInner() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Active applications</h2>
             <Button href="/applications" size="sm" variant="ghost">
-              View all
+              {t("View all")}
             </Button>
           </div>
           <div className="mt-4 space-y-3">
@@ -210,17 +212,17 @@ function DashboardInner() {
               </li>
             </ul>
             <Button href="/calendar" size="sm" variant="secondary" className="mt-4 w-full">
-              Open calendar
+              {t("Open calendar")}
             </Button>
           </Card>
           <Card className="p-5">
             <h2 className="text-lg font-semibold">Quick actions</h2>
             <div className="mt-3 grid gap-2">
               <Button href="/documents" size="sm" variant="soft">
-                Upload document
+                {t("Upload document")}
               </Button>
               <Button href="/compare?ids=maple-grove,cedar-memory" size="sm" variant="secondary">
-                Compare shortlist
+                {t("Compare shortlist")}
               </Button>
               <Button href="/tasks" size="sm" variant="ghost">
                 <CheckCircle2 size={14} /> Task checklist
@@ -234,7 +236,8 @@ function DashboardInner() {
 }
 
 export default function DashboardPage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="family">
       <DashboardInner />
     </RequireAuth>

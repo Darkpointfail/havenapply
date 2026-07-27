@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import type { AvailabilityStatus, AvailabilityUnit } from "@/lib/community-portal";
+import { useT } from "@/lib/i18n/locale";
 
 const emptyUnit = (): AvailabilityUnit => ({
   id: `av-${Date.now()}`,
@@ -20,14 +21,15 @@ const emptyUnit = (): AvailabilityUnit => ({
 });
 
 export function CommunityAvailabilityManager() {
-  const { ready, workspace, can, upsertAvailability, removeAvailability } =
+
+  const t = useT();  const { ready, workspace, can, upsertAvailability, removeAvailability } =
     useCommunityPortal();
   const [draft, setDraft] = useState<AvailabilityUnit | null>(null);
 
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading availability…
+        {t("Loading availability…")}
       </div>
     );
   }
@@ -37,7 +39,7 @@ export function CommunityAvailabilityManager() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Availability"
+        title={t("Availability")}
         description="Keep room inventory, pricing, and waitlists current for admissions."
         breadcrumbs={[
           { label: "Community", href: "/community/dashboard" },
@@ -46,7 +48,7 @@ export function CommunityAvailabilityManager() {
         actions={
           editable ? (
             <Button size="sm" onClick={() => setDraft(emptyUnit())}>
-              Add unit
+              {t("Add unit")}
             </Button>
           ) : null
         }
@@ -173,10 +175,10 @@ export function CommunityAvailabilityManager() {
                 else alert(res.error);
               }}
             >
-              Save
+              {t("Save")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
-              Cancel
+              {t("Cancel")}
             </Button>
           </div>
         </Card>
@@ -204,7 +206,7 @@ export function CommunityAvailabilityManager() {
               {editable && (
                 <div className="flex gap-2">
                   <Button size="sm" variant="secondary" onClick={() => setDraft(u)}>
-                    Edit
+                    {t("Edit")}
                   </Button>
                   <Button
                     size="sm"
@@ -213,7 +215,7 @@ export function CommunityAvailabilityManager() {
                       if (confirm(`Remove ${u.roomType}?`)) removeAvailability(u.id);
                     }}
                   >
-                    Remove
+                    {t("Remove")}
                   </Button>
                 </div>
               )}

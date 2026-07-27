@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { useT } from "@/lib/i18n/locale";
 
 function HospitalInner() {
+  const t = useT();
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-8 md:px-8 md:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -13,7 +15,7 @@ function HospitalInner() {
           <Badge tone="accent">Hospital portal</Badge>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">Discharge → placement</h1>
           <p className="mt-2 text-ink-muted">
-            Create patient, upload packet, multi-send to communities, track admissions.
+            {t("Create patient, upload packet, multi-send to communities, track admissions.")}
           </p>
         </div>
         <Button>New patient packet</Button>
@@ -58,7 +60,8 @@ function HospitalInner() {
 }
 
 export default function HospitalPage() {
-  return (
+
+  const t = useT();  return (
     <RequireAuth role="professional">
       <HospitalInner />
     </RequireAuth>

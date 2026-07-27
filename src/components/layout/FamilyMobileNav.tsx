@@ -20,7 +20,7 @@ export function FamilyMobileNav() {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface/95 px-1 pb-[env(safe-area-inset-bottom)] pt-1.5 backdrop-blur-xl lg:hidden"
-      aria-label="Family mobile"
+      aria-label={t("Family mobile")}
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-between">
         {familyMobileNav.map((item) => {

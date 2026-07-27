@@ -36,6 +36,7 @@ import {
 } from "@/lib/care-needs";
 import { seniorDisplayName } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const SECTIONS = [
   { id: "mobility", title: "Mobility" },
@@ -55,7 +56,8 @@ function toggleId(list: string[], id: string) {
 }
 
 export default function CareNeedsPage() {
-  const { ready, data, updateCareNeeds, markCareNeedsComplete } = useFamilyData();
+
+  const t = useT();  const { ready, data, updateCareNeeds, markCareNeedsComplete } = useFamilyData();
   const care = data.careNeeds;
   const name = seniorDisplayName(data.senior) || data.person.name || "your loved one";
   const [section, setSection] = useState<SectionId>(
@@ -128,7 +130,7 @@ export default function CareNeedsPage() {
     return (
       <div className="mx-auto max-w-[900px] px-5 py-8 md:px-8 md:py-10">
         <PageHeader
-          title="Care Needs"
+          title={t("Care Needs")}
           description="Describe daily support in plain language, after the senior profile is created."
           breadcrumbs={[
             { label: "Family", href: "/family/dashboard" },
@@ -138,7 +140,7 @@ export default function CareNeedsPage() {
         <Card className="p-6 md:p-8">
           <h2 className="text-xl font-semibold">Create a senior profile first</h2>
           <p className="mt-2 text-ink-muted">
-            Care needs build on the primary senior dossier from onboarding.
+            {t("Care needs build on the primary senior dossier from onboarding.")}
           </p>
           <Button href="/onboarding" className="mt-6">
             Continue onboarding <ArrowRight size={16} />
@@ -151,7 +153,7 @@ export default function CareNeedsPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Care Needs"
+        title={t("Care Needs")}
         description={`Help us understand ${name}’s day-to-day support needs. This guides community search, it is not a medical diagnosis.`}
         breadcrumbs={[
           { label: "Family", href: "/family/dashboard" },
@@ -248,9 +250,9 @@ export default function CareNeedsPage() {
               </div>
 
               <div className="mt-8 grid gap-5 md:grid-cols-2">
-                <SummaryBlock title="Priority points" items={summary.priorities} />
+                <SummaryBlock title={t("Priority points")} items={summary.priorities} />
                 <SummaryBlock
-                  title="Likely must-haves"
+                  title={t("Likely must-haves")}
                   items={
                     summary.mustHaves.length
                       ? summary.mustHaves
@@ -258,7 +260,7 @@ export default function CareNeedsPage() {
                   }
                 />
                 <SummaryBlock
-                  title="Preferences"
+                  title={t("Preferences")}
                   items={
                     summary.preferences.length
                       ? summary.preferences
@@ -266,7 +268,7 @@ export default function CareNeedsPage() {
                   }
                 />
                 <SummaryBlock
-                  title="Still missing"
+                  title={t("Still missing")}
                   items={
                     summary.missing.length
                       ? summary.missing
@@ -300,7 +302,7 @@ export default function CareNeedsPage() {
                   Find communities <ArrowRight size={16} />
                 </Button>
                 <Button href="/family/dashboard" variant="ghost">
-                  Dashboard
+                  {t("Dashboard")}
                 </Button>
               </div>
             </Card>
@@ -308,7 +310,7 @@ export default function CareNeedsPage() {
             <Card className="p-6 md:p-8">
               {section === "mobility" && (
                 <SectionShell
-                  title="Mobility"
+                  title={t("Mobility")}
                   subtitle="How does the senior get around today? Select all that apply."
                 >
                   <MultiChip
@@ -321,7 +323,7 @@ export default function CareNeedsPage() {
 
               {section === "adls" && (
                 <SectionShell
-                  title="Daily activities"
+                  title={t("Daily activities")}
                   subtitle="For each activity, choose the closest level of support."
                 >
                   <div className="space-y-5">
@@ -353,7 +355,7 @@ export default function CareNeedsPage() {
 
               {section === "medication" && (
                 <SectionShell
-                  title="Medication"
+                  title={t("Medication")}
                   subtitle="Rough answers are fine, you can attach a full list in Documents later."
                 >
                   <div className="space-y-5">
@@ -368,12 +370,12 @@ export default function CareNeedsPage() {
                     </div>
                     {care.medication.takesMeds === "yes" && (
                       <>
-                        <Field label="Approximate number of medications" optional>
+                        <Field label={t("Approximate number of medications")} optional>
                           <input
                             className={fieldClass}
                             value={care.medication.approximateCount}
                             onChange={(e) => patchMed({ approximateCount: e.target.value })}
-                            placeholder="e.g. 6–8"
+                            placeholder={t("e.g. 6–8")}
                           />
                         </Field>
                         {(
@@ -395,13 +397,13 @@ export default function CareNeedsPage() {
                             </div>
                           </div>
                         ))}
-                        <Field label="Notes" optional>
+                        <Field label={t("Notes")} optional>
                           <textarea
                             rows={3}
                             className={fieldClass}
                             value={care.medication.notes}
                             onChange={(e) => patchMed({ notes: e.target.value })}
-                            placeholder="Timing, pharmacy, recent changes…"
+                            placeholder={t("Timing, pharmacy, recent changes…")}
                           />
                         </Field>
                       </>
@@ -412,7 +414,7 @@ export default function CareNeedsPage() {
 
               {section === "cognition" && (
                 <SectionShell
-                  title="Memory & cognition"
+                  title={t("Memory & cognition")}
                   subtitle="Select what fits. This is for matching communities, not diagnosing."
                 >
                   <MultiChip
@@ -425,7 +427,7 @@ export default function CareNeedsPage() {
                       patch({ cognition: next });
                     }}
                   />
-                  <Field label="Additional notes" optional>
+                  <Field label={t("Additional notes")} optional>
                     <textarea
                       rows={3}
                       className={fieldClass}
@@ -438,7 +440,7 @@ export default function CareNeedsPage() {
 
               {section === "health" && (
                 <SectionShell
-                  title="General health"
+                  title={t("General health")}
                   subtitle="Flag relevant supports. Details can stay brief."
                 >
                   <MultiChip
@@ -446,24 +448,24 @@ export default function CareNeedsPage() {
                     selected={care.health}
                     onToggle={(id) => patch({ health: toggleId(care.health, id) })}
                   />
-                  <Field label="Main medical conditions" optional>
+                  <Field label={t("Main medical conditions")} optional>
                     <textarea
                       rows={2}
                       className={fieldClass}
                       value={care.healthConditions}
                       onChange={(e) => patch({ healthConditions: e.target.value })}
-                      placeholder="e.g. Hypertension, mild COPD"
+                      placeholder={t("e.g. Hypertension, mild COPD")}
                     />
                   </Field>
-                  <Field label="Allergies" optional>
+                  <Field label={t("Allergies")} optional>
                     <input
                       className={fieldClass}
                       value={care.allergiesDetail}
                       onChange={(e) => patch({ allergiesDetail: e.target.value })}
-                      placeholder="e.g. Penicillin, rash"
+                      placeholder={t("e.g. Penicillin, rash")}
                     />
                   </Field>
-                  <Field label="Other health notes" optional>
+                  <Field label={t("Other health notes")} optional>
                     <textarea
                       rows={2}
                       className={fieldClass}
@@ -476,7 +478,7 @@ export default function CareNeedsPage() {
 
               {section === "mental" && (
                 <SectionShell
-                  title="Mental health & behavior"
+                  title={t("Mental health & behavior")}
                   subtitle="Share what communities should be prepared to support."
                 >
                   <MultiChip
@@ -484,7 +486,7 @@ export default function CareNeedsPage() {
                     selected={care.mental}
                     onToggle={(id) => patch({ mental: toggleId(care.mental, id) })}
                   />
-                  <Field label="Notes" optional>
+                  <Field label={t("Notes")} optional>
                     <textarea
                       rows={3}
                       className={fieldClass}
@@ -497,7 +499,7 @@ export default function CareNeedsPage() {
 
               {section === "preferences" && (
                 <SectionShell
-                  title="Personal preferences"
+                  title={t("Personal preferences")}
                   subtitle="Lifestyle fit matters as much as clinical support."
                 >
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -522,7 +524,7 @@ export default function CareNeedsPage() {
                   onClick={goPrev}
                   disabled={section === "mobility"}
                 >
-                  Back
+                  {t("Back")}
                 </Button>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="secondary" onClick={() => setSection("summary")}>

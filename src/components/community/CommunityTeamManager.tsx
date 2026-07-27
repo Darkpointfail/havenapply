@@ -10,12 +10,14 @@ import {
   type CommunityTeamRole,
 } from "@/lib/community-portal";
 import { useCommunityPortal } from "@/lib/community-portal-store";
+import { useT } from "@/lib/i18n/locale";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand";
 
 export function CommunityTeamManager() {
-  const {
+
+  const t = useT();  const {
     ready,
     workspace,
     can,
@@ -31,7 +33,7 @@ export function CommunityTeamManager() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading team…
+        {t("Loading team…")}
       </div>
     );
   }
@@ -71,25 +73,25 @@ export function CommunityTeamManager() {
         {can("manageTeam") && (
           <section className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-              Invite
+              {t("Invite")}
             </h2>
             <label className="block text-sm">
-              Name
+              {t("Name")}
               <input
                 className={inputClass}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Full name"
+                placeholder={t("Full name")}
               />
             </label>
             <label className="block text-sm">
-              Email
+              {t("Email")}
               <input
                 type="email"
                 className={inputClass}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@community.com"
+                placeholder={t("name@community.com")}
               />
             </label>
             <label className="block text-sm">
@@ -113,7 +115,7 @@ export function CommunityTeamManager() {
               disabled={!name.trim() || !email.trim()}
               onClick={invite}
             >
-              Send invite
+              {t("Send invite")}
             </Button>
           </section>
         )}

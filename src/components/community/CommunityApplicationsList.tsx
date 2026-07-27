@@ -18,6 +18,7 @@ import {
 } from "@/lib/community-portal";
 import type { ApplicationStatus } from "@/data/applications";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -61,6 +62,7 @@ function decisionNote(app: CommunityApplication) {
 }
 
 function ApplicationsListInner() {
+  const t = useT();
   const params = useSearchParams();
   const raw = params.get("filter");
   const initial = (
@@ -105,7 +107,7 @@ function ApplicationsListInner() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading applications…
+        {t("Loading applications…")}
       </div>
     );
   }
@@ -152,7 +154,7 @@ function ApplicationsListInner() {
         </div>
         <input
           className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm sm:max-w-xs"
-          placeholder="Search senior or family…"
+          placeholder={t("Search senior or family…")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -214,7 +216,8 @@ function ApplicationsListInner() {
 }
 
 export function CommunityApplicationsList() {
-  return (
+
+  const t = useT();  return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">

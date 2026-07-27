@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/locale";
 
 const bigSteps = [
   {
@@ -69,6 +72,7 @@ const details = [
 ];
 
 export default function HowItWorksPage() {
+  const t = useT();
   return (
     <div className="bg-bg">
       {/* Hero */}
@@ -79,21 +83,21 @@ export default function HowItWorksPage() {
         />
         <div className="relative mx-auto max-w-[1040px] px-5 pb-12 pt-12 md:px-8 md:pb-16 md:pt-16">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">
-            How it works
+            {t("How it works")}
           </p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
-            One profile. Then apply everywhere.
+            {t("One profile. Then apply everywhere.")}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
-            Create the dossier once, discover the right communities, and send applications without
+            {t("Create the dossier once, discover the right communities, and send applications without")}
             starting over, so your family can move forward with clarity.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button href="/family/dashboard" size="lg">
-              Create a family profile
+              {t("Create a family profile")}
             </Button>
             <Button href="/for-communities" size="lg" variant="secondary">
-              I’m a community
+              {t("I’m a community")}
             </Button>
           </div>
         </div>
@@ -103,7 +107,7 @@ export default function HowItWorksPage() {
       <section className="border-y border-line/80 bg-surface/80">
         <div className="mx-auto max-w-[1040px] px-5 py-14 md:px-8 md:py-16">
           <p className="text-center text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-            The whole journey in three steps
+            {t("The whole journey in three steps")}
           </p>
 
           <ol className="relative mt-10 grid gap-6 md:grid-cols-3 md:gap-5">
@@ -119,15 +123,15 @@ export default function HowItWorksPage() {
                 <span className="relative z-[1] mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand/25 bg-brand-soft text-xl font-semibold text-brand">
                   {step.n}
                 </span>
-                <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink">{step.title}</h2>
-                <p className="mt-2 text-sm font-medium text-ink-secondary">{step.short}</p>
-                <p className="mt-3 text-sm leading-relaxed text-ink-muted">{step.detail}</p>
+                <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink">{t(step.title)}</h2>
+                <p className="mt-2 text-sm font-medium text-ink-secondary">{t(step.short)}</p>
+                <p className="mt-3 text-sm leading-relaxed text-ink-muted">{t(step.detail)}</p>
               </li>
             ))}
           </ol>
 
           <p className="mt-8 text-center text-sm text-ink-faint">
-            That’s it. Everything else is detail to make those three steps easier.
+            {t("That’s it. Everything else is detail to make those three steps easier.")}
           </p>
         </div>
       </section>
@@ -136,10 +140,10 @@ export default function HowItWorksPage() {
       <section className="mx-auto max-w-[1040px] px-5 py-16 md:px-8 md:py-20">
         <div className="max-w-xl">
           <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.1rem]">
-            What that looks like in Haven
+            {t("What that looks like in Haven")}
           </h2>
           <p className="mt-3 text-base leading-relaxed text-ink-muted">
-            Each step is designed so you always know what to do next, without admin overwhelm.
+            {t("Each step is designed so you always know what to do next, without admin overwhelm.")}
           </p>
         </div>
 
@@ -148,7 +152,7 @@ export default function HowItWorksPage() {
             const Icon = item.icon;
             return (
               <li
-                key={item.title}
+                key={t(item.title)}
                 className="grid gap-4 rounded-2xl border border-line bg-surface p-4 shadow-xs sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-6 sm:p-5"
               >
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -161,12 +165,12 @@ export default function HowItWorksPage() {
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-semibold tracking-tight text-ink">{item.title}</h3>
+                    <h3 className="text-lg font-semibold tracking-tight text-ink">{t(item.title)}</h3>
                     <span className="rounded-full bg-bg-soft px-2.5 py-0.5 text-[11px] font-medium text-ink-muted">
                       {item.hint}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{item.body}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{t(item.body)}</p>
                 </div>
                 <span className="hidden text-xs font-semibold tabular-nums text-ink-faint sm:block">
                   {String(i + 1).padStart(2, "0")}
@@ -183,7 +187,7 @@ export default function HowItWorksPage() {
           <div className="rounded-[1.35rem] border border-line bg-surface p-6 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">Families</p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-              Create once. Stay in control.
+              {t("Create once. Stay in control.")}
             </h3>
             <ul className="mt-4 space-y-2.5">
               {[
@@ -210,7 +214,7 @@ export default function HowItWorksPage() {
               Communities
             </p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-              Receive. Review. Decide.
+              {t("Receive. Review. Decide.")}
             </h3>
             <ul className="mt-4 space-y-2.5">
               {[
@@ -243,16 +247,16 @@ export default function HowItWorksPage() {
             </span>
             <div>
               <h3 className="text-lg font-semibold tracking-tight text-ink">
-                Prefer talking it through?
+                {t("Prefer talking it through?")}
               </h3>
               <p className="mt-1 max-w-lg text-sm leading-relaxed text-ink-muted">
-                Haven can gather the profile in a conversation, or you can switch to manual forms
+                {t("Haven can gather the profile in a conversation, or you can switch to manual forms")}
                 anytime. Same result either way.
               </p>
             </div>
           </div>
           <Button href="/family/dashboard" className="shrink-0">
-            Get started
+            {t("Get started")}
           </Button>
         </div>
       </section>
@@ -261,21 +265,21 @@ export default function HowItWorksPage() {
       <section className="px-5 pb-20 md:px-8 md:pb-28">
         <div className="mx-auto max-w-[920px] rounded-[1.75rem] border border-brand/20 bg-gradient-to-br from-brand-soft/80 via-surface to-surface px-6 py-12 text-center md:px-12 md:py-14">
           <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
-            Ready when you are
+            {t("Ready when you are")}
           </h2>
           <p className="mx-auto mt-3 max-w-md text-base text-ink-muted">
-            Start with the profile. Discover communities next. Apply when it feels right.
+            {t("Start with the profile. Discover communities next. Apply when it feels right.")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button href="/family/dashboard" size="lg">
-              Create a family profile
+              {t("Create a family profile")}
             </Button>
             <Button href="/find-senior-living" size="lg" variant="secondary">
-              Browse communities
+              {t("Browse communities")}
             </Button>
           </div>
           <p className="mt-5 text-sm text-ink-faint">
-            Free to create a profile. No application is sent without your approval.
+            {t("Free to create a profile. No application is sent without your approval.")}
           </p>
         </div>
       </section>

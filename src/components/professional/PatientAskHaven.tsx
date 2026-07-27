@@ -14,6 +14,7 @@ import {
   type Patient,
 } from "@/lib/professional-data";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -94,6 +95,7 @@ export function PatientAskHaven({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const suggestions = useMemo(() => dossierAiSuggestions(patient), [patient]);
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([
@@ -124,7 +126,7 @@ export function PatientAskHaven({
           <div>
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
               <Sparkles size={16} className="text-brand" />
-              AI Assistant
+              {t("AI Assistant")}
             </p>
             <p className="mt-0.5 text-xs text-ink-muted">
               Context: {patientName(patient)} · live dossier
@@ -134,7 +136,7 @@ export function PatientAskHaven({
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-ink-muted hover:bg-bg-soft"
-            aria-label="Close assistant"
+            aria-label={t("Close assistant")}
           >
             <X size={16} />
           </button>
@@ -187,7 +189,7 @@ export function PatientAskHaven({
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about this patient…"
+              placeholder={t("Ask about this patient…")}
               className="flex-1 rounded-xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-brand"
             />
             <Button type="submit" size="sm" disabled={!input.trim()}>

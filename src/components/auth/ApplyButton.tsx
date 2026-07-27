@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 import {
   applySignInHref,
   canUseFamilyApplyFlow,
@@ -30,7 +31,8 @@ export function ApplyButton({
   /** @deprecated ignored */
   autoOpen?: boolean;
 }) {
-  const { user, ready } = useAuth();
+
+  const t = useT();  const { user, ready } = useAuth();
 
   if (!ready) {
     return (
@@ -59,7 +61,7 @@ export function ApplyButton({
         variant={variant}
         className={className}
       >
-        Sign in to apply
+        {t("Sign in to apply")}
       </Button>
     );
   }

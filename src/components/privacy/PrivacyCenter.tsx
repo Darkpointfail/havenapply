@@ -17,6 +17,7 @@ import {
   maskSensitiveText,
 } from "@/lib/privacy-security";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 type Tab = "consent" | "privacy" | "security" | "access";
 

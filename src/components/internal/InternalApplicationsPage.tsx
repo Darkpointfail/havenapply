@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
 import { formatAdminTime, type AppHealthStatus } from "@/lib/internal-admin";
+import { useT } from "@/lib/i18n/locale";
 
 function healthTone(
   h: AppHealthStatus,
@@ -28,7 +29,8 @@ function healthTone(
 }
 
 export function InternalApplicationsPage() {
-  const { ready, workspace, interveneApplication } = useInternalAdmin();
+
+  const t = useT();  const { ready, workspace, interveneApplication } = useInternalAdmin();
   const [filter, setFilter] = useState("all");
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -46,7 +48,7 @@ export function InternalApplicationsPage() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading applications…
+        {t("Loading applications…")}
       </div>
     );
   }
@@ -54,7 +56,7 @@ export function InternalApplicationsPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Applications"
+        title={t("Applications")}
         description="Monitor statuses, stalled files, response times, and disputes, without exposing sensitive clinical detail."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },

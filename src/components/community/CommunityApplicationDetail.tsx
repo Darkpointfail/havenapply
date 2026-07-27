@@ -35,6 +35,7 @@ import {
   type TransitionCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const DOC_ORDER = ["Identity", "Medical", "Financial", "Legal", "Other"] as const;
 
@@ -114,7 +115,8 @@ function ChipList({ items }: { items: string[] }) {
 }
 
 export function CommunityApplicationDetail() {
-  const params = useParams();
+
+  const t = useT();  const params = useParams();
   const router = useRouter();
   const id = String(params.id || "");
   const {
@@ -188,12 +190,12 @@ export function CommunityApplicationDetail() {
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-lg font-semibold">Application not found</p>
         <p className="mt-2 text-sm text-ink-muted">
-          This dossier isn’t in your community workspace. Open Transition for accepted cases, or
-          Admissions for the live review queue.
+          {t("This dossier isn’t in your community workspace. Open Transition for accepted cases, or")}
+          {t("Admissions for the live review queue.")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button href="/community/transition" size="sm">
-            Transition
+            {t("Transition")}
           </Button>
           <Button href="/community/dashboard" size="sm" variant="secondary">
             Admissions
@@ -320,7 +322,7 @@ export function CommunityApplicationDetail() {
             ) : null}
           </div>
 
-          <Section title="AI executive summary">
+          <Section title={t("AI executive summary")}>
             <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs md:p-6">
               <p className="text-[15px] leading-relaxed text-ink-secondary whitespace-pre-line">
                 {app.executiveSummary || app.summary}
@@ -328,83 +330,83 @@ export function CommunityApplicationDetail() {
             </div>
           </Section>
 
-          <Section title="Client file">
+          <Section title={t("Client file")}>
             <p className="text-sm text-ink-muted">
-              Complete dossier submitted with the application, identity, clinical history, medications,
+              {t("Complete dossier submitted with the application, identity, clinical history, medications,")}
               and prior placements.
             </p>
             <div className="mt-4 space-y-4">
-              <SubCard id="section-identity" title="Identity & demographics">
+              <SubCard id="section-identity" title={t("Identity & demographics")}>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Field label="Full name" value={app.seniorName} />
-                  <Field label="Age" value={`${app.seniorAge} years`} />
+                  <Field label={t("Full name")} value={app.seniorName} />
+                  <Field label={t("Age")} value={`${app.seniorAge} years`} />
                   <Field
-                    label="Date of birth"
+                    label={t("Date of birth")}
                     value={
                       dossier?.dateOfBirth
                         ? formatPortalDate(dossier.dateOfBirth)
                         : undefined
                     }
                   />
-                  <Field label="Gender" value={dossier?.gender} />
-                  <Field label="Primary language" value={dossier?.primaryLanguage} />
-                  <Field label="Marital status" value={dossier?.maritalStatus} />
-                  <Field label="Height" value={dossier?.height} />
-                  <Field label="Weight" value={dossier?.weight} />
-                  <Field label="Blood type" value={dossier?.bloodType} />
-                  <Field label="Care type requested" value={applicationCareType(app)} />
+                  <Field label={t("Gender")} value={dossier?.gender} />
+                  <Field label={t("Primary language")} value={dossier?.primaryLanguage} />
+                  <Field label={t("Marital status")} value={dossier?.maritalStatus} />
+                  <Field label={t("Height")} value={dossier?.height} />
+                  <Field label={t("Weight")} value={dossier?.weight} />
+                  <Field label={t("Blood type")} value={dossier?.bloodType} />
+                  <Field label={t("Care type requested")} value={applicationCareType(app)} />
                   <Field
-                    label="Preferred move-in"
+                    label={t("Preferred move-in")}
                     value={
                       app.moveInRequested
                         ? formatPortalDate(app.moveInRequested)
                         : "Flexible"
                     }
                   />
-                  <Field label="Referral source" value={app.referralSource} />
+                  <Field label={t("Referral source")} value={app.referralSource} />
                 </div>
               </SubCard>
 
-              <SubCard id="section-family" title="Living situation & contacts">
+              <SubCard id="section-family" title={t("Living situation & contacts")}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Current address" value={dossier?.currentAddress} />
+                  <Field label={t("Current address")} value={dossier?.currentAddress} />
                   <Field
-                    label="Current living situation"
+                    label={t("Current living situation")}
                     value={dossier?.currentLivingSituation}
                   />
                   <Field
-                    label="Primary contact"
+                    label={t("Primary contact")}
                     value={`${app.family.name} · ${app.family.relationship}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
                   />
                   <Field
-                    label="Emergency contact"
+                    label={t("Emergency contact")}
                     value={
                       app.emergencyContact
                         ? `${app.emergencyContact.name} · ${app.emergencyContact.relationship}\n${app.emergencyContact.phone}`
                         : undefined
                     }
                   />
-                  <Field label="Social supports" value={dossier?.socialSupports} />
-                  <Field label="Payment method" value={app.paymentMethod} />
+                  <Field label={t("Social supports")} value={dossier?.socialSupports} />
+                  <Field label={t("Payment method")} value={app.paymentMethod} />
                 </div>
               </SubCard>
 
-              <SubCard title="Insurance & clinical contacts">
+              <SubCard title={t("Insurance & clinical contacts")}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Primary insurance" value={dossier?.insurancePrimary} />
-                  <Field label="Secondary insurance" value={dossier?.insuranceSecondary} />
-                  <Field label="Primary physician" value={dossier?.primaryPhysician} />
-                  <Field label="Physician phone" value={dossier?.physicianPhone} />
-                  <Field label="Pharmacy" value={dossier?.pharmacy} />
-                  <Field label="Code status" value={dossier?.codeStatus} />
+                  <Field label={t("Primary insurance")} value={dossier?.insurancePrimary} />
+                  <Field label={t("Secondary insurance")} value={dossier?.insuranceSecondary} />
+                  <Field label={t("Primary physician")} value={dossier?.primaryPhysician} />
+                  <Field label={t("Physician phone")} value={dossier?.physicianPhone} />
+                  <Field label={t("Pharmacy")} value={dossier?.pharmacy} />
+                  <Field label={t("Code status")} value={dossier?.codeStatus} />
                   <Field
-                    label="Advance directives"
+                    label={t("Advance directives")}
                     value={dossier?.advanceDirectives}
                   />
                 </div>
               </SubCard>
 
-              <SubCard id="section-clinical" title="Pathologies & diagnoses">
+              <SubCard id="section-clinical" title={t("Pathologies & diagnoses")}>
                 {dossier?.pathologies?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[520px] text-left text-sm">
@@ -437,7 +439,7 @@ export function CommunityApplicationDetail() {
                 )}
               </SubCard>
 
-              <SubCard id="section-medications" title="Medications">
+              <SubCard id="section-medications" title={t("Medications")}>
                 {dossier?.medications?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[640px] text-left text-sm">
@@ -476,7 +478,7 @@ export function CommunityApplicationDetail() {
                 )}
               </SubCard>
 
-              <SubCard title="Allergies">
+              <SubCard title={t("Allergies")}>
                 {dossier?.allergies?.length ? (
                   <ul className="space-y-2">
                     {dossier.allergies.map((a) => (
@@ -497,7 +499,7 @@ export function CommunityApplicationDetail() {
                 )}
               </SubCard>
 
-              <SubCard title="Previous establishments & placements">
+              <SubCard title={t("Previous establishments & placements")}>
                 {dossier?.previousFacilities?.length ? (
                   <ul className="space-y-3">
                     {dossier.previousFacilities.map((f) => (
@@ -526,15 +528,15 @@ export function CommunityApplicationDetail() {
               </SubCard>
 
               <div className="grid gap-4 lg:grid-cols-2">
-                <SubCard title="Hospitalizations">
+                <SubCard title={t("Hospitalizations")}>
                   <ChipList items={dossier?.hospitalizations || []} />
                 </SubCard>
-                <SubCard title="Surgeries">
+                <SubCard title={t("Surgeries")}>
                   <ChipList items={dossier?.surgeries || []} />
                 </SubCard>
               </div>
 
-              <SubCard title="ADLs & functional status">
+              <SubCard title={t("ADLs & functional status")}>
                 {dossier?.adls?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
@@ -559,20 +561,20 @@ export function CommunityApplicationDetail() {
                 )}
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Field
-                    label="Mobility aids"
+                    label={t("Mobility aids")}
                     value={dossier?.mobilityAids?.join(" · ")}
                   />
-                  <Field label="Diet" value={dossier?.diet} />
-                  <Field label="Continence" value={dossier?.continence} />
-                  <Field label="Hearing / vision" value={dossier?.hearingVision} />
-                  <Field label="Fall history" value={dossier?.fallHistory} />
-                  <Field label="Smoking / alcohol" value={dossier?.smokingAlcohol} />
+                  <Field label={t("Diet")} value={dossier?.diet} />
+                  <Field label={t("Continence")} value={dossier?.continence} />
+                  <Field label={t("Hearing / vision")} value={dossier?.hearingVision} />
+                  <Field label={t("Fall history")} value={dossier?.fallHistory} />
+                  <Field label={t("Smoking / alcohol")} value={dossier?.smokingAlcohol} />
                 </div>
               </SubCard>
 
-              <SubCard title="Cognition & behaviors">
+              <SubCard title={t("Cognition & behaviors")}>
                 <div className="grid gap-4 sm:grid-cols-1">
-                  <Field label="Cognitive notes" value={dossier?.cognitiveNotes} />
+                  <Field label={t("Cognitive notes")} value={dossier?.cognitiveNotes} />
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
                       Behaviors
@@ -583,7 +585,7 @@ export function CommunityApplicationDetail() {
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                      Care needs
+                      {t("Care needs")}
                     </p>
                     <div className="mt-2">
                       <ChipList items={app.careNeeds} />
@@ -592,15 +594,15 @@ export function CommunityApplicationDetail() {
                 </div>
               </SubCard>
 
-              <SubCard title="Vaccinations">
+              <SubCard title={t("Vaccinations")}>
                 <ChipList items={dossier?.vaccinations || []} />
               </SubCard>
             </div>
           </Section>
 
-          <Section id="section-documents" title="Documents">
+          <Section id="section-documents" title={t("Documents")}>
             <p className="text-sm text-ink-muted">
-              Verified before submission. Organized for review, not for collection.
+              {t("Verified before submission. Organized for review, not for collection.")}
             </p>
             <div className="mt-4 space-y-6">
               {DOC_ORDER.map((cat) => {
@@ -642,20 +644,20 @@ export function CommunityApplicationDetail() {
             </div>
           </Section>
 
-          <Section title="Messages">
+          <Section title={t("Messages")}>
             <div className="rounded-2xl border border-line bg-surface p-6 shadow-xs">
               <p className="text-sm text-ink-muted">
-                Talk with the family inside HavenApply. The conversation stays linked to this
+                {t("Talk with the family inside HavenApply. The conversation stays linked to this")}
                 application.
               </p>
               <Button href={messageHref} className="mt-4" size="sm">
                 <MessageSquare size={14} />
-                Open conversation
+                {t("Open conversation")}
               </Button>
             </div>
           </Section>
 
-          <Section title="Timeline">
+          <Section title={t("Timeline")}>
             <ol className="space-y-0">
               {app.auditLog
                 .slice()
@@ -706,14 +708,14 @@ export function CommunityApplicationDetail() {
                     </p>
                   ) : (
                     <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
-                      All transition steps complete, ready to close the dossier.
+                      {t("All transition steps complete, ready to close the dossier.")}
                     </p>
                   )}
 
                   <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto]">
                     <div>
                       <label className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                        Confirmed move-in date
+                        {t("Confirmed move-in date")}
                       </label>
                       <input
                         type="date"
@@ -730,7 +732,7 @@ export function CommunityApplicationDetail() {
                         disabled={!can("acceptDecline")}
                         onClick={saveMoveInDate}
                       >
-                        Save date
+                        {t("Save date")}
                       </Button>
                     </div>
                   </div>
@@ -750,7 +752,7 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          Close dossier
+                          {t("Close dossier")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
                           {transitionProgress?.complete
@@ -770,10 +772,10 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          Message family
+                          {t("Message family")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
-                          Contracts, payment, logistics
+                          {t("Contracts, payment, logistics")}
                         </span>
                       </span>
                     </button>
@@ -787,10 +789,10 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          Transition board
+                          {t("Transition board")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
-                          All accepted dossiers
+                          {t("All accepted dossiers")}
                         </span>
                       </span>
                     </Link>
@@ -801,12 +803,12 @@ export function CommunityApplicationDetail() {
                   {!reviewProgress?.complete ? (
                     <p className="mb-4 rounded-xl bg-warn-soft/50 px-3 py-2.5 text-sm text-ink-secondary">
                       Review still in progress ({reviewProgress?.done}/{reviewProgress?.total}).
-                      Check identity, clinical file, medications, documents, family contacts, and
+                      {t("Check identity, clinical file, medications, documents, family contacts, and")}
                       program fit before approving.
                     </p>
                   ) : (
                     <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
-                      All review checks complete, ready to finalize.
+                      {t("All review checks complete, ready to finalize.")}
                     </p>
                   )}
                   <div className="grid gap-3 md:grid-cols-3">
@@ -843,10 +845,10 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          Request information
+                          {t("Request information")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
-                          Message the family
+                          {t("Message the family")}
                         </span>
                       </span>
                     </button>
@@ -867,7 +869,7 @@ export function CommunityApplicationDetail() {
                       <span>
                         <span className="block text-base font-semibold text-ink">Decline</span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
-                          Select a reason
+                          {t("Select a reason")}
                         </span>
                       </span>
                     </button>
@@ -904,7 +906,7 @@ export function CommunityApplicationDetail() {
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
             <h2 className="text-xl font-semibold tracking-tight">Confirm approval</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              You completed the guided review. After accept, this dossier moves to Transition for
+              {t("You completed the guided review. After accept, this dossier moves to Transition for")}
               contracts, payment, and move-in details.
             </p>
             <ul className="mt-5 space-y-2">
@@ -937,7 +939,7 @@ export function CommunityApplicationDetail() {
                 value={auditNote}
                 onChange={(e) => setAuditNote(e.target.value)}
                 className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
-                placeholder="Notes for your team…"
+                placeholder={t("Notes for your team…")}
               />
             </label>
             <div className="mt-5 flex gap-2">
@@ -947,7 +949,7 @@ export function CommunityApplicationDetail() {
                 className="flex-1"
                 onClick={() => setAuditOpen(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 type="button"
@@ -955,7 +957,7 @@ export function CommunityApplicationDetail() {
                 disabled={!reviewProgress?.complete}
                 onClick={confirmApprove}
               >
-                Approve admission
+                {t("Approve admission")}
               </Button>
             </div>
           </div>
@@ -973,7 +975,7 @@ export function CommunityApplicationDetail() {
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
             <h2 className="text-xl font-semibold tracking-tight">Decline application</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Choose a reason. The family receives a clear update in HavenApply.
+              {t("Choose a reason. The family receives a clear update in HavenApply.")}
             </p>
             <div className="mt-5 space-y-2">
               {DECLINE_REASONS.map((reason) => (
@@ -1013,7 +1015,7 @@ export function CommunityApplicationDetail() {
                 className="flex-1"
                 onClick={() => setDeclineOpen(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="button" variant="danger" className="flex-1" onClick={confirmDecline}>
                 Decline
@@ -1034,7 +1036,7 @@ export function CommunityApplicationDetail() {
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
             <h2 className="text-xl font-semibold tracking-tight">Close dossier</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Confirm that contracts, payment, and move-in details are complete. The dossier moves
+              {t("Confirm that contracts, payment, and move-in details are complete. The dossier moves")}
               to History.
             </p>
             <ul className="mt-5 space-y-2">
@@ -1062,7 +1064,7 @@ export function CommunityApplicationDetail() {
                 value={closeNote}
                 onChange={(e) => setCloseNote(e.target.value)}
                 className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
-                placeholder="e.g. Move-in May 12 · deposit received"
+                placeholder={t("e.g. Move-in May 12 · deposit received")}
               />
             </label>
             <div className="mt-5 flex gap-2">
@@ -1072,7 +1074,7 @@ export function CommunityApplicationDetail() {
                 className="flex-1"
                 onClick={() => setCloseOpen(false)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 type="button"
@@ -1080,7 +1082,7 @@ export function CommunityApplicationDetail() {
                 disabled={!transitionProgress?.complete}
                 onClick={confirmClose}
               >
-                Close dossier
+                {t("Close dossier")}
               </Button>
             </div>
           </div>

@@ -10,8 +10,10 @@ import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { resendConfirmation } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n/locale";
 
 function VerifyInner() {
+  const t = useT();
   const { confirmEmail } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") || "";
@@ -73,14 +75,14 @@ function VerifyInner() {
         <p className="mt-2 text-ink-muted">{AUTH_MESSAGES.confirmSuccess}</p>
         <Card className="mt-8 space-y-3 p-6">
           <p className="text-sm text-ink-muted">
-            After you sign in, you can choose to talk with Haven or fill the profile with forms.
+            {t("After you sign in, you can choose to talk with Haven or fill the profile with forms.")}
           </p>
           <Button
             href={`/sign-in?next=${encodeURIComponent(next.startsWith("/") ? next : "/setup")}`}
             className="w-full"
             size="lg"
           >
-            Sign In
+            {t("Sign In")}
           </Button>
         </Card>
       </div>
@@ -106,11 +108,11 @@ function VerifyInner() {
           </Button>
         ) : (
           <Button href="/check-email" className="w-full">
-            Request a new link
+            {t("Request a new link")}
           </Button>
         )}
         <Button href="/sign-in" variant="ghost" className="w-full">
-          Back to Sign In
+          {t("Back to Sign In")}
         </Button>
         {newToken && email && (
           <div className="pt-2">
@@ -125,7 +127,7 @@ function VerifyInner() {
       </Card>
       <p className="mt-6 text-sm text-ink-muted">
         <Link href="/get-started" className="text-brand">
-          Create an account
+          {t("Create an account")}
         </Link>
       </p>
     </div>
@@ -133,7 +135,8 @@ function VerifyInner() {
 }
 
 export default function VerifyPage() {
-  return (
+
+  const t = useT();  return (
     <Suspense>
       <VerifyInner />
     </Suspense>

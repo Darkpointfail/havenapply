@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useInternalAdmin } from "@/lib/internal-admin-store";
+import { useT } from "@/lib/i18n/locale";
 import {
   formatAdminTime,
   type PartnershipStatus,
@@ -30,7 +31,8 @@ function statusTone(
 }
 
 export function InternalCommunitiesPage() {
-  const {
+
+  const t = useT();  const {
     ready,
     workspace,
     setCommunityStatus,
@@ -48,7 +50,7 @@ export function InternalCommunitiesPage() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading communities…
+        {t("Loading communities…")}
       </div>
     );
   }
@@ -56,7 +58,7 @@ export function InternalCommunitiesPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title="Communities"
+        title={t("Communities")}
         description="Review partnership requests, verify listings, and control published pricing & availability."
         breadcrumbs={[
           { label: "Internal", href: "/internal/overview" },

@@ -27,6 +27,7 @@ import { Card } from "@/components/ui/Card";
 import { useFamilyData } from "@/lib/family-data";
 import { toDisplayApplication } from "@/lib/family-applications";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale";
 
 const TYPE_LABEL: Record<TimelineEventType, string> = {
   created: "Creation",
@@ -42,7 +43,8 @@ const TYPE_LABEL: Record<TimelineEventType, string> = {
 };
 
 export default function ApplicationDetailPage() {
-  const params = useParams();
+
+  const t = useT();  const params = useParams();
   const router = useRouter();
   const id = String(params.id || "");
   const {
@@ -76,7 +78,7 @@ export default function ApplicationDetailPage() {
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-xl font-semibold">Application not found</p>
         <Button href="/family/applications" className="mt-4">
-          Back to applications
+          {t("Back to applications")}
         </Button>
       </div>
     );
@@ -153,35 +155,35 @@ export default function ApplicationDetailPage() {
         <div className="space-y-6">
           {/* Snapshot */}
           <Card className="grid gap-3 p-4 sm:grid-cols-2">
-            <Snap label="Contact" value={`${app.contactName} · ${app.contactRole}`} />
+            <Snap label={t("Contact")} value={`${app.contactName} · ${app.contactRole}`} />
             <Snap
-              label="Appointment"
+              label={t("Appointment")}
               value={app.upcomingAppointment || "None scheduled"}
             />
             <Snap
-              label="Missing documents"
+              label={t("Missing documents")}
               value={app.missingDocuments.join(", ") || "None"}
             />
             <Snap
-              label="Unread messages"
+              label={t("Unread messages")}
               value={String(app.unreadMessages)}
             />
             {familyApp && (
               <Snap
-                label="Family access"
+                label={t("Family access")}
                 value={familyApp.familyAccess.join(", ") || "Primary only"}
               />
             )}
             {familyApp?.communityDecision && (
               <div className="sm:col-span-2 rounded-xl border border-brand/20 bg-brand-soft/30 px-3 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-brand">
-                  Private community response
+                  {t("Private community response")}
                 </p>
                 <p className="mt-0.5 text-sm font-medium">
                   {familyApp.communityDecision.note}
                 </p>
                 <p className="mt-1 text-[10px] text-ink-faint">
-                  Not visible to other communities.
+                  {t("Not visible to other communities.")}
                 </p>
               </div>
             )}
@@ -191,7 +193,7 @@ export default function ApplicationDetailPage() {
           <section>
             <h2 className="text-lg font-semibold">Timeline</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Creation, send, reception, reviews, requests, documents, messages, visits, and
+              {t("Creation, send, reception, reviews, requests, documents, messages, visits, and")}
               decisions.
             </p>
             <ol className="relative mt-4 space-y-0 border-l border-line pl-5">
@@ -220,7 +222,7 @@ export default function ApplicationDetailPage() {
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
           <Card className="space-y-2 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-              Actions
+              {t("Actions")}
             </p>
             <Button
               href={`/family/documents?attach=${app.id}`}
@@ -273,7 +275,7 @@ export default function ApplicationDetailPage() {
               variant="ghost"
               className="w-full justify-start"
             >
-              View community
+              {t("View community")}
             </Button>
           </Card>
 
@@ -281,12 +283,12 @@ export default function ApplicationDetailPage() {
             <>
               <Card className="space-y-2 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                  Schedule a visit
+                  {t("Schedule a visit")}
                 </p>
                 <input
                   value={tourWhen}
                   onChange={(e) => setTourWhen(e.target.value)}
-                  placeholder="e.g. Sat Jul 25 · 11:00 AM"
+                  placeholder={t("e.g. Sat Jul 25 · 11:00 AM")}
                   className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
                 />
                 <Button
@@ -306,12 +308,12 @@ export default function ApplicationDetailPage() {
 
               <Card className="space-y-2 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                  Invite family
+                  {t("Invite family")}
                 </p>
                 <input
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="Family member name"
+                  placeholder={t("Family member name")}
                   className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
                 />
                 <Button
@@ -359,7 +361,7 @@ export default function ApplicationDetailPage() {
               href={`/family/apply/${app.residenceId}`}
               className="w-full"
             >
-              Continue draft
+              {t("Continue draft")}
             </Button>
           )}
         </aside>

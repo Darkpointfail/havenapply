@@ -48,13 +48,26 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // ignore quota / private mode write failures
+    }
     applyLocale(next);
   }, []);
 
   const toggleLocale = useCallback(() => {
-    setLocale(locale === "en" ? "fr" : "en");
-  }, [locale, setLocale]);
+    setLocaleState((prev) => {
+      const next: Locale = prev === "en" ? "fr" : "en";
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        // ignore
+      }
+      applyLocale(next);
+      return next;
+    });
+  }, []);
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) =>

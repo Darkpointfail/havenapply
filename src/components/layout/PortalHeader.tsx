@@ -226,12 +226,17 @@ export function PortalHeader({
                     )}
                   </Link>
                 ))}
-            <div className="mt-3 flex justify-center">
-              <LanguageSwitcher />
+            <div className="mt-auto space-y-3 border-t border-line pt-4">
+              <div className="px-1">
+                <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                  {t("Language")}
+                </p>
+                <LanguageSwitcher className="w-full justify-center" />
+              </div>
+              <Button variant="secondary" onClick={handleSignOut}>
+                {t("Sign out")}
+              </Button>
             </div>
-            <Button className="mt-auto" variant="secondary" onClick={handleSignOut}>
-              {t("Sign out")}
-            </Button>
           </nav>
         </aside>
       </div>,
@@ -377,7 +382,8 @@ export function PortalHeader({
           </nav>
         </div>
 
-        <div className="flex shrink-0 items-center justify-self-end gap-1">
+        <div className="flex shrink-0 items-center justify-self-end gap-1.5">
+          <LanguageSwitcher compact />
           {homeHref.startsWith("/family") && (
             <Button
               size="sm"
@@ -388,7 +394,6 @@ export function PortalHeader({
               <Sparkles size={14} /> {t("Assistant")}
             </Button>
           )}
-          <LanguageSwitcher compact className="hidden sm:inline-flex" />
           <button
             type="button"
             onClick={toggle}
@@ -429,6 +434,12 @@ export function PortalHeader({
                   role="menu"
                   className="absolute right-0 top-full z-50 mt-1.5 min-w-[220px] rounded-xl border border-line bg-surface p-1.5 shadow-lg"
                 >
+                  <div className="border-b border-line px-2 pb-2 pt-1">
+                    <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                      {t("Language")}
+                    </p>
+                    <LanguageSwitcher className="w-full justify-center" />
+                  </div>
                   {accountGroup.children.map((child) => {
                     const childActive = pathMatches(pathname, child.href);
                     const childBadge = badgeForHref(child.href);

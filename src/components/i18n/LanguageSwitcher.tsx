@@ -16,18 +16,24 @@ export function LanguageSwitcher({
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-lg border border-line bg-bg p-0.5 text-xs font-semibold",
+        "relative z-20 inline-flex shrink-0 items-center rounded-lg border border-line bg-bg p-0.5 text-xs font-semibold",
         className,
       )}
       role="group"
       aria-label={t("Language")}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <button
         type="button"
-        onClick={() => setLocale("en")}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setLocale("en");
+        }}
         className={cn(
-          "rounded-md px-2 py-1 transition",
-          compact ? "min-w-[2rem]" : "px-2.5",
+          "rounded-md px-2 py-1.5 transition",
+          compact ? "min-w-[2.25rem]" : "min-w-[2.5rem] px-2.5",
           locale === "en"
             ? "bg-surface text-ink shadow-xs"
             : "text-ink-muted hover:text-ink",
@@ -40,10 +46,14 @@ export function LanguageSwitcher({
       </button>
       <button
         type="button"
-        onClick={() => setLocale("fr")}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setLocale("fr");
+        }}
         className={cn(
-          "rounded-md px-2 py-1 transition",
-          compact ? "min-w-[2rem]" : "px-2.5",
+          "rounded-md px-2 py-1.5 transition",
+          compact ? "min-w-[2.25rem]" : "min-w-[2.5rem] px-2.5",
           locale === "fr"
             ? "bg-surface text-ink shadow-xs"
             : "text-ink-muted hover:text-ink",

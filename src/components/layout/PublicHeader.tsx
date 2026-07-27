@@ -175,7 +175,7 @@ export function PublicHeader() {
         </div>
 
         <div className="flex items-center justify-self-end gap-1.5">
-          <LanguageSwitcher compact className="hidden sm:inline-flex" />
+          <LanguageSwitcher compact />
           <div className="hidden shrink-0 items-center gap-2.5 lg:flex">
             <button
               type="button"

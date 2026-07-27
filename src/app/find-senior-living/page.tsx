@@ -19,6 +19,7 @@ import {
   computeCompatibility,
   emptySearchFilters,
   filterResidences,
+  originFromPostalCode,
   type SearchFilters,
 } from "@/lib/community-match";
 import { describeFilters, parseSearchIntent } from "@/lib/assistant/search-intent";
@@ -63,6 +64,7 @@ const DISTANCE_PRESETS = [
 
 function countActiveFilters(f: SearchFilters) {
   let n = 0;
+  if (f.postalCode.trim()) n += 1;
   if (f.careTypes.length) n += 1;
   if (f.budgetMax != null) n += 1;
   if (f.maxMiles != null) n += 1;
@@ -133,10 +135,12 @@ function FindCommunitiesInner() {
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const base = emptySearchFilters();
     const q = searchParams.get("q");
+    const zip = searchParams.get("zip") || searchParams.get("postal");
     const miles = searchParams.get("miles");
     const budget = searchParams.get("budget");
     const care = searchParams.get("care");
     if (q) base.query = q;
+    if (zip) base.postalCode = zip;
     if (miles) base.maxMiles = Number(miles);
     if (budget) base.budgetMax = Number(budget);
     if (care) base.careTypes = [care];
@@ -149,14 +153,25 @@ function FindCommunitiesInner() {
   const [visibleCount, setVisibleCount] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const postalOrigin = useMemo(
+    () =>
+      filters.postalCode.trim()
+        ? originFromPostalCode(filters.postalCode, residences)
+        : null,
+    [filters.postalCode],
+  );
+
   const matched = useMemo(() => {
     const filtered = filterResidences(residences, filters);
-    return filtered
-      .map((r) => ({
-        residence: r,
-        match: computeCompatibility(r, data.seniorCreated ? data.senior : null, data.careNeeds),
-      }))
-      .sort((a, b) => b.match.score - a.match.score);
+    const withMatch = filtered.map((r) => ({
+      residence: r,
+      match: computeCompatibility(r, data.seniorCreated ? data.senior : null, data.careNeeds),
+    }));
+    if (filters.postalCode.trim()) {
+      // filterResidences already sorts by proximity; keep that order, nudge score as tie-break only
+      return withMatch;
+    }
+    return withMatch.sort((a, b) => b.match.score - a.match.score);
   }, [filters, data.senior, data.seniorCreated, data.careNeeds]);
 
   useEffect(() => {
@@ -179,7 +194,8 @@ function FindCommunitiesInner() {
 
   const visible = matched.slice(0, visibleCount);
   const activeFilterCount = countActiveFilters(filters);
-  const hasQueryOrFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const hasQueryOrFilters =
+    Boolean(filters.query.trim()) || Boolean(filters.postalCode.trim()) || activeFilterCount > 0;
   const restrictiveEmpty = matched.length === 0 && activeFilterCount >= 3;
 
   const patch = (partial: Partial<SearchFilters>) => setFilters((prev) => ({ ...prev, ...partial }));
@@ -214,7 +230,7 @@ function FindCommunitiesInner() {
             Find senior living
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Search by city, ZIP, or name, then refine by care and budget.
+            Search by postal code, city, or name — then refine by care type, budget, and distance.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -230,15 +246,45 @@ function FindCommunitiesInner() {
               </Button>
             </>
           ) : (
-            <Button href="/sign-in" variant="ghost" size="sm">
-              Sign in
-            </Button>
+            <>
+              <Button href="/get-started" size="sm">
+                Build a profile
+              </Button>
+              <Button href="/sign-in" variant="ghost" size="sm">
+                Sign in
+              </Button>
+            </>
           )}
           <Button href={compareLink} variant="secondary" size="sm">
             Compare{data.compareIds.length ? ` (${data.compareIds.length})` : ""}
           </Button>
         </div>
       </div>
+
+      {!user ? (
+        <div className="mt-4 rounded-2xl border border-brand/20 bg-brand-soft/35 px-4 py-4 md:px-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">
+                Browse freely — build a profile for better matches
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+                You can explore communities by postal code and filters right now. Create a short
+                profile so Haven can suggest the best residences for your loved one’s care needs,
+                budget, and preferred area.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button href="/get-started" size="sm">
+                Build a profile
+              </Button>
+              <Button href="/sign-in" size="sm" variant="secondary">
+                Sign in
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <form
         className="mt-4 flex flex-col gap-2 rounded-xl bg-bg-soft/80 px-3 py-2 ring-1 ring-line md:flex-row md:items-center"
@@ -261,19 +307,41 @@ function FindCommunitiesInner() {
           Apply
         </Button>
       </form>
-      {(filters.query || filters.budgetMax || filters.maxMiles) && (
+      {(filters.query || filters.postalCode || filters.budgetMax || filters.maxMiles) && (
         <p className="mt-1.5 text-xs text-ink-muted">Active: {describeFilters(filters)}</p>
       )}
 
       {/* Search bar */}
       <div className="mt-4 rounded-xl border border-line bg-surface p-2.5 md:p-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <label className="flex w-full shrink-0 items-center gap-2.5 rounded-lg bg-bg px-3 py-2 md:w-[160px]">
+            <span className="sr-only">Postal code</span>
+            <input
+              value={filters.postalCode}
+              onChange={(e) => patch({ postalCode: e.target.value })}
+              placeholder="Postal / ZIP"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
+              aria-label="Postal or ZIP code"
+              inputMode="text"
+              autoComplete="postal-code"
+            />
+            {filters.postalCode ? (
+              <button
+                type="button"
+                className="rounded-full p-1 text-ink-faint hover:bg-bg-soft hover:text-ink"
+                onClick={() => patch({ postalCode: "" })}
+                aria-label="Clear postal code"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+          </label>
           <label className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg bg-bg px-3 py-2">
             <Search size={16} className="shrink-0 text-ink-faint" />
             <input
               value={filters.query}
               onChange={(e) => patch({ query: e.target.value })}
-              placeholder="City, state, ZIP, or community name"
+              placeholder="City, community name, or keyword"
               className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint"
               aria-label="Search"
             />
@@ -321,6 +389,18 @@ function FindCommunitiesInner() {
             ))}
           </div>
         </div>
+        {postalOrigin ? (
+          <p className="mt-2 text-xs text-ink-muted">
+            Showing communities near <span className="font-medium text-ink">{postalOrigin.label}</span>
+            {filters.maxMiles != null ? ` · within ${filters.maxMiles} miles` : ""}.
+            {!user ? " Build a profile to rank these by care fit." : ""}
+          </p>
+        ) : filters.postalCode.trim().length >= 3 ? (
+          <p className="mt-2 text-xs text-warn">
+            We couldn’t pinpoint that postal code yet — try a nearby ZIP (e.g. 78731) or add a city
+            name.
+          </p>
+        ) : null}
 
         {showFilters && (
           <div className="mt-3 space-y-3 border-t border-line pt-3">
@@ -342,6 +422,17 @@ function FindCommunitiesInner() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <label className="block">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Postal / ZIP code
+                </span>
+                <input
+                  className="mt-1 w-full rounded-lg border border-line bg-bg px-2.5 py-2 text-sm outline-none focus:border-brand"
+                  value={filters.postalCode}
+                  onChange={(e) => patch({ postalCode: e.target.value })}
+                  placeholder="e.g. 78731"
+                />
+              </label>
               <label className="block">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                   Monthly budget max
@@ -565,9 +656,15 @@ function FindCommunitiesInner() {
             <Button type="button" size="sm" onClick={resetFilters}>
               Clear filters
             </Button>
-            <Button href="/family/care-needs" variant="secondary" size="sm">
-              Update care needs
-            </Button>
+            {user ? (
+              <Button href="/family/care-needs" variant="secondary" size="sm">
+                Update care needs
+              </Button>
+            ) : (
+              <Button href="/get-started" variant="secondary" size="sm">
+                Build a profile for better matches
+              </Button>
+            )}
           </div>
         </div>
       ) : (

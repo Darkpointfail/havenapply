@@ -56,6 +56,7 @@ export function parseSearchIntent(text: string, base?: SearchFilters): SearchFil
 
 export function describeFilters(f: SearchFilters): string {
   const parts: string[] = [];
+  if (f.postalCode.trim()) parts.push(`postal ${f.postalCode.trim()}`);
   if (f.query) parts.push(`near ${f.query}`);
   if (f.maxMiles) parts.push(`within ${f.maxMiles} miles`);
   if (f.budgetMax) parts.push(`under $${f.budgetMax.toLocaleString()}/mo`);

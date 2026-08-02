@@ -145,7 +145,7 @@ export default function FamilyDashboardPage() {
         id: "profile",
         title: profileTitle,
         detail: profileDetail,
-        href: needsSetup ? "/family/dossier" : "/family/dossier",
+        href: "/family/dossier",
         done: profileDone && careDone,
         minutes: needsSetup ? 15 : 8,
       },

@@ -54,25 +54,32 @@ function ProfileHubInner() {
   const age = seniorAge(senior) || data.person.age;
   const careDone = Boolean(data.careNeeds.completedAt);
 
+  const dossierStarted = Boolean(data.residentDossier?.startedAt || data.residentDossier?.firstName);
   const checklist = useMemo(
     () => [
       {
-        label: "Basic profile",
+        label: "Resident dossier",
         done: data.seniorCreated && completeness >= 40,
-        href: "/onboarding",
+        href: "/family/dossier",
       },
       {
         label: "Care needs",
         done: careDone,
-        href: "/family/care-needs",
+        href: dossierStarted ? "/family/dossier" : "/family/care-needs",
       },
       {
         label: "Key documents",
         done: data.documents.length >= 1,
-        href: "/family/profile?tab=documents",
+        href: dossierStarted ? "/family/dossier" : "/family/profile?tab=documents",
       },
     ],
-    [data.seniorCreated, completeness, careDone, data.documents.length],
+    [
+      data.seniorCreated,
+      completeness,
+      careDone,
+      data.documents.length,
+      dossierStarted,
+    ],
   );
 
   if (!ready) {
@@ -169,14 +176,14 @@ function ProfileHubInner() {
             </dl>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              <Button href="/family/profile?tab=details" size="sm">
-                <Pencil size={14} /> Edit details
+              <Button href="/family/dossier" size="sm">
+                <Pencil size={14} /> {t("Edit resident dossier")}
               </Button>
               <Button href="/family/profile?tab=documents" size="sm" variant="secondary">
-                <Upload size={14} /> Manage documents
+                <Upload size={14} /> {t("Manage documents")}
               </Button>
-              <Button href="/family/care-needs" size="sm" variant="ghost">
-                {t("Care needs")}
+              <Button href="/family/profile?tab=details" size="sm" variant="ghost">
+                {t("Health details")}
               </Button>
             </div>
           </Card>

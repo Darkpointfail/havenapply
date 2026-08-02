@@ -48,8 +48,15 @@ import {
   markSharedWithdrawn,
   publishFamilyApplication,
 } from "@/lib/admissions-bridge";
+import {
+  emptyResidentDossier,
+  migrateResidentDossier,
+  syncDossierToFamily,
+  type ResidentDossier,
+} from "@/lib/resident-dossier";
 
 export type { DocCategoryId, VaultDocument, SavedFavorite, FavoriteTagId, FamilyApplication };
+export type { ResidentDossier };
 /** @deprecated use DocCategoryId */
 export type DocCategory = DocCategoryId;
 
@@ -74,6 +81,8 @@ export type FamilyData = {
   onboarding: OnboardingMeta;
   seniorCreated: boolean;
   careNeeds: CareNeeds;
+  /** Guided resident dossier wizard (fill once → multi-apply) */
+  residentDossier: ResidentDossier;
   sections: ProfileSection[];
   documents: VaultDocument[];
   documentRequests: DocumentRequest[];
@@ -112,6 +121,7 @@ function emptyFamilyData(): FamilyData {
     onboarding: emptyOnboardingMeta(),
     seniorCreated: false,
     careNeeds: emptyCareNeeds(),
+    residentDossier: emptyResidentDossier(),
     sections: SECTION_DEFS.map((s) => ({
       ...s,
       summary: "Nothing added yet",
@@ -167,6 +177,7 @@ function demoFamilyData(): FamilyData {
     senior,
     onboarding: { stepIndex: 8, startedAt: new Date().toISOString(), lastSavedAt: new Date().toISOString() },
     seniorCreated: true,
+    residentDossier: emptyResidentDossier(),
     careNeeds: {
       ...emptyCareNeeds(),
       completedAt: new Date().toISOString(),
@@ -401,6 +412,9 @@ function migrateFamilyData(raw: Partial<FamilyData> & { person?: ProfilePerson }
         ...(raw.careNeeds?.preferences || {}),
       },
     },
+    residentDossier: migrateResidentDossier(
+      (raw as Partial<FamilyData>).residentDossier,
+    ),
     person: scrubDemoNamesDeep(
       raw.person ? { ...base.person, ...raw.person, name: `${senior.firstName} ${senior.lastName}`.trim() } : personFromSenior(senior),
     ),
@@ -569,6 +583,11 @@ type FamilyDataContextValue = {
   finalizeSeniorProfile: () => SeniorProfile;
   updateCareNeeds: (patch: Partial<CareNeeds> | ((prev: CareNeeds) => CareNeeds)) => void;
   markCareNeedsComplete: () => void;
+  updateResidentDossier: (
+    patch: Partial<ResidentDossier> | ((prev: ResidentDossier) => ResidentDossier),
+  ) => void;
+  /** Persist dossier and sync into senior + care needs for search/apply */
+  saveResidentDossier: (dossier: ResidentDossier, opts?: { finalize?: boolean }) => void;
   addItem: (sectionId: string, text: string) => void;
   addItems: (sectionId: string, texts: string[]) => void;
   updateItem: (sectionId: string, index: number, text: string) => void;
@@ -772,6 +791,63 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       },
     }));
   }, [persist]);
+
+  const updateResidentDossier = useCallback(
+    (patch: Partial<ResidentDossier> | ((prev: ResidentDossier) => ResidentDossier)) => {
+      persist((prev) => {
+        const next =
+          typeof patch === "function"
+            ? patch(prev.residentDossier)
+            : { ...prev.residentDossier, ...patch };
+        const now = new Date().toISOString();
+        return {
+          ...prev,
+          residentDossier: {
+            ...next,
+            startedAt: next.startedAt || now,
+            lastSavedAt: now,
+          },
+        };
+      });
+    },
+    [persist],
+  );
+
+  const saveResidentDossier = useCallback(
+    (dossier: ResidentDossier, opts?: { finalize?: boolean }) => {
+      persist((prev) => {
+        const now = new Date().toISOString();
+        const nextDossier: ResidentDossier = {
+          ...dossier,
+          startedAt: dossier.startedAt || now,
+          lastSavedAt: now,
+          completedAt: opts?.finalize ? dossier.completedAt || now : dossier.completedAt,
+        };
+        const { senior: seniorPatch, careNeeds } = syncDossierToFamily(nextDossier);
+        const senior = {
+          ...prev.senior,
+          ...seniorPatch,
+          createdAt: prev.senior.createdAt || now,
+          updatedAt: now,
+        };
+        return {
+          ...prev,
+          residentDossier: nextDossier,
+          senior,
+          person: personFromSenior(senior),
+          seniorCreated: opts?.finalize ? true : prev.seniorCreated || Boolean(senior.firstName && senior.lastName),
+          careNeeds: {
+            ...careNeeds,
+            completedAt:
+              careNeeds.completedAt ||
+              prev.careNeeds.completedAt ||
+              (opts?.finalize ? now : null),
+          },
+        };
+      });
+    },
+    [persist],
+  );
 
   const addItem = useCallback(
     (sectionId: string, text: string) => {
@@ -1291,6 +1367,8 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       finalizeSeniorProfile,
       updateCareNeeds,
       markCareNeedsComplete,
+      updateResidentDossier,
+      saveResidentDossier,
       addItem,
       addItems,
       updateItem,
@@ -1327,6 +1405,8 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       finalizeSeniorProfile,
       updateCareNeeds,
       markCareNeedsComplete,
+      updateResidentDossier,
+      saveResidentDossier,
       addItem,
       addItems,
       updateItem,

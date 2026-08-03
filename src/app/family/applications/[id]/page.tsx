@@ -8,9 +8,9 @@ import {
   Calendar,
   Download,
   FilePlus,
-  GitCompare,
   MessageSquare,
   Reply,
+  Send,
   UserPlus,
   XCircle,
 } from "lucide-react";
@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { AdmissionPipelineStrip } from "@/components/admissions/AdmissionPipeline";
 import { useFamilyData } from "@/lib/family-data";
 import { toDisplayApplication } from "@/lib/family-applications";
 import { cn } from "@/lib/utils";
@@ -117,7 +118,7 @@ export default function ApplicationDetailPage() {
     showFlash("Summary downloaded");
   };
 
-  const compareHref = `/family/compare?ids=${[app.residenceId, ...otherIds].slice(0, 4).join(",")}`;
+  const compareHref = `/family/communities`;
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-10">
@@ -146,10 +147,28 @@ export default function ApplicationDetailPage() {
             <span className="text-ink-faint">Next action · </span>
             {app.nextAction}
           </p>
+          <div className="mt-4">
+            <AdmissionPipelineStrip status={app.status} />
+          </div>
         </div>
       </div>
 
       {flash && <p className="mt-3 text-sm text-success">{flash}</p>}
+
+      {(app.requestedDocuments.length > 0 || app.status === "more_info") && (
+        <Card className="mt-6 border-amber-200/80 bg-amber-soft/40 p-4">
+          <p className="font-semibold text-ink">{t("Documents requested by the residence")}</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {app.requestedDocuments.length
+              ? app.requestedDocuments.join(" · ")
+              : app.nextAction}
+          </p>
+          <Button href="/family/profile?tab=documents" size="sm" className="mt-3">
+            <FilePlus size={14} />
+            {t("Upload documents")}
+          </Button>
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_280px]">
         <div className="space-y-6">
@@ -225,7 +244,7 @@ export default function ApplicationDetailPage() {
               {t("Actions")}
             </p>
             <Button
-              href={`/family/documents?attach=${app.id}`}
+              href="/family/profile?tab=documents"
               size="sm"
               variant="secondary"
               className="w-full justify-start"
@@ -233,11 +252,7 @@ export default function ApplicationDetailPage() {
               <FilePlus size={14} /> Add a document
             </Button>
             <Button
-              href={
-                app.missingDocuments.length
-                  ? `/family/documents?request=${encodeURIComponent(app.missingDocuments[0])}`
-                  : "/family/documents"
-              }
+              href="/family/profile?tab=documents"
               size="sm"
               variant="secondary"
               className="w-full justify-start"
@@ -258,7 +273,7 @@ export default function ApplicationDetailPage() {
               variant="secondary"
               className="w-full justify-start"
             >
-              <GitCompare size={14} /> Compare with others
+              <Send size={14} /> {t("Apply elsewhere")}
             </Button>
             <Button
               type="button"

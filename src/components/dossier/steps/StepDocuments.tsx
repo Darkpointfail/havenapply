@@ -66,9 +66,9 @@ export function StepDocuments() {
   return (
     <div className="animate-rise">
       <StepIntro
-        eyebrow="Step 6 of 9"
+        eyebrow="Step 5 of 15"
         title="Documents"
-        subtitle="Drop files here once. Haven sorts them for every application."
+        subtitle="Upload once. Haven sorts them for every application."
       />
 
       <div

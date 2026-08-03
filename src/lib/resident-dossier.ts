@@ -130,25 +130,129 @@ export const DOSSIER_DOC_CATEGORIES: {
   { id: "other", label: "Other", vault: "other", recommended: false },
 ];
 
+/**
+ * Target admissions workflow (15 steps):
+ * 1 Creation → 2 Admin → 3 Medical → 4 Autonomy → 5 Documents →
+ * 6 Completeness → 7 Validate → 8 Send → 9 Residence review →
+ * 10 Extra docs → 11 Decision → 12 Signature → 13 Deposit →
+ * 14 Arrival prep → 15 Admission
+ *
+ * Steps 1–8 live in this wizard (folded for fewer clicks).
+ * Steps 9–15 live on the application detail (family + community).
+ */
 export const DOSSIER_STEPS = [
-  { id: "resident", title: "Resident Information", short: "Resident", minutes: 2 },
-  { id: "health", title: "Health Information", short: "Health", minutes: 2 },
-  { id: "care", title: "Daily Living & Care Needs", short: "Care", minutes: 2 },
-  { id: "looking", title: "What They're Looking For", short: "Looking for", minutes: 2 },
-  { id: "financial", title: "Financial Information", short: "Financial", minutes: 1 },
-  { id: "documents", title: "Documents", short: "Documents", minutes: 2 },
-  { id: "team", title: "Healthcare Team", short: "Team", minutes: 1 },
-  { id: "review", title: "Review", short: "Review", minutes: 1 },
-  { id: "submit", title: "Submit Applications", short: "Submit", minutes: 2 },
+  {
+    id: "resident",
+    title: "Administrative information",
+    short: "Admin",
+    minutes: 3,
+    workflowSteps: [1, 2],
+  },
+  {
+    id: "health",
+    title: "Medical information",
+    short: "Medical",
+    minutes: 2,
+    workflowSteps: [3],
+  },
+  {
+    id: "care",
+    title: "Autonomy level",
+    short: "Autonomy",
+    minutes: 2,
+    workflowSteps: [4],
+  },
+  {
+    id: "documents",
+    title: "Documents",
+    short: "Documents",
+    minutes: 2,
+    workflowSteps: [5],
+  },
+  {
+    id: "review",
+    title: "Review & validate",
+    short: "Validate",
+    minutes: 1,
+    workflowSteps: [6, 7],
+  },
+  {
+    id: "submit",
+    title: "Send to residences",
+    short: "Send",
+    minutes: 2,
+    workflowSteps: [8],
+  },
 ] as const;
 
 export type DossierStepId = (typeof DOSSIER_STEPS)[number]["id"];
+
+/** Map legacy 9-step drafts onto the streamlined 6-step wizard. */
+export function migrateDossierStepIndex(rawIndex: number, knownStepId?: string): number {
+  if (knownStepId) {
+    const byId = DOSSIER_STEPS.findIndex((s) => s.id === knownStepId);
+    if (byId >= 0) return byId;
+  }
+  const legacyMap: Record<number, number> = {
+    0: 0, // resident
+    1: 1, // health
+    2: 2, // care
+    3: 5, // looking → submit filters
+    4: 0, // financial → admin
+    5: 3, // documents
+    6: 0, // team → admin contacts
+    7: 4, // review
+    8: 5, // submit
+  };
+  if (rawIndex in legacyMap) return legacyMap[rawIndex];
+  return Math.max(0, Math.min(DOSSIER_STEPS.length - 1, rawIndex));
+}
+
+export const AUTONOMY_LEVEL_OPTIONS = [
+  {
+    id: "independent",
+    label: "Mostly independent",
+    hint: "Little day-to-day help needed",
+  },
+  {
+    id: "assisted",
+    label: "Assisted living level",
+    hint: "Help with several daily activities",
+  },
+  {
+    id: "memory",
+    label: "Memory care level",
+    hint: "Cognitive support and secure setting",
+  },
+  {
+    id: "nursing",
+    label: "Skilled nursing level",
+    hint: "Ongoing clinical or nursing care",
+  },
+] as const;
+
+/** Full pipeline shown on application pages (steps 8–15 after send). */
+export const ADMISSION_PIPELINE = [
+  { id: "sent", label: "Sent", step: 8 },
+  { id: "review", label: "Residence review", step: 9 },
+  { id: "more_info", label: "Extra documents", step: 10 },
+  { id: "decision", label: "Decision", step: 11 },
+  { id: "signature", label: "Signature", step: 12 },
+  { id: "deposit", label: "Deposit", step: 13 },
+  { id: "arrival", label: "Arrival prep", step: 14 },
+  { id: "admission", label: "Admission", step: 15 },
+] as const;
 
 export type ResidentDossier = {
   stepIndex: number;
   startedAt: string | null;
   lastSavedAt: string | null;
   completedAt: string | null;
+  /** Step 7 — family or social worker confirmed the packet */
+  validatedAt: string | null;
+  validatedBy: string;
+  /** Single autonomy / care-level signal (step 4) */
+  autonomyLevel: string;
 
   // 1. Resident
   firstName: string;
@@ -253,6 +357,9 @@ export function emptyResidentDossier(): ResidentDossier {
     startedAt: null,
     lastSavedAt: null,
     completedAt: null,
+    validatedAt: null,
+    validatedBy: "",
+    autonomyLevel: "",
     firstName: "",
     lastName: "",
     preferredName: "",
@@ -313,7 +420,7 @@ export function emptyResidentDossier(): ResidentDossier {
 export function migrateResidentDossier(raw?: Partial<ResidentDossier> | null): ResidentDossier {
   const base = emptyResidentDossier();
   if (!raw) return base;
-  return {
+  const merged = {
     ...base,
     ...raw,
     adls: { ...base.adls, ...(raw.adls || {}) },
@@ -328,7 +435,12 @@ export function migrateResidentDossier(raw?: Partial<ResidentDossier> | null): R
       ? raw.selectedCommunityIds
       : [],
     emergencyContact: raw.emergencyContact ?? null,
+    validatedAt: raw.validatedAt ?? null,
+    validatedBy: raw.validatedBy ?? "",
+    autonomyLevel: raw.autonomyLevel ?? "",
   };
+  merged.stepIndex = migrateDossierStepIndex(Number(raw.stepIndex) || 0);
+  return merged;
 }
 
 /** Seed dossier from existing senior + care needs when opening wizard. */
@@ -464,11 +576,11 @@ export function computeDossierCompleteness(
       filled(d.phone),
       filled(d.livingSituation),
       Boolean(d.emergencyContact?.name),
-      d.familyMembers.some((m) => m.name.trim()),
+      filled(d.insurance, d.maxMonthlyBudget, d.budgetMax),
     ].filter(Boolean).length / 8;
   sections.push({
     id: "resident",
-    label: "Resident Information",
+    label: "Administrative information",
     done: residentScore >= 0.6,
     score: residentScore,
     missing: residentMissing,
@@ -488,7 +600,7 @@ export function computeDossierCompleteness(
   if (!filled(d.currentMedications)) healthMissing.push("Medications");
   sections.push({
     id: "health",
-    label: "Health",
+    label: "Medical information",
     done: healthScore >= 0.4,
     score: healthScore,
     missing: healthMissing,
@@ -497,52 +609,23 @@ export function computeDossierCompleteness(
   const adlFilled = ADL_CARD_ACTIVITIES.filter((a) => filled(d.adls[a.id])).length;
   const careScore =
     [
+      filled(d.autonomyLevel),
       filled(d.mobility),
       adlFilled >= 3,
       filled(d.continence),
       d.memoryCognition.length > 0 || filled(d.behavioralConcerns),
-      d.nutrition.length > 0,
       filled(d.fallRisk),
     ].filter(Boolean).length / 6;
   const careMissing: string[] = [];
+  if (!filled(d.autonomyLevel)) careMissing.push("Autonomy level");
   if (!filled(d.mobility)) careMissing.push("Mobility");
   if (adlFilled < 3) careMissing.push("Daily living activities");
   sections.push({
     id: "care",
-    label: "Care Needs",
+    label: "Autonomy level",
     done: careScore >= 0.5,
     score: careScore,
     missing: careMissing,
-  });
-
-  const lookingScore =
-    [
-      d.communityTypes.length > 0,
-      filled(d.desiredMoveIn),
-      filled(d.preferredCities),
-      filled(d.budgetMin, d.budgetMax, d.maxMonthlyBudget),
-    ].filter(Boolean).length / 4;
-  sections.push({
-    id: "looking",
-    label: "Preferences",
-    done: lookingScore >= 0.5,
-    score: lookingScore,
-    missing: d.communityTypes.length ? [] : ["Community type"],
-  });
-
-  const financialScore =
-    [
-      filled(d.monthlyIncome, d.maxMonthlyBudget, d.budgetMax),
-      filled(d.insurance),
-      filled(d.veteransBenefits),
-      filled(d.longTermCareInsurance),
-    ].filter(Boolean).length / 4;
-  sections.push({
-    id: "financial",
-    label: "Financial",
-    done: financialScore >= 0.4,
-    score: financialScore,
-    missing: filled(d.insurance) ? [] : ["Insurance"],
   });
 
   const docsScore = missingDocs.length === 0 ? 1 : Math.max(0, 1 - missingDocs.length / 4);
@@ -554,27 +637,26 @@ export function computeDossierCompleteness(
     missing: missingDocs.map((m) => `Missing ${m}`),
   });
 
-  const teamScore = d.healthcareTeam.some((p) => p.name.trim()) ? 1 : 0.2;
+  const validated = Boolean(d.validatedAt);
   sections.push({
-    id: "team",
-    label: "Healthcare Team",
-    done: teamScore >= 0.5,
-    score: teamScore,
-    missing: teamScore >= 0.5 ? [] : ["Primary physician"],
+    id: "review",
+    label: "Validated",
+    done: validated,
+    score: validated ? 1 : 0,
+    missing: validated ? [] : ["Family or social worker validation"],
   });
 
-  // review + submit don't count toward profile completeness the same way
   const weighted = sections.reduce((sum, s) => sum + s.score, 0) / sections.length;
   const percent = Math.min(100, Math.round(weighted * 100));
   const coreDone = sections
-    .filter((s) => ["resident", "health", "care", "looking", "financial"].includes(s.id))
+    .filter((s) => ["resident", "health", "care", "documents"].includes(s.id))
     .every((s) => s.done);
 
   return {
     percent,
     sections,
     missingDocs,
-    readyToSubmit: coreDone && percent >= 60 && missingDocs.length <= 2,
+    readyToSubmit: coreDone && validated && percent >= 70 && missingDocs.length <= 1,
   };
 }
 
@@ -647,7 +729,11 @@ export function syncDossierToFamily(d: ResidentDossier): {
     zip: d.zip,
     livingSituation: livingMap[d.livingSituation] || d.livingSituation || "",
     livingSituationOther: d.livingSituationOther,
-    housingTypes: d.communityTypes.filter((t) => t !== "rehab" && t !== "other"),
+    housingTypes: d.autonomyLevel
+      ? [d.autonomyLevel === "independent" ? "independent" : d.autonomyLevel].filter(
+          (t) => t !== "rehab" && t !== "other",
+        )
+      : d.communityTypes.filter((t) => t !== "rehab" && t !== "other"),
     searchZones: cities.length
       ? cities.map((query, i) => ({
           id: `dz-${i}`,

@@ -17,10 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { StepResident } from "@/components/dossier/steps/StepResident";
 import { StepHealth } from "@/components/dossier/steps/StepHealth";
 import { StepCare } from "@/components/dossier/steps/StepCare";
-import { StepLooking } from "@/components/dossier/steps/StepLooking";
-import { StepFinancial } from "@/components/dossier/steps/StepFinancial";
 import { StepDocuments } from "@/components/dossier/steps/StepDocuments";
-import { StepTeam } from "@/components/dossier/steps/StepTeam";
 import { StepReview } from "@/components/dossier/steps/StepReview";
 import { StepSubmit } from "@/components/dossier/steps/StepSubmit";
 
@@ -168,14 +165,9 @@ export function DossierWizard() {
         ) : null}
         {step.id === "health" ? <StepHealth value={draft} onChange={patch} /> : null}
         {step.id === "care" ? <StepCare value={draft} onChange={patch} /> : null}
-        {step.id === "looking" ? <StepLooking value={draft} onChange={patch} /> : null}
-        {step.id === "financial" ? (
-          <StepFinancial value={draft} onChange={patch} />
-        ) : null}
         {step.id === "documents" ? <StepDocuments /> : null}
-        {step.id === "team" ? <StepTeam value={draft} onChange={patch} /> : null}
         {step.id === "review" ? (
-          <StepReview value={draft} onEdit={goToStepId} />
+          <StepReview value={draft} onChange={patch} onEdit={goToStepId} />
         ) : null}
         {step.id === "submit" ? (
           <StepSubmit value={draft} onChange={patch} onFinalize={finalize} />

@@ -111,9 +111,9 @@ export function StepResident({
   return (
     <div className="animate-rise">
       <StepIntro
-        eyebrow="Step 1 of 9"
-        title="Who is this for?"
-        subtitle="A few personal details. You can come back anytime."
+        eyebrow="Steps 1–2 of 15"
+        title="Administrative information"
+        subtitle="Identity, contacts, and a light financial picture — once for every residence."
       />
 
       <div className="space-y-8">
@@ -374,6 +374,90 @@ export function StepResident({
               ))
             : null}
         </div>
+
+        <SectionCard className="space-y-4">
+          <p className="text-sm font-semibold text-ink">{t("Insurance & budget")}</p>
+          <p className="text-sm text-ink-muted">
+            {t("Optional now. Exact numbers can wait — ranges are fine.")}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DossierField label="Insurance" optional>
+              <input
+                className={dossierFieldClass}
+                value={value.insurance}
+                onChange={(e) => onChange({ insurance: e.target.value })}
+                placeholder={t("Medicare, private plan, provincial coverage…")}
+              />
+            </DossierField>
+            <DossierField label="Maximum monthly budget" optional>
+              <input
+                className={dossierFieldClass}
+                value={value.maxMonthlyBudget || value.budgetMax}
+                onChange={(e) => onChange({ maxMonthlyBudget: e.target.value })}
+                placeholder={t("What feels comfortable")}
+                inputMode="numeric"
+              />
+            </DossierField>
+          </div>
+        </SectionCard>
+
+        <SectionCard className="space-y-3">
+          <p className="text-sm font-semibold text-ink">{t("Primary physician")}</p>
+          <p className="text-sm text-ink-muted">
+            {t("Who should residences call with clinical questions?")}
+          </p>
+          {(() => {
+            const physician =
+              value.healthcareTeam.find((p) => p.role === "primary_physician") ||
+              null;
+            const upsert = (patch: Partial<(typeof value.healthcareTeam)[0]>) => {
+              const existing = value.healthcareTeam.find(
+                (p) => p.role === "primary_physician",
+              );
+              if (existing) {
+                onChange({
+                  healthcareTeam: value.healthcareTeam.map((p) =>
+                    p.id === existing.id ? { ...p, ...patch } : p,
+                  ),
+                });
+              } else {
+                onChange({
+                  healthcareTeam: [
+                    ...value.healthcareTeam,
+                    {
+                      id: `hp-${Date.now()}`,
+                      role: "primary_physician",
+                      name: "",
+                      organization: "",
+                      phone: "",
+                      email: "",
+                      ...patch,
+                    },
+                  ],
+                });
+              }
+            };
+            return (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DossierField label="Name" optional>
+                  <input
+                    className={dossierFieldClass}
+                    value={physician?.name || ""}
+                    onChange={(e) => upsert({ name: e.target.value })}
+                  />
+                </DossierField>
+                <DossierField label="Phone" optional>
+                  <input
+                    className={dossierFieldClass}
+                    value={physician?.phone || ""}
+                    onChange={(e) => upsert({ phone: e.target.value })}
+                    inputMode="tel"
+                  />
+                </DossierField>
+              </div>
+            );
+          })()}
+        </SectionCard>
       </div>
     </div>
   );

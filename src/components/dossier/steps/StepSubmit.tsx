@@ -87,6 +87,10 @@ export function StepSubmit({
 
   const send = () => {
     if (!user || sending || !value.selectedCommunityIds.length) return;
+    if (!value.validatedAt) {
+      setError(t("Validate the dossier first (step 7) before sending."));
+      return;
+    }
     setSending(true);
     setError(null);
     onFinalize();
@@ -131,9 +135,9 @@ export function StepSubmit({
   return (
     <div className="animate-rise">
       <StepIntro
-        eyebrow="Step 9 of 9"
-        title="Send the same dossier"
-        subtitle="Search, select several communities, and apply once for all of them."
+        eyebrow="Step 8 of 15"
+        title="Send to residences"
+        subtitle="Select one or more residences. The same validated dossier goes to each."
       />
 
       <SectionCard className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -141,9 +145,11 @@ export function StepSubmit({
           <p className="text-sm text-ink-muted">{t("Profile completeness")}</p>
           <p className="text-2xl font-semibold text-ink">{completeness.percent}%</p>
         </div>
-        {!completeness.readyToSubmit ? (
+        {!completeness.readyToSubmit || !value.validatedAt ? (
           <p className="max-w-sm text-sm text-amber">
-            {t("You can still send — adding missing items improves response speed.")}
+            {!value.validatedAt
+              ? t("Validate the dossier on the previous step before sending.")
+              : t("You can still send — adding missing items improves response speed.")}
           </p>
         ) : (
           <p className="flex items-center gap-2 text-sm font-medium text-teal-deep">

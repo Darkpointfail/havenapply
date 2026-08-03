@@ -21,9 +21,9 @@ export function StepHealth({
   return (
     <div className="animate-rise">
       <StepIntro
-        eyebrow="Step 2 of 9"
-        title="Health, in plain words"
-        subtitle="No medical jargon required. Share what communities need to know."
+        eyebrow="Step 3 of 15"
+        title="Medical information"
+        subtitle="No jargon required. Share what residences need for admissions."
       />
 
       <SectionCard className="space-y-5">

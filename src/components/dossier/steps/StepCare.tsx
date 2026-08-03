@@ -11,6 +11,7 @@ import {
 import {
   ADL_ASSIST_LEVELS,
   ADL_CARD_ACTIVITIES,
+  AUTONOMY_LEVEL_OPTIONS,
   CONTINENCE_OPTIONS,
   MEMORY_OPTIONS,
   MOBILITY_CARD_OPTIONS,
@@ -39,12 +40,27 @@ export function StepCare({
   return (
     <div className="animate-rise">
       <StepIntro
-        eyebrow="Step 3 of 9"
-        title="Daily living & care"
-        subtitle="Tap what fits. This helps match the right level of support."
+        eyebrow="Step 4 of 15"
+        title="Autonomy level"
+        subtitle="One overall level, then the daily details residences need."
       />
 
       <div className="space-y-8">
+        <div>
+          <p className="mb-3 text-sm font-semibold text-ink">{t("Overall autonomy")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {AUTONOMY_LEVEL_OPTIONS.map((opt) => (
+              <SelectCard
+                key={opt.id}
+                selected={value.autonomyLevel === opt.id}
+                onClick={() => onChange({ autonomyLevel: opt.id })}
+                title={opt.label}
+                description={opt.hint}
+              />
+            ))}
+          </div>
+        </div>
+
         <div>
           <p className="mb-3 text-sm font-semibold text-ink">{t("Mobility")}</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useMemo } from "react";
 import {
   ArrowRight,
-  Bookmark,
   CheckCircle2,
   FileWarning,
   MapPin,
@@ -96,7 +95,7 @@ export default function FamilyDashboardPage() {
 
   const t = useT();  const { user } = useAuth();
   const { ask } = useAi();
-  const { data, completeness, toggleSavedCommunity } = useFamilyData();
+  const { data, completeness } = useFamilyData();
   const { visibleThreads } = useMessaging();
 
   const senior = data.senior;
@@ -124,55 +123,38 @@ export default function FamilyDashboardPage() {
   const steps: JourneyStep[] = useMemo(() => {
     const profileDone = data.seniorCreated && completeness >= 70;
     const docsDone = data.documents.length > 0;
-    const discovered = data.savedFavorites.length > 0 || activeApps.length > 0;
     const applied = activeApps.length > 0;
     const forSelf = isSelfApplicant(senior);
 
-    const profileTitle = needsSetup
-      ? "Create a care profile"
-      : forSelf
-        ? "Complete your care profile"
-        : `Complete the profile for ${lovedOne}`;
-
-    const profileDetail = needsSetup
-      ? "For yourself or a loved one, a few questions so Haven understands the care needs."
-      : careDone
-        ? "Add the last details for more accurate applications."
-        : "Fill in care needs to better match communities.";
-
     return [
       {
-        id: "profile",
-        title: profileTitle,
-        detail: profileDetail,
-        href: needsSetup ? "/onboarding" : "/family/profile",
-        done: profileDone && careDone,
+        id: "dossier",
+        title: needsSetup
+          ? "Create the shared dossier"
+          : forSelf
+            ? "Complete your dossier"
+            : `Complete the dossier for ${lovedOne}`,
+        detail: needsSetup
+          ? "Resident info, care needs, and documents — filled once for every application."
+          : "Keep the shared dossier current so every community gets the same packet.",
+        href: "/family/dossier",
+        done: profileDone && careDone && docsDone,
         minutes: needsSetup ? 15 : 8,
       },
       {
-        id: "docs",
-        title: "Upload essential documents",
-        detail: "Insurance card, ID, and more, once, for every application.",
-        href: "/family/profile?tab=documents",
-        done: docsDone,
+        id: "apply",
+        title: "Send applications",
+        detail: "Choose communities and submit the same dossier in one click.",
+        href: "/family/communities",
+        done: applied,
         minutes: 5,
       },
       {
-        id: "discover",
-        title: "Browse matching communities",
-        detail: forSelf
-          ? "Suggestions based on your profile."
-          : `Suggestions based on the profile for ${lovedOne}.`,
-        href: "/family/find-communities",
-        done: discovered,
-        minutes: 10,
-      },
-      {
-        id: "apply",
-        title: "Apply from a community profile",
-        detail: "Open a profile, send the dossier, then track your applications.",
-        href: "/family/find-communities",
-        done: applied,
+        id: "track",
+        title: "Track & respond",
+        detail: "Follow statuses, upload requested documents, and message admissions.",
+        href: "/family/applications",
+        done: applied && !needsSetup,
         minutes: 2,
       },
     ];
@@ -180,7 +162,6 @@ export default function FamilyDashboardPage() {
     data.seniorCreated,
     completeness,
     data.documents.length,
-    data.savedFavorites.length,
     activeApps.length,
     needsSetup,
     lovedOne,
@@ -230,11 +211,6 @@ export default function FamilyDashboardPage() {
       .sort((a, b) => b.match.score - a.match.score)
       .slice(0, 3);
   }, [senior, data.seniorCreated, data.careNeeds, careDone, activeApps]);
-
-  const savedIds = useMemo(
-    () => new Set(data.savedFavorites.map((f) => f.communityId)),
-    [data.savedFavorites],
-  );
 
   /* ─── Tracking mode (journey complete) ─── */
   if (journeyComplete) {
@@ -448,46 +424,31 @@ export default function FamilyDashboardPage() {
                   </p>
                 </div>
                 <Link
-                  href="/family/find-communities"
+                  href="/family/communities"
                   className="text-sm font-medium text-brand hover:underline"
                 >
                   Browse
                 </Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                {recommended.map(({ residence: r, match }) => {
-                  const saved = savedIds.has(r.id);
+                {recommended.map(({ residence: r }) => {
                   return (
                     <Card key={r.id} className="overflow-hidden p-0" hover>
                       <div className="relative h-28">
                         <Image src={r.image} alt="" fill className="object-cover" sizes="280px" />
-                        <span className="absolute left-2 top-2 rounded-full bg-surface/95 px-2 py-0.5 text-xs font-semibold">
-                          {match.score}%
-                        </span>
                       </div>
                       <div className="space-y-2 p-3.5">
                         <h3 className="text-sm font-semibold leading-snug">{r.name}</h3>
+                        <p className="text-xs text-ink-muted">
+                          {r.city}, {r.state}
+                        </p>
                         <div className="flex gap-2">
                           <Button href={`/find-senior-living/${r.id}`} size="sm" className="flex-1">
-                            View
+                            {t("View")}
                           </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => toggleSavedCommunity(r.id)}
-                          >
-                            <Bookmark
-                              size={14}
-                              className={saved ? "fill-current text-brand" : ""}
-                            />
-                          </Button>
-                          <Button
-                            href={`/family/apply/${r.id}`}
-                            size="sm"
-                            variant="soft"
-                          >
+                          <Button href={`/family/apply/${r.id}`} size="sm" variant="soft">
                             <Send size={14} />
+                            {t("Apply")}
                           </Button>
                         </div>
                       </div>
@@ -655,22 +616,18 @@ export default function FamilyDashboardPage() {
                   </p>
                 </div>
                 <Link
-                  href="/family/find-communities"
+                  href="/family/communities"
                   className="text-sm font-medium text-brand hover:underline"
                 >
                   {t("Browse all")}
                 </Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                {recommended.map(({ residence: r, match }) => {
-                  const saved = savedIds.has(r.id);
+                {recommended.map(({ residence: r }) => {
                   return (
                     <Card key={r.id} className="overflow-hidden p-0" hover>
                       <div className="relative h-36">
                         <Image src={r.image} alt="" fill className="object-cover" sizes="300px" />
-                        <span className="absolute left-2.5 top-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-xs font-semibold shadow-xs">
-                          {match.score}% match
-                        </span>
                       </div>
                       <div className="space-y-2.5 p-4">
                         <h3 className="font-semibold leading-snug">{r.name}</h3>
@@ -680,16 +637,7 @@ export default function FamilyDashboardPage() {
                         </p>
                         <div className="flex gap-2">
                           <Button href={`/find-senior-living/${r.id}`} size="sm" className="flex-1">
-                            View
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => toggleSavedCommunity(r.id)}
-                            aria-label={saved ? "Unsave" : "Save"}
-                          >
-                            <Bookmark size={14} className={saved ? "fill-current text-brand" : ""} />
+                            {t("View")}
                           </Button>
                           <Button
                             href={`/family/apply/${r.id}`}
@@ -698,6 +646,7 @@ export default function FamilyDashboardPage() {
                             aria-label={t("Apply")}
                           >
                             <Send size={14} />
+                            {t("Apply")}
                           </Button>
                         </div>
                       </div>
@@ -710,7 +659,7 @@ export default function FamilyDashboardPage() {
                   <p className="text-sm text-ink-muted">
                     {t("Ready to apply? Open a community and send the dossier from its profile.")}
                   </p>
-                  <Button href="/family/find-communities" size="sm" className="mt-3">
+                  <Button href="/family/communities" size="sm" className="mt-3">
                     <Search size={14} /> Browse communities
                   </Button>
                 </Card>

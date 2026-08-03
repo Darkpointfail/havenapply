@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityTransitionBoard } from "@/components/community/CommunityTransitionBoard";
-
-export default function CommunityTransitionPage() {
-  return <CommunityTransitionBoard />;
+/** Post-accept transition deferred past admissions MVP. */
+export default function TransitionRedirect() {
+  redirect("/community/dashboard");
 }

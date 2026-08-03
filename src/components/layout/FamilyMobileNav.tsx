@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Home, Search, UserRound } from "lucide-react";
+import { ClipboardList, FolderOpen, Home, MessageSquare } from "lucide-react";
 import { familyMobileNav } from "@/config/navigation";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 const icons: Record<string, typeof Home> = {
   "/family/dashboard": Home,
-  "/family/profile": UserRound,
-  "/family/find-communities": Search,
+  "/family/dossier": FolderOpen,
   "/family/applications": ClipboardList,
+  "/family/messages": MessageSquare,
 };
+
 export function FamilyMobileNav() {
   const pathname = usePathname();
   const t = useT();
@@ -28,10 +29,11 @@ export function FamilyMobileNav() {
           const active =
             pathname === item.href ||
             pathname.startsWith(item.href + "/") ||
-            (item.href === "/family/profile" &&
-              (pathname.startsWith("/family/senior-profile") ||
-                pathname.startsWith("/family/documents") ||
-                pathname.startsWith("/family/care-needs")));
+            (item.href === "/family/dossier" &&
+              (pathname.startsWith("/family/profile") ||
+                pathname.startsWith("/family/documents"))) ||
+            (item.href === "/family/applications" &&
+              pathname.startsWith("/family/communities"));
           return (
             <li key={item.href} className="flex-1">
               <Link

@@ -1,1 +1,5 @@
-export { default } from "@/app/find-senior-living/page";
+import { redirect } from "next/navigation";
+
+export default function ResidencesListRedirect() {
+  redirect("/family/communities");
+}

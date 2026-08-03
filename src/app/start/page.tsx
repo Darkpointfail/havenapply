@@ -48,11 +48,11 @@ function StartChoiceInner() {
           {welcome}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-          {t("How would you like to create the profile?")}
+          {t("Create the shared resident dossier")}
         </h1>
         <p className="mx-auto mt-3 max-w-lg text-ink-muted">
           {t(
-            "For yourself or a loved one. Build it once, then discover communities and apply everywhere with almost no extra work.",
+            "Fill once for yourself or a loved one. Upload documents, collaborate with family, and send the same packet to several communities.",
           )}
         </p>
       </div>
@@ -89,7 +89,7 @@ function StartChoiceInner() {
           <h2 className="mt-4 text-xl font-semibold tracking-tight">{t("Chat with Haven")}</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
             {t(
-              "Haven asks natural questions and fills the profile for you. Best if you prefer a guided conversation.",
+              "Haven asks natural questions and fills the dossier for you. Administrative help only — no clinical decisions.",
             )}
           </p>
           <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink">
@@ -100,11 +100,6 @@ function StartChoiceInner() {
       </div>
 
       <p className="mt-8 text-center text-sm text-ink-muted">
-        {t("Prefer classic forms?")}{" "}
-        <Link href="/onboarding" className="font-semibold text-brand hover:underline">
-          {t("Use manual forms")}
-        </Link>
-        <span className="mx-2 text-ink-faint">·</span>
         <Button
           href="/family/dashboard"
           variant="ghost"

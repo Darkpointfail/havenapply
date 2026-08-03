@@ -165,8 +165,8 @@ function CommunitiesInner() {
 
       <p className="mt-8 text-center text-sm text-ink-muted">
         Prefer the full map view?{" "}
-        <Link href="/find-senior-living" className="font-medium text-brand hover:underline">
-          {t("Open Find Senior Living")}
+        <Link href="/professional/communities" className="font-medium text-brand hover:underline">
+          {t("Browse communities")}
         </Link>
       </p>
     </div>

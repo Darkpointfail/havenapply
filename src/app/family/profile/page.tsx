@@ -7,7 +7,6 @@ import {
   ArrowRight,
   CheckCircle2,
   FileText,
-  HeartPulse,
   Pencil,
   Upload,
   UserRound,
@@ -26,14 +25,12 @@ import {
 } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
 import DocumentsPage from "@/app/documents/page";
-import MedicalProfilePage from "@/app/profile/page";
 import { useT } from "@/lib/i18n/locale";
 
-type TabId = "overview" | "details" | "documents";
+type TabId = "overview" | "documents";
 
 const TABS: { id: TabId; label: string; icon: typeof UserRound }[] = [
   { id: "overview", label: "Overview", icon: UserRound },
-  { id: "details", label: "Health & care", icon: HeartPulse },
   { id: "documents", label: "Documents", icon: FileText },
 ];
 
@@ -42,19 +39,13 @@ function ProfileHubInner() {
   const params = useSearchParams();
   const tabParam = params.get("tab");
   const tab: TabId =
-    tabParam === "documents" || tabParam === "details" || tabParam === "docs"
-      ? tabParam === "docs"
-        ? "documents"
-        : tabParam
-      : "overview";
+    tabParam === "documents" || tabParam === "docs" ? "documents" : "overview";
 
   const { ready, data, completeness } = useFamilyData();
   const senior = data.senior;
   const name = seniorDisplayName(senior) || data.person.name || "Senior profile";
   const age = seniorAge(senior) || data.person.age;
-  const careDone = Boolean(data.careNeeds.completedAt);
 
-  const dossierStarted = Boolean(data.residentDossier?.startedAt || data.residentDossier?.firstName);
   const checklist = useMemo(
     () => [
       {
@@ -63,22 +54,21 @@ function ProfileHubInner() {
         href: "/family/dossier",
       },
       {
-        label: "Care needs",
-        done: careDone,
-        href: dossierStarted ? "/family/dossier" : "/family/care-needs",
+        label: "Documents",
+        done: data.documents.length >= 1,
+        href: "/family/profile?tab=documents",
       },
       {
-        label: "Key documents",
-        done: data.documents.length >= 1,
-        href: dossierStarted ? "/family/dossier" : "/family/profile?tab=documents",
+        label: "Applications",
+        done: data.applications.some((a) => a.status !== "draft"),
+        href: "/family/applications",
       },
     ],
     [
       data.seniorCreated,
       completeness,
-      careDone,
       data.documents.length,
-      dossierStarted,
+      data.applications,
     ],
   );
 
@@ -182,8 +172,8 @@ function ProfileHubInner() {
               <Button href="/family/profile?tab=documents" size="sm" variant="secondary">
                 <Upload size={14} /> {t("Manage documents")}
               </Button>
-              <Button href="/family/profile?tab=details" size="sm" variant="ghost">
-                {t("Health details")}
+              <Button href="/family/family-members" size="sm" variant="ghost">
+                {t("Family members")}
               </Button>
             </div>
           </Card>
@@ -219,17 +209,11 @@ function ProfileHubInner() {
           </Card>
 
           <div className="flex flex-wrap gap-2">
-            <Button href="/family/find-communities">Browse communities</Button>
+            <Button href="/family/communities">{t("Choose communities")}</Button>
             <Button href="/family/applications" variant="secondary">
               {t("My applications")}
             </Button>
           </div>
-        </div>
-      )}
-
-      {tab === "details" && (
-        <div className="-mx-5 md:-mx-8">
-          <MedicalProfilePage />
         </div>
       )}
 

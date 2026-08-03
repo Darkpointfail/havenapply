@@ -22,18 +22,16 @@ import { useT } from "@/lib/i18n/locale";
 import { residences } from "@/data/residences";
 
 const heroBenefits = [
-  "One profile for every application",
-  "Secure medical document vault",
-  "Apply to multiple communities",
+  "One shared dossier for every application",
+  "Documents, messages, and status in one place",
+  "Built for families, social workers, and communities",
 ];
 
 const journey = [
-  "Create profile",
-  "Find communities",
-  "Submit applications",
-  "Complete assessments",
-  "Receive decisions",
-  "Move in",
+  "Build the dossier",
+  "Upload documents",
+  "Send applications",
+  "Collaborate & track",
 ];
 
 const faq = [
@@ -135,18 +133,20 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-[1400px] gap-12 px-5 pb-20 pt-14 md:px-8 md:pb-28 md:pt-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
           <div className="animate-rise">
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink md:text-6xl">
-              {t("One profile. Multiple communities. Less paperwork.")}
+              {t("Less paperwork. One shared dossier. Clear admissions.")}
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-secondary md:text-xl">
-              {t("Create one secure profile for your loved one, upload medical documents, apply to several senior living communities, and follow every application from one calm place.")}
+              {t(
+                "HavenApply coordinates the resident dossier, documents, communications, and admission workflow between families, care professionals, and communities.",
+              )}
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button href="/get-started" size="lg">
-                {t("Build your profile")}
+                {t("Start the dossier")}
                 <ArrowRight size={18} />
               </Button>
-              <Button href="/find-senior-living" size="lg" variant="secondary">
-                {t("Find senior living")}
+              <Button href="/how-it-works" size="lg" variant="secondary">
+                {t("How it works")}
               </Button>
             </div>
             <ul className="mt-10 space-y-3 text-sm text-ink-muted md:text-[15px]">
@@ -299,8 +299,8 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8">
-            <Button href="/find-senior-living" size="lg">
-              {t("Browse communities")}
+            <Button href="/get-started" size="lg">
+              {t("Start the dossier")}
               <ArrowRight size={18} />
             </Button>
           </div>
@@ -562,12 +562,12 @@ export default function HomePage() {
               <ArrowRight size={18} />
             </Button>
             <Button
-              href="/find-senior-living"
+              href="/how-it-works"
               size="lg"
               variant="ghost"
               className="border border-white/25 text-white hover:bg-white/10 hover:text-white"
             >
-              {t("Find senior living")}
+              {t("How it works")}
             </Button>
           </div>
         </div>

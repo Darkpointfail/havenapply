@@ -1,3 +1,10 @@
+/**
+ * HavenApply navigation — MVP only.
+ *
+ * Pillars: shared dossier · documents · admission workflow ·
+ * communication · collaboration · AI assistance (non-clinical).
+ */
+
 export type NavItem = {
   href: string;
   label: string;
@@ -14,7 +21,6 @@ export type NavGroup = {
 
 export const publicNav: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/find-senior-living", label: "Find Senior Living" },
   { href: "/for-families", label: "For Families" },
   { href: "/for-communities", label: "For Communities" },
   { href: "/contact", label: "Contact" },
@@ -27,53 +33,47 @@ export const publicAuthLinks = {
 };
 
 /**
- * Primary family journey, keep this short.
- * Dashboard → Profile → Communities → My applications
- * Apply happens on each community profile.
+ * Family journey: Dossier → Apply → Track → Collaborate
  */
 export const familyNav: NavItem[] = [
-  { href: "/family/dashboard", label: "Dashboard" },
-  { href: "/family/profile", label: "Profile" },
-  { href: "/family/find-communities", label: "Communities" },
-  { href: "/family/applications", label: "My applications" },
+  { href: "/family/dashboard", label: "Home" },
+  { href: "/family/dossier", label: "Dossier" },
+  { href: "/family/applications", label: "Applications" },
+  { href: "/family/messages", label: "Messages" },
 ];
 
-/**
- * Header: four journey steps. Account lives on the user name in the header.
- */
 export const familyNavGroups: NavGroup[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
+    id: "home",
+    label: "Home",
     href: "/family/dashboard",
     children: [{ href: "/family/dashboard", label: "Home" }],
   },
   {
-    id: "profile",
-    label: "Profile",
-    href: "/family/profile",
+    id: "dossier",
+    label: "Dossier",
+    href: "/family/dossier",
     children: [
-      { href: "/family/profile", label: "Manage profile" },
+      { href: "/family/dossier", label: "Resident dossier" },
       { href: "/family/profile?tab=documents", label: "Documents" },
     ],
   },
   {
-    id: "communities",
-    label: "Communities",
-    href: "/family/find-communities",
-    children: [
-      { href: "/family/find-communities", label: "Browse communities" },
-      { href: "/family/saved", label: "Saved" },
-      { href: "/family/compare", label: "Compare" },
-    ],
-  },
-  {
     id: "applications",
-    label: "My applications",
+    label: "Applications",
     href: "/family/applications",
     children: [
       { href: "/family/applications", label: "My applications" },
+      { href: "/family/communities", label: "Choose communities" },
+    ],
+  },
+  {
+    id: "collaborate",
+    label: "Collaborate",
+    href: "/family/messages",
+    children: [
       { href: "/family/messages", label: "Messages" },
+      { href: "/family/family-members", label: "Family members" },
     ],
   },
   {
@@ -81,38 +81,34 @@ export const familyNavGroups: NavGroup[] = [
     label: "Account",
     href: "/family/settings",
     children: [
-      { href: "/family/notifications", label: "Notifications" },
-      { href: "/family/family-members", label: "Family members" },
-      { href: "/family/privacy", label: "Privacy & security" },
       { href: "/family/settings", label: "Settings" },
+      { href: "/family/privacy", label: "Privacy" },
     ],
   },
 ];
 
-/** Bottom bar, mirrors the four journey steps */
+/** Bottom bar mirrors the four MVP pillars for families */
 export const familyMobileNav: NavItem[] = [
   { href: "/family/dashboard", label: "Home" },
-  { href: "/family/profile", label: "Profile" },
-  { href: "/family/find-communities", label: "Communities" },
-  { href: "/family/applications", label: "My applications" },
+  { href: "/family/dossier", label: "Dossier" },
+  { href: "/family/applications", label: "Applications" },
+  { href: "/family/messages", label: "Messages" },
 ];
 
 /**
- * Community portal, intelligent admissions inbox.
- * Admissions · Messages · Community · Team
+ * Community portal: admissions inbox only.
  */
 export const communityNav: NavItem[] = [
   { href: "/community/dashboard", label: "Admissions" },
-  { href: "/community/transition", label: "Transition" },
-  { href: "/community/applications?filter=history", label: "History" },
+  { href: "/community/applications", label: "Applications" },
   { href: "/community/messages", label: "Messages" },
-  { href: "/community/profile", label: "Community" },
   { href: "/community/team", label: "Team" },
+  { href: "/community/profile", label: "Community" },
 ];
 
-/** Flat nav only, no nested groups for the admissions portal */
 export const communityNavGroups: NavGroup[] = [];
 
+/** Internal ops for the admissions loop — no analytics/content CRM */
 export const internalNav: NavItem[] = [
   { href: "/internal/overview", label: "Overview" },
   { href: "/internal/users", label: "Users" },
@@ -122,22 +118,15 @@ export const internalNav: NavItem[] = [
   { href: "/internal/applications", label: "Applications" },
   { href: "/internal/documents", label: "Documents" },
   { href: "/internal/messages", label: "Messages" },
-  { href: "/internal/reports", label: "Reports" },
-  { href: "/internal/content", label: "Content" },
-  { href: "/internal/audit-logs", label: "Audit Logs" },
   { href: "/internal/settings", label: "Settings" },
 ];
 
-/** Internal header: few main titles with nested destinations */
 export const internalNavGroups: NavGroup[] = [
   {
     id: "home",
     label: "Home",
     href: "/internal/overview",
-    children: [
-      { href: "/internal/overview", label: "Overview" },
-      { href: "/internal/reports", label: "Analytics" },
-    ],
+    children: [{ href: "/internal/overview", label: "Overview" }],
   },
   {
     id: "people",
@@ -161,20 +150,15 @@ export const internalNavGroups: NavGroup[] = [
     ],
   },
   {
-    id: "governance",
-    label: "Governance",
-    href: "/internal/content",
-    children: [
-      { href: "/internal/content", label: "Moderation" },
-      { href: "/internal/audit-logs", label: "Audit logs" },
-      { href: "/internal/settings", label: "Settings" },
-    ],
+    id: "settings",
+    label: "Settings",
+    href: "/internal/settings",
+    children: [{ href: "/internal/settings", label: "Settings" }],
   },
 ];
 
 /**
- * Care professional portal, discharge planners, social workers, care coordinators.
- * Focus: patients, placement status, applications, messages, facility contacts.
+ * Care professional: patients (dossier) → apply → track → message.
  */
 export const professionalNav: NavItem[] = [
   { href: "/professional/dashboard", label: "Dashboard" },
@@ -182,8 +166,7 @@ export const professionalNav: NavItem[] = [
   { href: "/professional/applications", label: "Applications" },
   { href: "/professional/messages", label: "Messages" },
   { href: "/professional/communities", label: "Communities" },
-  { href: "/professional/contacts", label: "Contacts" },
-  { href: "/professional/organization", label: "My Organization" },
+  { href: "/professional/organization", label: "Organization" },
 ];
 
 export const familyHome = "/family/dashboard";

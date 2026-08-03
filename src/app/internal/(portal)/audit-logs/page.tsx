@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { InternalAuditPage } from "@/components/internal/InternalAuditPage";
-
-export default function Page() {
-  return <InternalAuditPage />;
+export default function InternalAuditRedirect() {
+  redirect("/internal/overview");
 }

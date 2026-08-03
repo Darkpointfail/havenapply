@@ -71,8 +71,8 @@ export function CommunityDetailGate({ community }: { community: CommunityDetail 
           </Button>
         </div>
         <p className="mt-4 text-xs text-ink-faint">
-          <Link href="/find-senior-living" className="underline-offset-2 hover:underline">
-            {t("Back to Find Senior Living")}
+          <Link href="/family/communities" className="underline-offset-2 hover:underline">
+            {t("Back to communities")}
           </Link>
         </p>
       </Card>

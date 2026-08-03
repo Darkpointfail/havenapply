@@ -9,12 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { useT } from "@/lib/i18n/locale";
 
 const sections: { label: string; href?: string; soon?: boolean }[] = [
-  { label: "Profile", href: "/family/senior-profile" },
+  { label: "Resident dossier", href: "/family/dossier" },
+  { label: "Documents", href: "/family/profile?tab=documents" },
   { label: "Family members", href: "/family/family-members" },
-  { label: "Notifications", href: "/family/notifications" },
-  { label: "Privacy & security", href: "/family/privacy" },
-  { label: "Billing", soon: true },
-  { label: "Connected accounts", soon: true },
+  { label: "Privacy", href: "/family/privacy" },
   { label: "Language", soon: true },
   { label: "Accessibility", soon: true },
 ];

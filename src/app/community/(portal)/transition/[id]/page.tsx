@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityTransitionWorkspace } from "@/components/community/transition/CommunityTransitionWorkspace";
-
-export default function CommunityTransitionDetailPage() {
-  return <CommunityTransitionWorkspace />;
+export default function TransitionDetailRedirect() {
+  redirect("/community/dashboard");
 }

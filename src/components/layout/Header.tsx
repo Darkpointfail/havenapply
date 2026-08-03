@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
-  CalendarDays,
   CheckSquare,
   FileText,
   LayoutDashboard,
@@ -12,7 +10,6 @@ import {
   Menu,
   MessageSquare,
   Moon,
-  Search,
   Settings,
   Sparkles,
   Sun,
@@ -29,19 +26,16 @@ import { useT } from "@/lib/i18n/locale";
 
 const marketingLinks = [
   { href: "/#problem", label: "Why Haven" },
-  { href: "/#ai", label: "AI" },
-  { href: "/#pricing", label: "Pricing" },
-  { href: "/find-senior-living", label: "Browse" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/for-families", label: "For Families" },
+  { href: "/for-communities", label: "For Communities" },
 ];
 
 const familyLinks = [
   { href: "/family/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/family/find-communities", label: "Communities", icon: Search },
-  { href: "/family/applications", label: "My applications", icon: CheckSquare },
-  { href: "/family/documents", label: "Documents", icon: FileText },
+  { href: "/family/dossier", label: "Dossier", icon: FileText },
+  { href: "/family/applications", label: "Applications", icon: CheckSquare },
   { href: "/family/messages", label: "Messages", icon: MessageSquare },
-  { href: "/family/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
 export function Header() {
@@ -167,11 +161,11 @@ export function Header() {
                 <Sparkles size={16} />
               </button>
               <Link
-                href="/notifications"
+                href="/family/messages"
                 className="relative rounded-xl p-2.5 text-ink-muted hover:bg-bg-soft hover:text-ink"
+                aria-label={t("Messages")}
               >
-                <Bell size={16} />
-                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-danger" />
+                <MessageSquare size={16} />
               </Link>
               <Link
                 href="/family/settings"

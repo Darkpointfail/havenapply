@@ -3,23 +3,27 @@ import {
   SITE_ACCESS_COOKIE,
   SITE_ACCESS_COOKIE_VALUE,
   SITE_ACCESS_PASSWORD,
+  normalizeSitePassword,
+  passwordsMatch,
 } from "@/lib/site-access";
 
 export async function POST(request: Request) {
-  let password = "";
+  let rawPassword: unknown = "";
   const contentType = request.headers.get("content-type") || "";
 
   if (contentType.includes("application/json")) {
     const body = (await request.json().catch(() => null)) as {
-      password?: string;
+      password?: unknown;
     } | null;
-    password = body?.password?.trim() || "";
+    rawPassword = body?.password;
   } else {
     const form = await request.formData().catch(() => null);
-    password = String(form?.get("password") || "").trim();
+    rawPassword = form?.get("password");
   }
 
-  if (password !== SITE_ACCESS_PASSWORD) {
+  const password = normalizeSitePassword(rawPassword);
+  if (!password || !passwordsMatch(password, SITE_ACCESS_PASSWORD)) {
+    // Static error only — never echo the submitted password.
     return NextResponse.json(
       { ok: false, error: "Incorrect password" },
       { status: 401 },
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
     name: SITE_ACCESS_COOKIE,
+    // Fixed constant — never derived from user input.
     value: SITE_ACCESS_COOKIE_VALUE,
     httpOnly: true,
     sameSite: "lax",

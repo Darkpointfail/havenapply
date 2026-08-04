@@ -5,16 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/locale";
+import {
+  SITE_ACCESS_PASSWORD_MAX_LENGTH,
+  safeSiteNextPath,
+} from "@/lib/site-access";
 
 function SiteAccessForm() {
   const t = useT();
   const router = useRouter();
   const params = useSearchParams();
-  const nextParam = params.get("next");
-  const next =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : "/";
+  const next = safeSiteNextPath(params.get("next"));
 
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +32,7 @@ function SiteAccessForm() {
         body: JSON.stringify({ password }),
       });
       if (!res.ok) {
+        // Fixed copy only — never render the submitted password.
         setError(t("Incorrect password. Try again."));
         setSubmitting(false);
         return;
@@ -79,8 +80,11 @@ function SiteAccessForm() {
                 required
                 autoFocus
                 autoComplete="current-password"
+                maxLength={SITE_ACCESS_PASSWORD_MAX_LENGTH}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value.slice(0, SITE_ACCESS_PASSWORD_MAX_LENGTH))
+                }
                 className="w-full rounded-2xl border border-line bg-bg-soft/80 py-3 pl-11 pr-4 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-4 focus:ring-brand/10"
                 placeholder={t("Access password")}
               />

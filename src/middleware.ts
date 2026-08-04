@@ -4,6 +4,7 @@ import {
   SITE_ACCESS_COOKIE_VALUE,
   SITE_ACCESS_PATH,
   isSiteAccessPublicPath,
+  safeSiteNextPath,
 } from "@/lib/site-access";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -16,8 +17,8 @@ export async function middleware(request: NextRequest) {
     if (!unlocked) {
       const url = request.nextUrl.clone();
       url.pathname = SITE_ACCESS_PATH;
-      const next =
-        `${pathname}${request.nextUrl.search}` || "/";
+      url.search = "";
+      const next = safeSiteNextPath(`${pathname}${request.nextUrl.search}`);
       if (next !== SITE_ACCESS_PATH) {
         url.searchParams.set("next", next);
       }

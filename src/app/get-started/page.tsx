@@ -114,10 +114,10 @@ function GetStartedInner() {
 
   useEffect(() => {
     if (!role || !formRef.current) return;
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }, 180);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [role]);
 
   const onSubmit = async (e: FormEvent) => {
@@ -125,7 +125,7 @@ function GetStartedInner() {
     if (!role || submitting) return;
     setError(null);
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("Passwords do not match."));
       return;
     }
     setSubmitting(true);
@@ -184,8 +184,11 @@ function GetStartedInner() {
     <div className="mx-auto max-w-3xl px-5 py-12 md:py-16">
       <PageHeader
         title={t("Who are you using HavenApply as?")}
-        description="Choose your role once, then create your account."
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Get Started" }]}
+        description={t("Choose your role once, then create your account.")}
+        breadcrumbs={[
+          { label: t("Home"), href: "/" },
+          { label: t("Get Started") },
+        ]}
       />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -216,11 +219,15 @@ function GetStartedInner() {
               >
                 <Icon size={22} />
               </span>
-              <p className="mt-4 text-lg font-semibold tracking-tight text-ink">{option.title}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{option.subtitle}</p>
+              <p className="mt-4 text-lg font-semibold tracking-tight text-ink">
+                {t(option.title)}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
+                {t(option.subtitle)}
+              </p>
               {option.examples ? (
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
-                  {option.examples.join(" · ")}
+                  {option.examples.map((ex) => t(ex)).join(" · ")}
                 </p>
               ) : (
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
@@ -233,7 +240,7 @@ function GetStartedInner() {
                   selected ? "text-brand" : "text-ink-muted group-hover:text-brand",
                 )}
               >
-                {selected ? "Selected" : "Select"}
+                {selected ? t("Selected") : t("Select")}
               </span>
             </button>
           );
@@ -256,7 +263,9 @@ function GetStartedInner() {
                   {t("Create account")}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-ink">
-                  {selectedMeta ? `${selectedMeta.title} registration` : "Registration"}
+                  {selectedMeta
+                    ? t("{role} registration", { role: t(selectedMeta.title) })
+                    : t("Registration")}
                 </h2>
                 <p className="mt-1 text-sm text-ink-muted">
                   {t("Your role is saved with your account for future access.")}
@@ -314,7 +323,11 @@ function GetStartedInner() {
               {needsOrg ? (
                 <>
                   <AuthField
-                    label={role === "facility" ? "Community / organization" : "Organization"}
+                    label={
+                      role === "facility"
+                        ? t("Community / organization")
+                        : t("Organization")
+                    }
                   >
                     <input
                       required
@@ -323,7 +336,9 @@ function GetStartedInner() {
                       onChange={(e) => setOrganization(e.target.value)}
                       autoComplete="organization"
                       placeholder={
-                        role === "facility" ? "Maple Grove Residence" : "City Hospital Case Management"
+                        role === "facility"
+                          ? t("Maple Grove Residence")
+                          : t("City Hospital Case Management")
                       }
                     />
                   </AuthField>
@@ -336,11 +351,13 @@ function GetStartedInner() {
                         onChange={(e) => setJobTitle(e.target.value)}
                         autoComplete="organization-title"
                         placeholder={
-                          role === "facility" ? "Director of Admissions" : "Social Worker"
+                          role === "facility"
+                            ? t("Director of Admissions")
+                            : t("Social Worker")
                         }
                       />
                     </AuthField>
-                    <AuthField label={t("Phone")} hint="Optional">
+                    <AuthField label={t("Phone")} hint={t("Optional")}>
                       <input
                         type="tel"
                         className={authInputClass}
@@ -353,7 +370,7 @@ function GetStartedInner() {
                 </>
               ) : null}
 
-              <AuthField label={t("Password")} hint="At least 8 characters">
+              <AuthField label={t("Password")} hint={t("At least 8 characters")}>
                 <input
                   required
                   type="password"
@@ -384,13 +401,15 @@ function GetStartedInner() {
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
                 />
                 <span>
-                  I accept the <span className="font-medium text-ink">Terms of Use</span> and{" "}
-                  <span className="font-medium text-ink">Privacy Policy</span>.
+                  {t("I accept the")}{" "}
+                  <span className="font-medium text-ink">{t("Terms of Use")}</span>{" "}
+                  {t("and")}{" "}
+                  <span className="font-medium text-ink">{t("Privacy Policy")}</span>.
                 </span>
               </label>
 
               <Button type="submit" className="w-full" size="lg" disabled={submitting || !role}>
-                {submitting ? "Creating account…" : "Create account"}
+                {submitting ? t("Creating account…") : t("Create account")}
               </Button>
             </form>
           </Card>
@@ -398,7 +417,7 @@ function GetStartedInner() {
       </div>
 
       <p className="mt-8 text-center text-sm text-ink-muted">
-        Already have an account?{" "}
+        {t("Already have an account?")}{" "}
         <Link href="/sign-in" className="font-medium text-brand hover:underline">
           {t("Log in")}
         </Link>
@@ -408,8 +427,7 @@ function GetStartedInner() {
 }
 
 export default function GetStartedPage() {
-
-  const t = useT();  return (
+  return (
     <RedirectIfAuthenticated fallbackHref="/family/dashboard">
       <Suspense
         fallback={

@@ -1,7 +1,9 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { CommunityTransitionWorkspace } from "@/components/community/transition/CommunityTransitionWorkspace";
+type Props = { params: Promise<{ id: string }> };
 
-export default function CommunityTransitionDetailPage() {
-  return <CommunityTransitionWorkspace />;
+/** Post-accept steps live on the application detail (signature → admission). */
+export default async function TransitionDetailRedirect({ params }: Props) {
+  const { id } = await params;
+  redirect(`/community/applications/${id}`);
 }

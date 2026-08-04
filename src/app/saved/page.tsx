@@ -1,1 +1,6 @@
-export { default } from "@/app/family/saved/page";
+import { redirect } from "next/navigation";
+
+/** Favorites deferred — not required for shared-dossier admissions MVP. */
+export default function SavedRedirect() {
+  redirect("/family/communities");
+}

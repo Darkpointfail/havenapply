@@ -61,6 +61,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       : AUTH_OPEN_ACCESS && isProfessional;
 
   const showFamilyShell = isFamilyUser && (isCoreFamily || isBrowse);
+  /** Full-screen guided flows without portal chrome */
+  const isImmersiveFamilyFlow = pathname.startsWith("/family/dossier");
 
   const communitySession =
     (isCommunityUser && user?.communityStatus === "verified") ||
@@ -81,6 +83,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   if (showFamilyShell) {
+    if (isImmersiveFamilyFlow) {
+      return <main className="flex-1 page-enter">{children}</main>;
+    }
     return (
       <>
         <PortalHeader

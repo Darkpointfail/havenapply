@@ -27,7 +27,7 @@ import {
 import { useFamilyCollaboration } from "@/lib/family-collaboration-store";
 import { cn } from "@/lib/utils";
 
-type Tab = "members" | "permissions" | "tasks" | "comments" | "activity";
+type Tab = "members" | "permissions";
 
 const inviteRoles = FAMILY_ROLES.filter((r) => r.id !== "owner");
 
@@ -159,9 +159,6 @@ export function FamilyMembersHub() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "members", label: "Members" },
     { id: "permissions", label: "Permissions" },
-    { id: "tasks", label: "Tasks" },
-    { id: "comments", label: "Comments" },
-    { id: "activity", label: "Activity" },
   ];
 
   return (
@@ -488,127 +485,6 @@ export function FamilyMembersHub() {
               </Card>
             ))}
           </div>
-        </div>
-      )}
-
-      {tab === "tasks" && (
-        <div className="space-y-4">
-          {can("assignTasks") && (
-            <Card className="space-y-3 p-4">
-              <p className="font-semibold">Assign a task</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input
-                  className="rounded-xl border border-line bg-surface px-3 py-2 text-sm sm:col-span-2"
-                  placeholder="Task title"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                />
-                <input
-                  className="rounded-xl border border-line bg-surface px-3 py-2 text-sm"
-                  placeholder="Due"
-                  value={taskDue}
-                  onChange={(e) => setTaskDue(e.target.value)}
-                />
-                <select
-                  className="rounded-xl border border-line bg-surface px-3 py-2 text-sm sm:col-span-2"
-                  value={taskAssignee}
-                  onChange={(e) => setTaskAssignee(e.target.value)}
-                >
-                  <option value="">Unassigned</option>
-                  {activeMembers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-                <Button size="sm" onClick={submitTask}>
-                  Assign
-                </Button>
-              </div>
-              {taskError && <p className="text-sm text-danger">{taskError}</p>}
-            </Card>
-          )}
-          <div className="space-y-2">
-            {household.tasks.map((t) => (
-              <Card
-                key={t.id}
-                className={cn(
-                  "flex items-start gap-3 p-4",
-                  t.done && "opacity-60",
-                )}
-              >
-                <button
-                  type="button"
-                  className={cn(
-                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
-                    t.done ? "border-success bg-success text-white" : "border-line",
-                  )}
-                  onClick={() => toggleTask(t.id)}
-                  aria-label={t.done ? "Mark incomplete" : "Mark complete"}
-                >
-                  {t.done && <Check size={12} />}
-                </button>
-                <div>
-                  <p className={cn("font-medium", t.done && "line-through")}>{t.title}</p>
-                  <p className="text-sm text-ink-muted">
-                    {t.assigneeName} · due {t.due}
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === "comments" && (
-        <div className="space-y-4">
-          {can("postComments") && (
-            <Card className="space-y-3 p-4">
-              <div className="flex items-center gap-2 font-semibold">
-                <MessageSquare size={16} /> Internal comment
-              </div>
-              <textarea
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm"
-                rows={3}
-                placeholder="Visible only to authorized family members, not communities."
-                value={commentDraft}
-                onChange={(e) => setCommentDraft(e.target.value)}
-              />
-              <Button size="sm" onClick={submitComment}>
-                Post
-              </Button>
-            </Card>
-          )}
-          <div className="space-y-3">
-            {household.comments.map((c) => (
-              <Card key={c.id} className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold">{c.authorName}</p>
-                  <p className="text-xs text-ink-faint">{formatCollabTime(c.createdAt)}</p>
-                </div>
-                <p className="mt-2 text-sm text-ink">{c.body}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === "activity" && (
-        <div className="space-y-3">
-          <div className="mb-2 flex items-center gap-2 text-sm text-ink-muted">
-            <History size={14} /> Important actions are recorded for the household.
-          </div>
-          {[...household.auditLog].reverse().map((a) => (
-            <Card key={a.id} className="flex gap-3 p-4">
-              <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" />
-              <div>
-                <p className="text-sm">
-                  <span className="font-semibold">{a.actor}</span>, {a.action}
-                </p>
-                <p className="mt-1 text-xs text-ink-faint">{formatCollabTime(a.at)}</p>
-              </div>
-            </Card>
-          ))}
         </div>
       )}
     </div>

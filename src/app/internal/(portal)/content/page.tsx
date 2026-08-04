@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { InternalModerationPage } from "@/components/internal/InternalModerationPage";
-
-export default function Page() {
-  return <InternalModerationPage />;
+export default function InternalContentRedirect() {
+  redirect("/internal/communities");
 }

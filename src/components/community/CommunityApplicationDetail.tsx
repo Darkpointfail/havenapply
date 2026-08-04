@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { AdmissionReviewGuide } from "@/components/community/AdmissionReviewGuide";
 import { AdmissionTransitionGuide } from "@/components/community/AdmissionTransitionGuide";
+import {
+  AdmissionPipelineStrip,
+  PostDecisionChecklist,
+} from "@/components/admissions/AdmissionPipeline";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCommunityPortal } from "@/lib/community-portal-store";
@@ -126,6 +130,8 @@ export function CommunityApplicationDetail() {
     getApplication,
     acceptApplication,
     declineApplication,
+    requestDocument,
+    changeStatus,
     updateReviewChecklist,
     updateTransitionChecklist,
     setMoveInConfirmed,
@@ -136,6 +142,8 @@ export function CommunityApplicationDetail() {
   const [auditOpen, setAuditOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [docRequestOpen, setDocRequestOpen] = useState(false);
+  const [docRequestText, setDocRequestText] = useState("");
   const [auditNote, setAuditNote] = useState("");
   const [declineReason, setDeclineReason] = useState<string>(DECLINE_REASONS[0]);
   const [declineNote, setDeclineNote] = useState("");
@@ -212,7 +220,7 @@ export function CommunityApplicationDetail() {
     const r = acceptApplication(app.id, auditNote.trim() || undefined);
     if (r.ok) {
       setAuditOpen(false);
-      flashMsg("Accepted, now in Transition for contracts & move-in");
+      flashMsg(t("Accepted — continue with signature, deposit, and arrival"));
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
   };
@@ -249,11 +257,11 @@ export function CommunityApplicationDetail() {
         <div className="space-y-10">
           <div>
             <Link
-              href={inTransition ? "/community/transition" : "/community/dashboard"}
+              href="/community/dashboard"
               className="inline-flex items-center gap-1.5 text-sm text-ink-muted transition hover:text-ink"
             >
               <ArrowLeft size={14} />
-              {inTransition ? "Transition" : "Admissions queue"}
+              {t("Admissions queue")}
             </Link>
 
             <p className="mt-5 text-sm font-medium text-ink-muted">
@@ -300,6 +308,12 @@ export function CommunityApplicationDetail() {
                   <span className="mx-1.5">·</span>
                   {applicationCareType(app)}
                 </p>
+                <div className="mt-4">
+                  <AdmissionPipelineStrip
+                    status={app.status}
+                    checklist={app.transitionChecklist}
+                  />
+                </div>
               </div>
             </div>
 
@@ -737,7 +751,7 @@ export function CommunityApplicationDetail() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <button
                       type="button"
                       disabled={!can("acceptDecline") || !transitionProgress?.complete}
@@ -752,12 +766,12 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          {t("Close dossier")}
+                          {t("Mark as admitted")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
                           {transitionProgress?.complete
-                            ? "Move-in ready · archive"
-                            : "Complete transition first"}
+                            ? t("Step 15 · close the loop")
+                            : t("Complete signature & deposit first")}
                         </span>
                       </span>
                     </button>
@@ -779,23 +793,21 @@ export function CommunityApplicationDetail() {
                         </span>
                       </span>
                     </button>
+                  </div>
 
-                    <Link
-                      href={`/community/transition/${app.id}`}
-                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-brand/40 hover:bg-brand-soft/30"
-                    >
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">
-                        <FileText size={18} />
-                      </span>
-                      <span>
-                        <span className="block text-base font-semibold text-ink">
-                          {t("Transition board")}
-                        </span>
-                        <span className="mt-0.5 block text-sm text-ink-muted">
-                          {t("All accepted dossiers")}
-                        </span>
-                      </span>
-                    </Link>
+                  <div className="mt-5">
+                    <PostDecisionChecklist
+                      checklist={app.transitionChecklist || {}}
+                      editable={can("acceptDecline")}
+                      onToggle={(id, value) =>
+                        updateTransitionChecklist(app.id, { [id]: value })
+                      }
+                      canAdmit={Boolean(transitionProgress?.complete)}
+                      onMarkAdmitted={() => {
+                        setCloseNote("");
+                        setCloseOpen(true);
+                      }}
+                    />
                   </div>
                 </>
               ) : (
@@ -811,7 +823,7 @@ export function CommunityApplicationDetail() {
                       {t("All review checks complete, ready to finalize.")}
                     </p>
                   )}
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <button
                       type="button"
                       disabled={!can("acceptDecline") || !reviewProgress?.complete}
@@ -825,19 +837,46 @@ export function CommunityApplicationDetail() {
                         <Check size={18} />
                       </span>
                       <span>
-                        <span className="block text-base font-semibold text-ink">Approve</span>
+                        <span className="block text-base font-semibold text-ink">
+                          {t("Accept")}
+                        </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
                           {reviewProgress?.complete
-                            ? "Then open Transition"
-                            : "Complete checklist first"}
+                            ? t("Then signature & deposit")
+                            : t("Complete checklist first")}
                         </span>
                       </span>
                     </button>
 
                     <button
                       type="button"
-                      disabled={!can("requestInfo")}
-                      onClick={() => router.push(messageHref)}
+                      disabled={!can("changeStatus")}
+                      onClick={() => {
+                        const r = changeStatus(app.id, "waitlisted");
+                        if (r.ok) setFlash(t("Placed on waitlist"));
+                      }}
+                      className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-warn/40 hover:bg-warn-soft/30 disabled:opacity-50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-warn-soft text-warn">
+                        <FileText size={18} />
+                      </span>
+                      <span>
+                        <span className="block text-base font-semibold text-ink">
+                          {t("Waitlist")}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-muted">
+                          {t("Keep the dossier active")}
+                        </span>
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!can("requestDocuments")}
+                      onClick={() => {
+                        setDocRequestText(app.documentRequest || "");
+                        setDocRequestOpen(true);
+                      }}
                       className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-warn/40 hover:bg-warn-soft/30 disabled:opacity-50"
                     >
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-warn-soft text-warn">
@@ -845,10 +884,10 @@ export function CommunityApplicationDetail() {
                       </span>
                       <span>
                         <span className="block text-base font-semibold text-ink">
-                          {t("Request information")}
+                          {t("Request documents")}
                         </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
-                          {t("Message the family")}
+                          {t("Step 10 · complementary files")}
                         </span>
                       </span>
                     </button>
@@ -867,7 +906,9 @@ export function CommunityApplicationDetail() {
                         <X size={18} />
                       </span>
                       <span>
-                        <span className="block text-base font-semibold text-ink">Decline</span>
+                        <span className="block text-base font-semibold text-ink">
+                          {t("Decline")}
+                        </span>
                         <span className="mt-0.5 block text-sm text-ink-muted">
                           {t("Select a reason")}
                         </span>
@@ -1019,6 +1060,58 @@ export function CommunityApplicationDetail() {
               </Button>
               <Button type="button" variant="danger" className="flex-1" onClick={confirmDecline}>
                 Decline
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request complementary documents */}
+      {docRequestOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+          <div
+            className="absolute inset-0"
+            onClick={() => setDocRequestOpen(false)}
+            aria-hidden
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
+            <h2 className="text-xl font-semibold tracking-tight">
+              {t("Request documents")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              {t("The family will see this on their application and in documents.")}
+            </p>
+            <label className="mt-4 block text-sm">
+              <span className="font-medium text-ink">{t("Documents needed")}</span>
+              <textarea
+                rows={4}
+                value={docRequestText}
+                onChange={(e) => setDocRequestText(e.target.value)}
+                placeholder={t("e.g. Updated medication list · Recent labs")}
+                className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+              />
+            </label>
+            <div className="mt-5 flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setDocRequestOpen(false)}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => {
+                  const r = requestDocument(app.id, docRequestText);
+                  if (r.ok) {
+                    setDocRequestOpen(false);
+                    setFlash(t("Document request sent"));
+                  }
+                }}
+              >
+                {t("Send request")}
               </Button>
             </div>
           </div>

@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { InternalAnalyticsPage } from "@/components/internal/InternalAnalyticsPage";
-
-export default function Page() {
-  return <InternalAnalyticsPage />;
+export default function InternalReportsRedirect() {
+  redirect("/internal/overview");
 }

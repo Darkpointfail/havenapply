@@ -23,6 +23,7 @@ import { computeCompatibility } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
 import { dossierReadyForApply, toDisplayApplication } from "@/lib/family-applications";
 import { useMessaging } from "@/lib/messaging-store";
+import { computeDossierCompleteness } from "@/lib/resident-dossier";
 import {
   type SeniorProfile,
   isSelfApplicant,
@@ -89,6 +90,7 @@ type JourneyStep = {
   href: string;
   done: boolean;
   minutes: number;
+  name?: string;
 };
 
 export default function FamilyDashboardPage() {
@@ -121,30 +123,67 @@ export default function FamilyDashboardPage() {
   );
 
   const steps: JourneyStep[] = useMemo(() => {
-    const profileDone = data.seniorCreated && completeness >= 70;
-    const docsDone = data.documents.length > 0;
+    const dossierStatus = computeDossierCompleteness(
+      data.residentDossier,
+      data.documents,
+    );
+    const sectionDone = (id: string) =>
+      Boolean(dossierStatus.sections.find((s) => s.id === id)?.done);
+
+    const profileDone = data.seniorCreated && sectionDone("resident");
+    const medicalDone =
+      (sectionDone("health") && sectionDone("care")) || careDone;
+    const docsDone = data.documents.length > 0 || sectionDone("documents");
     const applied = activeApps.length > 0;
     const forSelf = isSelfApplicant(senior);
+    const medicalHref =
+      sectionDone("health") && !sectionDone("care")
+        ? "/family/dossier?step=care"
+        : "/family/dossier?step=health";
 
     return [
       {
-        id: "dossier",
+        id: "profile",
         title: needsSetup
-          ? "Create the shared dossier"
+          ? "Create the resident profile"
           : forSelf
-            ? "Complete your dossier"
-            : `Complete the dossier for ${lovedOne}`,
+            ? "Complete your profile"
+            : "Complete the profile for {name}",
         detail: needsSetup
-          ? "Resident info, care needs, and documents — filled once for every application."
-          : "Keep the shared dossier current so every community gets the same packet.",
-        href: "/family/dossier",
-        done: profileDone && careDone && docsDone,
-        minutes: needsSetup ? 15 : 8,
+          ? "Identity, contacts, and living situation — the administrative base of the dossier."
+          : "Keep identity and contacts current so every residence has the same facts.",
+        href: "/family/dossier?step=resident",
+        done: profileDone,
+        minutes: 3,
+        name: lovedOne,
+      },
+      {
+        id: "medical",
+        title: needsSetup
+          ? "Create the medical profile"
+          : forSelf
+            ? "Complete your medical profile"
+            : "Complete the medical profile for {name}",
+        detail:
+          "Medications, conditions, allergies, autonomy, mobility, and daily living needs — everything health-related.",
+        href: medicalHref,
+        done: medicalDone,
+        minutes: 5,
+        name: lovedOne,
+      },
+      {
+        id: "documents",
+        title: "Add documents",
+        detail:
+          "Upload medical reports, ID, and other files residences need to review the application.",
+        href: "/family/dossier?step=documents",
+        done: docsDone,
+        minutes: 3,
       },
       {
         id: "apply",
         title: "Send applications",
-        detail: "Choose communities and submit the same dossier in one click.",
+        detail: "Choose residences and submit the same dossier in one click.",
         href: "/family/communities",
         done: applied,
         minutes: 5,
@@ -160,8 +199,8 @@ export default function FamilyDashboardPage() {
     ];
   }, [
     data.seniorCreated,
-    completeness,
-    data.documents.length,
+    data.residentDossier,
+    data.documents,
     activeApps.length,
     needsSetup,
     lovedOne,
@@ -527,7 +566,7 @@ export default function FamilyDashboardPage() {
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <Button href={next.href} size="lg">
-              {next.title.includes("Create") ? "Get started" : "Continue"}
+              {t(next.title.includes("Create") ? "Get started" : "Continue")}
               <ArrowRight size={16} />
             </Button>
             <div className="flex items-center gap-3 text-sm text-ink-muted">
@@ -579,15 +618,19 @@ export default function FamilyDashboardPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className={cn("font-semibold", step.done && "text-ink-muted")}>
-                          {step.title}
+                          {t(step.title, step.name ? { name: step.name } : undefined)}
                         </p>
-                        {isNext && <Badge tone="brand">Do this now</Badge>}
+                        {isNext && <Badge tone="brand">{t("Do this now")}</Badge>}
                         {step.done && (
-                          <span className="text-xs font-medium text-success">Done</span>
+                          <span className="text-xs font-medium text-success">{t("Done")}</span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm leading-relaxed text-ink-muted">{step.detail}</p>
-                      <p className="mt-2 text-xs text-ink-faint">~{step.minutes} min</p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+                        {t(step.detail)}
+                      </p>
+                      <p className="mt-2 text-xs text-ink-faint">
+                        {t("~{n} min", { n: String(step.minutes) })}
+                      </p>
                     </div>
                     <ArrowRight
                       size={18}

@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Cloud } from "lucide-react";
 import {
   DOSSIER_STEPS,
@@ -23,11 +24,14 @@ import { StepSubmit } from "@/components/dossier/steps/StepSubmit";
 
 export function DossierWizard() {
   const t = useT();
+  const searchParams = useSearchParams();
   const { ready, data, updateResidentDossier, saveResidentDossier } = useFamilyData();
   const [draft, setDraft] = useState<ResidentDossier | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seeded = useRef(false);
+  const urlStepApplied = useRef(false);
+  const lastUrlStep = useRef<string | null>(null);
 
   useEffect(() => {
     if (!ready || seeded.current) return;
@@ -39,9 +43,37 @@ export function DossierWizard() {
     if (!seededDraft.startedAt) {
       seededDraft.startedAt = new Date().toISOString();
     }
+
+    const stepParam = searchParams.get("step");
+    if (stepParam) {
+      const idx = DOSSIER_STEPS.findIndex((s) => s.id === stepParam);
+      if (idx >= 0) {
+        seededDraft.stepIndex = idx;
+        urlStepApplied.current = true;
+        lastUrlStep.current = stepParam;
+      }
+    }
+
     setDraft(seededDraft);
     seeded.current = true;
-  }, [ready, data.senior, data.careNeeds, data.residentDossier]);
+  }, [ready, data.senior, data.careNeeds, data.residentDossier, searchParams]);
+
+  // Honor ?step= when navigating from the journey while the wizard is already mounted.
+  useEffect(() => {
+    if (!seeded.current) return;
+    const stepParam = searchParams.get("step");
+    if (!stepParam) return;
+    const idx = DOSSIER_STEPS.findIndex((s) => s.id === stepParam);
+    if (idx < 0) return;
+    if (urlStepApplied.current && lastUrlStep.current === stepParam) return;
+    urlStepApplied.current = true;
+    lastUrlStep.current = stepParam;
+    setDraft((prev) =>
+      prev && prev.stepIndex !== idx
+        ? { ...prev, stepIndex: idx, lastSavedAt: new Date().toISOString() }
+        : prev,
+    );
+  }, [searchParams]);
 
   const persistDraft = useEffectEvent((next: ResidentDossier) => {
     setSaveState("saving");

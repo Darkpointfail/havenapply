@@ -1627,6 +1627,31 @@ export const frMessages: Record<string, string> = {
   "Maple Grove Residence": "Résidence Maple Grove",
   "City Hospital Case Management": "Gestion de cas, hôpital municipal",
 
+  // Family dashboard — Your journey
+  "Your journey": "Votre parcours",
+  "Do this now": "À faire maintenant",
+  Done: "Terminé",
+  "~{n} min": "Environ {n} min",
+  "Create the resident profile": "Créer le profil du résident",
+  "Complete your profile": "Compléter votre profil",
+  "Complete the profile for {name}": "Compléter le profil de {name}",
+  "Identity, contacts, and living situation — the administrative base of the dossier.":
+    "Identité, contacts et situation de vie — la base administrative du dossier.",
+  "Keep identity and contacts current so every residence has the same facts.":
+    "Gardez l’identité et les contacts à jour pour que chaque établissement ait les mêmes informations.",
+  "Create the medical profile": "Créer le profil médical",
+  "Complete your medical profile": "Compléter votre profil médical",
+  "Complete the medical profile for {name}": "Compléter le profil médical de {name}",
+  "Medications, conditions, allergies, autonomy, mobility, and daily living needs — everything health-related.":
+    "Médicaments, pathologies, allergies, autonomie, mobilité et besoins du quotidien — tout ce qui touche à la santé.",
+  "Add documents": "Ajouter les documents",
+  "Upload medical reports, ID, and other files residences need to review the application.":
+    "Téléversez les rapports médicaux, la pièce d’identité et les autres fichiers dont les établissements ont besoin.",
+  "Choose residences and submit the same dossier in one click.":
+    "Choisissez des établissements et envoyez le même dossier en un clic.",
+  "Track & respond": "Suivre et répondre",
+  "Follow statuses, upload requested documents, and message admissions.":
+    "Suivez les statuts, téléversez les documents demandés et échangez avec les admissions.",
 };
 
 export function translate(locale: Locale, key: string): string {

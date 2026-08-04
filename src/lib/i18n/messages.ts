@@ -1367,6 +1367,17 @@ export const frMessages: Record<string, string> = {
   "Confirm once. Haven sends the profile and documents. Track each community separately.": "Confirmez une fois. Haven envoie le profil et les documents. Suivez chaque établissement séparément.",
   "Track": "Suivi",
 
+  // Site password gate
+  "Private preview": "Aperçu privé",
+  "Enter the access password to continue to the site.":
+    "Entrez le mot de passe d’accès pour continuer vers le site.",
+  Password: "Mot de passe",
+  "Access password": "Mot de passe d’accès",
+  "Enter site": "Entrer sur le site",
+  "Checking…": "Vérification…",
+  "Incorrect password. Try again.": "Mot de passe incorrect. Réessayez.",
+  "Something went wrong. Please try again.": "Une erreur s’est produite. Réessayez.",
+
 };
 
 export function translate(locale: Locale, key: string): string {

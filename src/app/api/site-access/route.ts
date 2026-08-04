@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    // Session cookie only: password is required again on every new browser session.
   });
   return response;
 }

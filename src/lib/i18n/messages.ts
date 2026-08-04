@@ -826,7 +826,7 @@ export const frMessages: Record<string, string> = {
   "Follow up privately": "Faire un suivi en privé",
   "Food allergies": "Allergies alimentaires",
   "Food preferences": "Préférences alimentaires",
-  "For yourself or a loved one looking for the right care community.": "Pour vous-même ou un proche à la recherche de la bonne établissement de soins.",
+  "For yourself or a loved one looking for the right care community.": "Pour vous-même ou un proche à la recherche du bon établissement de soins.",
   "Forgot password": "Mot de passe oublié",
   "Forgot password?": "Mot de passe oublié ?",
   "Fort Worth, TX": "Fort Worth, Texas",

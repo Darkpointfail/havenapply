@@ -37,17 +37,19 @@ function ContactEditor({
   onChange,
   onRemove,
   title,
+  titleVars,
 }: {
   contact: ContactPerson;
   onChange: (c: ContactPerson) => void;
   onRemove?: () => void;
   title: string;
+  titleVars?: Record<string, string | number>;
 }) {
   const t = useT();
   return (
     <SectionCard className="space-y-3 bg-bg-soft/40">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-ink">{t(title)}</p>
+        <p className="text-sm font-semibold text-ink">{t(title, titleVars)}</p>
         {onRemove ? (
           <button
             type="button"
@@ -315,7 +317,8 @@ export function StepResident({
             value.familyMembers.map((m, i) => (
               <ContactEditor
                 key={m.id}
-                title={`Family member ${i + 1}`}
+                title="Family member {n}"
+                titleVars={{ n: String(i + 1) }}
                 contact={m}
                 onChange={(c) => {
                   const next = [...value.familyMembers];

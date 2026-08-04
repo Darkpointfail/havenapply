@@ -35,7 +35,7 @@ export type HealthcareProfessional = {
 };
 
 export const LIVING_SITUATION_OPTIONS = [
-  { id: "home", label: "Home" },
+  { id: "home", label: "At home" },
   { id: "hospital", label: "Hospital" },
   { id: "rehab", label: "Rehabilitation Center" },
   { id: "assisted", label: "Assisted Living" },

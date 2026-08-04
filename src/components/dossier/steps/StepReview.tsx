@@ -3,7 +3,9 @@
 import { AlertTriangle, CheckCircle2, Pencil, ShieldCheck } from "lucide-react";
 import { SectionCard, StepIntro, dossierFieldClass } from "@/components/dossier/DossierFields";
 import {
+  AUTONOMY_LEVEL_OPTIONS,
   DOSSIER_STEPS,
+  MOBILITY_CARD_OPTIONS,
   computeDossierCompleteness,
   type DossierStepId,
   type ResidentDossier,
@@ -23,19 +25,32 @@ const REVIEW_SECTIONS: DossierStepId[] = [
 
 function summaryFor(step: DossierStepId, d: ResidentDossier, docCount: number): string {
   switch (step) {
-    case "resident":
-      return [d.firstName, d.lastName].filter(Boolean).join(" ") || "Not started";
+    case "resident": {
+      const name = [d.firstName, d.lastName].filter(Boolean).join(" ");
+      return name || "Not started";
+    }
     case "health":
       return d.medicalConditions || d.diagnoses || d.allergies || "No medical details yet";
     case "care":
       return d.autonomyLevel
-        ? `Autonomy: ${d.autonomyLevel}${d.mobility ? ` · ${d.mobility}` : ""}`
+        ? "Autonomy: {level}"
         : "Autonomy incomplete";
     case "documents":
-      return docCount ? `${docCount} document(s)` : "No documents uploaded";
+      return docCount ? "{count} document(s)" : "No documents uploaded";
     default:
       return "";
   }
+}
+
+function summaryVars(
+  step: DossierStepId,
+  d: ResidentDossier,
+  docCount: number,
+): Record<string, string> | undefined {
+  if (step === "documents" && docCount) {
+    return { count: String(docCount) };
+  }
+  return undefined;
 }
 
 export function StepReview({
@@ -119,7 +134,24 @@ export function StepReview({
               <div className="min-w-0">
                 <p className="font-semibold text-ink">{t(meta.title)}</p>
                 <p className="mt-0.5 truncate text-sm text-ink-muted">
-                  {t(summaryFor(id, value, data.documents.length))}
+                  {(() => {
+                    const key = summaryFor(id, value, data.documents.length);
+                    const vars = summaryVars(id, value, data.documents.length);
+                    if (id === "care" && value.autonomyLevel) {
+                      const levelLabel =
+                        AUTONOMY_LEVEL_OPTIONS.find((o) => o.id === value.autonomyLevel)
+                          ?.label || value.autonomyLevel;
+                      const mobilityLabel =
+                        MOBILITY_CARD_OPTIONS.find((o) => o.id === value.mobility)?.label ||
+                        value.mobility;
+                      return t(key, {
+                        level: mobilityLabel
+                          ? `${t(levelLabel)} · ${t(mobilityLabel)}`
+                          : t(levelLabel),
+                      });
+                    }
+                    return t(key, vars);
+                  })()}
                 </p>
                 {section && !section.done ? (
                   <p className="mt-1 text-xs text-amber">{t("Needs attention")}</p>

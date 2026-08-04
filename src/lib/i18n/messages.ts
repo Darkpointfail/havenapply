@@ -1652,6 +1652,73 @@ export const frMessages: Record<string, string> = {
   "Track & respond": "Suivre et répondre",
   "Follow statuses, upload requested documents, and message admissions.":
     "Suivez les statuts, téléversez les documents demandés et échangez avec les admissions.",
+
+  // Streamlined 6-screen dossier forms (15-step workflow labels)
+  "Steps 1–2 of 15": "Étapes 1–2 sur 15",
+  "Step 3 of 15": "Étape 3 sur 15",
+  "Step 4 of 15": "Étape 4 sur 15",
+  "Step 5 of 15": "Étape 5 sur 15",
+  "Steps 6–7 of 15": "Étapes 6–7 sur 15",
+  "Step 8 of 15": "Étape 8 sur 15",
+  "Administrative information": "Informations administratives",
+  "Identity, contacts, and a light financial picture — once for every residence.":
+    "Identité, contacts et un aperçu financier léger — une seule fois pour chaque établissement.",
+  "Medical information": "Informations médicales",
+  "No jargon required. Share what residences need for admissions.":
+    "Pas de jargon. Partagez ce dont les établissements ont besoin pour les admissions.",
+  "Autonomy level": "Niveau d’autonomie",
+  "One overall level, then the daily details residences need.":
+    "Un niveau global, puis les détails du quotidien dont les établissements ont besoin.",
+  "Overall autonomy": "Autonomie globale",
+  "Assisted living level": "Niveau vie assistée",
+  "Memory care level": "Niveau soins de la mémoire",
+  "Skilled nursing level": "Niveau soins infirmiers",
+  "Little day-to-day help needed": "Peu d’aide au quotidien",
+  "Help with several daily activities": "Aide pour plusieurs activités quotidiennes",
+  "Cognitive support and secure setting": "Soutien cognitif et environnement sécurisé",
+  "Ongoing clinical or nursing care": "Soins cliniques ou infirmiers réguliers",
+  "Upload once. Haven sorts them for every application.":
+    "Téléversez une seule fois. Haven les classe pour chaque candidature.",
+  "Review & validate": "Revoir et valider",
+  "Automatic completeness first. Then confirm the packet is ready to send.":
+    "D’abord la complétude automatique. Puis confirmez que le dossier est prêt à envoyer.",
+  "Send to residences": "Envoyer aux établissements",
+  "Select one or more residences. The same validated dossier goes to each.":
+    "Sélectionnez un ou plusieurs établissements. Le même dossier validé part à chacun.",
+  Medical: "Médical",
+  Autonomy: "Autonomie",
+  Validate: "Valider",
+  "At home": "À domicile",
+  "Insurance & budget": "Assurance et budget",
+  "Optional now. Exact numbers can wait — ranges are fine.":
+    "Facultatif pour l’instant. Les montants exacts peuvent attendre — des fourchettes suffisent.",
+  "Who should residences call with clinical questions?":
+    "Qui les établissements doivent-ils appeler pour les questions cliniques ?",
+  "Family member {n}": "Membre de la famille {n}",
+  "Living situation": "Situation de vie",
+  "Conditions or diagnoses": "Conditions ou diagnostics",
+  Medications: "Médicaments",
+  "Daily living activities": "Activités de la vie quotidienne",
+  "Family or social worker validation": "Validation famille ou travailleur social",
+  "Family / social worker validation": "Validation famille / travailleur social",
+  "Confirm that the information and documents are accurate enough to send to residences.":
+    "Confirmez que les informations et documents sont assez exacts pour être envoyés aux établissements.",
+  "Validated by {name}": "Validé par {name}",
+  "Your name": "Votre nom",
+  "Family member or social worker": "Membre de la famille ou travailleur social",
+  "Validate dossier": "Valider le dossier",
+  "Not started": "Pas commencé",
+  "No medical details yet": "Aucun détail médical pour l’instant",
+  "Autonomy: {level}": "Autonomie : {level}",
+  "Autonomy incomplete": "Autonomie incomplète",
+  "{count} document(s)": "{count} document(s)",
+  "No documents uploaded": "Aucun document téléversé",
+  "Validate the dossier first (step 7) before sending.":
+    "Validez d’abord le dossier (étape 7) avant d’envoyer.",
+  "Validate the dossier on the previous step before sending.":
+    "Validez le dossier à l’étape précédente avant d’envoyer.",
+  "Search residences by name or city": "Rechercher des établissements par nom ou ville",
+  Validated: "Validé",
 };
 
 export function translate(locale: Locale, key: string): string {

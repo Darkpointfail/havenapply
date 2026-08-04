@@ -1598,6 +1598,35 @@ export const frMessages: Record<string, string> = {
   "Move-in Scheduled": "Emménagement planifié",
   "No communities match. Try another city or clear filters.": "Aucun établissement ne correspond. Essayez une autre ville ou effacez les filtres.",
 
+  // Get started / signup
+  "Get Started": "Commencer",
+  "Choose your role once, then create your account.":
+    "Choisissez votre rôle une seule fois, puis créez votre compte.",
+  Family: "Famille",
+  Select: "Choisir",
+  Selected: "Sélectionné",
+  "Passwords do not match.": "Les mots de passe ne correspondent pas.",
+  "Change role": "Changer de rôle",
+  Registration: "Inscription",
+  "{role} registration": "Inscription {role}",
+  "Community / organization": "Établissement / organisation",
+  "At least 8 characters": "Au moins 8 caractères",
+  "Already have an account?": "Vous avez déjà un compte ?",
+  "Creating account…": "Création du compte…",
+  "I accept the": "J’accepte les",
+  "Terms of Use": "Conditions d’utilisation",
+  "Privacy Policy": "Politique de confidentialité",
+  and: "et",
+  "Social Worker": "Travailleur social",
+  "Case Manager": "Gestionnaire de cas",
+  "Hospital Discharge Planner": "Planificateur de sortie d’hôpital",
+  Physician: "Médecin",
+  "Care Coordinator": "Coordonnateur de soins",
+  "Skilled Nursing Facility": "Centre de soins infirmiers",
+  "Memory Care Community": "Établissement de soins de la mémoire",
+  "Maple Grove Residence": "Résidence Maple Grove",
+  "City Hospital Case Management": "Gestion de cas, hôpital municipal",
+
 };
 
 export function translate(locale: Locale, key: string): string {

@@ -123,15 +123,28 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             type="button"
             className="relative overflow-hidden rounded-[1.25rem] md:col-span-2 md:row-span-2"
             onClick={() => setGalleryOpen(true)}
+            disabled={!community.image && community.gallery.length === 0}
           >
-            <Image
-              src={community.gallery[0] || community.image}
-              alt={community.name}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width:768px) 100vw, 50vw"
-            />
+            {community.gallery[0] || community.image ? (
+              <Image
+                src={community.gallery[0] || community.image}
+                alt={community.name}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width:768px) 100vw, 50vw"
+              />
+            ) : (
+              <div className="flex h-full min-h-[220px] w-full flex-col items-center justify-center gap-2 bg-[linear-gradient(160deg,#e8f2f2_0%,#f3f1ec_55%,#ebe4d8_100%)] px-6 text-center md:min-h-full">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+                  Medicare CMS
+                </p>
+                <p className="text-base font-medium text-ink">No photo available</p>
+                <p className="max-w-sm text-sm text-ink-muted">
+                  This facility is listed from Medicare Care Compare. Pricing is N/A.
+                </p>
+              </div>
+            )}
           </button>
           {community.gallery.slice(1, 5).map((src, i) => (
             <button
@@ -150,13 +163,15 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="mt-2 text-xs font-medium text-brand hover:underline"
-          onClick={() => setGalleryOpen(true)}
-        >
-          {t("View photo gallery")}
-        </button>
+        {(community.image || community.gallery.length > 0) && (
+          <button
+            type="button"
+            className="mt-2 text-xs font-medium text-brand hover:underline"
+            onClick={() => setGalleryOpen(true)}
+          >
+            {t("View photo gallery")}
+          </button>
+        )}
 
         {/* Header */}
         <div className="mt-6 flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
@@ -390,12 +405,18 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
                   <Card key={room.name} className="overflow-hidden">
                     <div className="grid md:grid-cols-[200px_1fr]">
                       <div className="relative min-h-[140px] bg-bg-soft">
-                        <Image
-                          src={community.gallery[0] || community.image}
-                          alt={room.name}
-                          fill
-                          className="object-cover"
-                        />
+                        {community.gallery[0] || community.image ? (
+                          <Image
+                            src={community.gallery[0] || community.image}
+                            alt={room.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full min-h-[140px] items-center justify-center px-3 text-center text-xs text-ink-muted">
+                            No photo · Price N/A
+                          </div>
+                        )}
                       </div>
                       <div className="p-4 md:p-5">
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -880,11 +901,17 @@ export function CommunityDetailView({ community }: { community: CommunityDetail 
               </button>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {(community.gallery.length ? community.gallery : [community.image]).map((src) => (
-                <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                  <Image src={src} alt="" fill className="object-cover" sizes="50vw" />
+              {(community.gallery.length ? community.gallery : community.image ? [community.image] : []).length ? (
+                (community.gallery.length ? community.gallery : [community.image]).map((src) => (
+                  <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                    <Image src={src} alt="" fill className="object-cover" sizes="50vw" />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full rounded-xl bg-bg-soft px-4 py-10 text-center text-sm text-ink-muted">
+                  No photos available for this Medicare facility.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

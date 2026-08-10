@@ -1,6 +1,9 @@
 import type { Residence } from "@/data/residences";
 import { getResidence } from "@/data/residences";
 
+// Lazy import path for CMS is handled by callers on the server via getCatalogResidence.
+// This module stays safe for shared use; getCommunityDetail prefers curated, then optional lookup.
+
 export type CareServiceBlock = {
   title: string;
   available: boolean;
@@ -436,5 +439,9 @@ export function buildCommunityDetail(r: Residence): CommunityDetail {
 export function getCommunityDetail(id: string): CommunityDetail | undefined {
   const r = getResidence(id);
   if (!r) return undefined;
+  return buildCommunityDetail(r);
+}
+
+export function getCommunityDetailFromResidence(r: Residence): CommunityDetail {
   return buildCommunityDetail(r);
 }

@@ -67,17 +67,27 @@ export function ResidenceCard({
           className="block h-full"
           onClick={(e) => e.stopPropagation()}
         >
-          <Image
-            src={residence.image}
-            alt={residence.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 100vw, 40vw"
-          />
+          {residence.image ? (
+            <Image
+              src={residence.image}
+              alt={residence.name}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              sizes="(max-width: 768px) 100vw, 40vw"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[linear-gradient(160deg,#e8f2f2_0%,#f3f1ec_55%,#ebe4d8_100%)] px-4 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+                Medicare
+              </p>
+              <p className="text-sm font-medium text-ink-muted">No photo available</p>
+            </div>
+          )}
         </Link>
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
           <Badge tone={avail.tone}>{avail.text}</Badge>
           {!residence.partner && <Badge tone="neutral">Non-partner</Badge>}
+          {!residence.image && <Badge tone="neutral">CMS</Badge>}
           {match && <Badge tone="brand">{match.score}% match</Badge>}
         </div>
         <button
@@ -169,7 +179,7 @@ export function ResidenceCard({
                 <span className="text-sm font-normal text-ink-muted"> / mo</span>
               </p>
             ) : (
-              <p className="text-sm font-semibold text-ink-muted">Price unavailable</p>
+              <p className="text-sm font-semibold text-ink-muted">N/A</p>
             )}
           </div>
         </div>

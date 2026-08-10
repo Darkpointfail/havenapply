@@ -15,6 +15,7 @@ import { ResidenceCard } from "@/components/residences/ResidenceCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { residences } from "@/data/residences";
+import type { Residence } from "@/data/residences";
 import {
   computeCompatibility,
   emptySearchFilters,
@@ -155,27 +156,103 @@ function FindCommunitiesInner() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [catalog, setCatalog] = useState<Residence[]>(residences);
+  const [catalogTotal, setCatalogTotal] = useState(residences.length);
+  const [medicareCount, setMedicareCount] = useState(0);
+  const [catalogPage, setCatalogPage] = useState(1);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogHasMore, setCatalogHasMore] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const pageToLoad = catalogPage;
+
+    async function load() {
+      setCatalogLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.query.trim()) params.set("q", filters.query.trim());
+        if (filters.postalCode.trim()) params.set("postal", filters.postalCode.trim());
+        if (filters.maxMiles != null) params.set("miles", String(filters.maxMiles));
+        if (filters.careTypes[0]) params.set("care", filters.careTypes[0]);
+        if (filters.medicaid) params.set("medicaid", "1");
+        if (filters.minRating != null) params.set("minRating", String(filters.minRating));
+        params.set("page", String(pageToLoad));
+        params.set("limit", "48");
+        params.set("source", "all");
+
+        const res = await fetch(`/api/communities?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("catalog fetch failed");
+        const data = (await res.json()) as {
+          items: Residence[];
+          total: number;
+          medicareCount: number;
+          page: number;
+          limit: number;
+        };
+
+        setMedicareCount(data.medicareCount || 0);
+        setCatalogTotal(data.total || 0);
+        setCatalogHasMore(data.page * data.limit < data.total);
+        setCatalog((prev) => (pageToLoad === 1 ? data.items : [...prev, ...data.items]));
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        // Fall back to curated demo residences if CMS catalog is unavailable.
+        if (pageToLoad === 1) {
+          setCatalog(residences);
+          setCatalogTotal(residences.length);
+          setCatalogHasMore(false);
+        }
+      } finally {
+        if (!controller.signal.aborted) setCatalogLoading(false);
+      }
+    }
+
+    void load();
+    return () => controller.abort();
+  }, [
+    catalogPage,
+    filters.query,
+    filters.postalCode,
+    filters.maxMiles,
+    filters.careTypes,
+    filters.medicaid,
+    filters.minRating,
+  ]);
+
+  // Reset pagination whenever search filters that hit the API change.
+  useEffect(() => {
+    setCatalogPage(1);
+  }, [
+    filters.query,
+    filters.postalCode,
+    filters.maxMiles,
+    filters.careTypes,
+    filters.medicaid,
+    filters.minRating,
+  ]);
 
   const postalOrigin = useMemo(
     () =>
       filters.postalCode.trim()
-        ? originFromPostalCode(filters.postalCode, residences)
+        ? originFromPostalCode(filters.postalCode, catalog.length ? catalog : residences)
         : null,
-    [filters.postalCode],
+    [filters.postalCode, catalog],
   );
 
   const matched = useMemo(() => {
-    const filtered = filterResidences(residences, filters);
+    const filtered = filterResidences(catalog, filters);
     const withMatch = filtered.map((r) => ({
       residence: r,
       match: computeCompatibility(r, data.seniorCreated ? data.senior : null, data.careNeeds),
     }));
     if (filters.postalCode.trim()) {
-      // filterResidences already sorts by proximity; keep that order, nudge score as tie-break only
       return withMatch;
     }
     return withMatch.sort((a, b) => b.match.score - a.match.score);
-  }, [filters, data.senior, data.seniorCreated, data.careNeeds]);
+  }, [catalog, filters, data.senior, data.seniorCreated, data.careNeeds]);
 
   useEffect(() => {
     setVisibleCount(0);
@@ -627,13 +704,24 @@ function FindCommunitiesInner() {
       {/* Results meta */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-ink-muted">
-          {loadingMore && visibleCount < matched.length ? (
+          {catalogLoading && catalogPage === 1 ? (
+            <>Loading Medicare catalog…</>
+          ) : loadingMore && visibleCount < matched.length ? (
             <>Loading… {visible.length} of {matched.length}</>
           ) : (
             <>
               <span className="font-medium text-ink">{matched.length}</span>{" "}
               {matched.length === 1 ? "community" : "communities"}
               {hasQueryOrFilters ? t(" match your search") : ""}
+              {medicareCount > 0 ? (
+                <span className="text-ink-faint">
+                  {" "}
+                  · {medicareCount.toLocaleString()} Medicare facilities indexed
+                  {catalogTotal > matched.length
+                    ? ` · ${catalogTotal.toLocaleString()} match filters`
+                    : ""}
+                </span>
+              ) : null}
             </>
           )}
         </p>
@@ -723,9 +811,32 @@ function FindCommunitiesInner() {
         </div>
       )}
 
+      {catalogHasMore || visibleCount < matched.length ? (
+        <div className="mt-6 flex justify-center">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={catalogLoading}
+            onClick={() => {
+              if (visibleCount < matched.length) {
+                setVisibleCount(matched.length);
+                return;
+              }
+              setCatalogPage((p) => p + 1);
+            }}
+          >
+            {catalogLoading ? "Loading…" : "Load more facilities"}
+          </Button>
+        </div>
+      ) : null}
+
       <p className="mt-8 max-w-2xl text-[11px] leading-relaxed text-ink-faint">
         {t("Compatibility scores are a search aid, not an admission guarantee. Pricing and availability")}
         can change, always verify with the community.
+        {medicareCount > 0
+          ? ` Medicare nursing homes (${medicareCount.toLocaleString()}) are sourced from CMS Care Compare; photos and prices are not included (N/A).`
+          : ""}
       </p>
     </div>
   );

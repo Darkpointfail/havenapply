@@ -3,10 +3,10 @@
 export const SITE_ACCESS_COOKIE = "haven_site_access";
 
 /** Bump to invalidate existing unlock cookies when the password policy changes. */
-export const SITE_ACCESS_COOKIE_VALUE = "gate-v2-session";
+export const SITE_ACCESS_COOKIE_VALUE = "gate-v3-revolution";
 
 export const SITE_ACCESS_PASSWORD =
-  process.env.SITE_ACCESS_PASSWORD || "HealthCare-Futur";
+  process.env.SITE_ACCESS_PASSWORD || "HealthCare-Revolution";
 
 export const SITE_ACCESS_PATH = "/site-access";
 export const SITE_ACCESS_API_PATH = "/api/site-access";

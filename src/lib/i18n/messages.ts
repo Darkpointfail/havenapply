@@ -1377,6 +1377,8 @@ export const frMessages: Record<string, string> = {
   "Checking…": "Vérification…",
   "Incorrect password. Try again.": "Mot de passe incorrect. Réessayez.",
   "Something went wrong. Please try again.": "Une erreur s’est produite. Réessayez.",
+  "Search now by postal code and filters. Create a short profile when you want stronger care-fit suggestions.":
+    "Recherchez dès maintenant par code postal et filtres. Créez un court profil quand vous voudrez de meilleures suggestions selon les besoins de soins.",
 
 };
 

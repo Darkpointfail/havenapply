@@ -325,16 +325,7 @@ function FindCommunitiesInner() {
                 {isProfessional ? t("Applications") : t("My applications")}
               </Button>
             </>
-          ) : (
-            <>
-              <Button href="/get-started" size="sm">
-                {t("Build a profile")}
-              </Button>
-              <Button href="/sign-in" variant="ghost" size="sm">
-                {t("Sign in")}
-              </Button>
-            </>
-          )}
+          ) : null}
           <Button href={compareLink} variant="secondary" size="sm">
             {t("Compare")}
             {data.compareIds.length ? ` (${data.compareIds.length})` : ""}
@@ -350,7 +341,9 @@ function FindCommunitiesInner() {
                 {t("Browse freely, build a profile for better matches")}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-ink-muted">
-                {t("You can explore communities by postal code and filters right now. Create a short profile so Haven can suggest the best residences for your loved one’s care needs, budget, and preferred area.")}
+                {t(
+                  "Search now by postal code and filters. Create a short profile when you want stronger care-fit suggestions.",
+                )}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
@@ -473,7 +466,6 @@ function FindCommunitiesInner() {
           <p className="mt-2 text-xs text-ink-muted">
             {t("Showing communities near {label}", { label: postalOrigin.label })}
             {filters.maxMiles != null ? t(" · within {miles} miles", { miles: filters.maxMiles }) : ""}.
-            {!user ? t(" Build a profile to rank these by care fit.") : ""}
           </p>
         ) : filters.postalCode.trim().length >= 3 ? (
           <p className="mt-2 text-xs text-warn">

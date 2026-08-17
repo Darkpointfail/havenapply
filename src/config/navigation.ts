@@ -28,18 +28,19 @@ export const publicAuthLinks = {
 
 /**
  * Primary family journey, keep this short.
- * Dashboard → Profile → Communities → My applications
+ * Dashboard → Dossier → Profile → Communities → My applications
  * Apply happens on each community profile.
  */
 export const familyNav: NavItem[] = [
   { href: "/family/dashboard", label: "Dashboard" },
+  { href: "/family/dossier", label: "Dossier" },
   { href: "/family/profile", label: "Profile" },
   { href: "/family/find-communities", label: "Communities" },
   { href: "/family/applications", label: "My applications" },
 ];
 
 /**
- * Header: four journey steps. Account lives on the user name in the header.
+ * Header: journey steps. Account lives on the user name in the header.
  */
 export const familyNavGroups: NavGroup[] = [
   {
@@ -47,6 +48,15 @@ export const familyNavGroups: NavGroup[] = [
     label: "Dashboard",
     href: "/family/dashboard",
     children: [{ href: "/family/dashboard", label: "Home" }],
+  },
+  {
+    id: "dossier",
+    label: "Dossier",
+    href: "/family/dossier",
+    children: [
+      { href: "/family/dossier", label: "Resident dossier" },
+      { href: "/family/profile?tab=documents", label: "Documents" },
+    ],
   },
   {
     id: "profile",
@@ -89,10 +99,10 @@ export const familyNavGroups: NavGroup[] = [
   },
 ];
 
-/** Bottom bar, mirrors the four journey steps */
+/** Bottom bar, mirrors the journey steps */
 export const familyMobileNav: NavItem[] = [
   { href: "/family/dashboard", label: "Home" },
-  { href: "/family/profile", label: "Profile" },
+  { href: "/family/dossier", label: "Dossier" },
   { href: "/family/find-communities", label: "Communities" },
   { href: "/family/applications", label: "My applications" },
 ];

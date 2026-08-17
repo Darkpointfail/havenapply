@@ -1,9 +1,15 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Pencil, ShieldCheck } from "lucide-react";
-import { SectionCard, StepIntro, dossierFieldClass } from "@/components/dossier/DossierFields";
+import {
+  DossierField,
+  SectionCard,
+  StepIntro,
+  dossierFieldClass,
+} from "@/components/dossier/DossierFields";
 import {
   DOSSIER_STEPS,
+  PRIMARY_PAYOR_OPTIONS,
   computeDossierCompleteness,
   type DossierStepId,
   type ResidentDossier,
@@ -32,10 +38,16 @@ function summaryFor(step: DossierStepId, d: ResidentDossier, docCount: number): 
       return d.autonomyLevel
         ? `Autonomy: ${d.autonomyLevel}${d.mobility ? ` · ${d.mobility}` : ""}`
         : "Autonomy incomplete";
-    case "financial":
-      return d.primaryPayor || d.insurance || d.maxMonthlyBudget || d.monthlyIncome
-        ? "Financial details started"
-        : "Financial incomplete";
+    case "financial": {
+      const payorLabel =
+        PRIMARY_PAYOR_OPTIONS.find((p) => p.id === d.primaryPayor)?.label ||
+        d.primaryPayor;
+      if (payorLabel) return `Payor: ${payorLabel}`;
+      if (d.insurance || d.maxMonthlyBudget || d.monthlyIncome) {
+        return "Financial details started";
+      }
+      return "Financial incomplete";
+    }
     case "documents":
       return docCount ? `${docCount} document(s)` : "No documents uploaded";
     default:
@@ -59,9 +71,17 @@ export function StepReview({
   const validated = Boolean(value.validatedAt);
 
   const validate = () => {
+    const signer =
+      value.signatureName.trim() ||
+      value.validatedBy.trim() ||
+      user?.name ||
+      "Family";
     onChange({
       validatedAt: new Date().toISOString(),
-      validatedBy: user?.name || value.validatedBy || "Family",
+      validatedBy: signer,
+      signatureName: value.signatureName.trim() || signer,
+      acknowledgementSigned: true,
+      signatureDate: value.signatureDate || new Date().toISOString().slice(0, 10),
     });
   };
 
@@ -143,6 +163,54 @@ export function StepReview({
         })}
       </div>
 
+      <SectionCard className="mb-6 space-y-4">
+        <p className="font-semibold text-ink">{t("Acknowledgement & signature")}</p>
+        <p className="text-sm text-ink-muted">
+          {t(
+            "Certify that the information in this admission packet is accurate to the best of your knowledge.",
+          )}
+        </p>
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-ink">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 rounded border-line text-brand focus:ring-brand"
+            checked={value.acknowledgementSigned}
+            onChange={(e) => onChange({ acknowledgementSigned: e.target.checked })}
+          />
+          <span>
+            {t(
+              "I acknowledge that the information provided is true and complete to the best of my knowledge.",
+            )}
+          </span>
+        </label>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <DossierField label="Signature name" required>
+            <input
+              className={dossierFieldClass}
+              value={value.signatureName}
+              onChange={(e) => onChange({ signatureName: e.target.value })}
+              placeholder={user?.name || t("Full legal name")}
+            />
+          </DossierField>
+          <DossierField label="Relationship to resident" optional>
+            <input
+              className={dossierFieldClass}
+              value={value.signatureRelationship}
+              onChange={(e) => onChange({ signatureRelationship: e.target.value })}
+              placeholder={t("e.g. Daughter, Self, Social worker")}
+            />
+          </DossierField>
+          <DossierField label="Signature date" optional>
+            <input
+              type="date"
+              className={dossierFieldClass}
+              value={value.signatureDate}
+              onChange={(e) => onChange({ signatureDate: e.target.value })}
+            />
+          </DossierField>
+        </div>
+      </SectionCard>
+
       <SectionCard
         className={cn(
           "space-y-4",
@@ -174,7 +242,11 @@ export function StepReview({
                     className={dossierFieldClass}
                     value={value.validatedBy}
                     onChange={(e) => onChange({ validatedBy: e.target.value })}
-                    placeholder={user?.name || t("Family member or social worker")}
+                    placeholder={
+                      value.signatureName ||
+                      user?.name ||
+                      t("Family member or social worker")
+                    }
                   />
                 </label>
                 <Button type="button" onClick={validate}>

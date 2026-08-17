@@ -13,13 +13,32 @@ import {
   ADL_CARD_ACTIVITIES,
   AUTONOMY_LEVEL_OPTIONS,
   CONTINENCE_OPTIONS,
+  MEDICAL_TREATMENT_OPTIONS,
   MEMORY_OPTIONS,
-  MOBILITY_CARD_OPTIONS,
+  MOBILITY_DEVICE_OPTIONS,
   NUTRITION_OPTIONS,
   type ResidentDossier,
+  type YesNoUnsure,
 } from "@/lib/resident-dossier";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
+
+const YES_NO_UNSURE = [
+  { id: "yes", label: "Yes" },
+  { id: "no", label: "No" },
+  { id: "unsure", label: "Not sure" },
+];
+
+/** Map first selected mobility device to legacy mobility string. */
+function mobilityFromDevices(devices: string[]): string {
+  if (!devices.length || devices.includes("none")) return "independent";
+  if (devices.includes("motorized_wheelchair") || devices.includes("manual_wheelchair")) {
+    return "wheelchair";
+  }
+  if (devices.includes("walker") || devices.includes("hoyer_lift")) return "walker";
+  if (devices.includes("cane")) return "cane";
+  return devices[0] || "";
+}
 
 export function StepCare({
   value,
@@ -30,11 +49,28 @@ export function StepCare({
 }) {
   const t = useT();
 
-  const toggleMulti = (key: "memoryCognition" | "nutrition", id: string) => {
+  const toggleMulti = (
+    key: "memoryCognition" | "nutrition" | "medicalTreatments" | "mobilityDevices",
+    id: string,
+  ) => {
     const cur = value[key];
-    onChange({
-      [key]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
-    });
+    let next: string[];
+    if (key === "mobilityDevices") {
+      if (id === "none") {
+        next = cur.includes("none") ? [] : ["none"];
+      } else {
+        next = cur.includes(id)
+          ? cur.filter((x) => x !== id)
+          : [...cur.filter((x) => x !== "none"), id];
+      }
+      onChange({
+        mobilityDevices: next,
+        mobility: mobilityFromDevices(next),
+      });
+      return;
+    }
+    next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+    onChange({ [key]: next });
   };
 
   return (
@@ -62,18 +98,12 @@ export function StepCare({
         </div>
 
         <div>
-          <p className="mb-3 text-sm font-semibold text-ink">{t("Mobility")}</p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {MOBILITY_CARD_OPTIONS.map((opt) => (
-              <SelectCard
-                key={opt.id}
-                selected={value.mobility === opt.id}
-                onClick={() => onChange({ mobility: opt.id })}
-                title={opt.label}
-                description={opt.hint}
-              />
-            ))}
-          </div>
+          <p className="mb-3 text-sm font-semibold text-ink">{t("Mobility devices")}</p>
+          <ChipToggle
+            options={[...MOBILITY_DEVICE_OPTIONS]}
+            selected={value.mobilityDevices}
+            onToggle={(id) => toggleMulti("mobilityDevices", id)}
+          />
         </div>
 
         <div>
@@ -141,13 +171,41 @@ export function StepCare({
           />
         </div>
 
+        <div>
+          <p className="mb-3 text-sm font-semibold text-ink">
+            {t("Formal dementia diagnosis")}
+          </p>
+          <ChipToggle
+            options={YES_NO_UNSURE}
+            selected={value.formalDementiaDiagnosis}
+            multi={false}
+            onToggle={(id) =>
+              onChange({
+                formalDementiaDiagnosis: id as YesNoUnsure,
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <p className="mb-3 text-sm font-semibold text-ink">{t("Prone to wandering")}</p>
+          <ChipToggle
+            options={YES_NO_UNSURE}
+            selected={value.proneToWandering}
+            multi={false}
+            onToggle={(id) =>
+              onChange({ proneToWandering: id as YesNoUnsure })
+            }
+          />
+        </div>
+
         <SectionCard>
           <DossierField label="Behavioral concerns" optional>
             <textarea
               className={`${dossierFieldClass} min-h-[80px] resize-y`}
               value={value.behavioralConcerns}
               onChange={(e) => onChange({ behavioralConcerns: e.target.value })}
-              placeholder={t("Agitation, wandering, sundowning… or none")}
+              placeholder={t("Agitation, sundowning… or none")}
             />
           </DossierField>
         </SectionCard>
@@ -161,17 +219,47 @@ export function StepCare({
           />
         </div>
 
-        <div>
-          <p className="mb-3 text-sm font-semibold text-ink">{t("Fall risk")}</p>
+        <SectionCard className="space-y-4">
+          <p className="text-sm font-semibold text-ink">{t("Falls in the past 90 days")}</p>
           <ChipToggle
-            options={[
-              { id: "yes", label: "Yes" },
-              { id: "no", label: "No" },
-              { id: "unsure", label: "Not sure" },
-            ]}
-            selected={value.fallRisk}
+            options={YES_NO_UNSURE}
+            selected={value.fallsPast90Days}
             multi={false}
-            onToggle={(id) => onChange({ fallRisk: id as ResidentDossier["fallRisk"] })}
+            onToggle={(id) =>
+              onChange({
+                fallsPast90Days: id as YesNoUnsure,
+                fallRisk: id as YesNoUnsure,
+              })
+            }
+          />
+          {value.fallsPast90Days === "yes" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DossierField label="Number of falls" optional>
+                <input
+                  className={dossierFieldClass}
+                  value={value.fallsCount}
+                  onChange={(e) => onChange({ fallsCount: e.target.value })}
+                  inputMode="numeric"
+                />
+              </DossierField>
+              <DossierField label="Injury details" optional>
+                <input
+                  className={dossierFieldClass}
+                  value={value.fallsInjuryDetails}
+                  onChange={(e) => onChange({ fallsInjuryDetails: e.target.value })}
+                  placeholder={t("Fracture, ER visit…")}
+                />
+              </DossierField>
+            </div>
+          ) : null}
+        </SectionCard>
+
+        <div>
+          <p className="mb-3 text-sm font-semibold text-ink">{t("Medical treatments")}</p>
+          <ChipToggle
+            options={[...MEDICAL_TREATMENT_OPTIONS]}
+            selected={value.medicalTreatments}
+            onToggle={(id) => toggleMulti("medicalTreatments", id)}
           />
         </div>
 
@@ -181,7 +269,7 @@ export function StepCare({
               className={`${dossierFieldClass} min-h-[90px] resize-y`}
               value={value.specialCareNeeds}
               onChange={(e) => onChange({ specialCareNeeds: e.target.value })}
-              placeholder={t("Oxygen, wound care, dialysis, two-person assist…")}
+              placeholder={t("Two-person assist, specialty equipment…")}
             />
           </DossierField>
         </SectionCard>

@@ -10,10 +10,14 @@ import {
   dossierFieldClass,
 } from "@/components/dossier/DossierFields";
 import {
+  ADVANCE_DIRECTIVE_OPTIONS,
   LIVING_SITUATION_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  contactPrimaryPhone,
   newContact,
   type ContactPerson,
   type ResidentDossier,
+  type YesNoUnsure,
 } from "@/lib/resident-dossier";
 import { useT } from "@/lib/i18n/locale";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +35,21 @@ const LANGUAGES = [
   { id: "Spanish", label: "Spanish" },
   { id: "Other", label: "Other" },
 ];
+
+const YES_NO_UNSURE = [
+  { id: "yes", label: "Yes" },
+  { id: "no", label: "No" },
+  { id: "unsure", label: "Not sure" },
+];
+
+function patchContactPhones(
+  contact: ContactPerson,
+  patch: Partial<ContactPerson>,
+): ContactPerson {
+  const next = { ...contact, ...patch };
+  next.phone = contactPrimaryPhone(next) || next.phone;
+  return next;
+}
 
 function ContactEditor({
   contact,
@@ -76,11 +95,35 @@ function ContactEditor({
             placeholder={t("e.g. Daughter")}
           />
         </DossierField>
-        <DossierField label="Phone">
+        <DossierField label="Cell phone" optional>
           <input
             className={dossierFieldClass}
-            value={contact.phone}
-            onChange={(e) => onChange({ ...contact, phone: e.target.value })}
+            value={contact.cellPhone || ""}
+            onChange={(e) =>
+              onChange(patchContactPhones(contact, { cellPhone: e.target.value }))
+            }
+            placeholder={t("(555) 000-0000")}
+            inputMode="tel"
+          />
+        </DossierField>
+        <DossierField label="Home phone" optional>
+          <input
+            className={dossierFieldClass}
+            value={contact.homePhone || ""}
+            onChange={(e) =>
+              onChange(patchContactPhones(contact, { homePhone: e.target.value }))
+            }
+            placeholder={t("(555) 000-0000")}
+            inputMode="tel"
+          />
+        </DossierField>
+        <DossierField label="Work phone" optional>
+          <input
+            className={dossierFieldClass}
+            value={contact.workPhone || ""}
+            onChange={(e) =>
+              onChange(patchContactPhones(contact, { workPhone: e.target.value }))
+            }
             placeholder={t("(555) 000-0000")}
             inputMode="tel"
           />
@@ -94,8 +137,77 @@ function ContactEditor({
             inputMode="email"
           />
         </DossierField>
+        <div className="sm:col-span-2">
+          <DossierField label="Street address" optional>
+            <input
+              className={dossierFieldClass}
+              value={contact.address || ""}
+              onChange={(e) => onChange({ ...contact, address: e.target.value })}
+            />
+          </DossierField>
+        </div>
+        <DossierField label="City" optional>
+          <input
+            className={dossierFieldClass}
+            value={contact.city || ""}
+            onChange={(e) => onChange({ ...contact, city: e.target.value })}
+          />
+        </DossierField>
+        <DossierField label="State / Province" optional>
+          <input
+            className={dossierFieldClass}
+            value={contact.state || ""}
+            onChange={(e) => onChange({ ...contact, state: e.target.value })}
+          />
+        </DossierField>
+        <DossierField label="ZIP / Postal code" optional>
+          <input
+            className={dossierFieldClass}
+            value={contact.zip || ""}
+            onChange={(e) => onChange({ ...contact, zip: e.target.value })}
+          />
+        </DossierField>
       </div>
     </SectionCard>
+  );
+}
+
+function YesNoUnsureField({
+  label,
+  value,
+  onChange,
+  nameLabel,
+  nameValue,
+  onNameChange,
+}: {
+  label: string;
+  value: YesNoUnsure;
+  onChange: (v: YesNoUnsure) => void;
+  nameLabel: string;
+  nameValue: string;
+  onNameChange: (name: string) => void;
+}) {
+  const t = useT();
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-ink">{t(label)}</p>
+      <ChipToggle
+        options={YES_NO_UNSURE}
+        selected={value}
+        multi={false}
+        onToggle={(id) => onChange(id as YesNoUnsure)}
+      />
+      {value === "yes" ? (
+        <DossierField label={nameLabel}>
+          <input
+            className={dossierFieldClass}
+            value={nameValue}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder={t("Full name")}
+          />
+        </DossierField>
+      ) : null}
+    </div>
   );
 }
 
@@ -108,16 +220,26 @@ export function StepResident({
 }) {
   const t = useT();
 
+  const toggleDirective = (id: string) => {
+    const cur = value.advanceDirectives;
+    onChange({
+      advanceDirectives: cur.includes(id)
+        ? cur.filter((x) => x !== id)
+        : [...cur, id],
+    });
+  };
+
   return (
     <div className="animate-rise">
       <StepIntro
         eyebrow="Steps 1–2 of 15"
         title="Administrative information"
-        subtitle="Identity, contacts, and a light financial picture — once for every residence."
+        subtitle="Identity, contacts, and legal decision-makers — once for every residence."
       />
 
       <div className="space-y-8">
         <SectionCard>
+          <p className="mb-4 text-sm font-semibold text-ink">{t("Demographics")}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <DossierField label="First name" required>
               <input
@@ -125,6 +247,14 @@ export function StepResident({
                 value={value.firstName}
                 onChange={(e) => onChange({ firstName: e.target.value })}
                 autoComplete="given-name"
+              />
+            </DossierField>
+            <DossierField label="Middle name" optional>
+              <input
+                className={dossierFieldClass}
+                value={value.middleName}
+                onChange={(e) => onChange({ middleName: e.target.value })}
+                autoComplete="additional-name"
               />
             </DossierField>
             <DossierField label="Last name" required>
@@ -151,6 +281,15 @@ export function StepResident({
                 onChange={(e) => onChange({ dateOfBirth: e.target.value })}
               />
             </DossierField>
+            <DossierField label="Social Security Number" optional>
+              <input
+                className={dossierFieldClass}
+                value={value.ssn}
+                onChange={(e) => onChange({ ssn: e.target.value })}
+                placeholder={t("XXX-XX-XXXX")}
+                autoComplete="off"
+              />
+            </DossierField>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -164,6 +303,16 @@ export function StepResident({
           </div>
 
           <div className="mt-5 space-y-3">
+            <p className="text-sm font-medium text-ink">{t("Marital status")}</p>
+            <ChipToggle
+              options={[...MARITAL_STATUS_OPTIONS]}
+              selected={value.maritalStatus}
+              multi={false}
+              onToggle={(id) => onChange({ maritalStatus: id })}
+            />
+          </div>
+
+          <div className="mt-5 space-y-3">
             <p className="text-sm font-medium text-ink">{t("Primary language")}</p>
             <ChipToggle
               options={LANGUAGES}
@@ -172,10 +321,49 @@ export function StepResident({
               onToggle={(id) => onChange({ primaryLanguage: id })}
             />
           </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <DossierField label="Religion" optional>
+              <input
+                className={dossierFieldClass}
+                value={value.religion}
+                onChange={(e) => onChange({ religion: e.target.value })}
+              />
+            </DossierField>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            <p className="text-sm font-semibold text-ink">{t("Funeral home")}</p>
+            <p className="text-sm text-ink-muted">{t("Optional. Used if arrangements are already set.")}</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <DossierField label="Funeral home name" optional>
+                <input
+                  className={dossierFieldClass}
+                  value={value.funeralHomeName}
+                  onChange={(e) => onChange({ funeralHomeName: e.target.value })}
+                />
+              </DossierField>
+              <DossierField label="City" optional>
+                <input
+                  className={dossierFieldClass}
+                  value={value.funeralHomeCity}
+                  onChange={(e) => onChange({ funeralHomeCity: e.target.value })}
+                />
+              </DossierField>
+              <DossierField label="Phone" optional>
+                <input
+                  className={dossierFieldClass}
+                  value={value.funeralHomePhone}
+                  onChange={(e) => onChange({ funeralHomePhone: e.target.value })}
+                  inputMode="tel"
+                />
+              </DossierField>
+            </div>
+          </div>
         </SectionCard>
 
         <SectionCard>
-          <p className="mb-4 text-sm font-semibold text-ink">{t("Address")}</p>
+          <p className="mb-4 text-sm font-semibold text-ink">{t("Address & living situation")}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <DossierField label="Street address" optional>
@@ -232,45 +420,57 @@ export function StepResident({
               </DossierField>
             </div>
           </div>
-        </SectionCard>
 
-        <div>
-          <p className="mb-3 text-sm font-semibold text-ink">
-            {t("Current living situation")}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {LIVING_SITUATION_OPTIONS.map((opt) => (
-              <SelectCard
-                key={opt.id}
-                selected={value.livingSituation === opt.id}
-                onClick={() => onChange({ livingSituation: opt.id })}
-                title={opt.label}
-              />
-            ))}
-          </div>
-          {value.livingSituation === "other" ? (
-            <div className="mt-3">
-              <DossierField label="Please describe" optional>
-                <input
-                  className={dossierFieldClass}
-                  value={value.livingSituationOther}
-                  onChange={(e) => onChange({ livingSituationOther: e.target.value })}
+          <div className="mt-6">
+            <p className="mb-3 text-sm font-semibold text-ink">
+              {t("Current living situation")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {LIVING_SITUATION_OPTIONS.map((opt) => (
+                <SelectCard
+                  key={opt.id}
+                  selected={value.livingSituation === opt.id}
+                  onClick={() => onChange({ livingSituation: opt.id })}
+                  title={opt.label}
                 />
-              </DossierField>
+              ))}
             </div>
-          ) : null}
-        </div>
+            {value.livingSituation === "other" ? (
+              <div className="mt-3">
+                <DossierField label="Please describe" optional>
+                  <input
+                    className={dossierFieldClass}
+                    value={value.livingSituationOther}
+                    onChange={(e) => onChange({ livingSituationOther: e.target.value })}
+                  />
+                </DossierField>
+              </div>
+            ) : null}
+          </div>
+        </SectionCard>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-ink">{t("Emergency contact")}</p>
+            <div>
+              <p className="text-sm font-semibold text-ink">
+                {t("Primary contact / financial guarantor")}
+              </p>
+              <p className="mt-0.5 text-sm text-ink-muted">
+                {t("Emergency contact who can also act as financial guarantor.")}
+              </p>
+            </div>
             {!value.emergencyContact ? (
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 onClick={() =>
-                  onChange({ emergencyContact: newContact({ isEmergency: true }) })
+                  onChange({
+                    emergencyContact: newContact({
+                      isEmergency: true,
+                      isFinancialGuarantor: true,
+                    }),
+                  })
                 }
               >
                 <Plus size={14} />
@@ -280,9 +480,17 @@ export function StepResident({
           </div>
           {value.emergencyContact ? (
             <ContactEditor
-              title="Emergency contact"
+              title="Primary contact / financial guarantor"
               contact={value.emergencyContact}
-              onChange={(c) => onChange({ emergencyContact: c })}
+              onChange={(c) =>
+                onChange({
+                  emergencyContact: {
+                    ...c,
+                    isEmergency: true,
+                    isFinancialGuarantor: true,
+                  },
+                })
+              }
               onRemove={() => onChange({ emergencyContact: null })}
             />
           ) : (
@@ -291,6 +499,75 @@ export function StepResident({
             </p>
           )}
         </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-ink">{t("Secondary contact")}</p>
+            {!value.secondaryContact ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => onChange({ secondaryContact: newContact() })}
+              >
+                <Plus size={14} />
+                {t("Add")}
+              </Button>
+            ) : null}
+          </div>
+          {value.secondaryContact ? (
+            <ContactEditor
+              title="Secondary contact"
+              contact={value.secondaryContact}
+              onChange={(c) => onChange({ secondaryContact: c })}
+              onRemove={() => onChange({ secondaryContact: null })}
+            />
+          ) : (
+            <p className="text-sm text-ink-muted">
+              {t("Optional backup contact.")}
+            </p>
+          )}
+        </div>
+
+        <SectionCard className="space-y-6">
+          <p className="text-sm font-semibold text-ink">{t("Legal decision-making")}</p>
+
+          <YesNoUnsureField
+            label="Healthcare proxy"
+            value={value.hasHealthcareProxy}
+            onChange={(v) => onChange({ hasHealthcareProxy: v })}
+            nameLabel="Healthcare proxy name"
+            nameValue={value.healthcareProxyName}
+            onNameChange={(name) => onChange({ healthcareProxyName: name })}
+          />
+
+          <YesNoUnsureField
+            label="Financial power of attorney"
+            value={value.hasFinancialPoa}
+            onChange={(v) => onChange({ hasFinancialPoa: v })}
+            nameLabel="Financial POA name"
+            nameValue={value.financialPoaName}
+            onNameChange={(name) => onChange({ financialPoaName: name })}
+          />
+
+          <YesNoUnsureField
+            label="Legal guardian"
+            value={value.hasLegalGuardian}
+            onChange={(v) => onChange({ hasLegalGuardian: v })}
+            nameLabel="Legal guardian name"
+            nameValue={value.legalGuardianName}
+            onNameChange={(name) => onChange({ legalGuardianName: name })}
+          />
+
+          <div>
+            <p className="mb-3 text-sm font-semibold text-ink">{t("Advance directives")}</p>
+            <ChipToggle
+              options={[...ADVANCE_DIRECTIVE_OPTIONS]}
+              selected={value.advanceDirectives}
+              onToggle={toggleDirective}
+            />
+          </div>
+        </SectionCard>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -331,133 +608,6 @@ export function StepResident({
             ))
           )}
         </div>
-
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-ink">
-            {t("Legal guardian / Power of Attorney")}
-          </p>
-          <ChipToggle
-            options={[
-              { id: "yes", label: "Yes" },
-              { id: "no", label: "No" },
-              { id: "unsure", label: "Not sure" },
-            ]}
-            selected={value.hasGuardianOrPoa}
-            multi={false}
-            onToggle={(id) =>
-              onChange({
-                hasGuardianOrPoa: id as ResidentDossier["hasGuardianOrPoa"],
-                legalContacts:
-                  id === "yes" && value.legalContacts.length === 0
-                    ? [newContact({ isPoa: true })]
-                    : value.legalContacts,
-              })
-            }
-          />
-          {value.hasGuardianOrPoa === "yes"
-            ? value.legalContacts.map((m, i) => (
-                <ContactEditor
-                  key={m.id}
-                  title="Guardian / POA"
-                  contact={m}
-                  onChange={(c) => {
-                    const next = [...value.legalContacts];
-                    next[i] = c;
-                    onChange({ legalContacts: next });
-                  }}
-                  onRemove={() =>
-                    onChange({
-                      legalContacts: value.legalContacts.filter((x) => x.id !== m.id),
-                    })
-                  }
-                />
-              ))
-            : null}
-        </div>
-
-        <SectionCard className="space-y-4">
-          <p className="text-sm font-semibold text-ink">{t("Insurance & budget")}</p>
-          <p className="text-sm text-ink-muted">
-            {t("Optional now. Exact numbers can wait — ranges are fine.")}
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DossierField label="Insurance" optional>
-              <input
-                className={dossierFieldClass}
-                value={value.insurance}
-                onChange={(e) => onChange({ insurance: e.target.value })}
-                placeholder={t("Medicare, private plan, provincial coverage…")}
-              />
-            </DossierField>
-            <DossierField label="Maximum monthly budget" optional>
-              <input
-                className={dossierFieldClass}
-                value={value.maxMonthlyBudget || value.budgetMax}
-                onChange={(e) => onChange({ maxMonthlyBudget: e.target.value })}
-                placeholder={t("What feels comfortable")}
-                inputMode="numeric"
-              />
-            </DossierField>
-          </div>
-        </SectionCard>
-
-        <SectionCard className="space-y-3">
-          <p className="text-sm font-semibold text-ink">{t("Primary physician")}</p>
-          <p className="text-sm text-ink-muted">
-            {t("Who should residences call with clinical questions?")}
-          </p>
-          {(() => {
-            const physician =
-              value.healthcareTeam.find((p) => p.role === "primary_physician") ||
-              null;
-            const upsert = (patch: Partial<(typeof value.healthcareTeam)[0]>) => {
-              const existing = value.healthcareTeam.find(
-                (p) => p.role === "primary_physician",
-              );
-              if (existing) {
-                onChange({
-                  healthcareTeam: value.healthcareTeam.map((p) =>
-                    p.id === existing.id ? { ...p, ...patch } : p,
-                  ),
-                });
-              } else {
-                onChange({
-                  healthcareTeam: [
-                    ...value.healthcareTeam,
-                    {
-                      id: `hp-${Date.now()}`,
-                      role: "primary_physician",
-                      name: "",
-                      organization: "",
-                      phone: "",
-                      email: "",
-                      ...patch,
-                    },
-                  ],
-                });
-              }
-            };
-            return (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <DossierField label="Name" optional>
-                  <input
-                    className={dossierFieldClass}
-                    value={physician?.name || ""}
-                    onChange={(e) => upsert({ name: e.target.value })}
-                  />
-                </DossierField>
-                <DossierField label="Phone" optional>
-                  <input
-                    className={dossierFieldClass}
-                    value={physician?.phone || ""}
-                    onChange={(e) => upsert({ phone: e.target.value })}
-                    inputMode="tel"
-                  />
-                </DossierField>
-              </div>
-            );
-          })()}
-        </SectionCard>
       </div>
     </div>
   );

@@ -41,6 +41,12 @@ import {
   type TransitionTimelineEntry,
   type TransitionWork,
 } from "@/lib/community-transition";
+import {
+  buildTransferFromApplication,
+  emptyPatientTransfer,
+  transferPacketReady,
+  type PatientTransfer,
+} from "@/lib/patient-transfer";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { useT } from "@/lib/i18n/locale";
 
@@ -85,6 +91,17 @@ type PortalContextValue = {
     timelineDetail?: string,
     stepId?: import("@/lib/community-transition").TransitionStepId,
   ) => { ok: boolean; error?: string };
+  createPatientTransfer: (input?: {
+    applicationId?: string | null;
+  }) => { ok: boolean; error?: string; transfer?: PatientTransfer };
+  updatePatientTransfer: (
+    transferId: string,
+    updater: (prev: PatientTransfer) => PatientTransfer,
+    timelineAction?: string,
+    timelineDetail?: string,
+  ) => { ok: boolean; error?: string };
+  sendPatientTransfer: (transferId: string) => { ok: boolean; error?: string };
+  getPatientTransfer: (id: string) => PatientTransfer | undefined;
   updateProfile: (patch: Partial<CommunityProfile>) => { ok: boolean; error?: string };
   upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
   removeAvailability: (unitId: string) => { ok: boolean; error?: string };
@@ -105,7 +122,11 @@ function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
     ws.residenceId,
     Array.isArray(ws.notifications) ? ws.notifications : [],
   );
-  return { ...ws, notifications };
+  return {
+    ...ws,
+    notifications,
+    patientTransfers: Array.isArray(ws.patientTransfers) ? ws.patientTransfers : [],
+  };
 }
 
 const PortalContext = createContext<PortalContextValue | null>(null);
@@ -716,6 +737,140 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     [actorName, mutateApp, workspace],
   );
 
+  const getPatientTransfer = useCallback(
+    (id: string) => workspace?.patientTransfers?.find((t) => t.id === id),
+    [workspace],
+  );
+
+  const createPatientTransfer = useCallback(
+    (input?: { applicationId?: string | null }) => {
+      if (!can("acceptDecline")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      if (!workspace) return { ok: false, error: "Workspace unavailable." };
+
+      const appId = input?.applicationId || null;
+      const app = appId
+        ? workspace.applications.find((a) => a.id === appId)
+        : undefined;
+      if (appId && !app) return { ok: false, error: "Resident dossier not found." };
+
+      const transfer = app
+        ? buildTransferFromApplication(app, actorName)
+        : emptyPatientTransfer(actorName);
+
+      persist((ws) =>
+        pushAudit(
+          {
+            ...ws,
+            patientTransfers: [transfer, ...(ws.patientTransfers || [])],
+          },
+          `Created patient transfer draft${transfer.residentName ? ` · ${transfer.residentName}` : ""}`,
+        ),
+      );
+      return { ok: true, transfer };
+    },
+    [actorName, can, persist, pushAudit, workspace],
+  );
+
+  const updatePatientTransfer = useCallback(
+    (
+      transferId: string,
+      updater: (prev: PatientTransfer) => PatientTransfer,
+      timelineAction?: string,
+      timelineDetail?: string,
+    ) => {
+      if (!can("acceptDecline")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      if (!workspace?.patientTransfers?.some((t) => t.id === transferId)) {
+        return { ok: false, error: "Transfer not found." };
+      }
+      const now = new Date().toISOString();
+      persist((ws) => ({
+        ...ws,
+        patientTransfers: (ws.patientTransfers || []).map((t) => {
+          if (t.id !== transferId) return t;
+          let next = updater(t);
+          next = { ...next, updatedAt: now };
+          if (timelineAction) {
+            next = {
+              ...next,
+              timeline: [
+                {
+                  id: `tl-${Date.now()}`,
+                  at: now,
+                  actor: actorName,
+                  action: timelineAction,
+                  detail: timelineDetail,
+                },
+                ...next.timeline,
+              ],
+            };
+          }
+          // Auto-promote draft → ready when packet is complete
+          if (next.status === "draft" && transferPacketReady(next).ok) {
+            next = { ...next, status: "ready" };
+          }
+          return next;
+        }),
+        updatedAt: now,
+      }));
+      return { ok: true };
+    },
+    [actorName, can, persist, workspace],
+  );
+
+  const sendPatientTransfer = useCallback(
+    (transferId: string) => {
+      if (!can("acceptDecline")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      const existing = workspace?.patientTransfers?.find((t) => t.id === transferId);
+      if (!existing) return { ok: false, error: "Transfer not found." };
+      const ready = transferPacketReady(existing);
+      if (!ready.ok) {
+        return {
+          ok: false,
+          error: `Complete required fields before sending: ${ready.missing.join(", ")}.`,
+        };
+      }
+      if (existing.status === "cancelled") {
+        return { ok: false, error: "This transfer was cancelled." };
+      }
+      const now = new Date().toISOString();
+      persist((ws) =>
+        pushAudit(
+          {
+            ...ws,
+            patientTransfers: (ws.patientTransfers || []).map((t) => {
+              if (t.id !== transferId) return t;
+              return {
+                ...t,
+                status: "sent" as const,
+                sentAt: now,
+                updatedAt: now,
+                timeline: [
+                  {
+                    id: `tl-${Date.now()}`,
+                    at: now,
+                    actor: actorName,
+                    action: "Transfer packet sent to receiving center",
+                    detail: t.destination?.name,
+                  },
+                  ...t.timeline,
+                ],
+              };
+            }),
+          },
+          `Sent patient transfer · ${existing.residentName} → ${existing.destination?.name || "center"}`,
+        ),
+      );
+      return { ok: true };
+    },
+    [actorName, can, persist, pushAudit, workspace],
+  );
+
   const updateProfile = useCallback(
     (patch: Partial<CommunityProfile>) => {
       if (!can("editProfile") && !can("editPricing") && !can("editAdmissions")) {
@@ -858,6 +1013,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       setMoveInConfirmed,
       completeTransition,
       saveTransitionWork,
+      createPatientTransfer,
+      updatePatientTransfer,
+      sendPatientTransfer,
+      getPatientTransfer,
       updateProfile,
       upsertAvailability,
       removeAvailability,
@@ -888,6 +1047,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       setMoveInConfirmed,
       completeTransition,
       saveTransitionWork,
+      createPatientTransfer,
+      updatePatientTransfer,
+      sendPatientTransfer,
+      getPatientTransfer,
       updateProfile,
       upsertAvailability,
       removeAvailability,

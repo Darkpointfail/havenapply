@@ -5,6 +5,7 @@ import { STATUS_META } from "@/data/applications";
 import { getResidence } from "@/data/residences";
 import { buildCommunityDetail } from "@/lib/residence-detail";
 import { residencesForCommunityOrg } from "@/lib/messaging";
+import type { PatientTransfer } from "@/lib/patient-transfer";
 
 export type CommunityTeamRole =
   | "admin"
@@ -498,6 +499,8 @@ export type CommunityWorkspace = {
   profile: CommunityProfile;
   availability: AvailabilityUnit[];
   applications: CommunityApplication[];
+  /** Inter-facility patient transfer packets sent to other centers */
+  patientTransfers: PatientTransfer[];
   team: CommunityTeamMember[];
   auditLog: AuditEntry[];
   /** Inbound alerts (e.g. new family applications) */
@@ -1604,6 +1607,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
     },
     availability,
     applications,
+    patientTransfers: [],
     team,
     notifications: [],
     auditLog: [

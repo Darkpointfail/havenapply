@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { StepResident } from "@/components/dossier/steps/StepResident";
 import { StepHealth } from "@/components/dossier/steps/StepHealth";
 import { StepCare } from "@/components/dossier/steps/StepCare";
+import { StepFinancial } from "@/components/dossier/steps/StepFinancial";
 import { StepDocuments } from "@/components/dossier/steps/StepDocuments";
 import { StepReview } from "@/components/dossier/steps/StepReview";
 import { StepSubmit } from "@/components/dossier/steps/StepSubmit";
@@ -165,6 +166,9 @@ export function DossierWizard() {
         ) : null}
         {step.id === "health" ? <StepHealth value={draft} onChange={patch} /> : null}
         {step.id === "care" ? <StepCare value={draft} onChange={patch} /> : null}
+        {step.id === "financial" ? (
+          <StepFinancial value={draft} onChange={patch} />
+        ) : null}
         {step.id === "documents" ? <StepDocuments /> : null}
         {step.id === "review" ? (
           <StepReview value={draft} onChange={patch} onEdit={goToStepId} />

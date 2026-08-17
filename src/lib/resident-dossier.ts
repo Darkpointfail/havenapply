@@ -7,15 +7,28 @@ import { emptySeniorProfile } from "@/lib/senior-profile";
 import type { DocCategoryId, VaultDocument } from "@/lib/document-vault";
 import type { ApplicationStatus } from "@/data/applications";
 
+export type YesNoUnsure = "" | "yes" | "no" | "unsure";
+
 export type ContactPerson = {
   id: string;
   name: string;
   relationship: string;
+  /** Primary phone; prefer cellPhone when set */
   phone: string;
   email: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  cellPhone?: string;
+  homePhone?: string;
+  workPhone?: string;
   isEmergency?: boolean;
   isGuardian?: boolean;
   isPoa?: boolean;
+  isFinancialGuarantor?: boolean;
+  isHealthcareProxy?: boolean;
+  isFinancialPoa?: boolean;
 };
 
 export type HealthcareProfessional = {
@@ -32,7 +45,20 @@ export type HealthcareProfessional = {
   organization: string;
   phone: string;
   email: string;
+  fax?: string;
+  address?: string;
 };
+
+/** Preferred dial number for a contact (cell first when set). */
+export function contactPrimaryPhone(c: Pick<ContactPerson, "phone" | "cellPhone" | "homePhone" | "workPhone">): string {
+  return (
+    (c.cellPhone && c.cellPhone.trim()) ||
+    (c.phone && c.phone.trim()) ||
+    (c.homePhone && c.homePhone.trim()) ||
+    (c.workPhone && c.workPhone.trim()) ||
+    ""
+  );
+}
 
 export const LIVING_SITUATION_OPTIONS = [
   { id: "home", label: "Home" },
@@ -52,18 +78,58 @@ export const MOBILITY_CARD_OPTIONS = [
   { id: "bedbound", label: "Bedbound", hint: "Mostly in bed" },
 ] as const;
 
+export const MOBILITY_DEVICE_OPTIONS = [
+  { id: "none", label: "None" },
+  { id: "cane", label: "Cane" },
+  { id: "walker", label: "Walker" },
+  { id: "manual_wheelchair", label: "Manual wheelchair" },
+  { id: "motorized_wheelchair", label: "Motorized wheelchair" },
+  { id: "hoyer_lift", label: "Hoyer lift" },
+] as const;
+
 export const ADL_CARD_ACTIVITIES = [
   { id: "bathing", label: "Bathing" },
   { id: "dressing", label: "Dressing" },
   { id: "toileting", label: "Toileting" },
   { id: "eating", label: "Eating" },
   { id: "transfers", label: "Transfers" },
+  { id: "walking", label: "Walking / Ambulation" },
 ] as const;
 
 export const ADL_ASSIST_LEVELS = [
   { id: "independent", label: "Independent" },
-  { id: "some", label: "Some help" },
-  { id: "dependent", label: "Full help" },
+  { id: "prompts", label: "Needs verbal prompts / supervision" },
+  { id: "hands_on", label: "Requires hands-on physical help" },
+  { id: "dependent", label: "Total dependence" },
+] as const;
+
+export const MARITAL_STATUS_OPTIONS = [
+  { id: "single", label: "Single" },
+  { id: "married", label: "Married" },
+  { id: "widowed", label: "Widowed" },
+  { id: "divorced", label: "Divorced" },
+] as const;
+
+export const ADVANCE_DIRECTIVE_OPTIONS = [
+  { id: "dnr", label: "DNR" },
+  { id: "dni", label: "DNI" },
+  { id: "living_will", label: "Living Will" },
+  { id: "molst_polst", label: "MOLST / POLST" },
+] as const;
+
+export const PRIMARY_PAYOR_OPTIONS = [
+  { id: "private_pay", label: "Private pay" },
+  { id: "medicaid", label: "Medicaid" },
+  { id: "medicaid_pending", label: "Medicaid pending" },
+  { id: "long_term_care_insurance", label: "Long-term care insurance" },
+] as const;
+
+export const MEDICAL_TREATMENT_OPTIONS = [
+  { id: "oxygen", label: "Oxygen" },
+  { id: "cpap_bipap", label: "CPAP / BiPAP" },
+  { id: "wound_care", label: "Wound care" },
+  { id: "dialysis", label: "Dialysis" },
+  { id: "iv_therapy", label: "IV therapy" },
 ] as const;
 
 export const CONTINENCE_OPTIONS = [
@@ -120,12 +186,22 @@ export const DOSSIER_DOC_CATEGORIES: {
   recommended: boolean;
 }[] = [
   { id: "insurance", label: "Insurance", vault: "insurance_card", recommended: true },
+  { id: "medicare", label: "Medicare", vault: "medicare", recommended: true },
+  { id: "medicaid", label: "Medicaid", vault: "medicaid", recommended: true },
   { id: "id", label: "ID", vault: "identification", recommended: true },
   { id: "medication_list", label: "Medication List", vault: "medication_list", recommended: true },
   { id: "physician_orders", label: "Physician Orders", vault: "physician_report", recommended: true },
   { id: "hospital_records", label: "Hospital Records", vault: "discharge", recommended: false },
   { id: "assessment", label: "Assessment", vault: "care_assessment", recommended: false },
-  { id: "financial", label: "Financial Documents", vault: "financial", recommended: false },
+  { id: "power_of_attorney", label: "Power of attorney", vault: "power_of_attorney", recommended: true },
+  { id: "guardianship", label: "Guardianship", vault: "guardianship", recommended: true },
+  {
+    id: "advance_directives",
+    label: "Advance directives",
+    vault: "advance_directives",
+    recommended: true,
+  },
+  { id: "financial", label: "Financial Documents", vault: "financial", recommended: true },
   { id: "legal", label: "Legal Documents", vault: "power_of_attorney", recommended: false },
   { id: "other", label: "Other", vault: "other", recommended: false },
 ];
@@ -163,6 +239,13 @@ export const DOSSIER_STEPS = [
     workflowSteps: [4],
   },
   {
+    id: "financial",
+    title: "Financial picture",
+    short: "Financial",
+    minutes: 2,
+    workflowSteps: [2],
+  },
+  {
     id: "documents",
     title: "Documents",
     short: "Documents",
@@ -187,7 +270,7 @@ export const DOSSIER_STEPS = [
 
 export type DossierStepId = (typeof DOSSIER_STEPS)[number]["id"];
 
-/** Map legacy 9-step drafts onto the streamlined 6-step wizard. */
+/** Map legacy 9-step drafts onto the streamlined 7-step wizard. */
 export function migrateDossierStepIndex(rawIndex: number, knownStepId?: string): number {
   if (knownStepId) {
     const byId = DOSSIER_STEPS.findIndex((s) => s.id === knownStepId);
@@ -197,12 +280,12 @@ export function migrateDossierStepIndex(rawIndex: number, knownStepId?: string):
     0: 0, // resident
     1: 1, // health
     2: 2, // care
-    3: 5, // looking → submit filters
-    4: 0, // financial → admin
-    5: 3, // documents
+    3: 6, // looking → submit filters
+    4: 3, // financial → financial
+    5: 4, // documents
     6: 0, // team → admin contacts
-    7: 4, // review
-    8: 5, // submit
+    7: 5, // review
+    8: 6, // submit
   };
   if (rawIndex in legacyMap) return legacyMap[rawIndex];
   return Math.max(0, Math.min(DOSSIER_STEPS.length - 1, rawIndex));
@@ -256,10 +339,14 @@ export type ResidentDossier = {
 
   // 1. Resident
   firstName: string;
+  middleName: string;
   lastName: string;
   preferredName: string;
   dateOfBirth: string;
+  ssn: string;
   gender: string;
+  maritalStatus: string;
+  religion: string;
   primaryLanguage: string;
   address: string;
   city: string;
@@ -269,15 +356,30 @@ export type ResidentDossier = {
   email: string;
   livingSituation: string;
   livingSituationOther: string;
+  funeralHomeName: string;
+  funeralHomeCity: string;
+  funeralHomePhone: string;
   emergencyContact: ContactPerson | null;
+  secondaryContact: ContactPerson | null;
   familyMembers: ContactPerson[];
-  hasGuardianOrPoa: "" | "yes" | "no" | "unsure";
+  hasGuardianOrPoa: YesNoUnsure;
   legalContacts: ContactPerson[];
+
+  // Legal / representatives
+  hasHealthcareProxy: YesNoUnsure;
+  healthcareProxyName: string;
+  hasFinancialPoa: YesNoUnsure;
+  financialPoaName: string;
+  hasLegalGuardian: YesNoUnsure;
+  legalGuardianName: string;
+  advanceDirectives: string[];
 
   // 2. Health
   medicalConditions: string;
   diagnoses: string;
   allergies: string;
+  medicationAllergies: string;
+  foodEnvironmentalAllergies: string;
   currentMedications: string;
   pastSurgeries: string;
   recentHospitalizations: string;
@@ -285,15 +387,25 @@ export type ResidentDossier = {
   height: string;
   weight: string;
   medicalNotes: string;
+  dietaryRequirements: string;
+  preferredEmergencyHospital: string;
+  physicianFax: string;
+  medicalTreatments: string[];
+  formalDementiaDiagnosis: YesNoUnsure;
+  proneToWandering: YesNoUnsure;
 
   // 3. Care needs
   mobility: string;
+  mobilityDevices: string[];
   adls: Record<(typeof ADL_CARD_ACTIVITIES)[number]["id"], string>;
   continence: string;
   memoryCognition: string[];
   behavioralConcerns: string;
   nutrition: string[];
-  fallRisk: "" | "yes" | "no" | "unsure";
+  fallRisk: YesNoUnsure;
+  fallsPast90Days: YesNoUnsure;
+  fallsCount: string;
+  fallsInjuryDetails: string;
   specialCareNeeds: string;
 
   // 4. Looking for
@@ -307,14 +419,49 @@ export type ResidentDossier = {
   specialPreferences: string[];
   specialPreferencesNotes: string;
 
-  // 5. Financial
+  // 5. Financial / payor
   monthlyIncome: string;
   insurance: string;
   governmentAssistance: string;
-  veteransBenefits: "" | "yes" | "no" | "unsure";
-  longTermCareInsurance: "" | "yes" | "no" | "unsure";
+  veteransBenefits: YesNoUnsure;
+  longTermCareInsurance: YesNoUnsure;
   maxMonthlyBudget: string;
   financialNotes: string;
+  primaryPayor: string;
+  medicarePartAbId: string;
+  medicarePartDCompany: string;
+  medicarePartDPolicy: string;
+  medicarePartDGroup: string;
+  medicaidId: string;
+  medicaidCaseNumber: string;
+  supplementalInsuranceCompany: string;
+  supplementalPolicyId: string;
+  supplementalGroupNumber: string;
+  ltcInsuranceCompany: string;
+  ltcPolicyId: string;
+  ltcGroupNumber: string;
+  medicaidPendingDate: string;
+  medicaidPendingCaseNumber: string;
+  medicaidAttorneyName: string;
+  medicaidAttorneyPhone: string;
+  incomeSocialSecurity: string;
+  incomePension: string;
+  incomeVa: string;
+  incomeOther: string;
+  assetsChecking: string;
+  assetsSavings: string;
+  assetsInvestments: string;
+  ownsHome: YesNoUnsure;
+  homeMarketValue: string;
+  homeMortgageBalance: string;
+  assetTransferPast5Years: YesNoUnsure;
+  assetTransferDetails: string;
+
+  // Signature / acknowledgement
+  acknowledgementSigned: boolean;
+  signatureName: string;
+  signatureRelationship: string;
+  signatureDate: string;
 
   // 7. Team
   healthcareTeam: HealthcareProfessional[];
@@ -344,6 +491,8 @@ export function newProfessional(
     organization: "",
     phone: "",
     email: "",
+    fax: "",
+    address: "",
   };
 }
 
@@ -361,10 +510,14 @@ export function emptyResidentDossier(): ResidentDossier {
     validatedBy: "",
     autonomyLevel: "",
     firstName: "",
+    middleName: "",
     lastName: "",
     preferredName: "",
     dateOfBirth: "",
+    ssn: "",
     gender: "",
+    maritalStatus: "",
+    religion: "",
     primaryLanguage: "",
     address: "",
     city: "",
@@ -374,13 +527,26 @@ export function emptyResidentDossier(): ResidentDossier {
     email: "",
     livingSituation: "",
     livingSituationOther: "",
+    funeralHomeName: "",
+    funeralHomeCity: "",
+    funeralHomePhone: "",
     emergencyContact: null,
+    secondaryContact: null,
     familyMembers: [],
     hasGuardianOrPoa: "",
     legalContacts: [],
+    hasHealthcareProxy: "",
+    healthcareProxyName: "",
+    hasFinancialPoa: "",
+    financialPoaName: "",
+    hasLegalGuardian: "",
+    legalGuardianName: "",
+    advanceDirectives: [],
     medicalConditions: "",
     diagnoses: "",
     allergies: "",
+    medicationAllergies: "",
+    foodEnvironmentalAllergies: "",
     currentMedications: "",
     pastSurgeries: "",
     recentHospitalizations: "",
@@ -388,13 +554,23 @@ export function emptyResidentDossier(): ResidentDossier {
     height: "",
     weight: "",
     medicalNotes: "",
+    dietaryRequirements: "",
+    preferredEmergencyHospital: "",
+    physicianFax: "",
+    medicalTreatments: [],
+    formalDementiaDiagnosis: "",
+    proneToWandering: "",
     mobility: "",
+    mobilityDevices: [],
     adls,
     continence: "",
     memoryCognition: [],
     behavioralConcerns: "",
     nutrition: [],
     fallRisk: "",
+    fallsPast90Days: "",
+    fallsCount: "",
+    fallsInjuryDetails: "",
     specialCareNeeds: "",
     communityTypes: [],
     desiredMoveIn: "",
@@ -412,6 +588,39 @@ export function emptyResidentDossier(): ResidentDossier {
     longTermCareInsurance: "",
     maxMonthlyBudget: "",
     financialNotes: "",
+    primaryPayor: "",
+    medicarePartAbId: "",
+    medicarePartDCompany: "",
+    medicarePartDPolicy: "",
+    medicarePartDGroup: "",
+    medicaidId: "",
+    medicaidCaseNumber: "",
+    supplementalInsuranceCompany: "",
+    supplementalPolicyId: "",
+    supplementalGroupNumber: "",
+    ltcInsuranceCompany: "",
+    ltcPolicyId: "",
+    ltcGroupNumber: "",
+    medicaidPendingDate: "",
+    medicaidPendingCaseNumber: "",
+    medicaidAttorneyName: "",
+    medicaidAttorneyPhone: "",
+    incomeSocialSecurity: "",
+    incomePension: "",
+    incomeVa: "",
+    incomeOther: "",
+    assetsChecking: "",
+    assetsSavings: "",
+    assetsInvestments: "",
+    ownsHome: "",
+    homeMarketValue: "",
+    homeMortgageBalance: "",
+    assetTransferPast5Years: "",
+    assetTransferDetails: "",
+    acknowledgementSigned: false,
+    signatureName: "",
+    signatureRelationship: "",
+    signatureDate: "",
     healthcareTeam: [],
     selectedCommunityIds: [],
   };
@@ -434,11 +643,20 @@ export function migrateResidentDossier(raw?: Partial<ResidentDossier> | null): R
     selectedCommunityIds: Array.isArray(raw.selectedCommunityIds)
       ? raw.selectedCommunityIds
       : [],
+    advanceDirectives: Array.isArray(raw.advanceDirectives) ? raw.advanceDirectives : [],
+    mobilityDevices: Array.isArray(raw.mobilityDevices) ? raw.mobilityDevices : [],
+    medicalTreatments: Array.isArray(raw.medicalTreatments) ? raw.medicalTreatments : [],
     emergencyContact: raw.emergencyContact ?? null,
+    secondaryContact: raw.secondaryContact ?? null,
     validatedAt: raw.validatedAt ?? null,
     validatedBy: raw.validatedBy ?? "",
     autonomyLevel: raw.autonomyLevel ?? "",
+    acknowledgementSigned: Boolean(raw.acknowledgementSigned),
   };
+  // Map legacy 3-level ADL assist ids onto the 4-level scale
+  for (const key of Object.keys(merged.adls) as (keyof typeof merged.adls)[]) {
+    if (merged.adls[key] === "some") merged.adls[key] = "hands_on";
+  }
   merged.stepIndex = migrateDossierStepIndex(Number(raw.stepIndex) || 0);
   return merged;
 }
@@ -589,15 +807,18 @@ export function computeDossierCompleteness(
   const healthScore =
     [
       filled(d.medicalConditions, d.diagnoses),
-      filled(d.allergies),
+      filled(d.allergies, d.medicationAllergies, d.foodEnvironmentalAllergies),
       filled(d.currentMedications),
       filled(d.height, d.weight),
       filled(d.vaccinationStatus),
     ].filter(Boolean).length / 5;
   const healthMissing: string[] = [];
   if (!filled(d.medicalConditions, d.diagnoses)) healthMissing.push("Conditions or diagnoses");
-  if (!filled(d.allergies)) healthMissing.push("Allergies");
+  if (!filled(d.allergies, d.medicationAllergies, d.foodEnvironmentalAllergies)) {
+    healthMissing.push("Allergies");
+  }
   if (!filled(d.currentMedications)) healthMissing.push("Medications");
+  if (!d.advanceDirectives.length) healthMissing.push("Advance directives");
   sections.push({
     id: "health",
     label: "Medical information",
@@ -610,16 +831,17 @@ export function computeDossierCompleteness(
   const careScore =
     [
       filled(d.autonomyLevel),
-      filled(d.mobility),
+      filled(d.mobility) || d.mobilityDevices.length > 0,
       adlFilled >= 3,
       filled(d.continence),
       d.memoryCognition.length > 0 || filled(d.behavioralConcerns),
-      filled(d.fallRisk),
+      filled(d.fallRisk, d.fallsPast90Days),
     ].filter(Boolean).length / 6;
   const careMissing: string[] = [];
   if (!filled(d.autonomyLevel)) careMissing.push("Autonomy level");
-  if (!filled(d.mobility)) careMissing.push("Mobility");
+  if (!filled(d.mobility) && !d.mobilityDevices.length) careMissing.push("Mobility");
   if (adlFilled < 3) careMissing.push("Daily living activities");
+  if (!filled(d.fallRisk, d.fallsPast90Days)) careMissing.push("Falls history");
   sections.push({
     id: "care",
     label: "Autonomy level",
@@ -628,7 +850,27 @@ export function computeDossierCompleteness(
     missing: careMissing,
   });
 
-  const docsScore = missingDocs.length === 0 ? 1 : Math.max(0, 1 - missingDocs.length / 4);
+  const financialScore =
+    [
+      filled(d.primaryPayor, d.insurance),
+      filled(d.monthlyIncome, d.maxMonthlyBudget, d.budgetMax),
+      filled(d.medicarePartAbId, d.medicaidId, d.ltcPolicyId) ||
+        d.primaryPayor === "private_pay",
+    ].filter(Boolean).length / 3;
+  const financialMissing: string[] = [];
+  if (!filled(d.primaryPayor)) financialMissing.push("Primary payor");
+  if (!filled(d.monthlyIncome, d.maxMonthlyBudget, d.budgetMax)) {
+    financialMissing.push("Income or budget");
+  }
+  sections.push({
+    id: "financial",
+    label: "Financial picture",
+    done: financialScore >= 0.34,
+    score: financialScore,
+    missing: financialMissing,
+  });
+
+  const docsScore = missingDocs.length === 0 ? 1 : Math.max(0, 1 - missingDocs.length / 6);
   sections.push({
     id: "documents",
     label: "Documents",
@@ -656,7 +898,7 @@ export function computeDossierCompleteness(
     percent,
     sections,
     missingDocs,
-    readyToSubmit: coreDone && validated && percent >= 70 && missingDocs.length <= 1,
+    readyToSubmit: coreDone && validated && percent >= 70 && missingDocs.length <= 2,
   };
 }
 
@@ -677,11 +919,17 @@ export function syncDossierToFamily(d: ResidentDossier): {
 
   const mobility: string[] = [];
   if (d.mobility === "independent") mobility.push("walks_alone");
-  if (d.mobility === "cane") mobility.push("cane");
-  if (d.mobility === "walker") mobility.push("walker");
-  if (d.mobility === "wheelchair") mobility.push("wheelchair");
+  if (d.mobility === "cane" || d.mobilityDevices.includes("cane")) mobility.push("cane");
+  if (d.mobility === "walker" || d.mobilityDevices.includes("walker")) mobility.push("walker");
+  if (
+    d.mobility === "wheelchair" ||
+    d.mobilityDevices.includes("manual_wheelchair") ||
+    d.mobilityDevices.includes("motorized_wheelchair")
+  ) {
+    mobility.push("wheelchair");
+  }
   if (d.mobility === "bedbound") mobility.push("bedbound");
-  if (d.fallRisk === "yes") mobility.push("fall_risk");
+  if (d.fallRisk === "yes" || d.fallsPast90Days === "yes") mobility.push("fall_risk");
 
   const adls = emptyCareNeeds().adls;
   const adlMap: Record<string, AdlActivityId> = {
@@ -690,11 +938,20 @@ export function syncDossierToFamily(d: ResidentDossier): {
     toileting: "toileting",
     eating: "eating",
     transfers: "transferring",
+    walking: "walking",
   };
   for (const [k, v] of Object.entries(d.adls)) {
     const target = adlMap[k];
     if (!target || !v) continue;
-    adls[target] = (v === "some" ? "some" : v === "dependent" ? "dependent" : "independent") as AdlLevel;
+    const level: AdlLevel =
+      v === "prompts"
+        ? "reminders"
+        : v === "hands_on" || v === "some"
+          ? "some"
+          : v === "dependent"
+            ? "dependent"
+            : "independent";
+    adls[target] = level;
   }
 
   const cognition: string[] = [];
@@ -704,11 +961,16 @@ export function syncDossierToFamily(d: ResidentDossier): {
   if (d.memoryCognition.includes("confusion")) cognition.push("disorientation");
 
   const health: string[] = [];
-  if (filled(d.allergies)) health.push("allergies");
+  if (filled(d.allergies, d.medicationAllergies, d.foodEnvironmentalAllergies)) {
+    health.push("allergies");
+  }
   if (filled(d.medicalConditions, d.diagnoses)) health.push("conditions");
   if (d.nutrition.includes("soft") || d.nutrition.includes("thickened")) health.push("special_diet");
   if (d.nutrition.includes("feeding_assist")) health.push("swallowing");
   if (d.continence === "incontinent" || d.continence === "occasional") health.push("incontinence");
+  if (d.medicalTreatments.includes("oxygen")) health.push("oxygen");
+  if (d.medicalTreatments.includes("dialysis")) health.push("dialysis");
+  if (d.medicalTreatments.includes("wound_care")) health.push("wounds");
 
   const cities = d.preferredCities
     .split(/[,;\n]/)
@@ -763,8 +1025,16 @@ export function syncDossierToFamily(d: ResidentDossier): {
     cognitionNotes: d.behavioralConcerns,
     health,
     healthConditions: [d.medicalConditions, d.diagnoses].filter(Boolean).join("\n"),
-    allergiesDetail: d.allergies,
-    healthNotes: [d.medicalNotes, d.specialCareNeeds, d.pastSurgeries, d.recentHospitalizations]
+    allergiesDetail:
+      [d.allergies, d.medicationAllergies, d.foodEnvironmentalAllergies].filter(Boolean).join("\n") ||
+      d.allergies,
+    healthNotes: [
+      d.medicalNotes,
+      d.specialCareNeeds,
+      d.pastSurgeries,
+      d.recentHospitalizations,
+      d.dietaryRequirements,
+    ]
       .filter(Boolean)
       .join("\n"),
     medication: {
@@ -779,12 +1049,14 @@ export function syncDossierToFamily(d: ResidentDossier): {
       language: d.specialPreferences.includes("french")
         ? "French speaking"
         : d.primaryLanguage || "",
-      religion: d.specialPreferences.includes("religious") ? "Religious affiliation preferred" : "",
+      religion: d.specialPreferences.includes("religious")
+        ? "Religious affiliation preferred"
+        : d.religion || "",
       room: d.roomPreference || (d.specialPreferences.includes("private_room") ? "Private room" : ""),
       environment: d.specialPreferences.includes("outdoor") ? "Outdoor spaces preferred" : "",
       communityType: d.communityTypes.join(", "),
       familyProximity: d.preferredCities,
-      diet: d.nutrition.join(", "),
+      diet: [d.nutrition.join(", "), d.dietaryRequirements].filter(Boolean).join(" · "),
       activities: "",
     },
     updatedAt: new Date().toISOString(),
@@ -805,14 +1077,23 @@ export function detectDocumentCategory(
 ): { dossierId: string; vault: DocCategoryId; label: string; confidence: "high" | "medium" | "low" } {
   const n = fileName.toLowerCase();
   const rules: { re: RegExp; id: string; confidence: "high" | "medium" }[] = [
-    { re: /(insurance|medicare|medicaid|assure|carte\s*vitale)/i, id: "insurance", confidence: "high" },
+    { re: /(insurance|assure|carte\s*vitale)/i, id: "insurance", confidence: "high" },
     { re: /(passport|driver|licence|license|id[_-\s]?card|identity|piece\s*ident)/i, id: "id", confidence: "high" },
     { re: /(med(ication)?[_-\s]?list|ordonnance|prescription|rx[_-\s]?list)/i, id: "medication_list", confidence: "high" },
     { re: /(physician|doctor|order|h&p|history\s*and\s*physical|ordre\s*medical)/i, id: "physician_orders", confidence: "high" },
     { re: /(hospital|discharge|admission|urgences)/i, id: "hospital_records", confidence: "medium" },
     { re: /(assess|mds|interrai|evaluation)/i, id: "assessment", confidence: "medium" },
     { re: /(bank|tax|income|financial|budget|releve)/i, id: "financial", confidence: "medium" },
-    { re: /(poa|power\s*of\s*attorney|guardian|mandat|tutelle|curatelle|legal)/i, id: "legal", confidence: "high" },
+    { re: /(poa|power\s*of\s*attorney|mandat)/i, id: "power_of_attorney", confidence: "high" },
+    { re: /(guardian|tutelle|curatelle)/i, id: "guardianship", confidence: "high" },
+    {
+      re: /(dnr|dni|living\s*will|molst|polst|advance\s*directive)/i,
+      id: "advance_directives",
+      confidence: "high",
+    },
+    { re: /(medicare)/i, id: "medicare", confidence: "high" },
+    { re: /(medicaid)/i, id: "medicaid", confidence: "high" },
+    { re: /(legal)/i, id: "legal", confidence: "medium" },
   ];
   for (const rule of rules) {
     if (rule.re.test(n)) {

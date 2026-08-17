@@ -18,6 +18,7 @@ const REVIEW_SECTIONS: DossierStepId[] = [
   "resident",
   "health",
   "care",
+  "financial",
   "documents",
 ];
 
@@ -31,6 +32,10 @@ function summaryFor(step: DossierStepId, d: ResidentDossier, docCount: number): 
       return d.autonomyLevel
         ? `Autonomy: ${d.autonomyLevel}${d.mobility ? ` · ${d.mobility}` : ""}`
         : "Autonomy incomplete";
+    case "financial":
+      return d.primaryPayor || d.insurance || d.maxMonthlyBudget || d.monthlyIncome
+        ? "Financial details started"
+        : "Financial incomplete";
     case "documents":
       return docCount ? `${docCount} document(s)` : "No documents uploaded";
     default:

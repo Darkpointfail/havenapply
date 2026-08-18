@@ -38,6 +38,11 @@ export function RequireAuth({
       return;
     }
 
+    if (user.accountStatus && user.accountStatus !== "active") {
+      router.replace(`${signInPathForRole(role)}?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     if (!roleSatisfies(user.role, role)) {
       router.replace("/access-denied");
       return;

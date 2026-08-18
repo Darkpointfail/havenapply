@@ -40,8 +40,9 @@ function buildSessionFromInput(
     organization: input.organization?.trim(),
     jobTitle: input.jobTitle?.trim(),
     emailConfirmed,
-    communityStatus: input.role === "facility" ? "verified" : undefined,
+    communityStatus: input.role === "facility" ? "pending" : undefined,
     onboardingCompleted: input.role !== "family",
+    accountStatus: "active",
   };
 }
 
@@ -88,6 +89,9 @@ export function sessionFromSupabaseUser(user: User): SessionUser | null {
   const firstName = metaString(meta, "first_name");
   const lastName = metaString(meta, "last_name");
   const communityStatus = meta.community_status as CommunityStatus | undefined;
+  const rawStatus = meta.account_status;
+  const accountStatus =
+    rawStatus === "disabled" || rawStatus === "suspended" ? rawStatus : "active";
 
   return {
     id: user.id,
@@ -104,9 +108,10 @@ export function sessionFromSupabaseUser(user: User): SessionUser | null {
         communityStatus === "verified" ||
         communityStatus === "rejected"
         ? communityStatus
-        : "verified"
+        : "pending"
       : undefined,
     onboardingCompleted: metaBool(meta, "onboarding_completed"),
+    accountStatus,
   };
 }
 
@@ -190,9 +195,10 @@ function sessionFromSignup(
     jobTitle: fallback.jobTitle,
     emailConfirmed: Boolean(user.email_confirmed_at),
     communityStatus: isFacilityRole(fallback.role)
-      ? fallback.communityStatus ?? "verified"
+      ? fallback.communityStatus ?? "pending"
       : undefined,
     onboardingCompleted: Boolean(fallback.onboardingCompleted),
+    accountStatus: "active",
   };
 }
 

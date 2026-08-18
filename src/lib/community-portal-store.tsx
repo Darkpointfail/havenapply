@@ -166,6 +166,12 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     }
 
     const residenceId = resolveCommunityResidenceId(user.organization, user.email);
+    if (!residenceId) {
+      // Unknown org → empty tenant (fail closed). Never attach another RPA's workspace.
+      setWorkspace(null);
+      setReady(true);
+      return;
+    }
     const map = readMap();
     let ws = map[residenceId];
     if (!ws || !Array.isArray(ws.applications) || ws.applications.length === 0) {

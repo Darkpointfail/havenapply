@@ -20,6 +20,9 @@ export type SignupRole = "family" | "professional" | "facility";
 
 export type CommunityStatus = "pending" | "verified" | "rejected";
 
+/** Lifecycle status — disabled/suspended accounts lose access immediately. */
+export type AccountStatus = "active" | "disabled" | "suspended";
+
 export function parseUserRole(value: unknown): UserRole | null {
   if (value === "residence") return "community";
   if (
@@ -65,6 +68,7 @@ export type AccountRecord = {
   phone?: string;
   communityStatus?: CommunityStatus;
   onboardingCompleted: boolean;
+  accountStatus: AccountStatus;
   createdAt: string;
 };
 
@@ -80,6 +84,7 @@ export type SessionUser = {
   emailConfirmed: boolean;
   communityStatus?: CommunityStatus;
   onboardingCompleted: boolean;
+  accountStatus: AccountStatus;
 };
 
 export type AuthOk<T = void> = { ok: true; data: T };
@@ -112,7 +117,12 @@ export function toSessionUser(a: AccountRecord): SessionUser {
     emailConfirmed: a.emailConfirmed,
     communityStatus: a.communityStatus,
     onboardingCompleted: a.onboardingCompleted,
+    accountStatus: a.accountStatus ?? "active",
   };
+}
+
+export function isAccountActive(status: AccountStatus | undefined): boolean {
+  return (status ?? "active") === "active";
 }
 
 function readAccounts(): AccountRecord[] {
@@ -139,6 +149,25 @@ export function readSession(): SessionUser | null {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const role = parseUserRole(parsed.role);
     if (!parsed.id || !parsed.email || !role) return null;
+
+    // Re-check account lifecycle from the accounts store (immediate revocation).
+    const account = findByEmail(String(parsed.email));
+    if (account && !isAccountActive(account.accountStatus)) {
+      writeSession(null);
+      return null;
+    }
+
+    const accountStatus: AccountStatus =
+      account?.accountStatus ??
+      (parsed.accountStatus === "disabled" || parsed.accountStatus === "suspended"
+        ? parsed.accountStatus
+        : "active");
+
+    if (!isAccountActive(accountStatus)) {
+      writeSession(null);
+      return null;
+    }
+
     return {
       id: String(parsed.id),
       email: String(parsed.email),
@@ -151,6 +180,7 @@ export function readSession(): SessionUser | null {
       emailConfirmed: Boolean(parsed.emailConfirmed),
       communityStatus: parsed.communityStatus as SessionUser["communityStatus"],
       onboardingCompleted: Boolean(parsed.onboardingCompleted),
+      accountStatus,
     };
   } catch {
     return null;
@@ -218,6 +248,7 @@ async function makeAccount(input: {
     phone: input.phone?.trim(),
     communityStatus: input.communityStatus,
     onboardingCompleted: Boolean(input.onboardingCompleted),
+    accountStatus: "active",
     createdAt: new Date().toISOString(),
   };
 }
@@ -326,7 +357,7 @@ export async function signUpWithRoleAccount(
     jobTitle: input.jobTitle,
     phone: input.phone,
     emailConfirmed: true,
-    communityStatus: input.role === "facility" ? "verified" : undefined,
+    communityStatus: input.role === "facility" ? "pending" : undefined,
     onboardingCompleted: input.role !== "family",
   });
   account.confirmToken = null;
@@ -352,6 +383,10 @@ export async function signInAccount(input: {
     return { ok: false, error: AUTH_MESSAGES.confirmBeforeSignIn };
   }
 
+  if (!isAccountActive(account.accountStatus)) {
+    return { ok: false, error: AUTH_MESSAGES.accessDenied };
+  }
+
   if (input.expectedRole && account.role !== input.expectedRole) {
     const facilityAlias =
       (input.expectedRole === "facility" && account.role === "community") ||
@@ -362,6 +397,29 @@ export async function signInAccount(input: {
   const session = toSessionUser(account);
   writeSession(session);
   return { ok: true, data: session };
+}
+
+/**
+ * Disable or suspend an account. Clears any active session for that email immediately.
+ * Role changes for the account itself are not performed here.
+ */
+export function setAccountLifecycleStatus(
+  email: string,
+  status: AccountStatus,
+): AuthResult<SessionUser> {
+  const account = findByEmail(email);
+  if (!account) return { ok: false, error: AUTH_MESSAGES.generic };
+  const updated = saveAccount({ ...account, accountStatus: status });
+  const session = readSession();
+  if (session && normalizeEmail(session.email) === normalizeEmail(email)) {
+    if (!isAccountActive(status)) writeSession(null);
+    else writeSession(toSessionUser(updated));
+  }
+  return { ok: true, data: toSessionUser(updated) };
+}
+
+export function disableAccount(email: string): AuthResult<SessionUser> {
+  return setAccountLifecycleStatus(email, "disabled");
 }
 
 export function signOutAccount() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, homeForUser, type UserRole } from "@/lib/auth";
 import {
@@ -9,11 +9,14 @@ import {
   isProfessionalPortalPath,
 } from "@/lib/auth-open-access";
 import { isFacilityRole } from "@/lib/auth-store";
+import { getMfaAssurance, listMfaFactors, roleRequiresMfa } from "@/lib/auth-mfa";
+import { mfaRedirectPath } from "@/lib/auth-mfa-redirect";
 import {
   openAccessHomeForPath,
   roleSatisfies,
   signInPathForRole,
 } from "@/lib/permissions";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 
 export function RequireAuth({
   role,
@@ -28,6 +31,7 @@ export function RequireAuth({
   const { user, ready } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mfaReady, setMfaReady] = useState(!isSupabaseBackend());
 
   useEffect(() => {
     if (!ready) return;
@@ -45,10 +49,44 @@ export function RequireAuth({
 
     if (isFacilityRole(role) && requireCommunityVerified && user.communityStatus !== "verified") {
       router.replace("/community/pending");
+      return;
     }
+
+    if (!isSupabaseBackend() || !roleRequiresMfa(user.role)) {
+      setMfaReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const factors = await listMfaFactors();
+        const aal = await getMfaAssurance();
+        if (cancelled) return;
+        if (!factors.totp.length) {
+          router.replace(mfaRedirectPath("enroll", { next: pathname }));
+          return;
+        }
+        if (aal.currentLevel !== "aal2") {
+          router.replace(
+            mfaRedirectPath("challenge", {
+              factorId: factors.totp[0]?.id,
+              next: pathname,
+            }),
+          );
+          return;
+        }
+        setMfaReady(true);
+      })();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [ready, user, role, requireCommunityVerified, router, pathname]);
 
-  if (!ready || !user) {
+  if (!ready || !user || !mfaReady) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-5">
         <div className="text-center">

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { assertSameOriginMutation } from "@/lib/auth-csrf";
+import { recordAuthEvent } from "@/lib/auth-events";
+import { assertPasswordAllowed } from "@/lib/auth-password-policy";
+import { clientKeyFromRequest, rateLimit } from "@/lib/auth-rate-limit";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";
 import {
   accountTypeLabel,
@@ -24,6 +28,25 @@ function isSignupRole(value: unknown): value is SignupRole {
 }
 
 export async function POST(request: Request) {
+  const csrf = assertSameOriginMutation(request);
+  if (!csrf.ok) {
+    void recordAuthEvent({ type: "csrf_rejected", detail: "sign-up" });
+    return NextResponse.json({ ok: false, error: AUTH_MESSAGES.generic }, { status: csrf.status });
+  }
+
+  const limited = rateLimit({
+    key: clientKeyFromRequest(request, "signup"),
+    limit: 8,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!limited.allowed) {
+    void recordAuthEvent({ type: "rate_limited", detail: "signup" });
+    return NextResponse.json(
+      { ok: false, error: AUTH_MESSAGES.rateLimited },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -47,6 +70,10 @@ export async function POST(request: Request) {
   }
   if (!body.password || !isValidPassword(body.password)) {
     return NextResponse.json({ ok: false, error: AUTH_MESSAGES.weakPassword }, { status: 400 });
+  }
+  const allowed = await assertPasswordAllowed(body.password);
+  if (!allowed.ok) {
+    return NextResponse.json({ ok: false, error: allowed.error }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -75,24 +102,29 @@ export async function POST(request: Request) {
     metadata.phone = body.phone?.trim() || "";
   }
   if (body.role === "facility") {
-    metadata.community_status = "verified";
+    metadata.community_status = "pending";
   }
+
+  const autoConfirm =
+    process.env.AUTH_SIGNUP_AUTO_CONFIRM === "true" ||
+    process.env.NODE_ENV !== "production";
 
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password: body.password,
-    email_confirm: true,
+    email_confirm: autoConfirm,
     user_metadata: metadata,
   });
 
   if (error) {
     const message = error.message.toLowerCase();
     if (message.includes("already") || message.includes("exists")) {
+      // Soft-generic to reduce account enumeration where possible.
       return NextResponse.json({ ok: false, error: AUTH_MESSAGES.emailTaken }, { status: 409 });
     }
     console.error("[auth] admin signup failed:", body.role, error.message);
     return NextResponse.json(
-      { ok: false, error: AUTH_MESSAGES.generic, detail: error.message },
+      { ok: false, error: AUTH_MESSAGES.generic },
       { status: 400 },
     );
   }
@@ -107,5 +139,6 @@ export async function POST(request: Request) {
     role: body.role,
     firstName: body.firstName.trim(),
     lastName: body.lastName.trim(),
+    pendingConfirmation: !autoConfirm,
   });
 }

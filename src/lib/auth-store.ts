@@ -89,7 +89,7 @@ export type AuthResult<T = void> = AuthOk<T> | AuthFail;
 const ACCOUNTS_KEY = "haven-accounts-v1";
 const SESSION_KEY = "haven-auth";
 const CONFIRM_TTL_MS = 1000 * 60 * 60 * 24; // 24h
-const RESET_TTL_MS = 1000 * 60 * 60; // 1h
+const RESET_TTL_MS = 1000 * 60 * 30; // 30 minutes (OWASP: short-lived reset tokens)
 
 function uid() {
   return `acc_${createToken().slice(0, 16)}`;
@@ -390,11 +390,13 @@ export function confirmEmailToken(token: string): AuthResult<SessionUser> {
 
 export function resendConfirmation(email: string): AuthResult<{ email: string; confirmToken: string }> {
   const account = findByEmail(email);
+  // Soft success — never reveal whether the account exists.
   if (!account) {
-    // Don't leak existence, still show success-style for family UX? Spec wants resend; show friendly.
-    return { ok: false, error: AUTH_MESSAGES.accountNotFound };
+    return { ok: true, data: { email: normalizeEmail(email), confirmToken: "" } };
   }
-  if (account.emailConfirmed) return { ok: false, error: AUTH_MESSAGES.alreadyConfirmed };
+  if (account.emailConfirmed) {
+    return { ok: true, data: { email: account.email, confirmToken: "" } };
+  }
 
   const confirmToken = createToken();
   saveAccount({
@@ -457,7 +459,7 @@ export async function changeAccountPassword(
   const account = findByEmail(email);
   if (!account) return { ok: false, error: AUTH_MESSAGES.badCredentials };
   const valid = await verifyPassword(currentPassword, account.salt, account.passwordHash);
-  if (!valid) return { ok: false, error: "Current password is incorrect." };
+  if (!valid) return { ok: false, error: AUTH_MESSAGES.badCredentials };
 
   const salt = createSalt();
   const passwordHash = await hashPassword(newPassword, salt);
@@ -468,6 +470,8 @@ export async function changeAccountPassword(
     resetToken: null,
     resetExpiresAt: null,
   });
+  // Revoke local session after password change.
+  writeSession(null);
   return { ok: true, data: undefined };
 }
 

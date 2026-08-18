@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { AUTH_MESSAGES } from "@/lib/auth-messages";
+import { assertSameOriginMutation } from "@/lib/auth-csrf";
+import { secureCookieOptions } from "@/lib/auth-cookies";
+import { recordAuthEvent } from "@/lib/auth-events";
+import { clientKeyFromRequest, rateLimit } from "@/lib/auth-rate-limit";
 import {
   SITE_ACCESS_COOKIE,
   SITE_ACCESS_COOKIE_VALUE,
@@ -8,6 +13,25 @@ import {
 } from "@/lib/site-access";
 
 export async function POST(request: Request) {
+  const csrf = assertSameOriginMutation(request);
+  if (!csrf.ok) {
+    void recordAuthEvent({ type: "csrf_rejected", detail: "site-access" });
+    return NextResponse.json({ ok: false, error: AUTH_MESSAGES.generic }, { status: csrf.status });
+  }
+
+  const limited = rateLimit({
+    key: clientKeyFromRequest(request, "site-access"),
+    limit: 20,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!limited.allowed) {
+    void recordAuthEvent({ type: "rate_limited", detail: "site-access" });
+    return NextResponse.json(
+      { ok: false, error: AUTH_MESSAGES.rateLimited },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   let rawPassword: unknown = "";
   const contentType = request.headers.get("content-type") || "";
 
@@ -23,7 +47,7 @@ export async function POST(request: Request) {
 
   const password = normalizeSitePassword(rawPassword);
   if (!password || !passwordsMatch(password, SITE_ACCESS_PASSWORD)) {
-    // Static error only — never echo the submitted password.
+    // Static error only — never echo the submitted or expected password.
     return NextResponse.json(
       { ok: false, error: "Incorrect password" },
       { status: 401 },
@@ -33,13 +57,8 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
     name: SITE_ACCESS_COOKIE,
-    // Fixed constant — never derived from user input.
     value: SITE_ACCESS_COOKIE_VALUE,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    // Session cookie only: password is required again on every new browser session.
+    ...secureCookieOptions(),
   });
   return response;
 }

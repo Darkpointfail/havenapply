@@ -10,8 +10,14 @@ export const AUTH_MESSAGES = {
   accessDenied: "You do not have permission to access this page.",
   badCredentials: "Incorrect email or password.",
   accountNotFound: "We couldn’t find an account with that email.",
-  weakPassword: "Use at least 8 characters for your password.",
+  weakPassword:
+    "Use at least 12 characters with upper, lower, and a number.",
+  compromisedPassword:
+    "This password appears in known breach lists. Choose a different one.",
   passwordMismatch: "Passwords do not match.",
+  rateLimited: "Too many attempts. Please wait a moment and try again.",
+  mfaRequired: "Multi-factor authentication is required for this account.",
+  mfaInvalid: "Invalid authentication code. Try again.",
   acceptTerms: "Please accept the Terms of Use and Privacy Policy to continue.",
   communityPending:
     "Your community is awaiting verification. You’ll get access once Haven reviews your organization.",

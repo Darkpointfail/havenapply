@@ -21,12 +21,6 @@ import { images } from "@/data/images";
 import { useT } from "@/lib/i18n/locale";
 import { residences } from "@/data/residences";
 
-const heroBenefits = [
-  "One profile for every application",
-  "Secure medical document vault",
-  "Apply to multiple communities",
-];
-
 const journey = [
   "Create profile",
   "Find communities",
@@ -131,61 +125,74 @@ export default function HomePage() {
   return (
     <div className="gradient-mesh">
       {/* 1 - Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-[1400px] gap-12 px-5 pb-20 pt-14 md:px-8 md:pb-28 md:pt-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
-          <div className="animate-rise">
-            <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink md:text-6xl">
-              {t("One profile. Multiple communities. Less paperwork.")}
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-secondary md:text-xl">
-              {t("Create one secure profile for your loved one, upload medical documents, apply to several senior living communities, and follow every application from one calm place.")}
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button href="/get-started" size="lg">
-                {t("Build your profile")}
-                <ArrowRight size={18} />
-              </Button>
-              <Button href="/find-senior-living" size="lg" variant="secondary">
-                {t("Find senior living")}
-              </Button>
-            </div>
-            <ul className="mt-10 space-y-3 text-sm text-ink-muted md:text-[15px]">
-              {heroBenefits.map((item) => (
-                <li key={item} className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="shrink-0 text-brand" />
-                  {t(item)}
-                </li>
-              ))}
-            </ul>
-          </div>
+      <section className="relative isolate overflow-hidden">
+        <Image
+          src="/community-photos/amenity-garden.jpg"
+          alt=""
+          fill
+          priority
+          aria-hidden
+          sizes="100vw"
+          className="hero-drift -z-20 object-cover"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.72) 38%, rgba(255,255,255,0.94) 100%), radial-gradient(ellipse 62% 55% at 50% 48%, rgba(255,255,255,0.75), transparent 72%)",
+          }}
+        />
 
-          <div className="relative animate-rise overflow-hidden rounded-[28px] shadow-lift">
-            <div className="relative aspect-[4/5] md:aspect-[5/4]">
-              <Image
-                src={images.hero}
-                alt={t("Family caregiver supporting a senior parent")}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width:1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 rounded-2xl glass p-4 text-ink shadow-md">
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-                  {t("Your loved one’s profile")}
-                </p>
-                <p className="mt-1 text-sm font-medium">{t("Built once · Ready to reuse")}</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-mute">
-                  <div className="h-full w-[82%] rounded-full bg-brand" />
-                </div>
+        <div className="mx-auto max-w-[1400px] px-5 py-24 text-center md:px-8 md:pb-[88px] md:pt-24">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-strong">
+            {t("Senior living admissions")}
+          </p>
+          <h1 className="mx-auto mt-[22px] max-w-[820px] text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-pretty text-ink md:text-[66px]">
+            {t("One application. Every community you’re considering.")}
+          </h1>
+          <p className="mx-auto mt-6 max-w-[600px] text-lg leading-[1.55] text-ink-secondary md:text-xl">
+            {t(
+              "Fill it out once for your parent. Send it to as many care communities as you like, and follow every answer in one place.",
+            )}
+          </p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-3.5 sm:flex-row">
+            <Button href="/get-started" size="lg" className="h-14 rounded-full px-7">
+              {t("Start an application")}
+            </Button>
+            <Button
+              href="#how-it-works"
+              size="lg"
+              variant="secondary"
+              className="h-14 rounded-full border-line-strong bg-white px-7"
+            >
+              {t("See how it works")}
+            </Button>
+          </div>
+          <p className="mt-[26px] text-[15px] text-ink-muted">
+            {t("Free for families · Takes about 15 minutes")}
+          </p>
+
+          <div className="mx-auto mt-16 grid max-w-[900px] grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
+            {[
+              { k: "1", v: "form to fill out" },
+              { k: "Any", v: "number of communities" },
+              { k: "0", v: "documents shared without your consent" },
+            ].map((s) => (
+              <div key={s.v} className="bg-surface/90 p-6 text-left backdrop-blur-sm">
+                <p className="text-3xl font-semibold tracking-[-0.02em]">{s.k}</p>
+                <p className="mt-1.5 text-[15px] text-ink-muted">{t(s.v)}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* 2 - Everything in one place */}
-      <section className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
+      <section
+        id="how-it-works"
+        className="mx-auto max-w-[1400px] scroll-mt-24 px-5 py-20 md:px-8 md:py-28"
+      >
         <div className="max-w-2xl">
           <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
             {t("Everything families need in one place.")}

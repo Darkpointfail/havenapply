@@ -1899,6 +1899,21 @@ export const frMessages: Record<string, string> = {
   "When you accept a candidate from the review queue, they appear here until contracts, payment, and move-in details are complete.":
     "Lorsque vous acceptez un candidat depuis la file d’examen, il apparaît ici jusqu’à ce que contrats, paiement et détails d’emménagement soient terminés.",
   "Workspace unavailable": "Espace de travail indisponible",
+
+  // Homepage hero refonte
+  "Senior living admissions": "Admissions en résidence senior",
+  "One application. Every community you’re considering.":
+    "Une candidature. Toutes les résidences que vous envisagez.",
+  "Fill it out once for your parent. Send it to as many care communities as you like, and follow every answer in one place.":
+    "Remplissez-la une fois pour votre parent. Envoyez-la à autant de résidences que vous voulez, et suivez chaque réponse au même endroit.",
+  "Start an application": "Commencer une candidature",
+  "See how it works": "Voir comment ça marche",
+  "Free for families · Takes about 15 minutes":
+    "Gratuit pour les familles · Environ 15 minutes",
+  "form to fill out": "formulaire à remplir",
+  "number of communities": "nombre de résidences",
+  "documents shared without your consent":
+    "document partagé sans votre consentement",
 };
 
 export function translate(locale: Locale, key: string): string {

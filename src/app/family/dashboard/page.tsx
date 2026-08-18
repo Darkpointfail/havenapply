@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { residences } from "@/data/residences";
 import { statusLabel, statusTone } from "@/data/applications";
 import { useAi } from "@/lib/ai";
@@ -24,10 +23,7 @@ import { computeCompatibility } from "@/lib/community-match";
 import { useFamilyData } from "@/lib/family-data";
 import { dossierReadyForApply, toDisplayApplication } from "@/lib/family-applications";
 import { useMessaging } from "@/lib/messaging-store";
-import {
-  type SeniorProfile,
-  isSelfApplicant,
-} from "@/lib/senior-profile";
+import { type SeniorProfile, isSelfApplicant } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
 
@@ -39,15 +35,9 @@ function lovedOnePhrase(senior: SeniorProfile): string {
   const rel = (senior.relationship || "").toLowerCase();
   const gender = (senior.gender || "").toLowerCase();
   const isFemale =
-    gender === "female" ||
-    gender === "woman" ||
-    gender === "f" ||
-    gender.includes("femme");
+    gender === "female" || gender === "woman" || gender === "f" || gender.includes("femme");
   const isMale =
-    gender === "male" ||
-    gender === "man" ||
-    gender === "m" ||
-    gender.includes("homme");
+    gender === "male" || gender === "man" || gender === "m" || gender.includes("homme");
 
   if (rel.includes("mother") || rel === "mom") return "your mother";
   if (rel.includes("father") || rel === "dad") return "your father";
@@ -92,9 +82,46 @@ type JourneyStep = {
   minutes: number;
 };
 
-export default function FamilyDashboardPage() {
+/* ── Small presentational helpers, no logic ── */
 
-  const t = useT();  const { user } = useAuth();
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+      {children}
+    </p>
+  );
+}
+
+function StatCard({
+  value,
+  label,
+  hint,
+  warn,
+}: {
+  value: number;
+  label: string;
+  hint: string;
+  warn?: boolean;
+}) {
+  return (
+    <div className="h-full rounded-[18px] border border-line bg-surface p-[22px] transition hover:border-brand/30">
+      <p
+        className={cn(
+          "text-[32px] font-semibold tabular-nums tracking-[-0.02em]",
+          warn ? "text-warn" : "text-ink",
+        )}
+      >
+        {value}
+      </p>
+      <p className="mt-1.5 text-base font-medium text-ink">{label}</p>
+      <p className="mt-0.5 text-sm text-ink-faint">{hint}</p>
+    </div>
+  );
+}
+
+export default function FamilyDashboardPage() {
+  const t = useT();
+  const { user } = useAuth();
   const { ask } = useAi();
   const { data, completeness, toggleSavedCommunity } = useFamilyData();
   const { visibleThreads } = useMessaging();
@@ -211,9 +238,7 @@ export default function FamilyDashboardPage() {
     ["approved", "conditionally_approved", "offer_received", "waitlisted"].includes(a.status),
   );
 
-  const recentMessages = visibleThreads
-    .filter((t) => !t.archivedByFamily)
-    .slice(0, 3);
+  const recentMessages = visibleThreads.filter((th) => !th.archivedByFamily).slice(0, 3);
 
   const recommended = useMemo(() => {
     const appliedIds = new Set(activeApps.map((a) => a.residenceId));
@@ -234,6 +259,54 @@ export default function FamilyDashboardPage() {
   const savedIds = useMemo(
     () => new Set(data.savedFavorites.map((f) => f.communityId)),
     [data.savedFavorites],
+  );
+
+  /* ─── Suggestions grid, shared by both modes ─── */
+  const suggestionsGrid = (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {recommended.map(({ residence: r, match }) => {
+        const saved = savedIds.has(r.id);
+        return (
+          <div
+            key={r.id}
+            className="overflow-hidden rounded-[18px] border border-line bg-surface transition hover:border-brand/25"
+          >
+            <div className="relative h-36">
+              <Image src={r.image} alt="" fill className="object-cover" sizes="300px" />
+              <span className="absolute left-2.5 top-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-xs font-semibold shadow-xs">
+                {match.score}% match
+              </span>
+            </div>
+            <div className="flex flex-col gap-2.5 p-4">
+              <h3 className="text-[17px] font-semibold leading-snug tracking-[-0.015em]">
+                {r.name}
+              </h3>
+              <p className="text-sm text-ink-muted">
+                <MapPin size={12} className="mr-1 inline" />
+                {r.distanceMiles} mi · {r.careLevels[0]}
+              </p>
+              <div className="flex gap-2">
+                <Button href={`/find-senior-living/${r.id}`} size="sm" className="flex-1">
+                  View
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => toggleSavedCommunity(r.id)}
+                  aria-label={saved ? "Unsave" : "Save"}
+                >
+                  <Bookmark size={14} className={saved ? "fill-current text-brand" : ""} />
+                </Button>
+                <Button href={`/family/apply/${r.id}`} size="sm" variant="soft" aria-label={t("Apply")}>
+                  <Send size={14} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 
   /* ─── Tracking mode (journey complete) ─── */
@@ -267,72 +340,54 @@ export default function FamilyDashboardPage() {
 
     return (
       <div className="min-h-full">
-        <div className="mx-auto max-w-[920px] space-y-10 px-5 py-8 md:px-8 md:py-12">
+        <div className="mx-auto flex max-w-[1000px] flex-col gap-11 px-5 py-8 md:px-8 md:py-12">
           <header>
-            <p className="text-base text-ink-muted">{greeting},</p>
-            <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight text-ink md:text-[2.35rem] md:leading-tight">
+            <p className="text-[15px] text-ink-muted">{greeting},</p>
+            <h1 className="mt-2.5 max-w-3xl text-3xl font-semibold tracking-[-0.025em] text-pretty text-ink md:text-[38px] md:leading-[1.1]">
               {actionHeadline}
             </h1>
-            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-muted">
+            <p className="mt-3.5 max-w-xl text-[17px] leading-relaxed text-ink-muted">
               {actionSub}
             </p>
           </header>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              {
-                label: "Needs you",
-                value: needsActionApps.length,
-                hint: "Action on your side",
-                href: "/family/applications",
-                tone: needsActionApps.length > 0 ? "warn" : "neutral",
-              },
-              {
-                label: "In review",
-                value: underReview.length,
-                hint: "With communities",
-                href: "/family/applications",
-                tone: "brand",
-              },
-              {
-                label: "Decisions",
-                value: decided.length,
-                hint: "Accepted, offer, waitlist",
-                href: "/family/applications",
-                tone: "success",
-              },
-            ].map((m) => (
-              <Link key={m.label} href={m.href}>
-                <Card className="h-full p-4 transition hover:border-brand/30">
-                  <p className="text-2xl font-semibold tabular-nums">{m.value}</p>
-                  <p className="mt-0.5 text-sm font-medium">{m.label}</p>
-                  <p className="text-xs text-ink-faint">{m.hint}</p>
-                </Card>
-              </Link>
-            ))}
+          <div className="grid gap-3.5 sm:grid-cols-3">
+            <Link href="/family/applications">
+              <StatCard
+                value={needsActionApps.length}
+                label="Needs you"
+                hint="Action on your side"
+                warn={needsActionApps.length > 0}
+              />
+            </Link>
+            <Link href="/family/applications">
+              <StatCard value={underReview.length} label="In review" hint="With communities" />
+            </Link>
+            <Link href="/family/applications">
+              <StatCard
+                value={decided.length}
+                label="Decisions"
+                hint="Accepted, offer, waitlist"
+              />
+            </Link>
           </div>
 
           {needsActionApps.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                {t("Do this now")}
-              </h2>
-              <div className="mt-4 space-y-2">
+              <Eyebrow>{t("Do this now")}</Eyebrow>
+              <div className="mt-4 flex flex-col gap-2.5">
                 {needsActionApps.map((app) => {
-                  const docs =
-                    app.requestedDocuments[0] ||
-                    app.missingDocuments[0] ||
-                    null;
+                  const docs = app.requestedDocuments[0] || app.missingDocuments[0] || null;
                   return (
                     <Link
                       key={app.id}
                       href={`/family/applications/${app.id}`}
-                      className="flex gap-3 rounded-2xl border border-warn/30 bg-warn-soft/30 p-4 transition hover:border-warn/50"
+                      className="flex items-center gap-4 rounded-[18px] border border-warn/30 bg-warn-soft/30 p-5 transition hover:border-warn/50"
                     >
-                      <FileWarning size={18} className="mt-0.5 shrink-0 text-warn" />
+                      <FileWarning size={18} className="shrink-0 text-warn" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{app.residenceName}</p>
-                        <p className="mt-1 text-sm text-ink-secondary">
+                        <p className="text-[17px] font-semibold">{app.residenceName}</p>
+                        <p className="mt-1.5 text-[15px] text-ink-secondary">
                           {docs
                             ? `Document requested: ${docs}`
                             : app.unreadMessages > 0
@@ -349,12 +404,10 @@ export default function FamilyDashboardPage() {
           )}
 
           <section>
-            <div className="mb-4 flex items-end justify-between gap-3">
+            <div className="mb-4 flex items-end justify-between gap-5">
               <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                  {t("Applications")}
-                </h2>
-                <p className="mt-1 text-lg font-semibold tracking-tight">
+                <Eyebrow>{t("Applications")}</Eyebrow>
+                <p className="mt-2 text-[22px] font-semibold tracking-[-0.02em]">
                   {forSelf
                     ? `${activeApps.length} application${activeApps.length === 1 ? "" : "s"}`
                     : `${activeApps.length} for ${lovedOne}`}
@@ -362,24 +415,24 @@ export default function FamilyDashboardPage() {
               </div>
               <Link
                 href="/family/applications"
-                className="text-sm font-medium text-brand hover:underline"
+                className="text-[15px] font-medium text-brand-strong hover:underline"
               >
                 {t("View all")}
               </Link>
             </div>
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2.5">
               {activeApps.map((app) => (
                 <Link
                   key={app.id}
                   href={`/family/applications/${app.id}`}
-                  className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5 transition hover:border-brand/25"
+                  className="flex items-center gap-[18px] rounded-[18px] border border-line bg-surface p-4 transition hover:border-brand/25"
                 >
-                  <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl">
-                    <Image src={app.image} alt="" fill className="object-cover" sizes="72px" />
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+                    <Image src={app.image} alt="" fill className="object-cover" sizes="64px" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{app.residenceName}</p>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-ink-muted">
+                    <p className="truncate text-[17px] font-semibold">{app.residenceName}</p>
+                    <p className="mt-1 line-clamp-1 text-[15px] text-ink-muted">
                       {app.nextAction || `Updated ${app.lastUpdated}`}
                       {app.upcomingAppointment ? ` · Visit ${app.upcomingAppointment}` : ""}
                     </p>
@@ -390,122 +443,75 @@ export default function FamilyDashboardPage() {
             </div>
           </section>
 
-          <section>
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                {t("Messages")}
-              </h2>
-              <Link
-                href="/family/messages"
-                className="text-sm font-medium text-brand hover:underline"
-              >
-                Inbox
-              </Link>
-            </div>
-            {recentMessages.length === 0 ? (
-              <Card className="p-5 text-sm text-ink-muted">
-                {t("Conversations with communities will show up here.")}
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                {recentMessages.map((t) => {
-                  const last = t.messages[t.messages.length - 1];
-                  const unread = t.messages.some(
-                    (m) => m.fromRole === "community" && !m.readByFamily,
-                  );
-                  return (
-                    <Link
-                      key={t.id}
-                      href={`/family/messages?community=${t.residenceId}`}
-                      className="flex items-start justify-between gap-3 rounded-2xl border border-line bg-surface p-4 transition hover:border-brand/25"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium">{t.residenceName}</p>
-                        <p className="mt-1 line-clamp-1 text-sm text-ink-muted">
-                          {last?.text || "No messages"}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        {unread && <span className="h-2 w-2 rounded-full bg-brand" />}
-                        <span className="text-[10px] text-ink-faint">{last?.time}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {recommended.length > 0 && (
+          <div className="grid gap-10 lg:grid-cols-2">
             <section>
-              <div className="mb-4 flex items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                    {t("Keep going")}
-                  </h2>
-                  <p className="mt-1 text-lg font-semibold tracking-tight">
-                    {forSelf ? "More communities for you" : `More communities for ${lovedOne}`}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <Eyebrow>{t("Messages")}</Eyebrow>
                 <Link
-                  href="/family/find-communities"
-                  className="text-sm font-medium text-brand hover:underline"
+                  href="/family/messages"
+                  className="text-[15px] font-medium text-brand-strong hover:underline"
                 >
-                  Browse
+                  Inbox
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {recommended.map(({ residence: r, match }) => {
-                  const saved = savedIds.has(r.id);
-                  return (
-                    <Card key={r.id} className="overflow-hidden p-0" hover>
-                      <div className="relative h-28">
-                        <Image src={r.image} alt="" fill className="object-cover" sizes="280px" />
-                        <span className="absolute left-2 top-2 rounded-full bg-surface/95 px-2 py-0.5 text-xs font-semibold">
-                          {match.score}%
-                        </span>
-                      </div>
-                      <div className="space-y-2 p-3.5">
-                        <h3 className="text-sm font-semibold leading-snug">{r.name}</h3>
-                        <div className="flex gap-2">
-                          <Button href={`/find-senior-living/${r.id}`} size="sm" className="flex-1">
-                            View
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => toggleSavedCommunity(r.id)}
-                          >
-                            <Bookmark
-                              size={14}
-                              className={saved ? "fill-current text-brand" : ""}
-                            />
-                          </Button>
-                          <Button
-                            href={`/family/apply/${r.id}`}
-                            size="sm"
-                            variant="soft"
-                          >
-                            <Send size={14} />
-                          </Button>
+              {recentMessages.length === 0 ? (
+                <div className="mt-4 rounded-[18px] border border-line bg-surface p-5 text-[15px] text-ink-muted">
+                  {t("Conversations with communities will show up here.")}
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-col gap-2.5">
+                  {recentMessages.map((thread) => {
+                    const last = thread.messages[thread.messages.length - 1];
+                    const unread = thread.messages.some(
+                      (m) => m.fromRole === "community" && !m.readByFamily,
+                    );
+                    return (
+                      <Link
+                        key={thread.id}
+                        href={`/family/messages?community=${thread.residenceId}`}
+                        className="flex items-start justify-between gap-3.5 rounded-[18px] border border-line bg-surface p-5 transition hover:border-brand/25"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-base font-semibold">{thread.residenceName}</p>
+                          <p className="mt-1.5 line-clamp-1 text-[15px] text-ink-muted">
+                            {last?.text || "No messages"}
+                          </p>
                         </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          {unread && <span className="h-2 w-2 rounded-full bg-brand" />}
+                          <span className="text-[13px] text-ink-faint">{last?.time}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </section>
-          )}
 
-          <Card className="flex flex-wrap items-center justify-between gap-4 border-brand/20 bg-gradient-to-r from-brand-soft/50 to-surface p-5">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ink text-white">
+            {recommended.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between gap-3">
+                  <Eyebrow>{t("Keep going")}</Eyebrow>
+                  <Link
+                    href="/family/find-communities"
+                    className="text-[15px] font-medium text-brand-strong hover:underline"
+                  >
+                    Browse
+                  </Link>
+                </div>
+                <div className="mt-4">{suggestionsGrid}</div>
+              </section>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-brand/20 bg-brand-soft/40 p-[22px]">
+            <div className="flex items-start gap-3.5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
                 <Sparkles size={16} />
               </span>
               <div>
-                <p className="font-semibold">Question about an application?</p>
-                <p className="mt-0.5 text-sm text-ink-muted">
+                <p className="text-[17px] font-semibold">Question about an application?</p>
+                <p className="mt-1 text-[15px] text-ink-muted">
                   {t("Haven can explain a status or the next step.")}
                 </p>
               </div>
@@ -524,7 +530,7 @@ export default function FamilyDashboardPage() {
             >
               {t("Ask Haven")}
             </Button>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -550,13 +556,13 @@ export default function FamilyDashboardPage() {
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto max-w-[920px] space-y-10 px-5 py-8 md:px-8 md:py-12">
+      <div className="mx-auto flex max-w-[1000px] flex-col gap-11 px-5 py-8 md:px-8 md:py-12">
         <header>
-          <p className="text-base text-ink-muted">{greeting},</p>
-          <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight text-ink md:text-[2.35rem] md:leading-tight">
+          <p className="text-[15px] text-ink-muted">{greeting},</p>
+          <h1 className="mt-2.5 max-w-3xl text-3xl font-semibold tracking-[-0.025em] text-pretty text-ink md:text-[38px] md:leading-[1.1]">
             {headline}
           </h1>
-          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ink-muted">
+          <p className="mt-3.5 max-w-xl text-[17px] leading-relaxed text-ink-muted">
             {profileIncomplete
               ? "One profile, then you can find communities and apply everywhere without starting over."
               : dossierComplete
@@ -564,12 +570,12 @@ export default function FamilyDashboardPage() {
                 : "Finish the required documents and care details before we suggest communities."}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-4">
+          <div className="mt-6 flex flex-wrap items-center gap-5">
             <Button href={next.href} size="lg">
               {next.title.includes("Create") ? "Get started" : "Continue"}
               <ArrowRight size={16} />
             </Button>
-            <div className="flex items-center gap-3 text-sm text-ink-muted">
+            <div className="flex items-center gap-3 text-[15px] text-ink-muted">
               <div className="h-1.5 w-28 overflow-hidden rounded-full bg-bg-soft sm:w-36">
                 <div
                   className="h-full rounded-full bg-brand transition-all"
@@ -584,10 +590,8 @@ export default function FamilyDashboardPage() {
         </header>
 
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-            {t("Your journey")}
-          </h2>
-          <ol className="mt-4 space-y-3">
+          <Eyebrow>{t("Your journey")}</Eyebrow>
+          <ol className="mt-4 flex flex-col gap-3">
             {steps.map((step, index) => {
               const isNext = step.id === next.id && !step.done;
               return (
@@ -595,17 +599,17 @@ export default function FamilyDashboardPage() {
                   <Link
                     href={step.href}
                     className={cn(
-                      "flex gap-4 rounded-2xl border p-4 transition md:p-5",
+                      "flex items-center gap-4 rounded-2xl border p-5 transition",
                       isNext
-                        ? "border-brand/35 bg-brand-soft/40 shadow-xs"
+                        ? "border-[1.5px] border-brand bg-brand-soft/40"
                         : step.done
-                          ? "border-line/70 bg-surface opacity-80"
+                          ? "border-line bg-surface opacity-80"
                           : "border-line bg-surface hover:border-brand/25",
                     )}
                   >
                     <span
                       className={cn(
-                        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                         step.done
                           ? "bg-success text-white"
                           : isNext
@@ -616,24 +620,28 @@ export default function FamilyDashboardPage() {
                       {step.done ? <CheckCircle2 size={16} /> : index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className={cn("font-semibold", step.done && "text-ink-muted")}>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <p
+                          className={cn(
+                            "text-[17px] font-semibold",
+                            step.done && "text-ink-muted",
+                          )}
+                        >
                           {step.title}
                         </p>
                         {isNext && <Badge tone="brand">Do this now</Badge>}
                         {step.done && (
-                          <span className="text-xs font-medium text-success">Done</span>
+                          <span className="text-[13px] font-semibold text-success">Done</span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm leading-relaxed text-ink-muted">{step.detail}</p>
-                      <p className="mt-2 text-xs text-ink-faint">~{step.minutes} min</p>
+                      <p className="mt-1.5 text-[15px] leading-relaxed text-ink-muted">
+                        {step.detail}
+                      </p>
+                      <p className="mt-2 text-sm text-ink-faint">~{step.minutes} min</p>
                     </div>
                     <ArrowRight
                       size={18}
-                      className={cn(
-                        "mt-2 shrink-0",
-                        isNext ? "text-brand" : "text-ink-faint",
-                      )}
+                      className={cn("shrink-0", isNext ? "text-brand" : "text-ink-faint")}
                     />
                   </Link>
                 </li>
@@ -645,86 +653,41 @@ export default function FamilyDashboardPage() {
         {dossierComplete && (
           <>
             <section>
-              <div className="mb-4 flex items-end justify-between gap-3">
+              <div className="mb-4 flex items-end justify-between gap-5">
                 <div>
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                    Suggestions
-                  </h2>
-                  <p className="mt-1 text-lg font-semibold tracking-tight">
+                  <Eyebrow>Suggestions</Eyebrow>
+                  <p className="mt-2 text-[22px] font-semibold tracking-[-0.02em]">
                     {forSelf ? "Communities for you" : `Communities for ${lovedOne}`}
                   </p>
                 </div>
                 <Link
                   href="/family/find-communities"
-                  className="text-sm font-medium text-brand hover:underline"
+                  className="text-[15px] font-medium text-brand-strong hover:underline"
                 >
                   {t("Browse all")}
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {recommended.map(({ residence: r, match }) => {
-                  const saved = savedIds.has(r.id);
-                  return (
-                    <Card key={r.id} className="overflow-hidden p-0" hover>
-                      <div className="relative h-36">
-                        <Image src={r.image} alt="" fill className="object-cover" sizes="300px" />
-                        <span className="absolute left-2.5 top-2.5 rounded-full bg-surface/95 px-2.5 py-1 text-xs font-semibold shadow-xs">
-                          {match.score}% match
-                        </span>
-                      </div>
-                      <div className="space-y-2.5 p-4">
-                        <h3 className="font-semibold leading-snug">{r.name}</h3>
-                        <p className="text-xs text-ink-muted">
-                          <MapPin size={11} className="mr-1 inline" />
-                          {r.distanceMiles} mi · {r.careLevels[0]}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button href={`/find-senior-living/${r.id}`} size="sm" className="flex-1">
-                            View
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => toggleSavedCommunity(r.id)}
-                            aria-label={saved ? "Unsave" : "Save"}
-                          >
-                            <Bookmark size={14} className={saved ? "fill-current text-brand" : ""} />
-                          </Button>
-                          <Button
-                            href={`/family/apply/${r.id}`}
-                            size="sm"
-                            variant="soft"
-                            aria-label={t("Apply")}
-                          >
-                            <Send size={14} />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+              {suggestionsGrid}
               {activeApps.length === 0 && (
-                <Card className="mt-4 p-5">
-                  <p className="text-sm text-ink-muted">
+                <div className="mt-4 rounded-[18px] border border-line bg-surface p-5">
+                  <p className="text-[15px] text-ink-muted">
                     {t("Ready to apply? Open a community and send the dossier from its profile.")}
                   </p>
-                  <Button href="/family/find-communities" size="sm" className="mt-3">
+                  <Button href="/family/find-communities" size="sm" className="mt-3.5">
                     <Search size={14} /> Browse communities
                   </Button>
-                </Card>
+                </div>
               )}
             </section>
 
-            <Card className="flex flex-wrap items-center justify-between gap-4 border-brand/20 bg-gradient-to-r from-brand-soft/50 to-surface p-5">
-              <div className="flex items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ink text-white">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-brand/20 bg-brand-soft/40 p-[22px]">
+              <div className="flex items-start gap-3.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
                   <Sparkles size={16} />
                 </span>
                 <div>
-                  <p className="font-semibold">Need a hand?</p>
-                  <p className="mt-0.5 text-sm text-ink-muted">
+                  <p className="text-[17px] font-semibold">Need a hand?</p>
+                  <p className="mt-1 text-[15px] text-ink-muted">
                     {forSelf
                       ? "Ask Haven for the next step on your profile."
                       : `Ask Haven for the next step for ${lovedOne}.`}
@@ -735,13 +698,11 @@ export default function FamilyDashboardPage() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() =>
-                  ask(`What communities fit best for ${lovedOne}?`)
-                }
+                onClick={() => ask(`What communities fit best for ${lovedOne}?`)}
               >
                 {t("Ask Haven")}
               </Button>
-            </Card>
+            </div>
           </>
         )}
       </div>

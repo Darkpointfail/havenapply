@@ -20,10 +20,10 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3.5 text-sm rounded-[10px]",
-  md: "h-11 px-[18px] text-[15px] rounded-xl",
-  lg: "h-12 px-6 text-base rounded-xl",
-  icon: "h-10 w-10 rounded-xl p-0",
+  sm: "h-9 px-4 text-sm rounded-full",
+  md: "h-11 px-5 text-[15px] rounded-full",
+  lg: "h-12 px-6 text-base rounded-full",
+  icon: "h-10 w-10 rounded-full p-0",
 };
 
 type Common = {

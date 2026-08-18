@@ -1910,6 +1910,23 @@ export const frMessages: Record<string, string> = {
   "See how it works": "Voir comment ça marche",
   "Free for families · Takes about 15 minutes":
     "Gratuit pour les familles · Environ 15 minutes",
+  // Community portal visual refonte
+  "Awaiting review": "En attente d’examen",
+  "Submitted over 48h ago": "Soumis il y a plus de 48 h",
+  "Low priority": "Priorité basse",
+  "ready to decide": "prêt à décider",
+  "Continue review": "Continuer l’examen",
+  "Start review": "Commencer l’examen",
+  "Admissions workspace unavailable": "Espace d’admissions indisponible",
+  "new application": "nouvelle candidature",
+  "Ask the family": "Demander à la famille",
+  "Accept": "Accepter",
+  "Review checklist": "Liste de contrôle d’examen",
+  "remaining to review": "restant(s) à examiner",
+  "Mark done": "Marquer comme fait",
+  "Not visible to the family": "Non visible pour la famille",
+  "No internal notes yet.": "Aucune note interne pour le moment.",
+  "Email family": "Courriel à la famille",
 };
 
 export function translate(locale: Locale, key: string): string {

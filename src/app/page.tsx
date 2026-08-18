@@ -172,19 +172,6 @@ export default function HomePage() {
           <p className="mt-[26px] text-[15px] text-ink-muted">
             {t("Free for families · Takes about 15 minutes")}
           </p>
-
-          <div className="mx-auto mt-16 grid max-w-[900px] grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
-            {[
-              { k: "1", v: "form to fill out" },
-              { k: "Any", v: "number of communities" },
-              { k: "0", v: "documents shared without your consent" },
-            ].map((s) => (
-              <div key={s.v} className="bg-surface/90 p-6 text-left backdrop-blur-sm">
-                <p className="text-3xl font-semibold tracking-[-0.02em]">{s.k}</p>
-                <p className="mt-1.5 text-[15px] text-ink-muted">{t(s.v)}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

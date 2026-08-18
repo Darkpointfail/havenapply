@@ -1910,10 +1910,6 @@ export const frMessages: Record<string, string> = {
   "See how it works": "Voir comment ça marche",
   "Free for families · Takes about 15 minutes":
     "Gratuit pour les familles · Environ 15 minutes",
-  "form to fill out": "formulaire à remplir",
-  "number of communities": "nombre de résidences",
-  "documents shared without your consent":
-    "document partagé sans votre consentement",
 };
 
 export function translate(locale: Locale, key: string): string {

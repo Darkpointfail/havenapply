@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { assertSameOriginMutation } from "@/lib/auth-csrf";
 import { secureCookieOptions } from "@/lib/auth-cookies";
-import { recordAuthEvent } from "@/lib/auth-events";
+import { recordAuthEvent } from "@/lib/auth-events-server";
 import { clientKeyFromRequest, rateLimit } from "@/lib/auth-rate-limit";
 import {
   SITE_ACCESS_COOKIE,

@@ -67,18 +67,18 @@ export async function assertPasswordAllowed(
 }
 
 async function sha1Hex(value: string): Promise<string> {
-  // Web Crypto may not expose SHA-1 in all runtimes; Node crypto fallback for server/tests.
+  // Prefer Web Crypto so this module stays client-safe (no node: imports).
   if (typeof crypto !== "undefined" && crypto.subtle) {
     try {
       const data = new TextEncoder().encode(value);
       const digest = await crypto.subtle.digest("SHA-1", data);
       return bufferToHex(digest).toUpperCase();
     } catch {
-      /* fall through */
+      /* SHA-1 may be unavailable in some browsers */
     }
   }
-  const { createHash } = await import("node:crypto");
-  return createHash("sha1").update(value).digest("hex").toUpperCase();
+  // Fail open for HIBP when SHA-1 cannot be computed in this runtime.
+  throw new Error("sha1_unavailable");
 }
 
 function bufferToHex(buffer: ArrayBuffer) {

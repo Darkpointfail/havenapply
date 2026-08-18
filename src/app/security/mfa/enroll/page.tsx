@@ -10,7 +10,7 @@ import {
   enrollTotp,
   listMfaFactors,
 } from "@/lib/auth-mfa";
-import { recordAuthEvent } from "@/lib/auth-events";
+import { recordAuthEvent } from "@/lib/auth-events-client";
 import { safeSiteNextPath } from "@/lib/site-access";
 
 function EnrollForm() {

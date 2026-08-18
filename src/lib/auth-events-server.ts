@@ -1,38 +1,15 @@
 /**
- * Auth security event log (server-only). No passwords, tokens, or raw secrets.
+ * Server-only auth security event log. No passwords, tokens, or raw secrets.
+ * Do not import this module from Client Components.
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { AuthEvent, AuthEventType } from "@/lib/auth-events-types";
 
-export type AuthEventType =
-  | "sign_in_success"
-  | "sign_in_failure"
-  | "sign_out"
-  | "password_change"
-  | "password_reset_requested"
-  | "password_reset_completed"
-  | "mfa_enroll"
-  | "mfa_challenge_success"
-  | "mfa_challenge_failure"
-  | "session_revoked"
-  | "rate_limited"
-  | "csrf_rejected"
-  | "anomaly_alert";
-
-export type AuthEvent = {
-  id: string;
-  createdAt: string;
-  type: AuthEventType;
-  role?: string | null;
-  userIdHash?: string | null;
-  emailHash?: string | null;
-  ipHash?: string | null;
-  userAgent?: string | null;
-  detail?: string | null;
-};
+export type { AuthEvent, AuthEventType };
 
 const RETENTION_DAYS = 90;
 
@@ -53,11 +30,8 @@ export async function hashIdentifier(value: string | null | undefined): Promise<
   if (!value) return null;
   const secret = process.env.ACCESS_LOG_HASH_SECRET || process.env.AUTH_EVENT_HASH_SECRET;
   if (!secret) {
-    // Fallback one-way without secret (still not reversible plaintext email)
-    const { createHash } = await import("node:crypto");
     return createHash("sha256").update(value.toLowerCase()).digest("hex");
   }
-  const { createHmac } = await import("node:crypto");
   return createHmac("sha256", secret).update(value.toLowerCase()).digest("hex");
 }
 
@@ -70,23 +44,6 @@ export async function recordAuthEvent(input: {
   userAgent?: string | null;
   detail?: string | null;
 }): Promise<void> {
-  if (typeof window !== "undefined") {
-    try {
-      void fetch("/api/auth/security-event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: input.type,
-          detail: input.detail ?? null,
-        }),
-        credentials: "same-origin",
-      });
-    } catch {
-      /* ignore */
-    }
-    return;
-  }
-
   const event: AuthEvent = {
     id: randomUUID(),
     createdAt: new Date().toISOString(),

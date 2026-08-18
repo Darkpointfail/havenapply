@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { assertSameOriginMutation } from "@/lib/auth-csrf";
-import { recordAuthEvent } from "@/lib/auth-events";
+import { recordAuthEvent } from "@/lib/auth-events-server";
 import { assertPasswordAllowed } from "@/lib/auth-password-policy";
 import { clientKeyFromRequest, rateLimit } from "@/lib/auth-rate-limit";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";

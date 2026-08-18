@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { challengeAndVerifyTotp, listMfaFactors } from "@/lib/auth-mfa";
-import { recordAuthEvent } from "@/lib/auth-events";
+import { recordAuthEvent } from "@/lib/auth-events-client";
 import { safeSiteNextPath } from "@/lib/site-access";
 
 function ChallengeForm() {

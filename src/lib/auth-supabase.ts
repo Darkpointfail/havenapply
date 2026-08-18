@@ -3,7 +3,7 @@ import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";
 import { assertPasswordAllowed } from "@/lib/auth-password-policy";
 import { resolvePostLoginMfa } from "@/lib/auth-mfa";
-import { recordAuthEvent } from "@/lib/auth-events";
+import { recordAuthEvent } from "@/lib/auth-events-client";
 import type {
   AuthResult,
   CommunityStatus,
@@ -392,11 +392,11 @@ export async function signInSupabase(input: {
   });
 
   if (error) {
-    void recordAuthEvent({ type: "sign_in_failure", email, detail: "bad_credentials" });
+    void recordAuthEvent({ type: "sign_in_failure", detail: "bad_credentials" });
     return { ok: false, error: mapAuthError(error.message) };
   }
   if (!data.user) {
-    void recordAuthEvent({ type: "sign_in_failure", email });
+    void recordAuthEvent({ type: "sign_in_failure", detail: "missing_user" });
     return { ok: false, error: AUTH_MESSAGES.badCredentials };
   }
 
@@ -418,9 +418,7 @@ export async function signInSupabase(input: {
 
   void recordAuthEvent({
     type: "sign_in_success",
-    userId: sessionUser.id,
-    email: sessionUser.email,
-    role: sessionUser.role,
+    detail: `role:${sessionUser.role}`,
   });
 
   const mfa = await resolvePostLoginMfa(sessionUser.role);
@@ -524,9 +522,8 @@ export async function changePasswordSupabase(
   await supabase.auth.signOut({ scope: "others" });
   void recordAuthEvent({
     type: "password_change",
-    userId: userData.user.id,
-    email: userData.user.email,
+    detail: "password_updated",
   });
-  void recordAuthEvent({ type: "session_revoked", userId: userData.user.id, detail: "password_change" });
+  void recordAuthEvent({ type: "session_revoked", detail: "password_change" });
   return { ok: true, data: undefined };
 }

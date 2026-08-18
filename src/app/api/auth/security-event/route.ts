@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSameOriginMutation } from "@/lib/auth-csrf";
-import { recordAuthEvent, type AuthEventType } from "@/lib/auth-events";
+import { recordAuthEvent, type AuthEventType } from "@/lib/auth-events-server";
 import { clientKeyFromRequest, rateLimit } from "@/lib/auth-rate-limit";
 
 const ALLOWED = new Set<AuthEventType>([

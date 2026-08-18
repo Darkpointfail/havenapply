@@ -1945,6 +1945,17 @@ export const frMessages: Record<string, string> = {
   "Change photo": "Changer la photo",
   "Add photo": "Ajouter une photo",
   "Could not use this photo.": "Impossible d’utiliser cette photo.",
+  // Application detail tabs
+  "Generated from": "Généré à partir de",
+  "documents and the family dossier": "documents et du dossier famille",
+  "Fits your programme": "Correspond à votre programme",
+  "Worth a look": "À examiner",
+  "Snapshot": "Aperçu",
+  "Clinical": "Clinique",
+  "Family & funding": "Famille et financement",
+  "of": "sur",
+  "checked": "vérifiés",
+  "left": "restant(s)",
 };
 
 export function translate(locale: Locale, key: string): string {

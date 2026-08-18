@@ -69,7 +69,14 @@ type PortalContextValue = {
   proposeTour: (appId: string, when: string) => { ok: boolean; error?: string };
   proposeAssessment: (appId: string, when: string) => { ok: boolean; error?: string };
   changeStatus: (appId: string, status: ApplicationStatus) => { ok: boolean; error?: string };
-  acceptApplication: (appId: string, note?: string) => { ok: boolean; error?: string };
+  acceptApplication: (
+    appId: string,
+    options?: {
+      note?: string;
+      email?: { to: string; subject: string; body: string } | null;
+      sms?: { to: string; body: string } | null;
+    },
+  ) => { ok: boolean; error?: string };
   declineApplication: (appId: string, note?: string) => { ok: boolean; error?: string };
   updateReviewChecklist: (
     appId: string,
@@ -489,21 +496,71 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const acceptApplication = useCallback(
-    (appId: string, note?: string) =>
-      mutateApp(
+    (
+      appId: string,
+      options?: {
+        note?: string;
+        email?: { to: string; subject: string; body: string } | null;
+        sms?: { to: string; body: string } | null;
+      },
+    ) => {
+      const note = options?.note?.trim();
+      const email = options?.email;
+      const sms = options?.sms;
+      const channels: string[] = [];
+      if (email?.to.trim() && email.body.trim()) {
+        channels.push(`email to ${email.to.trim()}`);
+      }
+      if (sms?.to.trim() && sms.body.trim()) {
+        channels.push(`SMS to ${sms.to.trim()}`);
+      }
+
+      return mutateApp(
         appId,
         "acceptDecline",
-        (a) => ({
-          ...a,
-          status: "approved" as ApplicationStatus,
-          transitionChecklist: a.transitionChecklist ?? {},
-          moveInConfirmed: a.moveInConfirmed ?? null,
-        }),
-        note?.trim()
-          ? `Accepted · ${note.trim()} · moved to transition`
-          : "Accepted · moved to transition",
-      ),
-    [mutateApp],
+        (a) => {
+          const now = new Date().toISOString();
+          const notifyAudits: typeof a.auditLog = [];
+          if (email?.to.trim() && email.body.trim()) {
+            notifyAudits.push({
+              id: `aud-email-${Date.now()}`,
+              at: now,
+              actor: actorName,
+              action: `Acceptance email sent to ${email.to.trim()} · ${email.subject.trim() || "No subject"}`,
+            });
+            notifyAudits.push({
+              id: `aud-email-body-${Date.now()}`,
+              at: now,
+              actor: actorName,
+              action: `Email message: ${email.body.trim().slice(0, 280)}${email.body.trim().length > 280 ? "…" : ""}`,
+            });
+          }
+          if (sms?.to.trim() && sms.body.trim()) {
+            notifyAudits.push({
+              id: `aud-sms-${Date.now()}`,
+              at: now,
+              actor: actorName,
+              action: `Acceptance SMS sent to ${sms.to.trim()}: ${sms.body.trim().slice(0, 160)}${sms.body.trim().length > 160 ? "…" : ""}`,
+            });
+          }
+          return {
+            ...a,
+            status: "approved" as ApplicationStatus,
+            transitionChecklist: a.transitionChecklist ?? {},
+            moveInConfirmed: a.moveInConfirmed ?? null,
+            auditLog: [...a.auditLog, ...notifyAudits],
+          };
+        },
+        [
+          "Accepted · moved to transition",
+          channels.length ? `notified via ${channels.join(" · ")}` : null,
+          note || null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      );
+    },
+    [actorName, mutateApp],
   );
 
   const declineApplication = useCallback(

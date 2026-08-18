@@ -1928,6 +1928,17 @@ export const frMessages: Record<string, string> = {
   "No internal notes yet.": "Aucune note interne pour le moment.",
   "Email family": "Courriel à la famille",
   "in transition": "en transition",
+  // Accept notify popup
+  "Accept & notify family": "Accepter et notifier la famille",
+  "Review the default email and text, edit if needed, then confirm to accept and send.": "Vérifiez l’e-mail et le SMS par défaut, modifiez-les si besoin, puis confirmez pour accepter et envoyer.",
+  "Send email": "Envoyer l’e-mail",
+  "Send text": "Envoyer le SMS",
+  "Email will not be sent.": "L’e-mail ne sera pas envoyé.",
+  "Text message (SMS)": "Message texte (SMS)",
+  "Text message will not be sent.": "Le SMS ne sera pas envoyé.",
+  "Family mobile number": "Numéro de mobile de la famille",
+  "characters (SMS may split if longer)": "caractères (le SMS peut être découpé s’il est plus long)",
+  "Subject": "Objet",
 };
 
 export function translate(locale: Locale, key: string): string {

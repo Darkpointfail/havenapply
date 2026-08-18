@@ -44,6 +44,30 @@ const DECLINE_REASONS = [
   "Other",
 ] as const;
 
+function buildAcceptEmailDraft(input: {
+  seniorName: string;
+  familyName: string;
+  communityName: string;
+}) {
+  const subject = `Good news — ${input.seniorName}'s application was accepted at ${input.communityName}`;
+  const body = `Dear ${input.familyName},
+
+We're pleased to let you know that ${input.seniorName}'s application to ${input.communityName} has been accepted.
+
+Our admissions team will follow up shortly about next steps, including contracts and move-in planning. You can also follow the update in HavenApply.
+
+Warm regards,
+${input.communityName} Admissions`;
+  return { subject, body };
+}
+
+function buildAcceptSmsDraft(input: {
+  seniorName: string;
+  communityName: string;
+}) {
+  return `${input.communityName}: ${input.seniorName}'s application was accepted. Check HavenApply for next steps, or reply to this message.`;
+}
+
 function priorityTone(p: AdmissionPriority) {
   if (p === "high") return "danger" as const;
   if (p === "medium") return "warn" as const;
@@ -137,6 +161,13 @@ export function CommunityApplicationDetail() {
   const [declineOpen, setDeclineOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [auditNote, setAuditNote] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
+  const [sendSms, setSendSms] = useState(true);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [smsTo, setSmsTo] = useState("");
+  const [smsBody, setSmsBody] = useState("");
   const [declineReason, setDeclineReason] = useState<string>(DECLINE_REASONS[0]);
   const [declineNote, setDeclineNote] = useState("");
   const [closeNote, setCloseNote] = useState("");
@@ -206,13 +237,69 @@ export function CommunityApplicationDetail() {
   }
 
   const priority = applicationPriority(app);
+  const communityName =
+    workspace.profile?.name || workspace.residenceName || "our community";
   const messageHref = `/community/messages?family=${encodeURIComponent(app.family.email)}&application=${encodeURIComponent(app.id)}&senior=${encodeURIComponent(app.seniorName)}&residence=${encodeURIComponent(app.residenceId)}`;
 
+  const openAcceptModal = () => {
+    const emailDraft = buildAcceptEmailDraft({
+      seniorName: app.seniorName,
+      familyName: app.family.name || "Family",
+      communityName,
+    });
+    setAuditNote("");
+    setSendEmail(true);
+    setSendSms(Boolean(app.family.phone?.trim()));
+    setEmailTo(app.family.email || "");
+    setEmailSubject(emailDraft.subject);
+    setEmailBody(emailDraft.body);
+    setSmsTo(app.family.phone || "");
+    setSmsBody(
+      buildAcceptSmsDraft({
+        seniorName: app.seniorName,
+        communityName,
+      }),
+    );
+    setAuditOpen(true);
+  };
+
   const confirmApprove = () => {
-    const r = acceptApplication(app.id, auditNote.trim() || undefined);
+    const emailPayload =
+      sendEmail && emailTo.trim() && emailBody.trim()
+        ? {
+            to: emailTo.trim(),
+            subject: emailSubject.trim() || "Application accepted",
+            body: emailBody.trim(),
+          }
+        : null;
+    const smsPayload =
+      sendSms && smsTo.trim() && smsBody.trim()
+        ? {
+            to: smsTo.trim(),
+            body: smsBody.trim(),
+          }
+        : null;
+
+    if (sendEmail && !emailPayload) {
+      flashMsg("Add an email address and message, or turn email off.");
+      return;
+    }
+    if (sendSms && !smsPayload) {
+      flashMsg("Add a phone number and text message, or turn SMS off.");
+      return;
+    }
+
+    const r = acceptApplication(app.id, {
+      note: auditNote.trim() || undefined,
+      email: emailPayload,
+      sms: smsPayload,
+    });
     if (r.ok) {
       setAuditOpen(false);
-      flashMsg("Accepted, now in Transition for contracts & move-in");
+      const parts = ["Accepted, now in Transition"];
+      if (emailPayload) parts.push("email sent");
+      if (smsPayload) parts.push("text sent");
+      flashMsg(parts.join(" · "));
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
   };
@@ -280,10 +367,7 @@ export function CommunityApplicationDetail() {
                 type="button"
                 size="sm"
                 disabled={!can("acceptDecline") || !reviewProgress?.complete}
-                onClick={() => {
-                  setAuditNote("");
-                  setAuditOpen(true);
-                }}
+                onClick={openAcceptModal}
               >
                 {t("Accept")}
               </Button>
@@ -921,10 +1005,7 @@ export function CommunityApplicationDetail() {
                     <button
                       type="button"
                       disabled={!can("acceptDecline") || !reviewProgress?.complete}
-                      onClick={() => {
-                        setAuditNote("");
-                        setAuditOpen(true);
-                      }}
+                      onClick={openAcceptModal}
                       className="flex flex-col items-start gap-3 rounded-xl border border-line bg-bg px-4 py-4 text-left transition hover:border-success/40 hover:bg-success-soft/40 disabled:opacity-50"
                     >
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-success-soft text-success">
@@ -1073,7 +1154,7 @@ export function CommunityApplicationDetail() {
         </aside>
       </div>
 
-      {/* Admission Audit modal */}
+      {/* Accept & notify family modal */}
       {auditOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
           <div
@@ -1081,45 +1162,125 @@ export function CommunityApplicationDetail() {
             onClick={() => setAuditOpen(false)}
             aria-hidden
           />
-          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
-            <h2 className="text-xl font-semibold tracking-tight">Confirm approval</h2>
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-lg">
+            <h2 className="text-xl font-semibold tracking-[-0.025em] text-ink">
+              {t("Accept & notify family")}
+            </h2>
             <p className="mt-1 text-sm text-ink-muted">
-              {t("You completed the guided review. After accept, this dossier moves to Transition for")}
-              contracts, payment, and move-in details.
-            </p>
-            <ul className="mt-5 space-y-2">
-              {(["identity", "clinical", "medications", "documents", "family", "fit"] as const).map(
-                (id) => {
-                  const labels: Record<string, string> = {
-                    identity: "Identity & demographics",
-                    clinical: "Clinical file",
-                    medications: "Medications & allergies",
-                    documents: "Documents packet",
-                    family: "Family & contacts",
-                    fit: "Program fit",
-                  };
-                  return (
-                    <li
-                      key={id}
-                      className="flex items-center gap-2 rounded-xl bg-success-soft/50 px-3 py-2.5 text-sm text-ink"
-                    >
-                      <Check size={14} className="text-success" />
-                      {labels[id]}
-                    </li>
-                  );
-                },
+              {t(
+                "Review the default email and text, edit if needed, then confirm to accept and send.",
               )}
-            </ul>
-            <label className="mt-4 block text-sm">
-              Internal notes (optional)
-              <textarea
-                rows={3}
-                value={auditNote}
-                onChange={(e) => setAuditNote(e.target.value)}
-                className="mt-1.5 w-full rounded-2xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
-                placeholder={t("Notes for your team…")}
-              />
-            </label>
+            </p>
+
+            <div className="mt-5 flex flex-col gap-4">
+              <div className="rounded-2xl border border-line p-4">
+                <label className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
+                  <span>{t("Email")}</span>
+                  <span className="flex items-center gap-2 font-medium text-ink-secondary">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-line"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                    />
+                    {t("Send email")}
+                  </span>
+                </label>
+                {sendEmail ? (
+                  <div className="mt-3 flex flex-col gap-3">
+                    <label className="block text-sm">
+                      <span className="text-ink-muted">{t("To")}</span>
+                      <input
+                        type="email"
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                        value={emailTo}
+                        onChange={(e) => setEmailTo(e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-ink-muted">{t("Subject")}</span>
+                      <input
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-ink-muted">{t("Message")}</span>
+                      <textarea
+                        rows={7}
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                        value={emailBody}
+                        onChange={(e) => setEmailBody(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-ink-faint">
+                    {t("Email will not be sent.")}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-line p-4">
+                <label className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
+                  <span>{t("Text message (SMS)")}</span>
+                  <span className="flex items-center gap-2 font-medium text-ink-secondary">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-line"
+                      checked={sendSms}
+                      onChange={(e) => setSendSms(e.target.checked)}
+                    />
+                    {t("Send text")}
+                  </span>
+                </label>
+                {sendSms ? (
+                  <div className="mt-3 flex flex-col gap-3">
+                    <label className="block text-sm">
+                      <span className="text-ink-muted">{t("Phone")}</span>
+                      <input
+                        type="tel"
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                        value={smsTo}
+                        onChange={(e) => setSmsTo(e.target.value)}
+                        placeholder={t("Family mobile number")}
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-ink-muted">{t("Message")}</span>
+                      <textarea
+                        rows={4}
+                        className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                        value={smsBody}
+                        onChange={(e) => setSmsBody(e.target.value)}
+                      />
+                    </label>
+                    <p className="text-xs text-ink-faint">
+                      {smsBody.length}/160 {t("characters (SMS may split if longer)")}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-ink-faint">
+                    {t("Text message will not be sent.")}
+                  </p>
+                )}
+              </div>
+
+              <label className="block text-sm">
+                <span className="font-medium text-ink">
+                  {t("Internal notes (optional)")}
+                </span>
+                <textarea
+                  rows={2}
+                  value={auditNote}
+                  onChange={(e) => setAuditNote(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+                  placeholder={t("Notes for your team…")}
+                />
+              </label>
+            </div>
+
             <div className="mt-5 flex gap-2">
               <Button
                 type="button"
@@ -1135,7 +1296,7 @@ export function CommunityApplicationDetail() {
                 disabled={!reviewProgress?.complete}
                 onClick={confirmApprove}
               >
-                {t("Approve admission")}
+                {t("Confirm & send")}
               </Button>
             </div>
           </div>

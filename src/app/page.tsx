@@ -4,15 +4,10 @@ import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
-  ClipboardList,
   FileText,
   HeartHandshake,
-  Hospital,
-  Lock,
   MapPin,
   Search,
-  ShieldCheck,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -20,15 +15,6 @@ import { Badge } from "@/components/ui/Badge";
 import { images } from "@/data/images";
 import { useT } from "@/lib/i18n/locale";
 import { residences } from "@/data/residences";
-
-const journey = [
-  "Create profile",
-  "Find communities",
-  "Submit applications",
-  "Complete assessments",
-  "Receive decisions",
-  "Move in",
-];
 
 const faq = [
   {
@@ -358,130 +344,6 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5 - Built for everyone involved */}
-      <section className="border-y border-line bg-surface px-5 py-20 md:px-8 md:py-28">
-        <div className="mx-auto max-w-[1400px]">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-              {t("Built for everyone involved.")}
-            </h2>
-            <p className="mt-4 text-lg text-ink-muted">
-              {t("Families, care teams, and communities can finally work from the same clear picture.")}
-            </p>
-          </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {[
-              {
-                icon: Users,
-                title: t("Families"),
-                points: [
-                  "Create one application",
-                  "Stay informed",
-                  "Collaborate with siblings",
-                ],
-              },
-              {
-                icon: Hospital,
-                title: t("Hospitals & social workers"),
-                points: [
-                  "Prepare referrals faster",
-                  "Avoid duplicate paperwork",
-                  "Track every placement",
-                ],
-              },
-              {
-                icon: ClipboardList,
-                title: t("Senior living communities"),
-                points: [
-                  "Receive complete applications",
-                  "Review organized medical information",
-                  "Request more details in one conversation",
-                ],
-              },
-            ].map((card) => (
-              <Card key={card.title} className="p-7" hover>
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-                  <card.icon size={20} />
-                </span>
-                <h3 className="mt-5 text-xl font-semibold tracking-tight">{card.title}</h3>
-                <ul className="mt-4 space-y-2.5">
-                  {card.points.map((p) => (
-                    <li key={p} className="flex gap-2 text-sm text-ink-muted">
-                      <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand" />
-                      {t(p)}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6 - Admissions journey */}
-      <section className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            {t("The admissions journey, made clearer.")}
-          </h2>
-          <p className="mt-4 text-lg text-ink-muted">
-            {t("From the first conversation to moving day, one path you can follow together.")}
-          </p>
-        </div>
-        <ol className="mx-auto mt-14 flex max-w-3xl flex-col items-center gap-0">
-          {journey.map((step, i) => (
-            <li key={step} className="flex w-full flex-col items-center">
-              <div className="flex w-full max-w-sm items-center gap-4 rounded-2xl border border-line bg-surface px-5 py-4 shadow-xs">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand-strong">
-                  {i + 1}
-                </span>
-                <span className="text-base font-medium text-ink">{t(step)}</span>
-              </div>
-              {i < journey.length - 1 ? (
-                <span
-                  aria-hidden
-                  className="my-2 h-6 w-px bg-gradient-to-b from-brand/40 to-brand/10"
-                />
-              ) : null}
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* 7 - Privacy */}
-      <section className="border-y border-line bg-surface px-5 py-20 md:px-8 md:py-28">
-        <div className="mx-auto grid max-w-[1400px] gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div>
-            <h2 className="max-w-xl text-3xl font-semibold tracking-tight md:text-4xl">
-              {t("Your information stays under your control.")}
-            </h2>
-            <div className="mt-6 max-w-xl space-y-4 text-ink-muted">
-              <p>{t("Families decide exactly who receives their information.")}</p>
-              <p>{t("Medical records are only shared after explicit consent.")}</p>
-              <p>{t("Documents remain securely stored for the people you trust.")}</p>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { icon: Lock, label: t("Encrypted storage") },
-              { icon: ShieldCheck, label: t("Consent tracking") },
-              { icon: FileText, label: t("Audit history") },
-              { icon: HeartHandshake, label: t("Share only what you choose") },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-3 rounded-2xl border border-line bg-bg p-4"
-              >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                  <item.icon size={18} />
-                </span>
-                <span className="text-sm font-medium text-ink">{t(item.label)}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>

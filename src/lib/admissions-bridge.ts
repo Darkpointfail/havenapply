@@ -22,6 +22,8 @@ export type SharedAdmissionPacket = {
   residenceName: string;
   seniorName: string;
   seniorAge: number;
+  /** Optional profile portrait shared with the receiving community */
+  seniorPhotoUrl: string | null;
   relationship: string;
   summary: string;
   careNeeds: string[];
@@ -86,6 +88,7 @@ export function publishFamilyApplication(
     careNeeds?: string[];
     medicalHighlights?: string[];
     phone?: string;
+    seniorPhotoUrl?: string | null;
     documentMeta?: { id: string; name: string; category: string }[];
   },
 ): SharedAdmissionPacket {
@@ -102,6 +105,7 @@ export function publishFamilyApplication(
     residenceName: app.residenceName,
     seniorName: canonicalSeniorName(extras?.seniorName, "Paul Gilbert"),
     seniorAge: extras?.seniorAge || 0,
+    seniorPhotoUrl: extras?.seniorPhotoUrl?.trim() || null,
     relationship: extras?.relationship || "Family",
     summary:
       app.desiredMoveIn
@@ -357,6 +361,7 @@ export function mergeSharedIntoCommunityApps(
       residenceId: p.residenceId,
       seniorName: canonicalSeniorName(p.seniorName),
       seniorAge: p.seniorAge || 80,
+      seniorPhotoUrl: p.seniorPhotoUrl || prior?.seniorPhotoUrl || null,
       relationship: p.relationship,
       summary: scrubDemoNamesDeep(p.summary),
       careNeeds: p.careNeeds,

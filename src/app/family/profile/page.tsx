@@ -24,6 +24,7 @@ import {
   seniorAge,
   seniorDisplayName,
 } from "@/lib/senior-profile";
+import { ProfilePhotoPicker } from "@/components/ProfilePhotoPicker";
 import { cn } from "@/lib/utils";
 import DocumentsPage from "@/app/documents/page";
 import MedicalProfilePage from "@/app/profile/page";
@@ -48,11 +49,15 @@ function ProfileHubInner() {
         : tabParam
       : "overview";
 
-  const { ready, data, completeness } = useFamilyData();
+  const { ready, data, completeness, updateSeniorDraft } = useFamilyData();
   const senior = data.senior;
   const name = seniorDisplayName(senior) || data.person.name || "Senior profile";
   const age = seniorAge(senior) || data.person.age;
   const careDone = Boolean(data.careNeeds.completedAt);
+  const initials = [senior.firstName?.[0], senior.lastName?.[0]]
+    .filter(Boolean)
+    .join("")
+    .toUpperCase() || "?";
 
   const checklist = useMemo(
     () => [
@@ -117,6 +122,12 @@ function ProfileHubInner() {
       {tab === "overview" && (
         <div className="space-y-6">
           <Card className="p-6">
+            <ProfilePhotoPicker
+              value={senior.photoDataUrl || ""}
+              initials={initials}
+              onChange={(photoDataUrl) => updateSeniorDraft({ photoDataUrl })}
+              className="mb-6 border-b border-line pb-6"
+            />
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-2xl font-semibold tracking-tight">{name}</p>

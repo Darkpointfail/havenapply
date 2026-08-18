@@ -14,6 +14,7 @@ import {
   transitionChecklistProgress,
   type CommunityApplication,
 } from "@/lib/community-portal";
+import { ProfileAvatar } from "@/components/ProfilePhotoPicker";
 
 function TransitionCard({ app }: { app: CommunityApplication }) {
   const t = useT();
@@ -21,9 +22,11 @@ function TransitionCard({ app }: { app: CommunityApplication }) {
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-line/80 bg-surface p-5 shadow-xs transition hover:border-line-strong hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3.5">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[15px] font-semibold text-brand-strong">
-          {initialsFromName(app.seniorName)}
-        </div>
+        <ProfileAvatar
+          photoUrl={app.seniorPhotoUrl}
+          initials={initialsFromName(app.seniorName)}
+          size={48}
+        />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-[17px] font-semibold tracking-[-0.025em] text-ink">

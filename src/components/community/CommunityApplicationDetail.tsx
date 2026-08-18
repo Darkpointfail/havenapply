@@ -34,6 +34,7 @@ import {
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { ProfileAvatar } from "@/components/ProfilePhotoPicker";
 
 const DOC_ORDER = ["Identity", "Medical", "Financial", "Legal", "Other"] as const;
 
@@ -380,9 +381,11 @@ export function CommunityApplicationDetail() {
         <div className="flex flex-col gap-8 p-5 md:p-8">
           <div>
             <div className="flex flex-wrap items-start gap-4">
-              <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-brand-soft text-lg font-semibold text-brand-strong">
-                {initialsFromName(app.seniorName)}
-              </div>
+              <ProfileAvatar
+                photoUrl={app.seniorPhotoUrl}
+                initials={initialsFromName(app.seniorName)}
+                size={60}
+              />
               <div className="min-w-0">
                 <h1 className="text-3xl font-semibold tracking-[-0.025em] text-ink">
                   {app.seniorName}

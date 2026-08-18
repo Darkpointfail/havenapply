@@ -507,6 +507,7 @@ function publishToCommunity(data: FamilyData, submitted: FamilyApplication) {
     relationship: data.senior.relationship || data.person.relationship || "Family",
     careNeeds: careNeeds.length ? careNeeds : undefined,
     medicalHighlights: medical.length ? medical : undefined,
+    seniorPhotoUrl: data.senior.photoDataUrl || data.residentDossier?.photoDataUrl || null,
     documentMeta: data.documents
       .filter((d) => submitted.attachedDocumentIds.includes(d.id))
       .map((d) => ({ id: d.id, name: d.name, category: d.category })),

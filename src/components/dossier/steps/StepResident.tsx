@@ -21,6 +21,7 @@ import {
 } from "@/lib/resident-dossier";
 import { useT } from "@/lib/i18n/locale";
 import { Button } from "@/components/ui/Button";
+import { ProfilePhotoPicker } from "@/components/ProfilePhotoPicker";
 
 const GENDERS = [
   { id: "Female", label: "Female" },
@@ -238,6 +239,19 @@ export function StepResident({
       />
 
       <div className="space-y-8">
+        <SectionCard>
+          <ProfilePhotoPicker
+            value={value.photoDataUrl || ""}
+            initials={
+              [value.firstName?.[0], value.lastName?.[0]]
+                .filter(Boolean)
+                .join("")
+                .toUpperCase() || undefined
+            }
+            onChange={(photoDataUrl) => onChange({ photoDataUrl })}
+          />
+        </SectionCard>
+
         <SectionCard>
           <p className="mb-4 text-sm font-semibold text-ink">{t("Demographics")}</p>
           <div className="grid gap-4 sm:grid-cols-2">

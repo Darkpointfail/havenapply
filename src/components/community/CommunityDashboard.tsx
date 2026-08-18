@@ -17,6 +17,7 @@ import {
   type CommunityApplication,
   type QueueSection,
 } from "@/lib/community-portal";
+import { ProfileAvatar } from "@/components/ProfilePhotoPicker";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
 
@@ -59,9 +60,11 @@ function ApplicationCard({ app }: { app: CommunityApplication }) {
   return (
     <article className="flex flex-col gap-[18px] rounded-[18px] border border-line bg-surface p-5 shadow-xs transition hover:border-line-strong hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-[18px]">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[15px] font-semibold text-brand-strong">
-          {initialsFromName(app.seniorName)}
-        </div>
+        <ProfileAvatar
+          photoUrl={app.seniorPhotoUrl}
+          initials={initialsFromName(app.seniorName)}
+          size={48}
+        />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-[17px] font-semibold tracking-[-0.025em] text-ink">

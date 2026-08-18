@@ -348,6 +348,8 @@ export type ResidentDossier = {
   maritalStatus: string;
   religion: string;
   primaryLanguage: string;
+  /** Optional portrait (JPEG data URL) shown on the client dossier */
+  photoDataUrl: string;
   address: string;
   city: string;
   state: string;
@@ -519,6 +521,7 @@ export function emptyResidentDossier(): ResidentDossier {
     maritalStatus: "",
     religion: "",
     primaryLanguage: "",
+    photoDataUrl: "",
     address: "",
     city: "",
     state: "",
@@ -683,6 +686,7 @@ export function seedDossierFromFamily(
   if (!d.city && senior.city) d.city = senior.city;
   if (!d.state && senior.state) d.state = senior.state;
   if (!d.zip && senior.zip) d.zip = senior.zip;
+  if (!d.photoDataUrl && senior.photoDataUrl) d.photoDataUrl = senior.photoDataUrl;
 
   if (!d.livingSituation && senior.livingSituation) {
     const map: Record<string, string> = {
@@ -989,6 +993,7 @@ export function syncDossierToFamily(d: ResidentDossier): {
     city: d.city,
     state: d.state,
     zip: d.zip,
+    photoDataUrl: d.photoDataUrl || "",
     livingSituation: livingMap[d.livingSituation] || d.livingSituation || "",
     livingSituationOther: d.livingSituationOther,
     housingTypes: d.autonomyLevel

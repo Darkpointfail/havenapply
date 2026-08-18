@@ -1939,6 +1939,12 @@ export const frMessages: Record<string, string> = {
   "Family mobile number": "Numéro de mobile de la famille",
   "characters (SMS may split if longer)": "caractères (le SMS peut être découpé s’il est plus long)",
   "Subject": "Objet",
+  // Profile photo
+  "Profile photo": "Photo de profil",
+  "A face makes the dossier warmer for admissions teams.": "Un visage rend le dossier plus humain pour les équipes d’admission.",
+  "Change photo": "Changer la photo",
+  "Add photo": "Ajouter une photo",
+  "Could not use this photo.": "Impossible d’utiliser cette photo.",
 };
 
 export function translate(locale: Locale, key: string): string {

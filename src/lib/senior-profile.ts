@@ -92,6 +92,8 @@ export type SeniorProfile = {
   city: string;
   state: string;
   zip: string;
+  /** Optional portrait (JPEG data URL) shown on the dossier */
+  photoDataUrl: string;
 
   // Step 3, Living
   livingSituation: string;
@@ -173,6 +175,7 @@ export function emptySeniorProfile(): SeniorProfile {
     city: "",
     state: "",
     zip: "",
+    photoDataUrl: "",
     livingSituation: "",
     livingSituationOther: "",
     housingTypes: [],

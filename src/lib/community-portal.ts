@@ -247,6 +247,8 @@ export type CommunityApplication = {
   residenceId: string;
   seniorName: string;
   seniorAge: number;
+  /** Optional portrait shared from the family dossier */
+  seniorPhotoUrl?: string | null;
   relationship: string;
   summary: string;
   /** Longer AI executive summary for review page */

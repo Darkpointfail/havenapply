@@ -192,7 +192,13 @@ function PrivacyInner() {
               <input
                 type="checkbox"
                 checked={workspace.preferences.shareAnalytics}
-                onChange={(e) => updatePreferences({ shareAnalytics: e.target.checked })}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  updatePreferences({ shareAnalytics: checked });
+                  void import("@/lib/analytics").then(({ setAnalyticsConsent }) =>
+                    setAnalyticsConsent(checked),
+                  );
+                }}
               />
               Share anonymized product analytics
             </label>

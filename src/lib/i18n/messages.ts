@@ -1927,6 +1927,7 @@ export const frMessages: Record<string, string> = {
   "Not visible to the family": "Non visible pour la famille",
   "No internal notes yet.": "Aucune note interne pour le moment.",
   "Email family": "Courriel à la famille",
+  "in transition": "en transition",
 };
 
 export function translate(locale: Locale, key: string): string {

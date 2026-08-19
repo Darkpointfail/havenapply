@@ -26,15 +26,25 @@ import { useProfessional } from "@/lib/professional-store";
 import { getCommunityDetail } from "@/lib/residence-detail";
 import { formatCurrency } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import {
+  ConsentCapture,
+  type ConsentCaptureValue,
+} from "@/components/consent/ConsentCapture";
+import { useConsentGovernanceOptional } from "@/lib/consent/store";
+import { useAuth } from "@/lib/auth";
+import type { ConsentPurposeId } from "@/lib/consent/types";
 
 function ApplyReviewInner({ communityId }: { communityId: string }) {
   const t = useT();
+  const { user } = useAuth();
   const { patients, submitApplication } = useProfessional();
+  const consentGov = useConsentGovernanceOptional();
   const params = useSearchParams();
   const patientFromQuery = params.get("patient") || "";
 
   const [selectedPatientId, setSelectedPatientId] = useState(patientFromQuery);
   const [consent, setConsent] = useState(false);
+  const [consentValue, setConsentValue] = useState<ConsentCaptureValue | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
@@ -195,9 +205,41 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
   }
 
   const submit = () => {
-    if (!consent || sending || already) return;
+    if (!consent || !consentValue || sending || already || !patient || !residence) return;
     setSending(true);
     setError(null);
+    const purposeIds = consentValue.acceptedPurposeIds as ConsentPurposeId[];
+    const record = consentGov?.grant({
+      subjectDisplayName: patientName(patient),
+      subjectRoleHint: "resident",
+      consenterRole: consentValue.consenterRole,
+      acceptedPurposeIds: purposeIds,
+      contextSurface: "professional_apply_review",
+      authorityProof:
+        consentValue.consenterRole === "legal_representative"
+          ? {
+              kind: consentValue.authorityKind,
+              documentRef: consentValue.authorityDocRef || null,
+              notedAt: new Date().toISOString(),
+              verificationNotePlaceholder:
+                "[LEGAL PLACEHOLDER] Authority proof — counsel to define verification.",
+            }
+          : null,
+    });
+    if (record && consentGov) {
+      try {
+        consentGov.transmit({
+          recordId: record.id,
+          establishmentId: residence.id,
+          establishmentName: residence.name,
+          purposeIds: purposeIds.filter((p) =>
+            ["admissions_application", "document_sharing", "community_messaging"].includes(p),
+          ),
+        });
+      } catch {
+        /* ignore */
+      }
+    }
     const result = submitApplication(patient.id, residence.id, residence.name);
     setSending(false);
     if (!result.ok) {
@@ -402,21 +444,18 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
             <Card className="p-5">
               <h3 className="text-sm font-semibold">Send application</h3>
               <p className="mt-1.5 text-sm text-ink-muted">
-                Submits {patientName(patient)}’s complete dossier to {residence.name} and notifies
-                their admissions team.
+                Submits {patientName(patient)}’s complete dossier to {residence.name}. No consent
+                boxes are pre-checked.
               </p>
-              <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-sm text-ink-secondary">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-line text-brand"
+              <div className="mt-4">
+                <ConsentCapture
+                  mode="apply"
+                  onChange={(v, valid) => {
+                    setConsentValue(v);
+                    setConsent(valid);
+                  }}
                 />
-                <span>
-                  {t("I confirm this dossier is accurate and authorize Haven to share the patient")}
-                  profile and documents with {residence.name}.
-                </span>
-              </label>
+              </div>
               {error && <p className="mt-3 text-sm text-danger">{error}</p>}
               <Button
                 type="button"

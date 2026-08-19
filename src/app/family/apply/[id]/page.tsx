@@ -32,6 +32,12 @@ import { getCommunityDetail } from "@/lib/residence-detail";
 import { labelForId, URGENCY_OPTIONS } from "@/lib/senior-profile";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import {
+  ConsentCapture,
+  type ConsentCaptureValue,
+} from "@/components/consent/ConsentCapture";
+import { useConsentGovernanceOptional } from "@/lib/consent/store";
+import type { ConsentPurposeId } from "@/lib/consent/types";
 
 function reasonIcon(tone: MatchReason["tone"]) {
   if (tone === "fit") return <ThumbsUp size={14} className="text-success" />;
@@ -63,6 +69,8 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
   const { user } = useAuth();
   const { ready, data, completeness, submitApplicationBatch } = useFamilyData();
   const [consent, setConsent] = useState(false);
+  const [consentValue, setConsentValue] = useState<ConsentCaptureValue | null>(null);
+  const consentGov = useConsentGovernanceOptional();
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
@@ -166,9 +174,42 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
     : "";
 
   const submit = () => {
-    if (!user || !consent || sending || already) return;
+    if (!user || !consent || !consentValue || sending || already) return;
     setSending(true);
     setError(null);
+    const purposeIds = consentValue.acceptedPurposeIds as ConsentPurposeId[];
+    const record = consentGov?.grant({
+      subjectDisplayName:
+        `${data.senior.firstName || ""} ${data.senior.lastName || ""}`.trim() || "Resident",
+      subjectRoleHint: "resident",
+      consenterRole: consentValue.consenterRole,
+      acceptedPurposeIds: purposeIds,
+      contextSurface: "family_apply_review",
+      authorityProof:
+        consentValue.consenterRole === "legal_representative"
+          ? {
+              kind: consentValue.authorityKind,
+              documentRef: consentValue.authorityDocRef || null,
+              notedAt: new Date().toISOString(),
+              verificationNotePlaceholder:
+                "[LEGAL PLACEHOLDER] Authority proof — counsel to define verification.",
+            }
+          : null,
+    });
+    if (record && consentGov) {
+      try {
+        consentGov.transmit({
+          recordId: record.id,
+          establishmentId: residence.id,
+          establishmentName: residence.name,
+          purposeIds: purposeIds.filter((p) =>
+            ["admissions_application", "document_sharing", "community_messaging"].includes(p),
+          ),
+        });
+      } catch {
+        /* ignore */
+      }
+    }
     const draft = emptyDraftApplication(residence, {
       name: user.name || "",
       email: user.email || "",
@@ -178,8 +219,8 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
         ...draft,
         attachedDocumentIds: data.documents.map((d) => d.id),
         desiredMoveIn: labelForId(URGENCY_OPTIONS, data.senior.urgency) || "",
-        consentShare: true,
-        consentAccurate: true,
+        consentShare: purposeIds.includes("admissions_application"),
+        consentAccurate: consentValue.acceptedTermsVersion,
         signatureName: user.name || "",
       },
     ]);
@@ -385,20 +426,17 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
               <h3 className="text-sm font-semibold">Send application</h3>
               <p className="mt-1.5 text-sm text-ink-muted">
                 Creates a Submitted application for {residence.name} and notifies their admissions
-                team.
+                team. No consent boxes are pre-checked.
               </p>
-              <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-sm text-ink-secondary">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-line text-brand"
+              <div className="mt-4">
+                <ConsentCapture
+                  mode="apply"
+                  onChange={(v, valid) => {
+                    setConsentValue(v);
+                    setConsent(valid);
+                  }}
                 />
-                <span>
-                  I confirm the dossier is accurate and authorize Haven to share it with{" "}
-                  {residence.name}.
-                </span>
-              </label>
+              </div>
               {error && <p className="mt-3 text-sm text-danger">{error}</p>}
               <Button
                 type="button"

@@ -71,6 +71,9 @@ export function StepReview({
   const validated = Boolean(value.validatedAt);
 
   const validate = () => {
+    if (!value.acknowledgementSigned) {
+      return;
+    }
     const signer =
       value.signatureName.trim() ||
       value.validatedBy.trim() ||
@@ -80,7 +83,6 @@ export function StepReview({
       validatedAt: new Date().toISOString(),
       validatedBy: signer,
       signatureName: value.signatureName.trim() || signer,
-      acknowledgementSigned: true,
       signatureDate: value.signatureDate || new Date().toISOString().slice(0, 10),
     });
   };
@@ -249,7 +251,11 @@ export function StepReview({
                     }
                   />
                 </label>
-                <Button type="button" onClick={validate}>
+                <Button
+                  type="button"
+                  onClick={validate}
+                  disabled={!value.acknowledgementSigned}
+                >
                   {t("Validate dossier")}
                 </Button>
               </div>

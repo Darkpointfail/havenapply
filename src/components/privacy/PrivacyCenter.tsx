@@ -18,8 +18,9 @@ import {
 } from "@/lib/privacy-security";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { ConsentGovernancePanel } from "@/components/consent/ConsentGovernancePanel";
 
-type Tab = "consent" | "privacy" | "security" | "access";
+type Tab = "consent" | "governance" | "privacy" | "security" | "access";
 
 function PrivacyInner() {
   const { user, signOut } = useAuth();
@@ -55,6 +56,7 @@ function PrivacyInner() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "consent", label: "Consent ledger" },
+    { id: "governance", label: "Governance" },
     { id: "privacy", label: "Preferences" },
     { id: "security", label: "Security" },
     { id: "access", label: "Access history" },
@@ -154,6 +156,8 @@ function PrivacyInner() {
           ))}
         </div>
       )}
+
+      {tab === "governance" && <ConsentGovernancePanel />}
 
       {tab === "privacy" && (
         <div className="space-y-4">

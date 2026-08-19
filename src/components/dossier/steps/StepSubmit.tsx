@@ -21,6 +21,12 @@ import { statusTone } from "@/data/applications";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import {
+  ConsentCapture,
+  type ConsentCaptureValue,
+} from "@/components/consent/ConsentCapture";
+import { useConsentGovernanceOptional } from "@/lib/consent/store";
+import type { ConsentPurposeId } from "@/lib/consent/types";
 
 function matchesSearch(r: Residence, q: string, cities: string, types: string[]) {
   const query = q.trim().toLowerCase();
@@ -64,10 +70,13 @@ export function StepSubmit({
   const t = useT();
   const { user } = useAuth();
   const { data, submitApplicationBatch, saveResidentDossier } = useFamilyData();
+  const consentGov = useConsentGovernanceOptional();
   const [query, setQuery] = useState("");
   const [sending, setSending] = useState(false);
   const [justSent, setJustSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [consentValid, setConsentValid] = useState(false);
+  const [consentValue, setConsentValue] = useState<ConsentCaptureValue | null>(null);
 
   const completeness = computeDossierCompleteness(value, data.documents);
   const selected = new Set(value.selectedCommunityIds);
@@ -91,10 +100,34 @@ export function StepSubmit({
       setError(t("Validate the dossier first (step 7) before sending."));
       return;
     }
+    if (!consentValid || !consentValue) {
+      setError(t("Complete consent selections before sending. Nothing is pre-checked."));
+      return;
+    }
     setSending(true);
     setError(null);
     onFinalize();
     saveResidentDossier(value, { finalize: true });
+
+    const purposeIds = consentValue.acceptedPurposeIds as ConsentPurposeId[];
+    const record = consentGov?.grant({
+      subjectDisplayName: [value.firstName, value.lastName].filter(Boolean).join(" ") || "Resident",
+      subjectRoleHint: "resident",
+      consenterRole: consentValue.consenterRole,
+      acceptedPurposeIds: purposeIds,
+      contextSurface: "dossier_step_submit",
+      expiresAt: null,
+      authorityProof:
+        consentValue.consenterRole === "legal_representative"
+          ? {
+              kind: consentValue.authorityKind,
+              documentRef: consentValue.authorityDocRef || null,
+              notedAt: new Date().toISOString(),
+              verificationNotePlaceholder:
+                "[LEGAL PLACEHOLDER] Authority proof captured — counsel to define verification workflow.",
+            }
+          : null,
+    });
 
     const drafts = value.selectedCommunityIds
       .map((id) => residences.find((r) => r.id === id))
@@ -105,12 +138,26 @@ export function StepSubmit({
           name: user.name || "",
           email: user.email || "",
         });
+        if (record && consentGov) {
+          try {
+            consentGov.transmit({
+              recordId: record.id,
+              establishmentId: r!.id,
+              establishmentName: r!.name,
+              purposeIds: purposeIds.filter((p) =>
+                ["admissions_application", "document_sharing", "community_messaging"].includes(p),
+              ),
+            });
+          } catch {
+            /* transmission requires accepted purposes — already validated */
+          }
+        }
         return {
           ...draft,
           attachedDocumentIds: data.documents.map((d) => d.id),
           desiredMoveIn: value.desiredMoveIn,
-          consentShare: true,
-          consentAccurate: true,
+          consentShare: purposeIds.includes("admissions_application"),
+          consentAccurate: consentValue.acceptedTermsVersion,
           signatureName: user.name || [value.firstName, value.lastName].filter(Boolean).join(" "),
           specificAnswers: {
             reason: "Shared resident dossier via HavenApply",
@@ -225,6 +272,17 @@ export function StepSubmit({
         ) : null}
       </div>
 
+      <SectionCard className="mt-6 space-y-3">
+        <p className="font-semibold text-ink">{t("Consent before sending")}</p>
+        <ConsentCapture
+          mode="apply"
+          onChange={(v, valid) => {
+            setConsentValue(v);
+            setConsentValid(valid);
+          }}
+        />
+      </SectionCard>
+
       <div className="sticky bottom-4 z-10 mt-6 rounded-[1.5rem] border border-line bg-surface/95 p-4 shadow-lg backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-ink-muted">
@@ -236,7 +294,7 @@ export function StepSubmit({
           </p>
           <Button
             type="button"
-            disabled={!value.selectedCommunityIds.length || sending}
+            disabled={!value.selectedCommunityIds.length || sending || !consentValid}
             onClick={send}
           >
             <Send size={16} />

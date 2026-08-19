@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:auth": "node scripts/test-auth.mjs",
+    "test:consent-governance": "node scripts/test-consent-governance.mjs",
     "cms:build": "node scripts/build-cms-nursing-homes.mjs"
   },
   "dependencies": {

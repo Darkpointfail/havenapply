@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /api/documents/
+Disallow: /documents
+Disallow: /family/documents
+
+# Document bytes are private; never allow crawlers to index vault routes or APIs.

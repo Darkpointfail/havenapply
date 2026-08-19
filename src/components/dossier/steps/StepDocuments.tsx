@@ -16,49 +16,86 @@ import {
   documentsByDossierCategory,
 } from "@/lib/resident-dossier";
 import { useFamilyData } from "@/lib/family-data";
+import { useAuth } from "@/lib/auth";
 import { putDocBlob } from "@/lib/doc-blobs";
-import { formatFileSize } from "@/lib/document-vault";
+import {
+  DOCUMENT_FILE_INPUT_ACCEPT,
+  MAX_DOC_BYTES,
+  formatFileSize,
+} from "@/lib/document-vault";
+import {
+  fetchDocumentTenantSession,
+  secureSoftDeleteDocument,
+  secureUploadDocument,
+} from "@/lib/documents/client";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 export function StepDocuments() {
   const t = useT();
+  const { user } = useAuth();
   const { data, addDocument, removeDocument } = useFamilyData();
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [lastDetect, setLastDetect] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const grouped = documentsByDossierCategory(data.documents);
+  const activeDocs = data.documents.filter((d) => !d.deletedAt);
+  const grouped = documentsByDossierCategory(activeDocs);
   const missing = DOSSIER_DOC_CATEGORIES.filter(
-    (c) => c.recommended && !data.documents.some((d) => d.category === c.vault),
+    (c) => c.recommended && !activeDocs.some((d) => d.category === c.vault),
   );
 
   const ingestFiles = (files: FileList | File[]) => {
     const list = Array.from(files);
     startTransition(async () => {
+      setError(null);
+      if (!user?.id) {
+        setError("Sign in required");
+        return;
+      }
+      const session = await fetchDocumentTenantSession(user.id);
       for (const file of list) {
+        if (file.size > MAX_DOC_BYTES) {
+          setError("File exceeds the demo size limit");
+          continue;
+        }
         const detected = detectDocumentCategory(file.name, file.type);
-        const id = addDocument({
-          name: file.name,
-          category: detected.vault,
-          description:
+        try {
+          const uploaded = await secureUploadDocument({
+            session,
+            file,
+            category: detected.vault,
+            title: file.name,
+            demoFixture: process.env.NODE_ENV !== "production",
+          });
+          addDocument({
+            id: uploaded.id,
+            serverDocumentId: uploaded.id,
+            storageFileName: uploaded.storageFileName,
+            name: file.name,
+            category: detected.vault,
+            description:
+              detected.confidence === "low"
+                ? "Auto-sorted to Other — you can change this later"
+                : `Auto-detected: ${detected.label}`,
+            size: formatFileSize(uploaded.byteSize),
+            sizeBytes: uploaded.byteSize,
+            mimeType: uploaded.mime,
+            hasFile: true,
+            status: "uploaded",
+          });
+          await putDocBlob(uploaded.id, file);
+          setLastDetect(
             detected.confidence === "low"
-              ? "Auto-sorted to Other — you can change this later"
-              : `Auto-detected: ${detected.label}`,
-          size: formatFileSize(file.size),
-          sizeBytes: file.size,
-          mimeType: file.type || "application/octet-stream",
-          hasFile: true,
-          status: "uploaded",
-        });
-        if (id) await putDocBlob(id, file);
-        setLastDetect(
-          detected.confidence === "low"
-            ? t("Added as Other — review the category if needed")
-            : t("Sorted into {category}", { category: t(detected.label) }),
-        );
+              ? t("Added as Other — review the category if needed")
+              : t("Sorted into {category}", { category: t(detected.label) }),
+          );
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Upload rejected");
+        }
       }
     });
   };
@@ -118,7 +155,7 @@ export function StepDocuments() {
           type="file"
           multiple
           className="hidden"
-          accept="image/*,.pdf,.doc,.docx"
+          accept={DOCUMENT_FILE_INPUT_ACCEPT}
           onChange={(e) => {
             if (e.target.files?.length) ingestFiles(e.target.files);
             e.target.value = "";
@@ -137,6 +174,11 @@ export function StepDocuments() {
         />
       </div>
 
+      {error ? (
+        <p className="mt-3 text-sm text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
       {lastDetect ? (
         <p className="mt-3 flex items-center gap-2 text-sm text-brand">
           <Sparkles size={14} />
@@ -199,7 +241,22 @@ export function StepDocuments() {
                     <span className="truncate text-ink">{doc.name}</span>
                     <button
                       type="button"
-                      onClick={() => removeDocument(doc.id)}
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            if (user?.id && doc.serverDocumentId) {
+                              const session = await fetchDocumentTenantSession(user.id);
+                              await secureSoftDeleteDocument({
+                                session,
+                                documentId: doc.serverDocumentId,
+                              });
+                            }
+                          } catch {
+                            /* local tombstone */
+                          }
+                          removeDocument(doc.id);
+                        })();
+                      }}
                       className="rounded-lg p-1.5 text-ink-muted hover:bg-surface hover:text-danger"
                       aria-label={t("Remove")}
                     >

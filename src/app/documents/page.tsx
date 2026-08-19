@@ -23,6 +23,7 @@ import { getDocBlob, putDocBlob } from "@/lib/doc-blobs";
 import {
   DOC_CATEGORIES,
   DOC_STATUSES,
+  DOCUMENT_FILE_INPUT_ACCEPT,
   MAX_DOC_BYTES,
   SHARE_TARGETS,
   categoryLabel,
@@ -35,6 +36,14 @@ import {
   type VaultDocument,
 } from "@/lib/document-vault";
 import { useFamilyData } from "@/lib/family-data";
+import { useAuth } from "@/lib/auth";
+import {
+  fetchDocumentTenantSession,
+  secureDownloadDocument,
+  secureSoftDeleteDocument,
+  secureUploadDocument,
+  type DocumentTenantSession,
+} from "@/lib/documents/client";
 import { SENSITIVE_WARNING } from "@/lib/privacy-security";
 import { usePrivacySecurityOptional } from "@/lib/privacy-security-store";
 import { cn } from "@/lib/utils";
@@ -44,7 +53,9 @@ type FilterStatus = "all" | DocStatus | "missing_prep";
 
 export default function DocumentsPage() {
 
-  const t = useT();  const {
+  const t = useT();
+  const { user } = useAuth();
+  const {
     ready,
     data,
     addDocument,
@@ -79,12 +90,17 @@ export default function DocumentsPage() {
   const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null);
 
   const readiness = useMemo(
-    () => documentReadiness(data.documents, data.documentRequests || []),
+    () =>
+      documentReadiness(
+        data.documents.filter((d) => !d.deletedAt),
+        data.documentRequests || [],
+      ),
     [data.documents, data.documentRequests],
   );
 
   const filtered = useMemo(() => {
     return data.documents.filter((d) => {
+      if (d.deletedAt) return false;
       if (categoryFilter !== "all" && d.category !== categoryFilter) return false;
       const st = effectiveStatus(d);
       if (statusFilter !== "all" && statusFilter !== "missing_prep" && st !== statusFilter) {
@@ -93,6 +109,11 @@ export default function DocumentsPage() {
       return true;
     });
   }, [data.documents, categoryFilter, statusFilter]);
+
+  const ensureSession = async (): Promise<DocumentTenantSession> => {
+    if (!user?.id) throw new Error("Sign in required to upload documents.");
+    return fetchDocumentTenantSession(user.id);
+  };
 
   useEffect(() => {
     let url: string | null = null;
@@ -149,7 +170,15 @@ export default function DocumentsPage() {
     }, 80);
   };
 
-  const ingestFile = async (file: File, overrides?: Partial<{ category: DocCategoryId; name: string; expires: string; description: string }>) => {
+  const ingestFile = async (
+    file: File,
+    overrides?: Partial<{
+      category: DocCategoryId;
+      name: string;
+      expires: string;
+      description: string;
+    }>,
+  ) => {
     setError(null);
     if (file.size > MAX_DOC_BYTES) {
       setError("This file is larger than the 4 MB demo limit. Choose a smaller file or photo.");
@@ -157,21 +186,32 @@ export default function DocumentsPage() {
     }
     setBusy(true);
     try {
-      const id = addDocument({
+      const session = await ensureSession();
+      const uploaded = await secureUploadDocument({
+        session,
+        file,
+        category: overrides?.category || category,
+        title: overrides?.name || file.name,
+        demoFixture: process.env.NODE_ENV !== "production",
+      });
+      addDocument({
+        id: uploaded.id,
+        serverDocumentId: uploaded.id,
+        storageFileName: uploaded.storageFileName,
         name: overrides?.name || file.name,
         category: overrides?.category || category,
         description: overrides?.description ?? description,
-        size: formatFileSize(file.size),
-        sizeBytes: file.size,
-        mimeType: file.type || "application/octet-stream",
+        size: formatFileSize(uploaded.byteSize),
+        sizeBytes: uploaded.byteSize,
+        mimeType: uploaded.mime,
         expires: (overrides?.expires ?? expires) || null,
         hasFile: true,
         status: "uploaded",
       });
-      if (id) await putDocBlob(id, file);
+      await putDocBlob(uploaded.id, file);
       resetForm();
-    } catch {
-      setError("Could not save this file on this device. Try again.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save this file securely. Try again.");
     } finally {
       setBusy(false);
     }
@@ -223,22 +263,35 @@ export default function DocumentsPage() {
     ) {
       return;
     }
-    const blob = await getDocBlob(doc.id);
-    if (!blob) {
-      setError("No file is stored for this document yet. Upload or replace a file to download.");
-      return;
+    try {
+      const session = await ensureSession();
+      const serverId = doc.serverDocumentId || doc.id;
+      let blob: Blob | null = null;
+      try {
+        blob = await secureDownloadDocument({ session, documentId: serverId });
+      } catch {
+        blob = await getDocBlob(doc.id);
+      }
+      if (!blob) {
+        setError("No file is stored for this document yet. Upload or replace a file to download.");
+        return;
+      }
+      privacy?.logAccess({
+        action: "download",
+        resource: doc.name,
+        detail: `Category: ${doc.category}`,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.storageFileName
+        ? `haven-${doc.storageFileName}`
+        : `haven-${doc.id}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Download denied.");
     }
-    privacy?.logAccess({
-      action: "download",
-      resource: doc.name,
-      detail: `Category: ${doc.category}`,
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = doc.name;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const onReplace = async (files: FileList | null) => {
@@ -250,16 +303,43 @@ export default function DocumentsPage() {
     }
     setBusy(true);
     try {
+      const existing = data.documents.find((d) => d.id === replaceTargetId);
+      const session = await ensureSession();
+      const uploaded = await secureUploadDocument({
+        session,
+        file,
+        category: existing?.category || "other",
+        title: existing?.name || file.name,
+        demoFixture: process.env.NODE_ENV !== "production",
+      });
+      // Soft-delete previous server object when present
+      if (existing?.serverDocumentId) {
+        try {
+          await secureSoftDeleteDocument({
+            session,
+            documentId: existing.serverDocumentId,
+          });
+        } catch {
+          /* continue with replacement */
+        }
+      }
       await putDocBlob(replaceTargetId, file);
       replaceDocumentFile(replaceTargetId, {
-        name: file.name,
-        size: formatFileSize(file.size),
-        sizeBytes: file.size,
-        mimeType: file.type || "application/octet-stream",
+        name: existing?.name || file.name,
+        size: formatFileSize(uploaded.byteSize),
+        sizeBytes: uploaded.byteSize,
+        mimeType: uploaded.mime,
       });
+      updateDocument(replaceTargetId, {
+        serverDocumentId: uploaded.id,
+        storageFileName: uploaded.storageFileName,
+        hasFile: true,
+      });
+      // Cache under server id as well for download fallbacks
+      await putDocBlob(uploaded.id, file);
       setReplaceTargetId(null);
-    } catch {
-      setError("Could not replace this file.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not replace this file.");
     } finally {
       setBusy(false);
     }
@@ -493,7 +573,7 @@ export default function DocumentsPage() {
             ref={fileRef}
             type="file"
             className="hidden"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,image/*"
+            accept={DOCUMENT_FILE_INPUT_ACCEPT}
             onChange={(e) => void onDropFiles(e.target.files)}
           />
           <input
@@ -615,7 +695,7 @@ export default function DocumentsPage() {
             categoryFilter === "all" ? "bg-brand text-white" : "bg-bg-soft text-ink-muted",
           )}
         >
-          All ({data.documents.length})
+          All ({data.documents.filter((d) => !d.deletedAt).length})
         </button>
         {DOC_CATEGORIES.map((c) => {
           const count = data.documents.filter((d) => d.category === c.id).length;
@@ -836,14 +916,28 @@ export default function DocumentsPage() {
                   variant="ghost"
                   className="text-danger"
                   onClick={() => {
-                    if (
-                      confirm(
-                        `${SENSITIVE_WARNING}\n\nPermanently delete “${doc.name}” from your vault? This cannot be undone in this browser.`,
-                      )
-                    ) {
+                    void (async () => {
+                      if (
+                        !confirm(
+                          `${SENSITIVE_WARNING}\n\nDelete “${doc.name}” from your vault? The file is soft-deleted first, then purged after the retention window.`,
+                        )
+                      ) {
+                        return;
+                      }
                       privacy?.logAccess({ action: "delete", resource: doc.name });
+                      try {
+                        if (doc.serverDocumentId || user?.id) {
+                          const session = await ensureSession();
+                          await secureSoftDeleteDocument({
+                            session,
+                            documentId: doc.serverDocumentId || doc.id,
+                          });
+                        }
+                      } catch {
+                        /* local tombstone still applied */
+                      }
                       removeDocument(doc.id);
-                    }
+                    })();
                   }}
                 >
                   <Trash2 size={14} />
@@ -858,7 +952,7 @@ export default function DocumentsPage() {
         ref={replaceRef}
         type="file"
         className="hidden"
-        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,image/*"
+        accept={DOCUMENT_FILE_INPUT_ACCEPT}
         onChange={(e) => void onReplace(e.target.files)}
       />
 

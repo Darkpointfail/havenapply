@@ -534,9 +534,9 @@ export function statusTone(status: ApplicationStatus) {
   return STATUS_META.find((s) => s.id === status)?.tone ?? "neutral";
 }
 
-export function formatPortalTime(iso: string) {
+export function formatPortalTime(iso: string, locale: "en" | "fr" = "en") {
   try {
-    return new Date(iso).toLocaleString("en-US", {
+    return new Date(iso).toLocaleString(locale === "fr" ? "fr-CA" : "en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -548,9 +548,9 @@ export function formatPortalTime(iso: string) {
   }
 }
 
-export function formatPortalDate(iso: string) {
+export function formatPortalDate(iso: string, locale: "en" | "fr" = "en") {
   try {
-    return new Date(iso).toLocaleDateString("en-US", {
+    return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",

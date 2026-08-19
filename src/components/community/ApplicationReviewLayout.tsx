@@ -58,7 +58,7 @@ export function AiSummaryBanner({
               {t("AI executive summary")}
             </p>
             <p className="mt-1.5 whitespace-pre-line text-[15px] leading-relaxed text-white/90">
-              {summary}
+              {summary ? t(summary) : ""}
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AiSummaryBanner({
                 <ul className="mt-2 space-y-1.5">
                   {aiHighlights!.map((item, i) => (
                     <li key={i} className="text-sm text-white/85">
-                      {item}
+                      {t(item)}
                     </li>
                   ))}
                 </ul>
@@ -87,7 +87,7 @@ export function AiSummaryBanner({
                 <ul className="mt-2 space-y-1.5">
                   {aiFlags!.map((item, i) => (
                     <li key={i} className="text-sm text-white/85">
-                      {item}
+                      {t(item)}
                     </li>
                   ))}
                 </ul>

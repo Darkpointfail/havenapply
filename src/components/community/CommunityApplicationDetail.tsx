@@ -39,7 +39,7 @@ import {
   type TransitionCheckId,
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/locale";
+import { useT, useI18n } from "@/lib/i18n/locale";
 import { ProfileAvatar } from "@/components/ProfilePhotoPicker";
 
 const DOC_ORDER = ["Identity", "Medical", "Financial", "Legal", "Other"] as const;
@@ -51,28 +51,40 @@ const DECLINE_REASONS = [
   "Other",
 ] as const;
 
-function buildAcceptEmailDraft(input: {
-  seniorName: string;
-  familyName: string;
-  communityName: string;
-}) {
-  const subject = `Good news — ${input.seniorName}'s application was accepted at ${input.communityName}`;
-  const body = `Dear ${input.familyName},
-
-We're pleased to let you know that ${input.seniorName}'s application to ${input.communityName} has been accepted.
-
-Our admissions team will follow up shortly about next steps, including contracts and move-in planning. You can also follow the update in HavenApply.
-
-Warm regards,
-${input.communityName} Admissions`;
+function buildAcceptEmailDraft(
+  input: {
+    seniorName: string;
+    familyName: string;
+    communityName: string;
+  },
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
+  const subject = t("Good news — {seniorName}'s application was accepted at {communityName}", {
+    seniorName: input.seniorName,
+    communityName: input.communityName,
+  });
+  const body = t(
+    "Dear {familyName},\n\nWe're pleased to let you know that {seniorName}'s application to {communityName} has been accepted.\n\nOur admissions team will follow up shortly about next steps, including contracts and move-in planning. You can also follow the update in HavenApply.\n\nWarm regards,\n{communityName} Admissions",
+    {
+      familyName: input.familyName,
+      seniorName: input.seniorName,
+      communityName: input.communityName,
+    },
+  );
   return { subject, body };
 }
 
-function buildAcceptSmsDraft(input: {
-  seniorName: string;
-  communityName: string;
-}) {
-  return `${input.communityName}: ${input.seniorName}'s application was accepted. Check HavenApply for next steps, or reply to this message.`;
+function buildAcceptSmsDraft(
+  input: {
+    seniorName: string;
+    communityName: string;
+  },
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
+  return t(
+    "{communityName}: {seniorName}'s application was accepted. Check HavenApply for next steps, or reply to this message.",
+    { communityName: input.communityName, seniorName: input.seniorName },
+  );
 }
 
 function priorityTone(p: AdmissionPriority) {
@@ -101,10 +113,14 @@ function Section({
 }
 
 function Field({ label, value }: { label: string; value?: string | null }) {
+  const t = useT();
+  const trimmed = value?.trim();
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">{label}</p>
-      <p className="mt-1 whitespace-pre-line text-sm text-ink">{value?.trim() || ","}</p>
+      <p className="mt-1 whitespace-pre-line text-sm text-ink">
+        {trimmed ? t(trimmed) : "—"}
+      </p>
     </div>
   );
 }
@@ -130,7 +146,8 @@ function SubCard({
 }
 
 function ChipList({ items }: { items: string[] }) {
-  if (!items.length) return <p className="text-sm text-ink-faint">,</p>;
+  const t = useT();
+  if (!items.length) return <p className="text-sm text-ink-faint">—</p>;
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((item) => (
@@ -138,7 +155,7 @@ function ChipList({ items }: { items: string[] }) {
           key={item}
           className="rounded-full bg-bg-soft px-3 py-1 text-xs font-medium text-ink-secondary"
         >
-          {item}
+          {t(item)}
         </li>
       ))}
     </ul>
@@ -147,6 +164,9 @@ function ChipList({ items }: { items: string[] }) {
 
 export function CommunityApplicationDetail() {
   const t = useT();
+  const { locale } = useI18n();
+  const fmtDate = (iso: string) => formatPortalDate(iso, locale);
+  const fmtTime = (iso: string) => formatPortalTime(iso, locale);
   const params = useParams();
   const router = useRouter();
   const id = String(params.id || "");
@@ -227,7 +247,7 @@ export function CommunityApplicationDetail() {
   if (!ready || !workspace) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        Loading…
+        {t("Loading…")}
       </div>
     );
   }
@@ -235,7 +255,7 @@ export function CommunityApplicationDetail() {
   if (!app) {
     return (
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
-        <p className="text-lg font-semibold">Application not found</p>
+        <p className="text-lg font-semibold">{t("Application not found")}</p>
         <p className="mt-2 text-sm text-ink-muted">
           {t("This dossier isn’t in your community workspace. Open Transition for accepted cases, or")}
           {t("Admissions for the live review queue.")}
@@ -254,7 +274,7 @@ export function CommunityApplicationDetail() {
 
   const priority = applicationPriority(app);
   const communityName =
-    workspace.profile?.name || workspace.residenceName || "our community";
+    workspace.profile?.name || workspace.residenceName || t("our community");
   const messageHref = `/community/messages?family=${encodeURIComponent(app.family.email)}&application=${encodeURIComponent(app.id)}&senior=${encodeURIComponent(app.seniorName)}&residence=${encodeURIComponent(app.residenceId)}`;
   const appRecord = app as unknown as Record<string, unknown>;
   const aiHighlights = Array.isArray(appRecord.aiHighlights)
@@ -267,9 +287,9 @@ export function CommunityApplicationDetail() {
   const openAcceptModal = () => {
     const emailDraft = buildAcceptEmailDraft({
       seniorName: app.seniorName,
-      familyName: app.family.name || "Family",
+      familyName: app.family.name || t("Family"),
       communityName,
-    });
+    }, t);
     setAuditNote("");
     setSendEmail(true);
     setSendSms(Boolean(app.family.phone?.trim()));
@@ -281,7 +301,7 @@ export function CommunityApplicationDetail() {
       buildAcceptSmsDraft({
         seniorName: app.seniorName,
         communityName,
-      }),
+      }, t),
     );
     setAuditOpen(true);
   };
@@ -291,7 +311,7 @@ export function CommunityApplicationDetail() {
       sendEmail && emailTo.trim() && emailBody.trim()
         ? {
             to: emailTo.trim(),
-            subject: emailSubject.trim() || "Application accepted",
+            subject: emailSubject.trim() || t("Application accepted"),
             body: emailBody.trim(),
           }
         : null;
@@ -304,11 +324,11 @@ export function CommunityApplicationDetail() {
         : null;
 
     if (sendEmail && !emailPayload) {
-      flashMsg("Add an email address and message, or turn email off.");
+      flashMsg(t("Add an email address and message, or turn email off."));
       return;
     }
     if (sendSms && !smsPayload) {
-      flashMsg("Add a phone number and text message, or turn SMS off.");
+      flashMsg(t("Add a phone number and text message, or turn SMS off."));
       return;
     }
 
@@ -319,9 +339,9 @@ export function CommunityApplicationDetail() {
     });
     if (r.ok) {
       setAuditOpen(false);
-      const parts = ["Accepted, now in Transition"];
-      if (emailPayload) parts.push("email sent");
-      if (smsPayload) parts.push("text sent");
+      const parts = [t("Accepted, now in Transition")];
+      if (emailPayload) parts.push(t("email sent"));
+      if (smsPayload) parts.push(t("text sent"));
       flashMsg(parts.join(" · "));
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
@@ -332,7 +352,7 @@ export function CommunityApplicationDetail() {
     const r = declineApplication(app.id, note);
     if (r.ok) {
       setDeclineOpen(false);
-      flashMsg("Application declined");
+      flashMsg(t("Application declined"));
     }
   };
 
@@ -340,7 +360,7 @@ export function CommunityApplicationDetail() {
     const r = completeTransition(app.id, closeNote.trim() || undefined);
     if (r.ok) {
       setCloseOpen(false);
-      flashMsg("Dossier closed, moved to History");
+      flashMsg(t("Dossier closed, moved to History"));
       window.setTimeout(() => router.push("/community/applications?filter=history"), 900);
     }
   };
@@ -349,7 +369,7 @@ export function CommunityApplicationDetail() {
     const date = moveInDraft.trim() || null;
     const r = setMoveInConfirmed(app.id, date);
     if (r.ok) {
-      flashMsg(date ? "Move-in date confirmed" : "Move-in date cleared");
+      flashMsg(date ? t("Move-in date confirmed") : t("Move-in date cleared"));
     }
   };
 
@@ -365,7 +385,7 @@ export function CommunityApplicationDetail() {
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-ink">{app.family.name}</p>
-            <p className="text-sm text-ink-muted">{app.family.relationship}</p>
+            <p className="text-sm text-ink-muted">{t(app.family.relationship)}</p>
           </div>
         </div>
         <div className="mt-4 flex flex-col gap-2">
@@ -404,9 +424,9 @@ export function CommunityApplicationDetail() {
                   )}
                 </div>
                 <div className="min-w-0 pb-5">
-                  <p className="text-[15px] font-medium text-ink">{entry.action}</p>
+                  <p className="text-[15px] font-medium text-ink">{t(entry.action)}</p>
                   <p className="mt-0.5 text-[13px] text-ink-faint">
-                    {entry.actor} · {formatPortalTime(entry.at)}
+                    PLACEHOLDER
                   </p>
                 </div>
               </li>
@@ -427,7 +447,7 @@ export function CommunityApplicationDetail() {
               <li key={note.id} className="rounded-xl bg-bg-soft px-3 py-2.5">
                 <p className="text-sm text-ink whitespace-pre-line">{note.body}</p>
                 <p className="mt-1 text-[13px] text-ink-faint">
-                  {note.author} · {formatPortalTime(note.at)}
+                  {note.author} · {fmtTime(note.at)}
                 </p>
               </li>
             ))}
@@ -465,14 +485,14 @@ export function CommunityApplicationDetail() {
                     <h1 className="text-xl font-semibold tracking-[-0.025em] text-ink">
                       {app.seniorName}
                     </h1>
-                    <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
+                    <Badge tone={priorityTone(priority)}>{t(priorityBadgeLabel(priority))}</Badge>
                   </div>
                   <p className="mt-0.5 text-sm text-ink-muted">
-                    {applicationCareType(app)}
+                    {t(applicationCareType(app))}
                     <span className="mx-1.5">·</span>
                     {t("Move-in")}{" "}
                     {app.moveInRequested
-                      ? formatPortalDate(app.moveInRequested)
+                      ? fmtDate(app.moveInRequested)
                       : t("Flexible")}
                   </p>
                 </div>
@@ -555,14 +575,14 @@ export function CommunityApplicationDetail() {
                       <div className="bg-surface p-5">
                         <p className="text-sm text-ink-faint">{t("Care type")}</p>
                         <p className="text-[17px] font-semibold text-ink">
-                          {applicationCareType(app)}
+                          {t(applicationCareType(app))}
                         </p>
                       </div>
                       <div className="bg-surface p-5">
                         <p className="text-sm text-ink-faint">{t("Preferred move-in")}</p>
                         <p className="text-[17px] font-semibold text-ink">
                           {app.moveInRequested
-                            ? formatPortalDate(app.moveInRequested)
+                            ? fmtDate(app.moveInRequested)
                             : t("Flexible")}
                         </p>
                       </div>
@@ -571,12 +591,12 @@ export function CommunityApplicationDetail() {
                     <SubCard id="section-identity" title={t("Identity & demographics")}>
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <Field label={t("Full name")} value={app.seniorName} />
-                        <Field label={t("Age")} value={`${app.seniorAge} years`} />
+                        <Field label={t("Age")} value={t("{age} years", { age: app.seniorAge })} />
                         <Field
                           label={t("Date of birth")}
                           value={
                             dossier?.dateOfBirth
-                              ? formatPortalDate(dossier.dateOfBirth)
+                              ? fmtDate(dossier.dateOfBirth)
                               : undefined
                           }
                         />
@@ -586,13 +606,13 @@ export function CommunityApplicationDetail() {
                         <Field label={t("Height")} value={dossier?.height} />
                         <Field label={t("Weight")} value={dossier?.weight} />
                         <Field label={t("Blood type")} value={dossier?.bloodType} />
-                        <Field label={t("Care type requested")} value={applicationCareType(app)} />
+                        <Field label={t("Care type requested")} value={t(applicationCareType(app))} />
                         <Field
                           label={t("Preferred move-in")}
                           value={
                             app.moveInRequested
-                              ? formatPortalDate(app.moveInRequested)
-                              : "Flexible"
+                              ? fmtDate(app.moveInRequested)
+                              : t("Flexible")
                           }
                         />
                         <Field label={t("Referral source")} value={app.referralSource} />
@@ -605,15 +625,15 @@ export function CommunityApplicationDetail() {
                           <table className="w-full text-left text-sm">
                             <thead>
                               <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                                <th className="pb-2 pr-3 font-medium">Activity</th>
-                                <th className="pb-2 font-medium">Level of assist</th>
+                                <th className="pb-2 pr-3 font-medium">{t("Activity")}</th>
+                                <th className="pb-2 font-medium">{t("Level of assist")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-line">
                               {dossier.adls.map((a) => (
                                 <tr key={a.activity}>
-                                  <td className="py-2 pr-3 font-medium text-ink">{a.activity}</td>
-                                  <td className="py-2 text-ink-muted">{a.level}</td>
+                                  <td className="py-2 pr-3 font-medium text-ink">{t(a.activity)}</td>
+                                  <td className="py-2 text-ink-muted">{t(a.level)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -625,7 +645,7 @@ export function CommunityApplicationDetail() {
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <Field
                           label={t("Mobility aids")}
-                          value={dossier?.mobilityAids?.join(" · ")}
+                          value={dossier?.mobilityAids?.map((aid) => t(aid)).join(" · ")}
                         />
                         <Field label={t("Diet")} value={dossier?.diet} />
                         <Field label={t("Continence")} value={dossier?.continence} />
@@ -642,9 +662,10 @@ export function CommunityApplicationDetail() {
                       <div className="mt-4 rounded-2xl border border-line bg-surface p-5 md:p-6">
                         {!reviewProgress?.complete ? (
                           <p className="mb-4 rounded-xl bg-warn-soft/50 px-3 py-2.5 text-sm text-ink-secondary">
-                            Review still in progress ({reviewProgress?.done}/{reviewProgress?.total}).
-                            {t("Check identity, clinical file, medications, documents, family contacts, and")}
-                            program fit before approving.
+                            {t("Review still in progress ({done}/{total}). Check identity, clinical file, medications, documents, family contacts, and program fit before approving.", {
+                              done: reviewProgress?.done ?? 0,
+                              total: reviewProgress?.total ?? 0,
+                            })}
                           </p>
                         ) : (
                           <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
@@ -662,11 +683,11 @@ export function CommunityApplicationDetail() {
                               <Check size={18} />
                             </span>
                             <span>
-                              <span className="block text-base font-semibold text-ink">Approve</span>
+                              <span className="block text-base font-semibold text-ink">{t("Approve")}</span>
                               <span className="mt-0.5 block text-sm text-ink-muted">
                                 {reviewProgress?.complete
-                                  ? "Then open Transition"
-                                  : "Complete checklist first"}
+                                  ? t("Then open Transition")
+                                  : t("Complete checklist first")}
                               </span>
                             </span>
                           </button>
@@ -704,7 +725,7 @@ export function CommunityApplicationDetail() {
                               <X size={18} />
                             </span>
                             <span>
-                              <span className="block text-base font-semibold text-ink">Decline</span>
+                              <span className="block text-base font-semibold text-ink">{t("Decline")}</span>
                               <span className="mt-0.5 block text-sm text-ink-muted">
                                 {t("Select a reason")}
                               </span>
@@ -723,23 +744,25 @@ export function CommunityApplicationDetail() {
                           <table className="w-full min-w-[520px] text-left text-sm">
                             <thead>
                               <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                                <th className="pb-2 pr-3 font-medium">Condition</th>
-                                <th className="pb-2 pr-3 font-medium">Status</th>
-                                <th className="pb-2 pr-3 font-medium">Since</th>
-                                <th className="pb-2 font-medium">Notes</th>
+                                <th className="pb-2 pr-3 font-medium">{t("Condition")}</th>
+                                <th className="pb-2 pr-3 font-medium">{t("Status")}</th>
+                                <th className="pb-2 pr-3 font-medium">{t("Since")}</th>
+                                <th className="pb-2 font-medium">{t("Notes")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-line">
                               {dossier.pathologies.map((p) => (
                                 <tr key={`${p.name}-${p.diagnosedYear}`}>
-                                  <td className="py-2.5 pr-3 font-medium text-ink">{p.name}</td>
+                                  <td className="py-2.5 pr-3 font-medium text-ink">{t(p.name)}</td>
                                   <td className="py-2.5 pr-3 capitalize text-ink-secondary">
-                                    {p.status}
+                                    {t(p.status)}
                                   </td>
                                   <td className="py-2.5 pr-3 text-ink-muted">
-                                    {p.diagnosedYear || ","}
+                                    {p.diagnosedYear || "—"}
                                   </td>
-                                  <td className="py-2.5 text-ink-muted">{p.notes || ","}</td>
+                                  <td className="py-2.5 text-ink-muted">
+                                    {p.notes ? t(p.notes) : "—"}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -758,16 +781,16 @@ export function CommunityApplicationDetail() {
                               key={a.substance}
                               className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-bg-soft px-3 py-2.5 text-sm"
                             >
-                              <span className="font-medium text-ink">{a.substance}</span>
+                              <span className="font-medium text-ink">{t(a.substance)}</span>
                               <span className="text-ink-muted">
-                                {a.reaction}
-                                {a.severity ? ` · ${a.severity}` : ""}
+                                {a.reaction ? t(a.reaction) : ""}
+                                {a.severity ? ` · ${t(a.severity)}` : ""}
                               </span>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-ink-faint">None reported</p>
+                        <p className="text-sm text-ink-faint">{t("None reported")}</p>
                       )}
                     </SubCard>
 
@@ -776,7 +799,7 @@ export function CommunityApplicationDetail() {
                         <Field label={t("Cognitive notes")} value={dossier?.cognitiveNotes} />
                         <div>
                           <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                            Behaviors
+                            {t("Behaviors")}
                           </p>
                           <div className="mt-2">
                             <ChipList items={dossier?.behaviors || []} />
@@ -804,20 +827,20 @@ export function CommunityApplicationDetail() {
                               <div className="flex flex-wrap items-baseline justify-between gap-2">
                                 <p className="font-medium text-ink">{f.name}</p>
                                 <p className="text-xs text-ink-faint">
-                                  {[f.from, f.to].filter(Boolean).join(" → ") || "Dates n/a"}
+                                  {[f.from, f.to].filter(Boolean).join(" → ") || t("Dates n/a")}
                                 </p>
                               </div>
-                              <p className="mt-1 text-sm text-ink-muted">{f.type}</p>
+                              <p className="mt-1 text-sm text-ink-muted">{t(f.type)}</p>
                               {f.reasonForLeaving && (
                                 <p className="mt-1.5 text-sm text-ink-secondary">
-                                  Reason for leaving: {f.reasonForLeaving}
+                                  {t("Reason for leaving: {reason}", { reason: t(f.reasonForLeaving) })}
                                 </p>
                               )}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-ink-faint">No prior facilities listed.</p>
+                        <p className="text-sm text-ink-faint">{t("No prior facilities listed.")}</p>
                       )}
                     </SubCard>
 
@@ -842,11 +865,11 @@ export function CommunityApplicationDetail() {
                         <table className="w-full min-w-[640px] text-left text-sm">
                           <thead>
                             <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                              <th className="pb-2 pr-3 font-medium">Medication</th>
-                              <th className="pb-2 pr-3 font-medium">Dose</th>
-                              <th className="pb-2 pr-3 font-medium">Frequency</th>
-                              <th className="pb-2 pr-3 font-medium">Route</th>
-                              <th className="pb-2 font-medium">Indication</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Medication")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Dose")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Frequency")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Route")}</th>
+                              <th className="pb-2 font-medium">{t("Indication")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-line">
@@ -856,10 +879,10 @@ export function CommunityApplicationDetail() {
                                 <td className="py-2.5 pr-3 tabular-nums text-ink-secondary">
                                   {m.dose}
                                 </td>
-                                <td className="py-2.5 pr-3 text-ink-muted">{m.frequency}</td>
-                                <td className="py-2.5 pr-3 text-ink-muted">{m.route || ","}</td>
+                                <td className="py-2.5 pr-3 text-ink-muted">{t(m.frequency)}</td>
+                                <td className="py-2.5 pr-3 text-ink-muted">{m.route ? t(m.route) : "—"}</td>
                                 <td className="py-2.5 text-ink-muted">
-                                  {m.indication || ","}
+                                  {m.indication ? t(m.indication) : "—"}
                                   {m.prescribedBy ? ` · ${m.prescribedBy}` : ""}
                                 </td>
                               </tr>
@@ -867,11 +890,11 @@ export function CommunityApplicationDetail() {
                           </tbody>
                         </table>
                         <p className="mt-3 text-xs text-ink-faint">
-                          {dossier.medications.length} medications on file
+                          {t("{n} medications on file", { n: dossier.medications.length })}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-sm text-ink-faint">No medication list provided.</p>
+                      <p className="text-sm text-ink-faint">{t("No medication list provided.")}</p>
                     )}
                   </SubCard>
                 ),
@@ -898,10 +921,10 @@ export function CommunityApplicationDetail() {
                                       <FileText size={18} className="text-ink-faint" />
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-sm font-semibold text-ink">{doc.name}</p>
+                                      <p className="text-sm font-semibold text-ink">{t(doc.name)}</p>
                                       {doc.aiSummary && (
                                         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-                                          {doc.aiSummary}
+                                          {t(doc.aiSummary)}
                                         </p>
                                       )}
                                       <button
@@ -933,13 +956,13 @@ export function CommunityApplicationDetail() {
                         />
                         <Field
                           label={t("Primary contact")}
-                          value={`${app.family.name} · ${app.family.relationship}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
+                          value={`${app.family.name} · ${t(app.family.relationship)}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
                         />
                         <Field
                           label={t("Emergency contact")}
                           value={
                             app.emergencyContact
-                              ? `${app.emergencyContact.name} · ${app.emergencyContact.relationship}\n${app.emergencyContact.phone}`
+                              ? `${app.emergencyContact.name} · ${t(app.emergencyContact.relationship)}\n${app.emergencyContact.phone}`
                               : undefined
                           }
                         />
@@ -1007,28 +1030,28 @@ export function CommunityApplicationDetail() {
                       {app.seniorName}
                     </h1>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
-                      <Badge tone="brand">{reviewStatusLabel(app)}</Badge>
+                      <Badge tone={priorityTone(priority)}>{t(priorityBadgeLabel(priority))}</Badge>
+                      <Badge tone="brand">{t(reviewStatusLabel(app))}</Badge>
                       {inTransition && transitionProgress ? (
                         <Badge tone={transitionProgress.complete ? "success" : "brand"}>
-                          Transition {transitionProgress.done}/{transitionProgress.total}
+                          {t("Transition {done}/{total}", { done: transitionProgress.done, total: transitionProgress.total })}
                         </Badge>
                       ) : null}
                       {isTerminal ? (
                         <Badge tone={app.status === "closed" ? "success" : "danger"}>
-                          {app.status === "closed" ? "Closed" : reviewStatusLabel(app)}
+                          {app.status === "closed" ? t("Closed") : t(reviewStatusLabel(app))}
                         </Badge>
                       ) : null}
                     </div>
                     <p className="mt-2 text-sm text-ink-muted">
-                      {applicationCareType(app)}
+                      {t(applicationCareType(app))}
                       <span className="mx-1.5">·</span>
                       {t("Move-in")}{" "}
                       {app.moveInRequested
-                        ? formatPortalDate(app.moveInRequested)
+                        ? fmtDate(app.moveInRequested)
                         : t("Flexible")}
                       <span className="mx-1.5">·</span>
-                      {t("Submitted")} {formatPortalDate(app.submittedAt)}
+                      {t("Submitted")} {fmtDate(app.submittedAt)}
                     </p>
                   </div>
                 </div>
@@ -1048,14 +1071,14 @@ export function CommunityApplicationDetail() {
                 <div className="bg-surface p-5">
                   <p className="text-sm text-ink-faint">{t("Care type")}</p>
                   <p className="text-[17px] font-semibold text-ink">
-                    {applicationCareType(app)}
+                    {t(applicationCareType(app))}
                   </p>
                 </div>
                 <div className="bg-surface p-5">
                   <p className="text-sm text-ink-faint">{t("Preferred move-in")}</p>
                   <p className="text-[17px] font-semibold text-ink">
                     {app.moveInRequested
-                      ? formatPortalDate(app.moveInRequested)
+                      ? fmtDate(app.moveInRequested)
                       : t("Flexible")}
                   </p>
                 </div>
@@ -1091,10 +1114,10 @@ export function CommunityApplicationDetail() {
                                   <FileText size={18} className="text-ink-faint" />
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-ink">{doc.name}</p>
+                                  <p className="text-sm font-semibold text-ink">{t(doc.name)}</p>
                                   {doc.aiSummary && (
                                     <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-                                      {doc.aiSummary}
+                                      {t(doc.aiSummary)}
                                     </p>
                                   )}
                                   <button
@@ -1118,26 +1141,25 @@ export function CommunityApplicationDetail() {
               <Section title={t("AI executive summary")}>
                 <div className="rounded-2xl border border-line bg-surface p-5 md:p-6">
                   <p className="text-[15px] leading-relaxed text-ink-secondary whitespace-pre-line">
-                    {app.executiveSummary || app.summary}
+                    {t(app.executiveSummary || app.summary || "")}
                   </p>
                 </div>
               </Section>
 
               <Section title={t("Client file")}>
                 <p className="text-sm text-ink-muted">
-                  {t("Complete dossier submitted with the application, identity, clinical history, medications,")}
-                  and prior placements.
+                  {t("Complete dossier submitted with the application: identity, clinical history, medications, and prior placements.")}
                 </p>
                 <div className="mt-4 flex flex-col gap-4">
                   <SubCard id="section-identity" title={t("Identity & demographics")}>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <Field label={t("Full name")} value={app.seniorName} />
-                      <Field label={t("Age")} value={`${app.seniorAge} years`} />
+                      <Field label={t("Age")} value={t("{age} years", { age: app.seniorAge })} />
                       <Field
                         label={t("Date of birth")}
                         value={
                           dossier?.dateOfBirth
-                            ? formatPortalDate(dossier.dateOfBirth)
+                            ? fmtDate(dossier.dateOfBirth)
                             : undefined
                         }
                       />
@@ -1147,13 +1169,13 @@ export function CommunityApplicationDetail() {
                       <Field label={t("Height")} value={dossier?.height} />
                       <Field label={t("Weight")} value={dossier?.weight} />
                       <Field label={t("Blood type")} value={dossier?.bloodType} />
-                      <Field label={t("Care type requested")} value={applicationCareType(app)} />
+                      <Field label={t("Care type requested")} value={t(applicationCareType(app))} />
                       <Field
                         label={t("Preferred move-in")}
                         value={
                           app.moveInRequested
-                            ? formatPortalDate(app.moveInRequested)
-                            : "Flexible"
+                            ? fmtDate(app.moveInRequested)
+                            : t("Flexible")
                         }
                       />
                       <Field label={t("Referral source")} value={app.referralSource} />
@@ -1169,13 +1191,13 @@ export function CommunityApplicationDetail() {
                       />
                       <Field
                         label={t("Primary contact")}
-                        value={`${app.family.name} · ${app.family.relationship}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
+                        value={`${app.family.name} · ${t(app.family.relationship)}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
                       />
                       <Field
                         label={t("Emergency contact")}
                         value={
                           app.emergencyContact
-                            ? `${app.emergencyContact.name} · ${app.emergencyContact.relationship}\n${app.emergencyContact.phone}`
+                            ? `${app.emergencyContact.name} · ${t(app.emergencyContact.relationship)}\n${app.emergencyContact.phone}`
                             : undefined
                         }
                       />
@@ -1205,23 +1227,25 @@ export function CommunityApplicationDetail() {
                         <table className="w-full min-w-[520px] text-left text-sm">
                           <thead>
                             <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                              <th className="pb-2 pr-3 font-medium">Condition</th>
-                              <th className="pb-2 pr-3 font-medium">Status</th>
-                              <th className="pb-2 pr-3 font-medium">Since</th>
-                              <th className="pb-2 font-medium">Notes</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Condition")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Status")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Since")}</th>
+                              <th className="pb-2 font-medium">{t("Notes")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-line">
                             {dossier.pathologies.map((p) => (
                               <tr key={`${p.name}-${p.diagnosedYear}`}>
-                                <td className="py-2.5 pr-3 font-medium text-ink">{p.name}</td>
+                                <td className="py-2.5 pr-3 font-medium text-ink">{t(p.name)}</td>
                                 <td className="py-2.5 pr-3 capitalize text-ink-secondary">
-                                  {p.status}
+                                  {t(p.status)}
                                 </td>
                                 <td className="py-2.5 pr-3 text-ink-muted">
-                                  {p.diagnosedYear || ","}
+                                  {p.diagnosedYear || "—"}
                                 </td>
-                                <td className="py-2.5 text-ink-muted">{p.notes || ","}</td>
+                                <td className="py-2.5 text-ink-muted">
+                                  {p.notes ? t(p.notes) : "—"}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -1238,11 +1262,11 @@ export function CommunityApplicationDetail() {
                         <table className="w-full min-w-[640px] text-left text-sm">
                           <thead>
                             <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                              <th className="pb-2 pr-3 font-medium">Medication</th>
-                              <th className="pb-2 pr-3 font-medium">Dose</th>
-                              <th className="pb-2 pr-3 font-medium">Frequency</th>
-                              <th className="pb-2 pr-3 font-medium">Route</th>
-                              <th className="pb-2 font-medium">Indication</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Medication")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Dose")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Frequency")}</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Route")}</th>
+                              <th className="pb-2 font-medium">{t("Indication")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-line">
@@ -1252,10 +1276,10 @@ export function CommunityApplicationDetail() {
                                 <td className="py-2.5 pr-3 tabular-nums text-ink-secondary">
                                   {m.dose}
                                 </td>
-                                <td className="py-2.5 pr-3 text-ink-muted">{m.frequency}</td>
-                                <td className="py-2.5 pr-3 text-ink-muted">{m.route || ","}</td>
+                                <td className="py-2.5 pr-3 text-ink-muted">{t(m.frequency)}</td>
+                                <td className="py-2.5 pr-3 text-ink-muted">{m.route ? t(m.route) : "—"}</td>
                                 <td className="py-2.5 text-ink-muted">
-                                  {m.indication || ","}
+                                  {m.indication ? t(m.indication) : "—"}
                                   {m.prescribedBy ? ` · ${m.prescribedBy}` : ""}
                                 </td>
                               </tr>
@@ -1263,11 +1287,11 @@ export function CommunityApplicationDetail() {
                           </tbody>
                         </table>
                         <p className="mt-3 text-xs text-ink-faint">
-                          {dossier.medications.length} medications on file
+                          {t("{n} medications on file", { n: dossier.medications.length })}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-sm text-ink-faint">No medication list provided.</p>
+                      <p className="text-sm text-ink-faint">{t("No medication list provided.")}</p>
                     )}
                   </SubCard>
 
@@ -1279,16 +1303,16 @@ export function CommunityApplicationDetail() {
                             key={a.substance}
                             className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-bg-soft px-3 py-2.5 text-sm"
                           >
-                            <span className="font-medium text-ink">{a.substance}</span>
+                            <span className="font-medium text-ink">{t(a.substance)}</span>
                             <span className="text-ink-muted">
-                              {a.reaction}
-                              {a.severity ? ` · ${a.severity}` : ""}
+                              {a.reaction ? t(a.reaction) : ""}
+                              {a.severity ? ` · ${t(a.severity)}` : ""}
                             </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-ink-faint">None reported</p>
+                      <p className="text-sm text-ink-faint">{t("None reported")}</p>
                     )}
                   </SubCard>
 
@@ -1303,20 +1327,20 @@ export function CommunityApplicationDetail() {
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <p className="font-medium text-ink">{f.name}</p>
                               <p className="text-xs text-ink-faint">
-                                {[f.from, f.to].filter(Boolean).join(" → ") || "Dates n/a"}
+                                {[f.from, f.to].filter(Boolean).join(" → ") || t("Dates n/a")}
                               </p>
                             </div>
-                            <p className="mt-1 text-sm text-ink-muted">{f.type}</p>
+                            <p className="mt-1 text-sm text-ink-muted">{t(f.type)}</p>
                             {f.reasonForLeaving && (
                               <p className="mt-1.5 text-sm text-ink-secondary">
-                                Reason for leaving: {f.reasonForLeaving}
+                                {t("Reason for leaving: {reason}", { reason: t(f.reasonForLeaving) })}
                               </p>
                             )}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-ink-faint">No prior facilities listed.</p>
+                      <p className="text-sm text-ink-faint">{t("No prior facilities listed.")}</p>
                     )}
                   </SubCard>
 
@@ -1335,15 +1359,15 @@ export function CommunityApplicationDetail() {
                         <table className="w-full text-left text-sm">
                           <thead>
                             <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-faint">
-                              <th className="pb-2 pr-3 font-medium">Activity</th>
-                              <th className="pb-2 font-medium">Level of assist</th>
+                              <th className="pb-2 pr-3 font-medium">{t("Activity")}</th>
+                              <th className="pb-2 font-medium">{t("Level of assist")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-line">
                             {dossier.adls.map((a) => (
                               <tr key={a.activity}>
-                                <td className="py-2 pr-3 font-medium text-ink">{a.activity}</td>
-                                <td className="py-2 text-ink-muted">{a.level}</td>
+                                <td className="py-2 pr-3 font-medium text-ink">{t(a.activity)}</td>
+                                <td className="py-2 text-ink-muted">{t(a.level)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1355,7 +1379,7 @@ export function CommunityApplicationDetail() {
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <Field
                         label={t("Mobility aids")}
-                        value={dossier?.mobilityAids?.join(" · ")}
+                        value={dossier?.mobilityAids?.map((aid) => t(aid)).join(" · ")}
                       />
                       <Field label={t("Diet")} value={dossier?.diet} />
                       <Field label={t("Continence")} value={dossier?.continence} />
@@ -1370,7 +1394,7 @@ export function CommunityApplicationDetail() {
                       <Field label={t("Cognitive notes")} value={dossier?.cognitiveNotes} />
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                          Behaviors
+                          {t("Behaviors")}
                         </p>
                         <div className="mt-2">
                           <ChipList items={dossier?.behaviors || []} />
@@ -1396,8 +1420,7 @@ export function CommunityApplicationDetail() {
               <Section title={t("Messages")}>
                 <div className="rounded-2xl border border-line bg-surface p-6">
                   <p className="text-sm text-ink-muted">
-                    {t("Talk with the family inside HavenApply. The conversation stays linked to this")}
-                    application.
+                    {t("Talk with the family inside HavenApply. The conversation stays linked to this application.")}
                   </p>
                   <Button href={messageHref} className="mt-4" size="sm">
                     <MessageSquare size={14} />
@@ -1408,26 +1431,30 @@ export function CommunityApplicationDetail() {
 
               <Section
                 id="section-decision"
-                title={inTransition ? "Transition & close" : "Outcome"}
+                title={inTransition ? t("Transition & close") : t("Outcome")}
               >
                 <p className="text-sm text-ink-muted">
                   {inTransition
-                    ? "Complete contracts, payment, and family logistics, then close the dossier."
-                    : "This dossier is archived."}
+                    ? t("Complete contracts, payment, and family logistics, then close the dossier.")
+                    : t("This dossier is archived.")}
                 </p>
                 <div className="mt-4 rounded-2xl border border-line bg-surface p-5 md:p-6">
                   {isTerminal ? (
                     <p className="rounded-xl bg-bg-soft px-3 py-3 text-sm text-ink-secondary">
                       {app.status === "closed"
-                        ? "Move-in transition complete, dossier closed."
-                        : `This application is ${app.status.replaceAll("_", " ")}.`}
+                        ? t("Move-in transition complete, dossier closed.")
+                        : t("This application is {status}.", {
+                            status: t(reviewStatusLabel(app)),
+                          })}
                     </p>
                   ) : (
                     <>
                       {!transitionProgress?.complete ? (
                         <p className="mb-4 rounded-xl bg-brand-soft/50 px-3 py-2.5 text-sm text-ink-secondary">
-                          Transition in progress ({transitionProgress?.done}/{transitionProgress?.total}
-                          ). Finish the residency agreement, deposit, family details, and move-in date.
+                          {t("Transition in progress ({done}/{total}). Finish the residency agreement, deposit, family details, and move-in date before closing.", {
+                            done: transitionProgress?.done ?? 0,
+                            total: transitionProgress?.total ?? 0,
+                          })}
                         </p>
                       ) : (
                         <p className="mb-4 rounded-xl bg-success-soft/60 px-3 py-2.5 text-sm text-success">
@@ -1479,8 +1506,8 @@ export function CommunityApplicationDetail() {
                             </span>
                             <span className="mt-0.5 block text-sm text-ink-muted">
                               {transitionProgress?.complete
-                                ? "Move-in ready · archive"
-                                : "Complete transition first"}
+                                ? t("Move-in ready · archive")
+                                : t("Complete transition first")}
                             </span>
                           </span>
                         </button>
@@ -1691,7 +1718,7 @@ export function CommunityApplicationDetail() {
             aria-hidden
           />
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
-            <h2 className="text-xl font-semibold tracking-tight">Decline application</h2>
+            <h2 className="text-xl font-semibold tracking-tight">{t("Decline application")}</h2>
             <p className="mt-1 text-sm text-ink-muted">
               {t("Choose a reason. The family receives a clear update in HavenApply.")}
             </p>
@@ -1713,12 +1740,12 @@ export function CommunityApplicationDetail() {
                     onChange={() => setDeclineReason(reason)}
                     className="text-brand"
                   />
-                  {reason}
+                  {t(reason)}
                 </label>
               ))}
             </div>
             <label className="mt-4 block text-sm">
-              Internal note (optional)
+              {t("Internal note (optional)")}
               <textarea
                 rows={3}
                 value={declineNote}
@@ -1736,7 +1763,7 @@ export function CommunityApplicationDetail() {
                 {t("Cancel")}
               </Button>
               <Button type="button" variant="danger" className="flex-1" onClick={confirmDecline}>
-                Decline
+                {t("Decline")}
               </Button>
             </div>
           </div>
@@ -1752,18 +1779,17 @@ export function CommunityApplicationDetail() {
             aria-hidden
           />
           <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
-            <h2 className="text-xl font-semibold tracking-tight">Close dossier</h2>
+            <h2 className="text-xl font-semibold tracking-tight">{t("Close dossier")}</h2>
             <p className="mt-1 text-sm text-ink-muted">
-              {t("Confirm that contracts, payment, and move-in details are complete. The dossier moves")}
-              to History.
+              {t("Confirm that contracts, payment, and move-in details are complete. The dossier moves to History.")}
             </p>
             <ul className="mt-5 space-y-2">
               {(
                 [
-                  ["contract", "Residency agreement"],
-                  ["payment", "Deposit & payment"],
-                  ["familyDetails", "Final family details"],
-                  ["moveInDate", "Move-in date"],
+                  ["contract", t("Residency agreement")],
+                  ["payment", t("Deposit & payment")],
+                  ["familyDetails", t("Final family details")],
+                  ["moveInDate", t("Move-in date")],
                 ] as const
               ).map(([id, label]) => (
                 <li
@@ -1776,7 +1802,7 @@ export function CommunityApplicationDetail() {
               ))}
             </ul>
             <label className="mt-4 block text-sm">
-              Closing note (optional)
+              {t("Closing note (optional)")}
               <textarea
                 rows={3}
                 value={closeNote}

@@ -26,7 +26,7 @@ export function AdmissionTransitionGuide({
     <aside className="rounded-2xl border border-line bg-surface p-4 shadow-xs md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-ink">Move-in transition</p>
+          <p className="text-sm font-semibold text-ink">{t("Move-in transition")}</p>
           <p className="mt-0.5 text-xs text-ink-muted">
             {t("Finish contracts, payment, and family details before closing the dossier.")}
           </p>
@@ -67,16 +67,16 @@ export function AdmissionTransitionGuide({
                     closed && "opacity-60",
                   )}
                   aria-pressed={checked}
-                  aria-label={item.label}
+                  aria-label={t(item.label)}
                 >
                   <Check size={12} strokeWidth={3} />
                 </button>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink">
                     <span className="mr-1.5 text-ink-faint">{index + 1}.</span>
-                    {item.label}
+                    {t(item.label)}
                   </p>
-                  <p className="mt-0.5 text-xs text-ink-muted">{item.hint}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">{t(item.hint)}</p>
                 </div>
               </div>
             </li>
@@ -87,8 +87,10 @@ export function AdmissionTransitionGuide({
       {!closed ? (
         <p className="mt-4 text-xs leading-relaxed text-ink-faint">
           {progress.complete
-            ? "All transition steps done, you can close the dossier."
-            : "Work these items with the family. Closing unlocks when every required step is done."}
+            ? t("All transition steps done, you can close the dossier.")
+            : t(
+                "Work these items with the family. Closing unlocks when every required step is done.",
+              )}
         </p>
       ) : null}
     </aside>

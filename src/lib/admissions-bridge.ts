@@ -277,67 +277,84 @@ export function updateSharedFromCommunity(
   return next;
 }
 
-function familyStorageKey(email: string) {
-  return `haven-family-v4-${email.toLowerCase()}`;
+async function familyStorageKeys(email: string): Promise<string[]> {
+  const { familyDataKeyCandidates, familyDataStorageKey } = await import(
+    "@/lib/security/opaque-key"
+  );
+  const key = await familyDataStorageKey(email);
+  const { legacy } = familyDataKeyCandidates(email);
+  return [key, legacy];
 }
 
 function syncDecisionToFamilyStore(packet: SharedAdmissionPacket) {
   if (!packet.familyEmail || typeof window === "undefined") return;
-  try {
-    const raw = localStorage.getItem(familyStorageKey(packet.familyEmail));
-    if (!raw) return;
-    const data = JSON.parse(raw) as { applications?: FamilyApplication[] };
-    if (!Array.isArray(data.applications)) return;
+  void (async () => {
+    try {
+      const keys = await familyStorageKeys(packet.familyEmail);
+      let raw: string | null = null;
+      let usedKey = keys[0]!;
+      for (const k of keys) {
+        raw = localStorage.getItem(k);
+        if (raw) {
+          usedKey = k;
+          break;
+        }
+      }
+      if (!raw) return;
+      const data = JSON.parse(raw) as { applications?: FamilyApplication[] };
+      if (!Array.isArray(data.applications)) return;
 
-    const apps = data.applications.map((a) => {
-      if (a.id !== packet.familyApplicationId) return a;
-      if (packet.withdrawn) return withdrawApplication(a);
+      const apps = data.applications.map((a) => {
+        if (a.id !== packet.familyApplicationId) return a;
+        if (packet.withdrawn) return withdrawApplication(a);
 
-      let next = a;
-      if (packet.decisionKind) {
-        next = applyCommunityDecision(
-          next,
-          packet.decisionKind,
-          packet.decisionNote || packet.documentRequest || packet.infoRequest || "",
-        );
-      }
-      if (packet.documentRequest) {
-        next = {
-          ...next,
-          requestedDocuments: packet.documentRequest.split("·").map((s) => s.trim()).filter(Boolean),
-          status: "more_info",
-        };
-      }
-      if (packet.tourProposal) {
-        next = {
-          ...next,
-          upcomingAppointment: packet.tourProposal,
-          status: packet.status || "tour_requested",
-        };
-      }
-      if (packet.assessmentProposal) {
-        next = {
-          ...next,
-          upcomingAppointment: packet.assessmentProposal,
-          status: packet.status || "assessment_requested",
-        };
-      }
-      if (packet.waitlistPosition != null) {
-        next = { ...next, waitingPosition: packet.waitlistPosition, status: "waitlisted" };
-      }
-      if (packet.status) {
-        next = { ...next, status: packet.status };
-      }
-      return next;
-    });
+        let next = a;
+        if (packet.decisionKind) {
+          next = applyCommunityDecision(
+            next,
+            packet.decisionKind,
+            packet.decisionNote || packet.documentRequest || packet.infoRequest || "",
+          );
+        }
+        if (packet.documentRequest) {
+          next = {
+            ...next,
+            requestedDocuments: packet.documentRequest
+              .split("·")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            status: "more_info",
+          };
+        }
+        if (packet.tourProposal) {
+          next = {
+            ...next,
+            upcomingAppointment: packet.tourProposal,
+            status: packet.status || "tour_requested",
+          };
+        }
+        if (packet.assessmentProposal) {
+          next = {
+            ...next,
+            upcomingAppointment: packet.assessmentProposal,
+            status: packet.status || "assessment_requested",
+          };
+        }
+        if (packet.waitlistPosition != null) {
+          next = { ...next, waitingPosition: packet.waitlistPosition, status: "waitlisted" };
+        }
+        if (packet.status) {
+          next = { ...next, status: packet.status };
+        }
+        return next;
+      });
 
-    localStorage.setItem(
-      familyStorageKey(packet.familyEmail),
-      JSON.stringify({ ...data, applications: apps }),
-    );
-  } catch {
-    /* ignore */
-  }
+      localStorage.setItem(keys[0]!, JSON.stringify({ ...data, applications: apps }));
+      if (usedKey !== keys[0]!) localStorage.removeItem(usedKey);
+    } catch {
+      /* ignore */
+    }
+  })();
 }
 
 /** Merge shared live applications into community workspace list (dedupe by familyApplicationId). */

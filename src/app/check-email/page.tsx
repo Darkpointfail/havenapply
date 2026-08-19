@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { AuthAlert, DemoInbox } from "@/components/auth/AuthForm";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +15,8 @@ function CheckEmailInner() {
   const t = useT();
   const { resendConfirmationEmail } = useAuth();
   const params = useSearchParams();
-  const email = params.get("email") || "";
+  // Prefer sessionStorage over ?email= to avoid PII in URLs / logs / Referer.
+  const [email, setEmail] = useState("");
   const token = params.get("token");
   const role = params.get("role") || "family";
   const next = params.get("next") || (role === "family" ? "/setup" : "/sign-in");
@@ -23,6 +24,36 @@ function CheckEmailInner() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmToken, setConfirmToken] = useState(token);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("haven-pending-email");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { email?: string };
+        if (parsed.email) setEmail(parsed.email);
+      }
+    } catch {
+      /* ignore */
+    }
+    // Legacy query param support (cleared from address bar after read).
+    const q = params.get("email");
+    if (q) {
+      setEmail(q);
+      try {
+        sessionStorage.setItem(
+          "haven-pending-email",
+          JSON.stringify({ email: q, role }),
+        );
+      } catch {
+        /* ignore */
+      }
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("email");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+  }, [params, role]);
 
   const resend = async (e: FormEvent) => {
     e.preventDefault();

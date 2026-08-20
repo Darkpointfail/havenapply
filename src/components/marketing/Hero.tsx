@@ -21,8 +21,9 @@ export function Hero() {
             alt=""
             fill
             priority
+            quality={92}
             sizes="100vw"
-            className="object-cover object-[65%_40%]"
+            className="object-cover object-[78%_42%]"
           />
         </div>
       </div>

@@ -146,21 +146,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isMarketingHome = pathname === "/";
-  const hideFooter =
-    isMarketingHome ||
-    isPublicAuth ||
-    isPortalAuth ||
-    isCoreFamily ||
-    isCommunity ||
-    isInternal ||
-    isProfessional;
+  const hideChrome =
+    isPublicAuth || isPortalAuth || isCoreFamily || isCommunity || isInternal || isProfessional;
 
   return (
     <>
-      {!isMarketingHome && <PublicHeader />}
+      {!hideChrome && <PublicHeader />}
       <main className="flex-1 page-enter">{children}</main>
-      {!hideFooter && <Footer />}
+      {!hideChrome && <Footer />}
     </>
   );
 }

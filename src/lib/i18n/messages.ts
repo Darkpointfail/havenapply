@@ -10,7 +10,7 @@ export const frMessages: Record<string, string> = {
   "Switch to English": "Passer en anglais",
 
   // Common chrome
-  "Log in": "Connexion",
+  "Log in": "Se connecter",
   Register: "S’inscrire",
   "Sign out": "Se déconnecter",
   "Sign in": "Connexion",
@@ -43,7 +43,9 @@ export const frMessages: Record<string, string> = {
   Home: "Accueil",
   "Find Senior Living": "Trouver une résidence",
   "For Families": "Pour les familles",
-  "For Communities": "Pour les établissements",
+  "For Residences": "Pour les résidences",
+  "For Communities": "Pour les résidences",
+  "Request a demo": "Demander une démonstration",
   Contact: "Contact",
 
   // Family nav
@@ -376,7 +378,7 @@ export const frMessages: Record<string, string> = {
   "Also see": "Voir aussi",
 
   // For communities / establishments
-  "For communities": "Pour les établissements",
+  "For communities": "Pour les résidences",
   "Complete digital applications": "Dossiers numériques complets",
   "Documents in one packet": "Tous les documents au même endroit",
   "Messaging on the application": "Messagerie liée au dossier",

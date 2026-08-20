@@ -77,12 +77,8 @@ export default function HowItWorksPage() {
     <div className="bg-bg">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--brand-soft)_0%,_transparent_55%)] opacity-90"
-        />
-        <div className="relative mx-auto max-w-[1040px] px-5 pb-12 pt-12 md:px-8 md:pb-16 md:pt-16">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">
+        <div className="relative mx-auto max-w-[1320px] px-5 pb-12 pt-12 md:px-16 md:pb-16 md:pt-16">
+          <p className="home-eyebrow text-brand-strong">
             {t("How it works")}
           </p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
@@ -105,7 +101,7 @@ export default function HowItWorksPage() {
 
       {/* Big 3 steps, the mental model */}
       <section className="border-y border-line/80 bg-surface/80">
-        <div className="mx-auto max-w-[1040px] px-5 py-14 md:px-8 md:py-16">
+        <div className="mx-auto max-w-[1320px] px-5 py-14 md:px-8 md:py-16">
           <p className="text-center text-sm font-semibold uppercase tracking-[0.12em] text-ink-faint">
             {t("The whole journey in three steps")}
           </p>
@@ -118,9 +114,9 @@ export default function HowItWorksPage() {
             {bigSteps.map((step) => (
               <li
                 key={step.n}
-                className="relative rounded-[1.35rem] border border-line bg-surface p-6 text-center shadow-[0_12px_32px_-28px_rgba(15,20,25,0.4)] md:px-5"
+                className="relative rounded-[20px] border border-line bg-surface p-6 text-center  md:px-5"
               >
-                <span className="relative z-[1] mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand/25 bg-brand-soft text-xl font-semibold text-brand">
+                <span className="relative z-[1] mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand/25 bg-brand-soft text-xl font-semibold text-brand-strong">
                   {step.n}
                 </span>
                 <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink">{t(step.title)}</h2>
@@ -137,7 +133,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* What you do, concretely */}
-      <section className="mx-auto max-w-[1040px] px-5 py-16 md:px-8 md:py-20">
+      <section className="mx-auto max-w-[1320px] px-5 py-16 md:px-8 md:py-20">
         <div className="max-w-xl">
           <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.1rem]">
             {t("What that looks like in Haven")}
@@ -153,10 +149,10 @@ export default function HowItWorksPage() {
             return (
               <li
                 key={t(item.title)}
-                className="grid gap-4 rounded-2xl border border-line bg-surface p-4 shadow-xs sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-6 sm:p-5"
+                className="grid gap-4 rounded-[14px] border border-line bg-surface p-4 shadow-xs sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-6 sm:p-5"
               >
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-brand-soft text-brand-strong">
                     <Icon size={18} />
                   </span>
                   <span className="text-xs font-semibold tabular-nums text-ink-faint sm:hidden">
@@ -183,9 +179,9 @@ export default function HowItWorksPage() {
 
       {/* Two audiences */}
       <section className="border-t border-line/70 bg-brand-soft/30">
-        <div className="mx-auto grid max-w-[1040px] gap-5 px-5 py-14 md:grid-cols-2 md:px-8 md:py-16">
-          <div className="rounded-[1.35rem] border border-line bg-surface p-6 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">Families</p>
+        <div className="mx-auto grid max-w-[1320px] gap-5 px-5 py-14 md:grid-cols-2 md:px-8 md:py-16">
+          <div className="rounded-[20px] border border-line bg-surface p-6 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-strong">Families</p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
               {t("Create once. Stay in control.")}
             </h3>
@@ -196,21 +192,21 @@ export default function HowItWorksPage() {
                 "Nothing is sent without your approval",
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-sm text-ink-secondary">
-                  <Check size={16} className="mt-0.5 shrink-0 text-brand" />
+                  <Check size={16} className="mt-0.5 shrink-0 text-brand-strong" />
                   {t}
                 </li>
               ))}
             </ul>
             <Link
               href="/for-families"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-strong hover:underline"
             >
               For families <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="rounded-[1.35rem] border border-line bg-surface p-6 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">
+          <div className="rounded-[20px] border border-line bg-surface p-6 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-strong">
               Communities
             </p>
             <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -223,14 +219,14 @@ export default function HowItWorksPage() {
                 "Accept, decline, or wait, families are notified",
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-sm text-ink-secondary">
-                  <Check size={16} className="mt-0.5 shrink-0 text-brand" />
+                  <Check size={16} className="mt-0.5 shrink-0 text-brand-strong" />
                   {t}
                 </li>
               ))}
             </ul>
             <Link
               href="/for-communities"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-strong hover:underline"
             >
               For communities <ArrowRight size={14} />
             </Link>
@@ -239,10 +235,10 @@ export default function HowItWorksPage() {
       </section>
 
       {/* AI note */}
-      <section className="mx-auto max-w-[1040px] px-5 py-14 md:px-8 md:py-16">
-        <div className="flex flex-col gap-5 rounded-[1.5rem] border border-line bg-surface p-6 shadow-xs md:flex-row md:items-center md:justify-between md:p-8">
+      <section className="mx-auto max-w-[1320px] px-5 py-14 md:px-8 md:py-16">
+        <div className="flex flex-col gap-5 rounded-[20px] border border-line bg-surface p-6 shadow-xs md:flex-row md:items-center md:justify-between md:p-8">
           <div className="flex gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ink text-white">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
               <Sparkles size={18} />
             </span>
             <div>
@@ -262,7 +258,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="px-5 pb-20 md:px-8 md:pb-28">
+      <section className="px-5 pb-20 md:px-16 md:pb-28">
         <div className="mx-auto max-w-[920px] rounded-[1.75rem] border border-brand/20 bg-gradient-to-br from-brand-soft/80 via-surface to-surface px-6 py-12 text-center md:px-12 md:py-14">
           <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.15rem]">
             {t("Ready when you are")}

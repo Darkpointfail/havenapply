@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Reveal } from "@/components/marketing/Reveal";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
@@ -10,10 +11,26 @@ const rows: {
   name: "home.tracking.r1" | "home.tracking.r2" | "home.tracking.r3";
   status: "home.tracking.status.review" | "home.tracking.status.docs" | "home.tracking.status.visit";
   shape: StatusShape;
+  image: string;
 }[] = [
-  { name: "home.tracking.r1", status: "home.tracking.status.review", shape: "square" },
-  { name: "home.tracking.r2", status: "home.tracking.status.docs", shape: "circle" },
-  { name: "home.tracking.r3", status: "home.tracking.status.visit", shape: "ring" },
+  {
+    name: "home.tracking.r1",
+    status: "home.tracking.status.review",
+    shape: "square",
+    image: "/community-photos/maple-grove.jpg",
+  },
+  {
+    name: "home.tracking.r2",
+    status: "home.tracking.status.docs",
+    shape: "circle",
+    image: "/community-photos/lakeside-haven.jpg",
+  },
+  {
+    name: "home.tracking.r3",
+    status: "home.tracking.status.visit",
+    shape: "ring",
+    image: "/community-photos/orchard-house.jpg",
+  },
 ];
 
 function StatusMark({ shape }: { shape: StatusShape }) {
@@ -57,10 +74,16 @@ export function TrackingPreview() {
               key={row.name}
               className="flex items-center gap-4 rounded-[14px] border border-[var(--line)] p-3"
             >
-              <div
-                aria-hidden
-                className="h-14 w-14 shrink-0 rounded-[12px] bg-[var(--bg-soft)]"
-              />
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                <Image
+                  src={row.image}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                  aria-hidden
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[17px] font-semibold text-[var(--ink)]">
                   {t(row.name)}

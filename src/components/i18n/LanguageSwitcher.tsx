@@ -16,7 +16,7 @@ export function LanguageSwitcher({
   return (
     <div
       className={cn(
-        "relative z-20 inline-flex shrink-0 items-center rounded-lg border border-line bg-bg p-0.5 text-xs font-semibold",
+        "relative z-20 inline-flex shrink-0 items-center rounded-[14px] border border-[var(--line)] bg-[var(--surface)] p-1 text-[15px] font-semibold",
         className,
       )}
       role="group"
@@ -24,46 +24,30 @@ export function LanguageSwitcher({
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setLocale("en");
-        }}
-        className={cn(
-          "rounded-md px-2 py-1.5 transition",
-          compact ? "min-w-[2.25rem]" : "min-w-[2.5rem] px-2.5",
-          locale === "en"
-            ? "bg-surface text-ink shadow-xs"
-            : "text-ink-muted hover:text-ink",
-        )}
-        aria-pressed={locale === "en"}
-        aria-label={t("Switch to English")}
-        title={t("English")}
-      >
-        EN
-      </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setLocale("fr");
-        }}
-        className={cn(
-          "rounded-md px-2 py-1.5 transition",
-          compact ? "min-w-[2.25rem]" : "min-w-[2.5rem] px-2.5",
-          locale === "fr"
-            ? "bg-surface text-ink shadow-xs"
-            : "text-ink-muted hover:text-ink",
-        )}
-        aria-pressed={locale === "fr"}
-        aria-label={t("Switch to French")}
-        title={t("French")}
-      >
-        FR
-      </button>
+      {(["fr", "en"] as const).map((code) => (
+        <button
+          key={code}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setLocale(code);
+          }}
+          className={cn(
+            "rounded-[10px] transition-colors",
+            compact ? "min-h-10 min-w-10 px-2.5" : "min-h-11 min-w-11 px-3",
+            "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--brand-strong)] focus-visible:ring-offset-2",
+            locale === code
+              ? "bg-[var(--brand-soft)] text-[var(--brand-strong)]"
+              : "text-[var(--ink-secondary)] hover:text-[var(--ink)]",
+          )}
+          aria-pressed={locale === code}
+          aria-label={code === "en" ? t("Switch to English") : t("Switch to French")}
+          title={code === "en" ? t("English") : t("French")}
+        >
+          {code.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }

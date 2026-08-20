@@ -23,7 +23,7 @@ const topics = [
 type TopicId = (typeof topics)[number]["id"];
 
 const fieldClass =
-  "mt-2 w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/40 focus:ring-4 focus:ring-brand/10";
+  "mt-2 w-full rounded-[14px] border-[1.5px] border-line bg-surface px-4 py-3.5 text-[16px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand-strong focus-visible:ring-[3px] focus-visible:ring-brand-strong focus-visible:ring-offset-2";
 
 export default function ContactPage() {
   const t = useT();
@@ -49,13 +49,8 @@ export default function ContactPage() {
   return (
     <div className="bg-bg">
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--brand-soft)_0%,_transparent_55%)] opacity-90"
-        />
-
-        <div className="relative mx-auto max-w-[1040px] px-5 pb-10 pt-12 md:px-8 md:pb-14 md:pt-16">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">{t("Contact")}</p>
+        <div className="relative mx-auto max-w-[1320px] px-5 pb-10 pt-12 md:px-16 md:pb-14 md:pt-16">
+          <p className="home-eyebrow text-brand-strong">{t("Contact")}</p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
             {t("Tell us how we can help")}
           </h1>
@@ -66,15 +61,15 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-[1040px] px-5 pb-20 md:px-8 md:pb-28">
+      <section className="relative mx-auto max-w-[1320px] px-5 pb-20 md:px-16 md:pb-28">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8 lg:items-start">
           {/* Side panel */}
-          <aside className="overflow-hidden rounded-[1.5rem] border border-line bg-surface shadow-[0_16px_40px_-28px_rgba(15,20,25,0.35)]">
+          <aside className="overflow-hidden rounded-[20px] border border-line bg-surface ">
             <div className="border-b border-line bg-brand-soft/40 px-6 py-6 md:px-7">
               <p className="text-sm font-semibold text-ink">Prefer email?</p>
               <a
                 href="mailto:hello@havenapply.com"
-                className="mt-3 inline-flex items-center gap-2 text-lg font-semibold text-brand transition hover:text-brand-strong"
+                className="mt-3 inline-flex items-center gap-2 text-lg font-semibold text-brand-strong transition hover:text-brand-strong"
               >
                 <Mail size={18} />
                 hello@havenapply.com
@@ -104,7 +99,7 @@ export default function ContactPage() {
                         {l.label}
                         <ArrowRight
                           size={14}
-                          className="text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-brand"
+                          className="text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-brand-strong"
                         />
                       </Link>
                     </li>
@@ -112,7 +107,7 @@ export default function ContactPage() {
                 </ul>
               </div>
 
-              <div className="rounded-2xl border border-line bg-bg-soft/60 px-4 py-4">
+              <div className="rounded-[14px] border border-line bg-bg-soft/60 px-4 py-4">
                 <p className="text-sm font-semibold text-ink">Built for trust</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
                   {t("Haven helps families and communities share applications with clarity, without")}
@@ -123,10 +118,10 @@ export default function ContactPage() {
           </aside>
 
           {/* Form */}
-          <div className="rounded-[1.5rem] border border-line bg-surface p-6 shadow-[0_20px_50px_-32px_rgba(15,20,25,0.4)] md:p-8">
+          <div className="rounded-[20px] border border-line bg-surface p-6  md:p-8">
             {sent ? (
               <div className="flex min-h-[22rem] flex-col items-center justify-center px-4 py-10 text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                <span className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-brand-soft text-brand-strong">
                   <CheckCircle2 size={28} />
                 </span>
                 <h2 className="mt-5 text-2xl font-semibold tracking-tight text-ink">
@@ -153,13 +148,13 @@ export default function ContactPage() {
                           type="button"
                           onClick={() => setTopic(id)}
                           className={cn(
-                            "flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-sm font-medium transition",
+                            "flex items-center gap-2.5 rounded-[14px] border px-3.5 py-3 text-left text-sm font-medium transition",
                             active
                               ? "border-brand/30 bg-brand-soft text-brand-strong shadow-xs"
                               : "border-line bg-bg-soft/40 text-ink-muted hover:border-brand/20 hover:bg-bg-soft",
                           )}
                         >
-                          <Icon size={16} className={active ? "text-brand" : "text-ink-faint"} />
+                          <Icon size={16} className={active ? "text-brand-strong" : "text-ink-faint"} />
                           <span className="leading-snug">{label}</span>
                         </button>
                       );

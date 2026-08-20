@@ -7,8 +7,6 @@ import { ConcernsGrid } from "@/components/marketing/ConcernsGrid";
 import { Faq } from "@/components/marketing/Faq";
 import { FrictionList } from "@/components/marketing/FrictionList";
 import { Hero } from "@/components/marketing/Hero";
-import { HomeFooter } from "@/components/marketing/HomeFooter";
-import { HomeHeader } from "@/components/marketing/HomeHeader";
 import { PrivacyBlock } from "@/components/marketing/PrivacyBlock";
 import { Steps } from "@/components/marketing/Steps";
 import { TrackingPreview } from "@/components/marketing/TrackingPreview";
@@ -16,7 +14,6 @@ import { TrackingPreview } from "@/components/marketing/TrackingPreview";
 export function HomePageView() {
   return (
     <div className="bg-[var(--surface)] text-[var(--ink)]">
-      <HomeHeader />
       <Hero />
       <AudienceCards />
       <Steps />
@@ -31,7 +28,6 @@ export function HomePageView() {
       <ConcernsGrid />
       <Faq />
       <ClosingCta />
-      <HomeFooter />
     </div>
   );
 }

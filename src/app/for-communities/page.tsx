@@ -23,9 +23,9 @@ function ProductPreview() {
     <div className="relative mx-auto w-full max-w-md lg:max-w-none">
       <div
         aria-hidden
-        className="absolute -inset-4 rounded-[2rem] bg-brand/5 blur-2xl md:-inset-6"
+        className="absolute -inset-4 rounded-[2rem] bg-[var(--brand-soft)] blur-2xl md:-inset-6"
       />
-      <div className="relative overflow-hidden rounded-[1.35rem] border border-line bg-surface p-4 shadow-[0_20px_50px_-28px_rgba(15,20,25,0.35)] md:p-5">
+      <div className="relative overflow-hidden rounded-[20px] border border-line bg-surface p-4  md:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-ink-faint">{t("Admissions inbox")}</p>
@@ -53,7 +53,7 @@ function ProductPreview() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-line bg-surface p-3.5">
+          <div className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="mb-2.5 flex items-center justify-between">
               <p className="text-xs font-semibold">{t("Incoming packets")}</p>
               <span className="text-[10px] text-ink-faint">{t("Today")}</span>
@@ -104,9 +104,9 @@ function ProductPreview() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-line bg-bg-soft/50 p-3.5">
+          <div className="rounded-[14px] border border-line bg-bg-soft/50 p-3.5">
             <div className="flex items-center gap-2">
-              <CheckCircle2 size={14} className="text-brand" />
+              <CheckCircle2 size={14} className="text-brand-strong" />
               <p className="text-xs font-semibold">{t("Decision ready")}</p>
             </div>
             <p className="mt-1.5 text-[11px] leading-relaxed text-ink-muted">
@@ -153,14 +153,10 @@ export default function ForCommunitiesPage() {
   return (
     <div className="bg-bg">
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--brand-soft)_0%,_transparent_55%)] opacity-90"
-        />
-        <div className="relative mx-auto grid max-w-[1120px] gap-12 px-5 pb-16 pt-12 md:px-8 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-14">
+        <div className="relative mx-auto grid max-w-[1320px] gap-12 px-5 pb-16 pt-12 md:px-16 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-14">
           <div>
-            <span className="inline-flex rounded-full border border-brand/20 bg-brand-soft/80 px-3 py-1 text-xs font-semibold tracking-wide text-brand-strong">
-              {t("For communities")}
+            <span className="inline-flex rounded-[10px] bg-brand-soft px-3 py-1.5 text-[16px] font-semibold tracking-wide text-brand-strong">
+              {t("For Residences")}
             </span>
             <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
               {t("A simpler way to receive and review senior living applications")}
@@ -184,10 +180,10 @@ export default function ForCommunitiesPage() {
       </section>
 
       <section className="border-y border-line/80 bg-surface/70">
-        <div className="mx-auto grid max-w-[1120px] gap-4 px-5 py-6 sm:grid-cols-2 md:px-8 lg:grid-cols-4 lg:gap-2 lg:py-5">
+        <div className="mx-auto grid max-w-[1320px] gap-4 px-5 py-6 sm:grid-cols-2 md:px-8 lg:grid-cols-4 lg:gap-2 lg:py-5">
           {trustItems.map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3 px-1 py-1">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-strong">
                 <Icon size={16} />
               </span>
               <p className="text-sm font-medium leading-snug text-ink-secondary">{label}</p>
@@ -197,7 +193,7 @@ export default function ForCommunitiesPage() {
       </section>
 
       <section className="border-y border-line/70 bg-brand-soft/35">
-        <div className="mx-auto grid max-w-[1120px] gap-10 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-14">
+        <div className="mx-auto grid max-w-[1320px] gap-10 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-14">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.1rem]">
               {t("Keep your admissions team aligned")}
@@ -215,16 +211,16 @@ export default function ForCommunitiesPage() {
               ].map(({ icon: Icon, label }) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-line/80 bg-surface/90 px-4 py-4 shadow-xs"
+                  className="rounded-[14px] border border-line/80 bg-surface/90 px-4 py-4 shadow-xs"
                 >
-                  <Icon size={16} className="text-brand" />
+                  <Icon size={16} className="text-brand-strong" />
                   <p className="mt-2.5 text-sm font-semibold leading-snug text-ink">{label}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[1.35rem] border border-line bg-surface p-5 shadow-[0_16px_40px_-28px_rgba(15,20,25,0.4)] md:p-6">
+          <div className="rounded-[20px] border border-line bg-surface p-5  md:p-6">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm font-semibold">{t("Admissions team")}</p>
               <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand-strong">
@@ -254,7 +250,7 @@ export default function ForCommunitiesPage() {
               ].map((p) => (
                 <li
                   key={p.name}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-bg-soft/40 px-3.5 py-3"
+                  className="flex items-center justify-between gap-3 rounded-[14px] border border-line bg-bg-soft/40 px-3.5 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand-strong">
@@ -282,8 +278,8 @@ export default function ForCommunitiesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1120px] px-5 py-16 md:px-8 md:py-20">
-        <div className="grid gap-10 rounded-[1.5rem] border border-line bg-surface p-6 shadow-[0_12px_36px_-28px_rgba(15,20,25,0.35)] md:grid-cols-[1fr_1.05fr] md:items-center md:gap-12 md:p-10">
+      <section className="mx-auto max-w-[1320px] px-5 py-16 md:px-8 md:py-20">
+        <div className="grid gap-10 rounded-[20px] border border-line bg-surface p-6  md:grid-cols-[1fr_1.05fr] md:items-center md:gap-12 md:p-10">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-ink md:text-3xl">
               {t("Every application arrives complete")}
@@ -304,9 +300,9 @@ export default function ForCommunitiesPage() {
               return (
                 <div
                   key={c.name}
-                  className="rounded-2xl border border-line bg-bg-soft/50 p-4 text-center"
+                  className="rounded-[14px] border border-line bg-bg-soft/50 p-4 text-center"
                 >
-                  <Icon size={14} className="mx-auto text-brand" />
+                  <Icon size={14} className="mx-auto text-brand-strong" />
                   <p className="mt-2 text-sm font-semibold">{c.name}</p>
                   <p className="mt-1.5 text-[11px] font-medium text-ink-muted">{c.note}</p>
                 </div>
@@ -317,7 +313,7 @@ export default function ForCommunitiesPage() {
       </section>
 
       <section className="border-t border-line/70 bg-surface/60">
-        <div className="mx-auto max-w-[1120px] px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-[1320px] px-5 py-16 md:px-8 md:py-20">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-ink">
             {t("Three steps. Clear admissions.")}
           </h2>
@@ -328,7 +324,7 @@ export default function ForCommunitiesPage() {
             />
             {journey.map((step, i) => (
               <li key={step.title} className="relative text-center md:px-4">
-                <span className="relative z-[1] mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand/25 bg-surface text-lg font-semibold text-brand shadow-xs">
+                <span className="relative z-[1] mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand/25 bg-surface text-lg font-semibold text-brand-strong shadow-xs">
                   {i + 1}
                 </span>
                 <h3 className="mt-5 text-xl font-semibold tracking-tight">{step.title}</h3>
@@ -342,7 +338,7 @@ export default function ForCommunitiesPage() {
       </section>
 
       <section className="px-5 pb-20 pt-4 md:px-8 md:pb-28">
-        <div className="mx-auto max-w-[920px] rounded-[1.75rem] border border-brand/20 bg-gradient-to-br from-brand-soft/80 via-surface to-surface px-6 py-12 text-center shadow-[0_20px_50px_-32px_rgba(15,118,110,0.45)] md:px-12 md:py-14">
+        <div className="mx-auto max-w-[920px] rounded-[1.75rem] border border-brand/20 bg-gradient-to-br from-brand-soft/80 via-surface to-surface px-6 py-12 text-center  md:px-12 md:py-14">
           <h2 className="text-3xl font-semibold tracking-tight text-ink md:text-[2.2rem]">
             {t("Ready to simplify admissions?")}
           </h2>
@@ -364,7 +360,7 @@ export default function ForCommunitiesPage() {
           </p>
           <p className="mt-8 text-sm text-ink-muted">
             {t("Also see")}{" "}
-            <Link href="/for-families" className="font-medium text-brand hover:underline">
+            <Link href="/for-families" className="font-medium text-brand-strong hover:underline">
               {t("For families")}
             </Link>
             .

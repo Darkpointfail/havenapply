@@ -2,13 +2,15 @@ import type { Messages } from "./fr";
 
 /** English strings for the home page. Structure mirrors FR. */
 export const en: Messages = {
-  "home.nav.families": "Families",
-  "home.nav.residences": "Residences",
+  "home.nav.families": "For families",
+  "home.nav.residences": "For residences",
+  "home.nav.contact": "Contact",
   "home.nav.professionals": "Professionals",
   "home.nav.how": "How it works",
   "home.nav.security": "Security",
   "home.nav.signIn": "Sign in",
   "home.nav.start": "Start my application",
+  "home.nav.getStarted": "Get started",
   "home.nav.menu": "Menu",
   "home.nav.close": "Close",
   "home.lang.fr": "FR",

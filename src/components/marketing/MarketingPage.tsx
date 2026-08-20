@@ -17,7 +17,6 @@ export function MarketingPage({
   breadcrumbs,
   points,
   footer,
-  align = "left",
 }: {
   eyebrow: string;
   title: string;
@@ -28,35 +27,26 @@ export function MarketingPage({
   align?: "left" | "right";
 }) {
   return (
-    <div className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute inset-0 opacity-80",
-          align === "right"
-            ? "bg-[radial-gradient(ellipse_at_top_right,_var(--brand-soft)_0%,_transparent_52%)]"
-            : "bg-[radial-gradient(ellipse_at_top_left,_var(--brand-soft)_0%,_transparent_52%)]",
-        )}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/25 to-transparent"
-      />
-
-      <div className="relative mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20">
+    <div className="bg-[var(--surface)]">
+      <div className="mx-auto max-w-[900px] px-5 py-16 md:px-16 md:py-20">
         <nav aria-label="Breadcrumb" className="mb-8">
-          <ol className="flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
+          <ol className="flex flex-wrap items-center gap-1.5 text-[16px] text-[var(--ink-muted)]">
             {breadcrumbs.map((crumb, i) => {
               const last = i === breadcrumbs.length - 1;
               return (
                 <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
-                  {i > 0 && <ChevronRight size={14} className="text-ink-faint" aria-hidden />}
+                  {i > 0 && <ChevronRight size={14} className="text-[var(--ink-faint)]" aria-hidden />}
                   {crumb.href && !last ? (
-                    <Link href={crumb.href} className="transition hover:text-brand">
+                    <Link
+                      href={crumb.href}
+                      className="transition hover:text-[var(--brand-strong)]"
+                    >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className={last ? "font-medium text-ink" : undefined}>{crumb.label}</span>
+                    <span className={last ? "font-medium text-[var(--ink)]" : undefined}>
+                      {crumb.label}
+                    </span>
                   )}
                 </li>
               );
@@ -65,22 +55,27 @@ export function MarketingPage({
         </nav>
 
         <header className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">{eyebrow}</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink md:text-[2.75rem] md:leading-[1.15]">
-            {title}
-          </h1>
-          <p className="mt-4 text-lg leading-relaxed text-ink-muted">{description}</p>
+          <p className="home-eyebrow text-[var(--brand-strong)]">{eyebrow}</p>
+          <h1 className="home-h1 mt-4 text-[var(--ink)] !text-[34px] md:!text-[44px]">{title}</h1>
+          <p className="home-lead mt-4 text-[var(--ink-secondary)]">{description}</p>
         </header>
 
-        <div className="mt-14 space-y-0 divide-y divide-line/80 border-y border-line/80">
+        <div className="mt-14 space-y-0 border-y border-[var(--line)]">
           {points.map((point, i) => (
-            <section key={point.title} className="grid gap-4 py-8 sm:grid-cols-[4.5rem_1fr] sm:gap-6">
-              <p className="font-semibold tabular-nums text-brand/70 sm:pt-1">
+            <section
+              key={point.title}
+              className={cn(
+                "grid gap-4 border-t border-[var(--line)] py-8 first:border-t-0 sm:grid-cols-[4.5rem_1fr] sm:gap-6",
+              )}
+            >
+              <p className="font-semibold tabular-nums text-[var(--brand-strong)] sm:pt-1">
                 {String(i + 1).padStart(2, "0")}
               </p>
               <div>
-                <h2 className="text-xl font-semibold tracking-tight text-ink">{point.title}</h2>
-                <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-ink-muted md:text-base">
+                <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                  {point.title}
+                </h2>
+                <p className="mt-2 max-w-prose text-[18px] leading-[1.6] text-[var(--ink-secondary)]">
                   {point.body}
                 </p>
               </div>
@@ -89,7 +84,7 @@ export function MarketingPage({
         </div>
 
         {footer ? (
-          <footer className="mt-12 max-w-prose text-sm leading-relaxed text-ink-muted">
+          <footer className="mt-12 max-w-prose text-[16px] leading-relaxed text-[var(--ink-muted)]">
             {footer}
           </footer>
         ) : null}

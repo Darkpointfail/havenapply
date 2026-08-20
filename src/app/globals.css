@@ -292,15 +292,16 @@ html.dark body::before {
 
 .home-hero-media-zoom {
   position: absolute;
-  inset: -6%;
-  transform-origin: 65% 40%;
-  animation: home-hero-dezoom 18s var(--ease) forwards;
+  inset: -8%;
+  transform: scale(1.14);
+  transform-origin: 78% 42%;
+  animation: home-hero-dezoom 22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   will-change: transform;
 }
 
 @keyframes home-hero-dezoom {
   from {
-    transform: scale(1.08);
+    transform: scale(1.14);
   }
   to {
     transform: scale(1);

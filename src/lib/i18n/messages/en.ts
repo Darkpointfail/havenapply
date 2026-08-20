@@ -1,6 +1,6 @@
 import type { Messages } from "./fr";
 
-/** English strings for the home page — structure mirrors FR. */
+/** English strings for the home page. Structure mirrors FR. */
 export const en: Messages = {
   "home.nav.families": "Families",
   "home.nav.residences": "Residences",
@@ -18,7 +18,7 @@ export const en: Messages = {
   "home.hero.eyebrow": "Private senior residences · Quebec",
   "home.hero.title": "One application, sent to the residences that truly fit.",
   "home.hero.lead":
-    "You describe the situation once. HavenApply presents it to the right residences — without rebuilding the same file every time.",
+    "You describe the situation once. HavenApply presents it to the right residences : without rebuilding the same file every time.",
   "home.hero.ctaPrimary": "Start my application",
   "home.hero.ctaSecondary": "See how it works",
   "home.hero.note":
@@ -50,7 +50,7 @@ export const en: Messages = {
     "You decide which residences receive the application. Nothing is shared without your explicit consent.",
   "home.steps.3.title": "Follow the replies",
   "home.steps.3.body":
-    "Messages, missing documents, and next steps stay visible — for you and for relatives you invite.",
+    "Messages, missing documents, and next steps stay visible : for you and for relatives you invite.",
 
   "home.friction.title": "What you will not do again",
   "home.friction.1": "Fill out the same form for every residence",
@@ -72,7 +72,7 @@ export const en: Messages = {
   "home.benefits.families.1":
     "One application, sent only to the residences you choose",
   "home.benefits.families.2":
-    "A document vault shared with consent — not scattered attachments",
+    "A document vault shared with consent : not scattered attachments",
   "home.benefits.families.3":
     "Invite a sibling or relative without sharing a password",
   "home.benefits.residences.title": "For residences",
@@ -89,11 +89,11 @@ export const en: Messages = {
   "home.privacy.3": "You can revoke future access from your account",
   "home.privacy.4": "Exchanges stay traceable for authorized people",
   "home.privacy.link": "Learn more about security",
-  "home.privacy.proofTitle": "Proof placeholders — to be completed",
-  "home.privacy.proof.1": "Law 25 — practices to confirm",
-  "home.privacy.proof.2": "Data hosting — region and provider to confirm",
-  "home.privacy.proof.3": "Partner residences — verified list to publish",
-  "home.privacy.proof.4": "Testimonials — only after written approval",
+  "home.privacy.proofTitle": "Proof placeholders : to be completed",
+  "home.privacy.proof.1": "Law 25 : practices to confirm",
+  "home.privacy.proof.2": "Data hosting : region and provider to confirm",
+  "home.privacy.proof.3": "Partner residences : verified list to publish",
+  "home.privacy.proof.4": "Testimonials : only after written approval",
 
   "home.concerns.title": "Legitimate concerns",
   "home.concerns.1.q": "Does this replace human contact?",

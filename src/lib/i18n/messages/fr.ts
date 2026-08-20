@@ -16,7 +16,7 @@ export const fr = {
   "home.hero.title":
     "Une seule demande, envoyée aux résidences qui conviennent vraiment.",
   "home.hero.lead":
-    "Vous décrivez la situation une fois. HavenApply la présente aux résidences adaptées — sans recommencer le même dossier à chaque fois.",
+    "Vous décrivez la situation une fois. HavenApply la présente aux résidences adaptées : sans recommencer le même dossier à chaque fois.",
   "home.hero.ctaPrimary": "Commencer ma demande",
   "home.hero.ctaSecondary": "Voir comment ça marche",
   "home.hero.note":
@@ -48,7 +48,7 @@ export const fr = {
     "Vous décidez quelles résidences reçoivent la demande. Rien n’est partagé sans votre accord explicite.",
   "home.steps.3.title": "Suivez les réponses",
   "home.steps.3.body":
-    "Messages, documents manquants et prochaines étapes restent visibles — pour vous et pour les proches que vous invitez.",
+    "Messages, documents manquants et prochaines étapes restent visibles : pour vous et pour les proches que vous invitez.",
 
   "home.friction.title": "Ce que vous ne referez plus",
   "home.friction.1": "Remplir le même formulaire pour chaque résidence",
@@ -89,11 +89,11 @@ export const fr = {
   "home.privacy.3": "Vous pouvez retirer un accès futur depuis votre espace",
   "home.privacy.4": "Les échanges restent traçables pour les personnes autorisées",
   "home.privacy.link": "En savoir plus sur la sécurité",
-  "home.privacy.proofTitle": "Emplacements de preuve — à remplir",
-  "home.privacy.proof.1": "Loi 25 — conformité et pratiques à préciser",
-  "home.privacy.proof.2": "Hébergement des données — région et fournisseur à confirmer",
-  "home.privacy.proof.3": "Résidences partenaires — liste vérifiée à publier",
-  "home.privacy.proof.4": "Témoignages — uniquement après autorisation écrite",
+  "home.privacy.proofTitle": "Emplacements de preuve : à remplir",
+  "home.privacy.proof.1": "Loi 25 : conformité et pratiques à préciser",
+  "home.privacy.proof.2": "Hébergement des données : région et fournisseur à confirmer",
+  "home.privacy.proof.3": "Résidences partenaires : liste vérifiée à publier",
+  "home.privacy.proof.4": "Témoignages : uniquement après autorisation écrite",
 
   "home.concerns.title": "Des préoccupations légitimes",
   "home.concerns.1.q": "Est-ce que ça remplace le contact humain ?",

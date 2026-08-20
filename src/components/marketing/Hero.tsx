@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
@@ -11,36 +10,22 @@ const focusRing =
 
 export function Hero() {
   const t = useT();
-  const [heroReady, setHeroReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/home/hero.jpg", { method: "HEAD" })
-      .then((res) => {
-        if (!cancelled) setHeroReady(res.ok);
-      })
-      .catch(() => {
-        if (!cancelled) setHeroReady(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <section className="relative isolate overflow-hidden bg-[var(--ink-deep)] px-5 py-20 md:px-16 md:py-24">
-      <div aria-hidden className="absolute inset-0 -z-20 bg-[var(--bg-soft)]" />
-      {heroReady ? (
-        <Image
-          src="/home/hero.jpg"
-          alt=""
-          fill
-          priority
-          aria-hidden
-          sizes="100vw"
-          className="-z-20 object-cover"
-        />
-      ) : null}
+      <div className="home-hero-media" aria-hidden>
+        <div className="absolute inset-0 bg-[var(--bg-soft)]" />
+        <div className="home-hero-media-zoom">
+          <Image
+            src="/home/hero.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[65%_40%]"
+          />
+        </div>
+      </div>
       <div
         aria-hidden
         className="absolute inset-0 -z-10"

@@ -282,6 +282,31 @@ html.dark body::before {
   opacity: 1;
   transform: translateY(0);
 }
+
+.home-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -20;
+  overflow: hidden;
+}
+
+.home-hero-media-zoom {
+  position: absolute;
+  inset: -6%;
+  transform-origin: 65% 40%;
+  animation: home-hero-dezoom 18s var(--ease) forwards;
+  will-change: transform;
+}
+
+@keyframes home-hero-dezoom {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -291,6 +316,11 @@ html.dark body::before {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .home-hero-media-zoom {
+    animation: none !important;
+    transform: none !important;
+    inset: 0;
   }
   .animate-rise,
   .animate-fade,

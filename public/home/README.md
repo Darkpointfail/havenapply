@@ -1,2 +1,2 @@
-# Drop marketing photos here.
-# Expected: hero.jpg (full-bleed home hero). Until then the hero uses a soft placeholder.
+# Home marketing assets
+# hero.jpg — full-bleed hero (happy seniors / residence atmosphere)

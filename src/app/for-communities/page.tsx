@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { LaptopFrame } from "@/components/marketing/LaptopFrame";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
@@ -20,12 +21,8 @@ function ProductPreview() {
   const t = useT();
 
   return (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-      <div
-        aria-hidden
-        className="absolute -inset-4 rounded-[2rem] bg-[var(--brand-soft)] blur-2xl md:-inset-6"
-      />
-      <div className="relative overflow-hidden rounded-[20px] border border-line bg-surface p-4  md:p-5">
+    <LaptopFrame className="max-w-md lg:max-w-none" screenClassName="bg-[var(--bg-soft)]">
+      <div className="p-4 md:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-ink-faint">{t("Admissions inbox")}</p>
@@ -115,7 +112,7 @@ function ProductPreview() {
           </div>
         </div>
       </div>
-    </div>
+    </LaptopFrame>
   );
 }
 

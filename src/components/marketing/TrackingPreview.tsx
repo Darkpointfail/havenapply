@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { LaptopFrame } from "@/components/marketing/LaptopFrame";
 import { Reveal } from "@/components/marketing/Reveal";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
@@ -64,44 +65,46 @@ export function TrackingPreview() {
 
   return (
     <Reveal>
-      <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-6 md:p-8">
-        <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-[var(--ink)] md:text-[22px]">
-          {t("home.tracking.title")}
-        </h3>
-        <ul className="mt-6 space-y-4">
-          {rows.map((row) => (
-            <li
-              key={row.name}
-              className="flex items-center gap-4 rounded-[14px] border border-[var(--line)] p-3"
-            >
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
-                <Image
-                  src={row.image}
-                  alt=""
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                  aria-hidden
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[17px] font-semibold text-[var(--ink)]">
-                  {t(row.name)}
-                </p>
-                <span
-                  className={cn(
-                    "mt-1.5 inline-flex items-center gap-2 rounded-[10px] bg-[var(--bg-soft)] px-2.5 py-1 text-[16px] font-medium text-[var(--ink-secondary)]",
-                  )}
-                >
-                  <StatusMark shape={row.shape} />
-                  {t(row.status)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <p className="home-small mt-5 text-[var(--ink-muted)]">{t("home.tracking.disclaimer")}</p>
-      </div>
+      <LaptopFrame screenClassName="bg-[var(--surface)]">
+        <div className="p-6 md:p-8">
+          <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-[var(--ink)] md:text-[22px]">
+            {t("home.tracking.title")}
+          </h3>
+          <ul className="mt-6 space-y-4">
+            {rows.map((row) => (
+              <li
+                key={row.name}
+                className="flex items-center gap-4 rounded-[14px] border border-[var(--line)] p-3"
+              >
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                  <Image
+                    src={row.image}
+                    alt=""
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                    aria-hidden
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[17px] font-semibold text-[var(--ink)]">
+                    {t(row.name)}
+                  </p>
+                  <span
+                    className={cn(
+                      "mt-1.5 inline-flex items-center gap-2 rounded-[10px] bg-[var(--bg-soft)] px-2.5 py-1 text-[16px] font-medium text-[var(--ink-secondary)]",
+                    )}
+                  >
+                    <StatusMark shape={row.shape} />
+                    {t(row.status)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="home-small mt-5 text-[var(--ink-muted)]">{t("home.tracking.disclaimer")}</p>
+        </div>
+      </LaptopFrame>
     </Reveal>
   );
 }

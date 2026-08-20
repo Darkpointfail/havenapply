@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DossierLaptopDemo } from "@/components/marketing/DossierLaptopDemo";
 import { useT } from "@/lib/i18n/locale";
 
 const bigSteps = [
@@ -75,26 +76,31 @@ export default function HowItWorksPage() {
   const t = useT();
   return (
     <div className="bg-bg">
-      {/* Hero */}
+      {/* Hero + animated laptop */}
       <section className="relative overflow-hidden">
-        <div className="relative mx-auto max-w-[1320px] px-5 pb-12 pt-12 md:px-16 md:pb-16 md:pt-16">
-          <p className="home-eyebrow text-brand-strong">
-            {t("How it works")}
-          </p>
-          <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
-            {t("One profile. Then apply everywhere.")}
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
-            {t("Create the dossier once, discover the right communities, and send applications without")}
-            starting over, so your family can move forward with clarity.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button href="/family/dashboard" size="lg">
-              {t("Create a family profile")}
-            </Button>
-            <Button href="/for-communities" size="lg" variant="secondary">
-              {t("I’m a community")}
-            </Button>
+        <div className="relative mx-auto grid max-w-[1320px] items-center gap-10 px-5 pb-12 pt-12 md:grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] md:gap-10 md:px-16 md:pb-16 md:pt-16 lg:gap-14">
+          <div className="min-w-0">
+            <p className="home-eyebrow text-brand-strong">{t("How it works")}</p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink md:text-[2.85rem] md:leading-[1.12]">
+              {t("One profile. Then apply everywhere.")}
+            </h1>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
+              {t(
+                "Create the dossier once, discover the right communities, and send applications without starting over, so your family can move forward with clarity.",
+              )}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button href="/get-started" size="lg">
+                {t("Create a family profile")}
+              </Button>
+              <Button href="/for-communities" size="lg" variant="secondary">
+                {t("I’m a community")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="min-w-0 w-full md:justify-self-end">
+            <DossierLaptopDemo />
           </div>
         </div>
       </section>

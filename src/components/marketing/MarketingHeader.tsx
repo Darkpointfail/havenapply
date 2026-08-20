@@ -69,7 +69,7 @@ export function MarketingHeader() {
           aria-label={t("Navigation menu")}
         >
           <div className="flex min-h-16 items-center justify-between border-b border-[var(--line)] px-5">
-            <Logo href="/" size="md" className="!ml-0 !translate-y-0" />
+            <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
             <button
               type="button"
               className={cn(
@@ -135,11 +135,11 @@ export function MarketingHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--surface)]/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-5 py-3 md:px-16 md:py-4">
-        <Logo href="/" size="lg" className="!ml-0 !translate-y-0" />
+      <div className="mx-auto flex h-[4.5rem] max-w-[1320px] items-center gap-5 px-5 md:h-[4.75rem] md:gap-8 md:px-16">
+        <Logo href="/" size="nav" className="!ml-0 !translate-y-0 self-center" />
 
         <nav
-          className="ml-4 hidden flex-1 items-center gap-1 md:ml-8 lg:flex"
+          className="hidden flex-1 items-center gap-0.5 self-center lg:flex"
           aria-label={t("Public")}
         >
           {publicNav.map((item) => (
@@ -147,7 +147,7 @@ export function MarketingHeader() {
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-[14px] px-3 py-2.5 text-[16px] font-medium transition-colors",
+                "inline-flex h-10 items-center rounded-[14px] px-3 text-[16px] font-medium leading-none transition-colors",
                 focusRing,
                 isActive(item.href)
                   ? "bg-[var(--brand-soft)] text-[var(--brand-strong)]"
@@ -159,12 +159,12 @@ export function MarketingHeader() {
           ))}
         </nav>
 
-        <div className="ml-auto hidden items-center gap-3 lg:flex">
+        <div className="ml-auto hidden items-center gap-3 self-center lg:flex">
           <LanguageSwitcher />
           <Link
             href={publicAuthLinks.signIn}
             className={cn(
-              "inline-flex h-14 min-w-[7.5rem] items-center justify-center rounded-[14px] px-4 text-[16px] font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)]",
+              "inline-flex h-11 min-w-[7rem] items-center justify-center rounded-[14px] px-4 text-[16px] font-semibold leading-none text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)]",
               focusRing,
             )}
           >
@@ -173,7 +173,7 @@ export function MarketingHeader() {
           <Link
             href={publicAuthLinks.register}
             className={cn(
-              "inline-flex h-14 items-center justify-center rounded-[14px] bg-[var(--brand-strong)] px-5 text-[16px] font-semibold text-white transition-colors hover:brightness-95",
+              "inline-flex h-11 items-center justify-center rounded-[14px] bg-[var(--brand-strong)] px-5 text-[16px] font-semibold leading-none text-white transition-colors hover:brightness-95",
               focusRing,
             )}
           >
@@ -184,7 +184,7 @@ export function MarketingHeader() {
         <button
           type="button"
           className={cn(
-            "ml-auto inline-flex h-14 w-14 items-center justify-center rounded-[14px] bg-[var(--bg-soft)] text-[var(--ink)] lg:hidden",
+            "ml-auto inline-flex h-11 w-11 shrink-0 items-center justify-center self-center rounded-[14px] bg-[var(--bg-soft)] text-[var(--ink)] lg:hidden",
             focusRing,
           )}
           aria-label={open ? t("Close menu") : t("Open menu")}

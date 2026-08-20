@@ -13,13 +13,19 @@ export function Logo({
   markOnly?: boolean;
   light?: boolean;
   href?: string;
-  size?: "md" | "lg";
+  /** nav = header marketing, aligned with 16px titles */
+  size?: "md" | "lg" | "nav";
 }) {
   const large = size === "lg";
+  const nav = size === "nav";
   // Cropped assets: height = visible wordmark (no empty PNG padding)
-  const heightClass = large ? "h-[2.7rem] md:h-[3.05rem]" : "h-8 md:h-9";
-  const markSize = large ? "h-[2.7rem] w-[2.7rem]" : "h-8 w-8";
-  const maxWidth = large ? "292px" : "215px";
+  const heightClass = large
+    ? "h-[2.7rem] md:h-[3.05rem]"
+    : nav
+      ? "h-9 md:h-10"
+      : "h-8 md:h-9";
+  const markSize = large ? "h-[2.7rem] w-[2.7rem]" : nav ? "h-9 w-9 md:h-10 md:w-10" : "h-8 w-8";
+  const maxWidth = large ? "292px" : nav ? "200px" : "215px";
 
   const imageClass = cn(
     "w-auto object-contain object-left",
@@ -36,9 +42,10 @@ export function Logo({
     <Link
       href={href}
       className={cn(
-        "inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90 -ml-0.5",
-        // Optical crop on desktop; sit lower/centered on mobile header
-        "translate-y-1 md:-translate-y-1.5",
+        "inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90",
+        // Optical crop only for large wordmark in dense chrome
+        large && "-ml-0.5 translate-y-1 md:-translate-y-1.5",
+        !large && "ml-0 translate-y-0",
         className,
       )}
       aria-label="HavenApply home"

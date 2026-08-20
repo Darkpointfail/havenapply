@@ -10,8 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import { translate, type Locale } from "@/lib/i18n/messages";
+import { en as homeEn } from "@/lib/i18n/messages/en";
+import { fr as homeFr, type MessageKey } from "@/lib/i18n/messages/fr";
+
+export type { Locale };
 
 const STORAGE_KEY = "haven-locale";
+const homeCatalogs = { fr: homeFr, en: homeEn } as const;
 
 type I18nContextValue = {
   locale: Locale;
@@ -36,14 +41,26 @@ function interpolate(template: string, vars?: Record<string, string | number>) {
   return out;
 }
 
+function resolveMessage(locale: Locale, key: string) {
+  if (Object.prototype.hasOwnProperty.call(homeFr, key)) {
+    const catalog = homeCatalogs[locale] ?? homeCatalogs.fr;
+    return catalog[key as MessageKey] ?? homeFr[key as MessageKey] ?? key;
+  }
+  return translate(locale, key);
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("fr");
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-    const next: Locale = stored === "fr" || stored === "en" ? stored : "en";
-    setLocaleState(next);
-    applyLocale(next);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const next: Locale = stored === "fr" || stored === "en" ? stored : "fr";
+      setLocaleState(next);
+      applyLocale(next);
+    } catch {
+      applyLocale("fr");
+    }
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
@@ -51,7 +68,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // ignore quota / private mode write failures
+      /* ignore quota / private mode */
     }
     applyLocale(next);
   }, []);
@@ -62,7 +79,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem(STORAGE_KEY, next);
       } catch {
-        // ignore
+        /* ignore */
       }
       applyLocale(next);
       return next;
@@ -71,7 +88,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) =>
-      interpolate(translate(locale, key), vars),
+      interpolate(resolveMessage(locale, key), vars),
     [locale],
   );
 
@@ -91,4 +108,9 @@ export function useI18n() {
 
 export function useT() {
   return useI18n().t;
+}
+
+export function useLocale() {
+  const { locale, setLocale } = useI18n();
+  return { locale, setLocale };
 }

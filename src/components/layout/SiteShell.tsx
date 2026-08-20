@@ -146,12 +146,19 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isMarketingHome = pathname === "/";
   const hideFooter =
-    isPublicAuth || isPortalAuth || isCoreFamily || isCommunity || isInternal || isProfessional;
+    isMarketingHome ||
+    isPublicAuth ||
+    isPortalAuth ||
+    isCoreFamily ||
+    isCommunity ||
+    isInternal ||
+    isProfessional;
 
   return (
     <>
-      <PublicHeader />
+      {!isMarketingHome && <PublicHeader />}
       <main className="flex-1 page-enter">{children}</main>
       {!hideFooter && <Footer />}
     </>

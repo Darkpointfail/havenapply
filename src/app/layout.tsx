@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full`}>
+    <html lang="fr" className={`${outfit.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans antialiased">
         <AppProviders>
           <SiteShell>{children}</SiteShell>

@@ -146,14 +146,25 @@ function GetStartedInner() {
       return;
     }
     if (result.pendingConfirmation) {
-      router.push(
-        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}`,
-      );
+      try {
+        sessionStorage.setItem(
+          "haven-pending-email",
+          JSON.stringify({ email: result.data.email, role }),
+        );
+      } catch {
+        /* ignore */
+      }
+      router.push(`/check-email?role=${encodeURIComponent(role)}`);
       return;
     }
     if (result.needsManualSignIn) {
+      try {
+        sessionStorage.setItem("haven-signin-email", result.data.email);
+      } catch {
+        /* ignore */
+      }
       router.push(
-        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(
+        `/sign-in?registered=1&next=${encodeURIComponent(
           role === "facility"
             ? "/community/dashboard"
             : role === "professional"

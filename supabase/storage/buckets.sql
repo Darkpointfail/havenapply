@@ -67,6 +67,7 @@ create policy community_media_public_read on storage.objects
 
 -- Path conventions (enforced in Edge Functions, not SQL):
 -- senior-documents:     {family_id}/{senior_id}/{document_id}/v{version}
--- message-attachments:  {conversation_id}/{message_id}/{filename}
+-- message-attachments:  {conversation_id}/{message_id}/{attachment_id}  (never original filename)
 -- community-media:      {organization_id}/{community_id}/{asset_id}
 -- exports:              {user_id}/{export_id}
+-- Do not put emails, names, or other PII in object keys or signed URL paths.

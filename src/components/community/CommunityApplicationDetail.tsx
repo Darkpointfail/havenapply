@@ -255,7 +255,8 @@ export function CommunityApplicationDetail() {
   const priority = applicationPriority(app);
   const communityName =
     workspace.profile?.name || workspace.residenceName || "our community";
-  const messageHref = `/community/messages?family=${encodeURIComponent(app.family.email)}&application=${encodeURIComponent(app.id)}&senior=${encodeURIComponent(app.seniorName)}&residence=${encodeURIComponent(app.residenceId)}`;
+  // Application id only — no email / senior name in the URL.
+  const messageHref = `/community/messages?application=${encodeURIComponent(app.id)}&residence=${encodeURIComponent(app.residenceId)}`;
   const appRecord = app as unknown as Record<string, unknown>;
   const aiHighlights = Array.isArray(appRecord.aiHighlights)
     ? (appRecord.aiHighlights as string[]).filter(Boolean)

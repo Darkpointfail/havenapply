@@ -35,8 +35,21 @@ function createToken() {
   return toHex(bytes.buffer);
 }
 async function hashPassword(password, salt) {
-  const data = new TextEncoder().encode(`${salt}:${password}`);
-  return toHex(await crypto.subtle.digest("SHA-256", data));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const saltBytes = new Uint8Array(salt.match(/.{1,2}/g).map((b) => parseInt(b, 16)));
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 210000 },
+    keyMaterial,
+    256,
+  );
+  const digest = toHex(bits);
+  return `pbkdf2-sha256$210000$${digest}`;
 }
 
 function readAccounts() {

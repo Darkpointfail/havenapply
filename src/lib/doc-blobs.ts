@@ -1,4 +1,6 @@
-/** IndexedDB blob store for document files (client-side only) */
+/** IndexedDB blob store for document files (client-side only), AES-GCM wrapped. */
+
+import { decryptDocBlob, encryptDocBlob } from "@/lib/security/doc-crypto";
 
 const DB_NAME = "haven-doc-blobs";
 const STORE = "blobs";
@@ -21,10 +23,11 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function putDocBlob(id: string, blob: Blob) {
+  const sealed = await encryptDocBlob(blob);
   const db = await openDb();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(blob, id);
+    tx.objectStore(STORE).put(sealed, id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -33,12 +36,14 @@ export async function putDocBlob(id: string, blob: Blob) {
 export async function getDocBlob(id: string): Promise<Blob | null> {
   try {
     const db = await openDb();
-    return new Promise((resolve, reject) => {
+    const stored = await new Promise<Blob | null>((resolve, reject) => {
       const tx = db.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).get(id);
       req.onsuccess = () => resolve((req.result as Blob) || null);
       req.onerror = () => reject(req.error);
     });
+    if (!stored) return null;
+    return decryptDocBlob(stored);
   } catch {
     return null;
   }

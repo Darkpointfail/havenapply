@@ -1,19 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   SITE_ACCESS_COOKIE,
-  SITE_ACCESS_COOKIE_VALUE,
   SITE_ACCESS_PATH,
   isSiteAccessPublicPath,
+  isValidSiteAccessCookie,
   safeSiteNextPath,
+  siteAccessGateDisabled,
 } from "@/lib/site-access";
+import { applySecurityHeaders, enforceHttpsOrRedirect } from "@/lib/security/tls";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  const httpsRedirect = enforceHttpsOrRedirect(request);
+  if (httpsRedirect) return applySecurityHeaders(httpsRedirect);
+
   const { pathname } = request.nextUrl;
 
-  if (!isSiteAccessPublicPath(pathname)) {
-    const unlocked =
-      request.cookies.get(SITE_ACCESS_COOKIE)?.value === SITE_ACCESS_COOKIE_VALUE;
+  if (!siteAccessGateDisabled() && !isSiteAccessPublicPath(pathname)) {
+    const unlocked = await isValidSiteAccessCookie(
+      request.cookies.get(SITE_ACCESS_COOKIE)?.value,
+    );
     if (!unlocked) {
       const url = request.nextUrl.clone();
       url.pathname = SITE_ACCESS_PATH;
@@ -22,18 +28,16 @@ export async function middleware(request: NextRequest) {
       if (next !== SITE_ACCESS_PATH) {
         url.searchParams.set("next", next);
       }
-      return NextResponse.redirect(url);
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
   }
 
-  return updateSession(request);
+  const response = await updateSession(request);
+  return applySecurityHeaders(response);
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static assets and images.
-     */
     "/((?!_next/static|_next/image|favicon.ico|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

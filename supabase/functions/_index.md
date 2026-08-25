@@ -55,7 +55,7 @@ Shared response shape:
 
 **Side effect:** insert `document_access_logs`.
 
-**Result:** `{ "download_url", "expires_in" }`
+**Result:** `{ "download_url", "expires_in" }` — TTL ≤ 120s (≤ 60s for elevated clinical/financial categories). Object keys must be opaque UUIDs; never put original filenames or PII in the storage path.
 
 ---
 

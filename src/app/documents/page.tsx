@@ -228,15 +228,53 @@ export default function DocumentsPage() {
       setError("No file is stored for this document yet. Upload or replace a file to download.");
       return;
     }
+
+    // Short-lived signed grant (server HMAC) before releasing the file.
+    const grantRes = await fetch("/api/documents/signed-download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        documentId: doc.id,
+        category: doc.category,
+        mimeType: doc.mimeType,
+        originalName: doc.name,
+      }),
+    });
+    const grantJson = (await grantRes.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { token?: string; filename?: string; downloadUrl?: string };
+      error?: string;
+    } | null;
+    if (!grantRes.ok || !grantJson?.ok || !grantJson.data?.token) {
+      setError(grantJson?.error || "Could not create a secure download link.");
+      return;
+    }
+
+    const consumeRes = await fetch("/api/documents/consume-download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: grantJson.data.token }),
+    });
+    if (!consumeRes.ok) {
+      setError("Download link expired or already used. Try again.");
+      return;
+    }
+
     privacy?.logAccess({
       action: "download",
       resource: doc.name,
       detail: `Category: ${doc.category}`,
     });
+
+    if (grantJson.data.downloadUrl) {
+      window.location.assign(grantJson.data.downloadUrl);
+      return;
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = doc.name;
+    a.download = grantJson.data.filename || `haven-${doc.id}`;
     a.click();
     URL.revokeObjectURL(url);
   };

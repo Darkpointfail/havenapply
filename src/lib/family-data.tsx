@@ -362,9 +362,16 @@ function formatDate() {
   });
 }
 
-function storageKey(email: string) {
-  // v4: replace legacy names (Andrea Mazurie / Margaret Chen) with Paul Gilbert
-  return `haven-family-v4-${email.toLowerCase()}`;
+async function resolveFamilyStorageKey(email: string): Promise<{
+  key: string;
+  legacy: string;
+}> {
+  const { familyDataKeyCandidates, familyDataStorageKey } = await import(
+    "@/lib/security/opaque-key"
+  );
+  const candidates = familyDataKeyCandidates(email);
+  const key = await familyDataStorageKey(email);
+  return { key, legacy: candidates.legacy };
 }
 
 function summarizeSection(items: string[]) {
@@ -650,21 +657,31 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
-    try {
-      const raw = localStorage.getItem(storageKey(user.email));
-      const base = raw ? migrateFamilyData(JSON.parse(raw)) : emptyFamilyData();
-      const synced = {
-        ...base,
-        applications: syncAppsFromSharedBridge(base.applications),
-      };
-      setData(synced);
-      if (raw && JSON.stringify(synced.applications) !== JSON.stringify(base.applications)) {
-        localStorage.setItem(storageKey(user.email), JSON.stringify(synced));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { key, legacy } = await resolveFamilyStorageKey(user.email);
+        if (cancelled) return;
+        const raw =
+          localStorage.getItem(key) || localStorage.getItem(legacy);
+        const base = raw ? migrateFamilyData(JSON.parse(raw)) : emptyFamilyData();
+        const synced = {
+          ...base,
+          applications: syncAppsFromSharedBridge(base.applications),
+        };
+        setData(synced);
+        localStorage.setItem(key, JSON.stringify(synced));
+        if (localStorage.getItem(legacy) && key !== legacy) {
+          localStorage.removeItem(legacy);
+        }
+      } catch {
+        if (!cancelled) setData(emptyFamilyData());
       }
-    } catch {
-      setData(emptyFamilyData());
-    }
-    setReady(true);
+      if (!cancelled) setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [authReady, user]);
 
   const persist = useCallback(
@@ -672,7 +689,10 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       setData((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         if (user?.role === "family") {
-          localStorage.setItem(storageKey(user.email), JSON.stringify(next));
+          void resolveFamilyStorageKey(user.email).then(({ key, legacy }) => {
+            localStorage.setItem(key, JSON.stringify(next));
+            if (localStorage.getItem(legacy)) localStorage.removeItem(legacy);
+          });
         }
         return next;
       });

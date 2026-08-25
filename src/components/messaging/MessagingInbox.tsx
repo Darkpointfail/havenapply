@@ -29,6 +29,26 @@ import { getResidence, residences } from "@/data/residences";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/locale";
+import {
+  getSharedByFamilyAppId,
+  sharedIdFromCommunityAppId,
+  listSharedForResidence,
+} from "@/lib/admissions-bridge";
+
+function resolveSharedPacket(applicationId: string, residenceId: string) {
+  const sharedId = sharedIdFromCommunityAppId(applicationId);
+  const byFamily = getSharedByFamilyAppId(applicationId);
+  if (byFamily) return byFamily;
+  if (sharedId) {
+    const hit = listSharedForResidence(residenceId).find((p) => p.id === sharedId);
+    if (hit) return hit;
+  }
+  return (
+    listSharedForResidence(residenceId).find(
+      (p) => p.id === applicationId || p.familyApplicationId === applicationId,
+    ) || null
+  );
+}
 
 export function MessagingInbox({
   portal = "family",
@@ -76,18 +96,56 @@ export function MessagingInbox({
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [visibleThreads, query, showArchived, role]);
 
-  // Deep link ?community= (family) or ?family= (community)
+  // Deep link by application id only (no email / senior name in the URL)
   useEffect(() => {
     if (!ready) return;
     const community = params.get("community");
-    const familyEmail = params.get("family");
     const applicationId = params.get("application");
+    const legacyFamilyEmail = params.get("family");
     const senior = params.get("senior");
 
-    if (portal === "community" && familyEmail) {
+    if (portal === "community" && applicationId) {
+      const existing = visibleThreads.find(
+        (t) => t.applicationId === applicationId && !t.archivedByCommunity,
+      );
+      if (existing) {
+        setActiveId(existing.id);
+        return;
+      }
+      const residenceId = params.get("residence") || "maple-grove";
+      const r = getResidence(residenceId);
+      const fromBridge = resolveSharedPacket(applicationId, residenceId);
+      const familyEmail = fromBridge?.family.email || legacyFamilyEmail || "";
+      if (!familyEmail) return;
+      const id = startConversation({
+        scope: "application",
+        residenceId,
+        residenceName: r?.name || "Your community",
+        avatar: r?.image || "/images/residences/maple-grove.jpg",
+        applicationId,
+        familyEmail,
+        fromRole: "community",
+        subject: fromBridge?.seniorName
+          ? `Application · ${fromBridge.seniorName}`
+          : "Application message",
+        firstMessage: fromBridge?.seniorName
+          ? `Hello, regarding ${fromBridge.seniorName}’s application, we’d like to connect securely on Haven.`
+          : "Hello, we’d like to connect securely on Haven about your application.",
+      });
+      if (id) setActiveId(id);
+      if (typeof window !== "undefined" && (legacyFamilyEmail || senior)) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("family");
+        url.searchParams.delete("senior");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+      return;
+    }
+
+    if (portal === "community" && legacyFamilyEmail) {
       const existing = visibleThreads.find(
         (t) =>
-          t.authorizedFamilyEmails.includes(familyEmail.toLowerCase()) &&
+          t.authorizedFamilyEmails.includes(legacyFamilyEmail.toLowerCase()) &&
           (!applicationId || t.applicationId === applicationId) &&
           !t.archivedByCommunity,
       );
@@ -103,16 +161,19 @@ export function MessagingInbox({
         residenceName: r?.name || "Your community",
         avatar: r?.image || "/images/residences/maple-grove.jpg",
         applicationId,
-        familyEmail,
+        familyEmail: legacyFamilyEmail,
         fromRole: "community",
-        subject: senior
-          ? `Application · ${decodeURIComponent(senior)}`
-          : `Message · ${familyEmail}`,
-        firstMessage: senior
-          ? `Hello, regarding ${decodeURIComponent(senior)}’s application, we’d like to connect securely on Haven.`
-          : "Hello, we’d like to connect securely on Haven about your application.",
+        subject: "Application message",
+        firstMessage:
+          "Hello, we’d like to connect securely on Haven about your application.",
       });
       if (id) setActiveId(id);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("family");
+        url.searchParams.delete("senior");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
       return;
     }
 

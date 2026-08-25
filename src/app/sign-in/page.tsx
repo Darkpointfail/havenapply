@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import {
   AuthAlert,
   AuthField,
@@ -24,10 +24,33 @@ function SignInForm() {
   const params = useSearchParams();
   const next = params.get("next");
   const registered = params.get("registered") === "1";
-  const [email, setEmail] = useState(params.get("email") || "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("haven-signin-email");
+      if (stored) setEmail(stored);
+    } catch {
+      /* ignore */
+    }
+    const q = params.get("email");
+    if (q) {
+      setEmail(q);
+      try {
+        sessionStorage.setItem("haven-signin-email", q);
+      } catch {
+        /* ignore */
+      }
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("email");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+  }, [params]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();

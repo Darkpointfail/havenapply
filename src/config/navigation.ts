@@ -30,7 +30,7 @@ export const publicAuthLinks = {
  * Apply happens on each community profile.
  */
 export const familyNav: NavItem[] = [
-  { href: "/", label: "Accueil" },
+  { href: "/family/dashboard", label: "Accueil" },
   { href: "/family/dossier", label: "Dossier" },
   { href: "/family/profile", label: "Profile" },
   { href: "/family/find-communities", label: "Communities" },
@@ -44,8 +44,8 @@ export const familyNavGroups: NavGroup[] = [
   {
     id: "dashboard",
     label: "Accueil",
-    href: "/",
-    children: [{ href: "/", label: "Espace famille" }],
+    href: "/family/dashboard",
+    children: [{ href: "/family/dashboard", label: "Espace famille" }],
   },
   {
     id: "dossier",
@@ -99,7 +99,7 @@ export const familyNavGroups: NavGroup[] = [
 
 /** Bottom bar, mirrors the journey steps */
 export const familyMobileNav: NavItem[] = [
-  { href: "/", label: "Accueil" },
+  { href: "/family/dashboard", label: "Accueil" },
   { href: "/family/dossier", label: "Dossier" },
   { href: "/family/find-communities", label: "Communities" },
   { href: "/family/applications", label: "My applications" },
@@ -194,7 +194,7 @@ export const professionalNav: NavItem[] = [
   { href: "/professional/organization", label: "My Organization" },
 ];
 
-export const familyHome = "/";
+export const familyHome = "/family/dashboard";
 export const communityHome = "/community/dashboard";
 export const internalHome = "/internal/overview";
 export const professionalHome = "/professional/dashboard";

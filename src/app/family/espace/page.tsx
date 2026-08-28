@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Legacy path — the family space now lives at the site root. */
+/** Legacy path — B2C family space lives at /family/dashboard. */
 export default function FamilyEspaceRedirectPage() {
-  redirect("/");
+  redirect("/family/dashboard");
 }

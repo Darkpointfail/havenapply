@@ -33,10 +33,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   const isCoreFamily = isFamilyPortalPath(pathname);
   const isBrowse = isSharedBrowsePath(pathname);
+  const isPublicHome = pathname === "/";
   const isFamilyEspaceUi =
-    pathname === "/" ||
-    pathname === "/family/dashboard" ||
-    pathname.startsWith("/family/espace");
+    pathname === "/family/dashboard" || pathname.startsWith("/family/espace");
   const isCommunityConsoleUi =
     pathname === "/community/dashboard" || pathname.startsWith("/community/console");
   const isCommunity = pathname.startsWith("/community") || pathname.startsWith("/admin");
@@ -58,8 +57,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  // Full-bleed product UIs: family space (root / B2C) and residence console (B2B).
-  if (isSiteAccess || pathname === "/") {
+  // Marketing homepage and full-bleed product UIs own their chrome.
+  if (isSiteAccess || isPublicHome) {
     return <main className="flex-1">{children}</main>;
   }
 

@@ -56,17 +56,17 @@ const FAQ = [
 const STEPS = [
   {
     n: "1",
-    title: "Vous racontez la situation",
+    title: "Créez son profil une fois, utilisez-le pour plusieurs résidences",
     body: "Une conversation avec notre accompagnatrice remplace le formulaire. Elle pose les questions, vous répondez avec vos mots.",
   },
   {
     n: "2",
-    title: "Vous envoyez en un clic",
+    title: "Choisissez les résidences et envoyez vos demandes en ligne",
     body: "Vous comparez prix, services et disponibilités réelles, puis vous cochez les résidences retenues. Le dossier part en ligne à toutes en même temps, avec les pièces jointes.",
   },
   {
     n: "3",
-    title: "Vous suivez les réponses en ligne",
+    title: "Suivez toutes les demandes de votre proche au même endroit",
     body: "Accusé de réception, position sur la liste d'attente, pièces manquantes, décision. Chaque réponse arrive dans votre espace, sans un seul appel.",
   },
 ] as const;
@@ -531,7 +531,7 @@ export function PublicHomePage() {
       <section id="comment" className="scroll-mt-24 bg-white py-20 md:py-24">
         <div className="hp-wrap">
           <h2 className="hp-h2 max-w-3xl text-[var(--hp-ink)]">
-            Trois étapes, entièrement en ligne
+            Une démarche simple pour vous, un dossier complet pour votre proche
           </h2>
           <p className="hp-body mt-4 max-w-3xl">
             Depuis votre salon, votre téléphone ou la chambre d&apos;hôpital. Vous répondez à des
@@ -569,7 +569,7 @@ export function PublicHomePage() {
               Accompagnement par intelligence artificielle
             </span>
             <h2 className="hp-h2 mt-6 text-white" style={{ fontSize: 40 }}>
-              Vous n&apos;êtes pas seul devant le formulaire
+              Vous n&apos;avez pas besoin de tout comprendre pour commencer
             </h2>
             <p className="mt-5 text-[17.5px] leading-[1.6] text-white/85 hp-pretty">
               Claire vous guide par une simple discussion. Elle explique chaque question, remplit
@@ -727,7 +727,7 @@ export function PublicHomePage() {
       <section className="py-20 text-center md:py-24" style={{ background: "var(--hp-black)" }}>
         <div className="hp-wrap mx-auto max-w-3xl">
           <h2 className="hp-h2 text-white" style={{ fontSize: 40 }}>
-            Remplissez ce soir, envoyez en ligne demain matin
+            Prêt à commencer les démarches pour votre proche ?
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-[17.5px] leading-[1.6] text-white/85 hp-pretty">
             Créer un compte prend deux minutes. Vous pouvez tout arrêter et reprendre plus tard,

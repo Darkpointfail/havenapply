@@ -3,21 +3,31 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { ClipboardList, Sparkles } from "lucide-react";
+import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { RequireAuth } from "@/components/auth/RequireAuth";
-import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
-import { useT } from "@/lib/i18n/locale";
+import "@/components/marketing/public-home.css";
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-public-sans",
+  display: "swap",
+});
 
 function StartChoiceInner() {
   const router = useRouter();
   const { user, ready } = useAuth();
   const { data, ready: familyReady } = useFamilyData();
-  const t = useT();
 
-  // Only leave this page when the loved-one profile is actually created.
-  // Account flag alone is not enough (open-access demo can mark onboarding done early).
   const profileReady = Boolean(user?.onboardingCompleted && data.seniorCreated);
 
   useEffect(() => {
@@ -29,87 +39,113 @@ function StartChoiceInner() {
 
   if (!ready || !familyReady || !user) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-10 w-10 animate-pulse-soft rounded-full bg-brand-soft" />
+      <div className="flex min-h-[50vh] items-center justify-center bg-[var(--hp-wash,#f1f7f5)]">
+        <div
+          className="h-10 w-10 animate-pulse rounded-full"
+          style={{ background: "#d6efe9" }}
+          aria-hidden
+        />
       </div>
     );
   }
 
   if (profileReady) return null;
 
-  const welcome = user.firstName
-    ? t("Welcome, {name}", { name: user.firstName })
-    : t("Welcome");
+  const welcome = user.firstName ? `Bonjour ${user.firstName}` : "Bienvenue";
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center px-5 py-12">
-      <div className="mb-10 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand">
-          {welcome}
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-          {t("How would you like to create the profile?")}
-        </h1>
-        <p className="mx-auto mt-3 max-w-lg text-ink-muted">
-          {t(
-            "For yourself or a loved one. Build it once, then discover communities and apply everywhere with almost no extra work.",
-          )}
-        </p>
-      </div>
+    <div
+      className={`hp min-h-[100dvh] ${sourceSerif.variable} ${publicSans.variable}`}
+      style={{ background: "var(--hp-wash)" }}
+    >
+      <header className="border-b border-[var(--hp-border)] bg-white">
+        <div className="hp-wrap flex h-[58px] items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
+            <span
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[14px] font-semibold text-white"
+              style={{ background: "var(--hp-green)" }}
+              aria-hidden
+            >
+              H
+            </span>
+            <span className="hp-serif text-[19px] text-[var(--hp-ink)]">HavenApply</span>
+          </Link>
+          <Link href="/family/dashboard" className="hp-btn-ghost text-[14px]">
+            Passer à l&apos;espace famille
+          </Link>
+        </div>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Link
-          href="/assistant"
-          className="group flex flex-col rounded-[1.5rem] border border-brand/25 bg-gradient-to-b from-brand-soft/60 to-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink text-white">
-            <Sparkles size={20} />
-          </span>
-          <h2 className="mt-4 text-xl font-semibold tracking-tight">{t("Chat with Haven")}</h2>
-          <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
-            {t(
-              "Haven asks natural questions and fills the profile for you. Best if you prefer a guided conversation.",
-            )}
+      <main className="hp-wrap flex flex-col justify-center py-16 md:py-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <p
+            className="text-[12.5px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--hp-ink-muted)" }}
+          >
+            {welcome}
           </p>
-          <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand">
-            {t("Start with AI")}
-            <span className="transition group-hover:translate-x-0.5">→</span>
-          </span>
-        </Link>
-
-        <Link
-          href="/onboarding"
-          className="group flex flex-col rounded-[1.5rem] border border-line bg-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-bg-soft text-ink">
-            <ClipboardList size={20} />
-          </span>
-          <h2 className="mt-4 text-xl font-semibold tracking-tight">
-            {t("Fill forms yourself")}
-          </h2>
-          <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
-            {t(
-              "Step-by-step forms if you already know the details and want full control over every field.",
-            )}
+          <h1 className="hp-serif mt-3 text-[34px] leading-tight text-[var(--hp-ink)] md:text-[40px]">
+            Comment souhaitez-vous créer le profil d&apos;admission ?
+          </h1>
+          <p className="hp-body mx-auto mt-4 max-w-xl">
+            Pour vous ou pour un proche. Vous le constituez une seule fois, puis vous l&apos;envoyez
+            aux résidences choisies.
           </p>
-          <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink">
-            {t("Use manual forms")}
-            <span className="transition group-hover:translate-x-0.5">→</span>
-          </span>
-        </Link>
-      </div>
+        </div>
 
-      <p className="mt-8 text-center text-sm text-ink-muted">
-        {t("You can switch methods anytime.")}{" "}
-        <Button
-          href="/"
-          variant="ghost"
-          size="sm"
-          className="inline h-auto p-0 text-brand"
-        >
-          {t("Skip to dashboard")}
-        </Button>
-      </p>
+        <div className="mx-auto mt-12 grid w-full max-w-3xl gap-4 md:grid-cols-2">
+          <Link
+            href="/family/dashboard"
+            className="hp-card flex flex-col p-7 text-left no-underline transition-colors hover:bg-[var(--hp-green-tint)]"
+          >
+            <p
+              className="text-[12.5px] font-semibold uppercase tracking-[0.08em]"
+              style={{ color: "var(--hp-green-deep)" }}
+            >
+              Recommandé
+            </p>
+            <h2 className="hp-serif mt-3 text-[22px] text-[var(--hp-ink)]">
+              Avec Claire, votre accompagnatrice
+            </h2>
+            <p className="mt-3 flex-1 text-[15px] leading-relaxed text-[var(--hp-ink-body)]">
+              Elle pose les questions, remplit le dossier avec vous, et signale ce qui manque.
+              Idéal si vous préférez une conversation guidée.
+            </p>
+            <span className="mt-8 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--hp-green)]">
+              Commencer avec Claire →
+            </span>
+          </Link>
+
+          <Link
+            href="/onboarding"
+            className="hp-card flex flex-col p-7 text-left no-underline transition-colors hover:bg-[var(--hp-wash)]"
+          >
+            <p
+              className="text-[12.5px] font-semibold uppercase tracking-[0.08em]"
+              style={{ color: "var(--hp-ink-muted)" }}
+            >
+              Manuel
+            </p>
+            <h2 className="hp-serif mt-3 text-[22px] text-[var(--hp-ink)]">
+              Remplir le formulaire soi-même
+            </h2>
+            <p className="mt-3 flex-1 text-[15px] leading-relaxed text-[var(--hp-ink-body)]">
+              Étapes structurées si vous avez déjà les renseignements et souhaitez contrôler chaque
+              champ.
+            </p>
+            <span className="mt-8 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--hp-ink)]">
+              Ouvrir le formulaire →
+            </span>
+          </Link>
+        </div>
+
+        <p className="mt-10 text-center text-[14px] text-[var(--hp-ink-muted)]">
+          Vous pourrez changer de méthode en tout temps.{" "}
+          <Link href="/family/dashboard" className="font-semibold text-[var(--hp-green)] no-underline">
+            Aller à l&apos;espace famille
+          </Link>
+        </p>
+      </main>
     </div>
   );
 }

@@ -87,7 +87,7 @@ function StartChoiceInner() {
 
         <div className="mx-auto mt-12 grid w-full max-w-3xl gap-4 md:grid-cols-2">
           <Link
-            href="/family/dashboard"
+            href="/family/dashboard?claire=1"
             className="hp-card flex flex-col p-7 text-left no-underline transition-colors hover:bg-[var(--hp-green-tint)]"
           >
             <p
@@ -104,12 +104,12 @@ function StartChoiceInner() {
               Idéal si vous préférez une conversation guidée.
             </p>
             <span className="mt-8 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--hp-green)]">
-              Commencer avec Claire →
+              Ouvrir le chat avec Claire →
             </span>
           </Link>
 
           <Link
-            href="/onboarding"
+            href="/family/dossier"
             className="hp-card flex flex-col p-7 text-left no-underline transition-colors hover:bg-[var(--hp-wash)]"
           >
             <p

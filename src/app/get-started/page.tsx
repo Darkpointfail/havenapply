@@ -111,6 +111,10 @@ function GetStartedInner() {
 
   const needsOrg = role === "professional" || role === "facility";
   const selectedMeta = ROLE_OPTIONS.find((o) => o.id === role);
+  const nextParam = params.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
+  const familyHome = safeNext?.startsWith("/family") ? safeNext : "/family/dashboard";
 
   useEffect(() => {
     if (!role || !formRef.current) return;
@@ -147,7 +151,13 @@ function GetStartedInner() {
     }
     if (result.pendingConfirmation) {
       router.push(
-        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}`,
+        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}&next=${encodeURIComponent(
+          role === "facility"
+            ? "/community/dashboard"
+            : role === "professional"
+              ? "/professional/dashboard"
+              : familyHome,
+        )}`,
       );
       return;
     }
@@ -158,7 +168,7 @@ function GetStartedInner() {
             ? "/community/dashboard"
             : role === "professional"
               ? "/professional/dashboard"
-              : "/family/dashboard",
+              : familyHome,
         )}`,
       );
       return;
@@ -168,7 +178,7 @@ function GetStartedInner() {
         ? "/community/dashboard"
         : role === "professional"
           ? "/professional/dashboard"
-          : "/family/dashboard",
+          : familyHome,
     );
   };
 

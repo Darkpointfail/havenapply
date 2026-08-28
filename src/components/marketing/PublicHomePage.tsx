@@ -152,67 +152,22 @@ function HeroPhoto() {
 }
 
 function TrackingVisual() {
-  const [url, setUrl] = useState<string | null>(null);
   return (
-    <label className="block cursor-pointer">
-      <div
-        className="relative w-full overflow-hidden rounded-[14px]"
-        style={{
-          height: 400,
-          background: url
-            ? undefined
-            : "repeating-linear-gradient(135deg, #E8EFEC 0 12px, #F7FAF9 12px 24px)",
-          border: "1px solid var(--hp-border)",
-        }}
-      >
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full flex-col justify-end p-6">
-            <div className="hp-card space-y-3 p-4">
-              <p className="text-[13px] font-semibold" style={{ color: "var(--hp-ink-muted)" }}>
-                Suivi des demandes
-              </p>
-              {[
-                ["Résidence Les Jardins", "En évaluation"],
-                ["Maison Sainte-Anne", "Documents reçus"],
-                ["Villa du Ruisseau", "Visite planifiée"],
-              ].map(([name, status]) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2.5"
-                  style={{ background: "#F7FAF9" }}
-                >
-                  <span className="text-[14.5px] font-semibold">{name}</span>
-                  <span
-                    className="hp-pill"
-                    style={{
-                      background: "var(--hp-green-tint)",
-                      color: "var(--hp-green-deep)",
-                      height: 26,
-                      fontSize: 12.5,
-                    }}
-                  >
-                    {status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          setUrl(URL.createObjectURL(file));
-        }}
+    <div
+      className="relative w-full overflow-hidden rounded-[14px]"
+      style={{
+        height: 400,
+        border: "1px solid var(--hp-border)",
+      }}
+    >
+      <Image
+        src="/home/saves-online.jpg"
+        alt="Suivi des demandes d'admission en ligne depuis la maison, sans paperasse"
+        fill
+        sizes="(max-width: 768px) 100vw, 520px"
+        className="object-cover object-center"
       />
-    </label>
+    </div>
   );
 }
 

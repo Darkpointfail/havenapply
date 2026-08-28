@@ -82,6 +82,8 @@ export function CommunityProfileEditor() {
   }
 
   const editable = can("editProfile") || can("editAdmissions") || can("editPricing");
+  const canToggleIntake =
+    can("editAdmissions") || can("editProfile") || can("acceptDecline");
   const flags = draft.admissionFlags!;
   const cover = draft.photos[0];
 
@@ -168,14 +170,17 @@ export function CommunityProfileEditor() {
                 type="button"
                 role="switch"
                 aria-checked={draft.acceptingApplications}
-                disabled={!can("editAdmissions") && !can("editProfile")}
-                onClick={() =>
-                  patch({ acceptingApplications: !draft.acceptingApplications })
-                }
+                disabled={!canToggleIntake}
+                onClick={() => {
+                  const next = !draft.acceptingApplications;
+                  patch({ acceptingApplications: next });
+                  // Persist intake toggle immediately so console + family apply stay in sync
+                  updateProfile({ ...draft, acceptingApplications: next });
+                }}
                 className={cn(
                   "relative h-7 w-12 shrink-0 rounded-full transition",
                   draft.acceptingApplications ? "bg-brand" : "bg-line-strong",
-                  !can("editAdmissions") && !can("editProfile") && "opacity-50",
+                  !canToggleIntake && "opacity-50",
                 )}
               >
                 <span

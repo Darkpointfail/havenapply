@@ -106,6 +106,7 @@ const ROLE_PERMS: Record<CommunityTeamRole, CommunityPermission[]> = {
     "changeStatus",
     "acceptDecline",
     "editAvailability",
+    "editAdmissions",
     "viewAudit",
   ],
   sales_counselor: [

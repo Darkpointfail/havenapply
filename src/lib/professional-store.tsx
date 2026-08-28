@@ -28,6 +28,7 @@ import {
   type ChecklistKey,
   type CareProfile,
 } from "@/lib/professional-data";
+import { isResidenceAcceptingApplications } from "@/lib/community-portal";
 
 export type ContactDraft = Omit<FacilityContact, "id" | "updatedAt">;
 
@@ -499,6 +500,12 @@ export function ProfessionalProvider({ children }: { children: ReactNode }) {
       }
       if (patient.applications.some((a) => a.communityId === communityId && a.status !== "declined")) {
         return { ok: false as const, error: "An application was already submitted to this community." };
+      }
+      if (!isResidenceAcceptingApplications(communityId)) {
+        return {
+          ok: false as const,
+          error: "This community is not accepting new applications right now.",
+        };
       }
 
       const now = new Date().toISOString();

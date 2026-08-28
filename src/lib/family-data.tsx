@@ -48,6 +48,7 @@ import {
   markSharedWithdrawn,
   publishFamilyApplication,
 } from "@/lib/admissions-bridge";
+import { isResidenceAcceptingApplications } from "@/lib/community-portal";
 import {
   emptyResidentDossier,
   migrateResidentDossier,
@@ -1179,6 +1180,11 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       let result: FamilyApplication | null = null;
 
       persist((prev) => {
+        if (!isResidenceAcceptingApplications(app.residenceId)) {
+          result = null;
+          return prev;
+        }
+
         // Prevent accidental double submit for same residence (use latest state)
         const existing = prev.applications.find(
           (a) =>
@@ -1236,6 +1242,8 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         let working = prev;
 
         for (const app of apps) {
+          if (!isResidenceAcceptingApplications(app.residenceId)) continue;
+
           const blocked = applications.find(
             (a) =>
               a.residenceId === app.residenceId &&

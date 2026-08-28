@@ -542,6 +542,7 @@ export const frMessages: Record<string, string> = {
   "Additional notes": "Notes complémentaires",
   "ADLs & functional status": "AVQ et état fonctionnel",
   "Administrator": "Administrateur",
+  "Accepting new applications": "Nouvelles demandes acceptées",
   "Admission criteria": "Critères d'admission",
   "Admission Requirements": "Conditions d'admission",
   "Admissions Coordinator": "Coordonnateur des admissions",
@@ -798,6 +799,10 @@ export const frMessages: Record<string, string> = {
   "Facility forms": "Formulaires d'établissement",
   "Faith / practices": "Foi / pratiques",
   "Families on platform": "Familles sur la plateforme",
+  "Families can send new dossiers to your community.":
+    "Les familles peuvent envoyer de nouveaux dossiers à votre établissement.",
+  "Families see that intake is closed and cannot submit.":
+    "Les familles voient que l’intake est fermé et ne peuvent pas soumettre.",
   "Family & contacts": "Famille et contacts",
   "Family / other login": "Famille / autre connexion",
   "Family contact": "Contact familial",
@@ -1003,6 +1008,9 @@ export const frMessages: Record<string, string> = {
   "Needs replacement": "A besoin d'être remplacé",
   "Needs some assistance": "A besoin d'aide",
   "New application submitted": "Nouvelle candidature déposée",
+  "New applications": "Nouvelles demandes",
+  "Not accepting applications": "Ne reçoit pas de demandes",
+  "Not accepting new applications": "Nouvelles demandes fermées",
   "New conversation": "Nouvelle conversation",
   "New password (8+ chars, upper, lower, number)": "Nouveau mot de passe (8+ caractères, supérieur, inférieur, chiffre)",
   "No applications in this queue.": "Aucune candidature dans cette file d'attente.",
@@ -1027,6 +1035,8 @@ export const frMessages: Record<string, string> = {
   "One profile. Then apply everywhere.": "Un profil. Ensuite, appliquez-le partout.",
   "Only visible to you on this device…": "Visible uniquement par vous sur cet appareil…",
   "Open a community profile to apply, then track each dossier here.": "Ouvrez un profil d’établissement pour postuler, puis suivez chaque dossier ici.",
+  "Open or close intake for new family applications. Existing dossiers stay active.":
+    "Ouvrez ou fermez l’intake des nouvelles demandes familiales. Les dossiers déjà reçus restent actifs.",
   "Open AI Assistant": "Assistant IA ouvert",
   "Open application": "Ouvrir la candidature",
   "Open audit logs": "Ouvrir les journaux d'audit",
@@ -1277,6 +1287,12 @@ export const frMessages: Record<string, string> = {
   "The whole journey in three steps": "Tout le voyage en trois étapes",
   "They create or use their own Haven account. Never share your password.": "Ils créent ou utilisent leur propre compte Haven. Ne partagez jamais votre mot de passe.",
   "This is a friendly reminder that the residency agreement is still awaiting signature. We’re happy to walk through any questions.": "Ceci nous rappelle amicalement que le contrat de résidence est toujours en attente de signature. Nous serons heureux de répondre à toutes vos questions.",
+  "This community has temporarily closed new applications.":
+    "Cet établissement a temporairement fermé les nouvelles demandes.",
+  "This community is not accepting new applications right now.":
+    "Cet établissement n’accepte pas de nouvelles demandes pour le moment.",
+  "is not receiving new dossiers right now.":
+    "ne reçoit pas de nouveaux dossiers pour le moment.",
   "Timeline & location": "Chronologie et lieu",
   "Timing, pharmacy, recent changes…": "Calendrier, pharmacie, changements récents…",
   "To continue reviewing the application, please upload the following.": "Pour continuer à examiner la candidature, veuillez télécharger les éléments suivants.",

@@ -1409,100 +1409,168 @@ function TableauView() {
 }
 
 function EtablissementView() {
+  const { workspace, updateProfile, can } = useCommunityPortal();
+  const profile = workspace?.profile;
+  const accepting = profile?.acceptingApplications !== false;
+  const canToggle = can("editAdmissions") || can("editProfile");
+  const name = profile?.name || RESIDENCE.name;
+  const city = profile?.city || RESIDENCE.city;
+  const description = profile?.description || RESIDENCE.description;
+
+  const toggleAccepting = () => {
+    if (!canToggle) return;
+    updateProfile({ acceptingApplications: !accepting });
+  };
+
   return (
-    <div className="rc-card overflow-hidden">
-      <div className="flex items-center justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
-        <p className="text-[14px] font-medium text-[var(--rc-ink-muted)]">
-          Aperçu de la page vue par les familles
-        </p>
-        <button type="button" className="rc-btn rc-btn-outline">
-          Modifier la page
-        </button>
-      </div>
-
-      <div
-        className="relative flex h-[250px] items-center justify-center"
-        style={{
-          background:
-            "repeating-linear-gradient(135deg, #E8EFEC 0 12px, #F3F8F6 12px 24px)",
-        }}
-      >
-        <span
-          className="rounded-[7px] border border-[var(--rc-border)] bg-white px-3 py-1.5 text-[12px] text-[var(--rc-ink-muted)]"
-          style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
-        >
-          photo de la résidence — façade
-        </span>
-      </div>
-
-      <div className="p-8">
-        <h2 className="rc-serif text-[30px] leading-tight">{RESIDENCE.name}</h2>
-        <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
-          {RESIDENCE.city} · {RESIDENCE.units} unités · {RESIDENCE.type}
-        </p>
-        <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-[var(--rc-ink-muted)]">
-          {RESIDENCE.description}
-        </p>
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="overflow-hidden rounded-[10px] border border-[var(--rc-border)]">
-            <div
-              className="rc-table-head rc-label"
-              style={{ gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr" }}
-            >
-              <span>Type</span>
-              <span>Superficie</span>
-              <span>Prix indicatif</span>
-              <span>Disponibilité</span>
-            </div>
-            {UNIT_PRICING.map((u) => (
-              <div
-                key={u.type}
-                className="rc-table-row"
-                style={{
-                  gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr",
-                  cursor: "default",
-                }}
-              >
-                <p className="text-[14.5px] font-semibold">{u.type}</p>
-                <p className="text-[14px] text-[var(--rc-ink-muted)]">{u.area}</p>
-                <p className="text-[14px] font-medium">{u.price}</p>
-                <p className="text-[14px]">{u.avail}</p>
-              </div>
-            ))}
+    <div className="flex flex-col gap-5">
+      <div className="rc-card overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
+          <div>
+            <p className="text-[14px] font-medium text-[var(--rc-ink)]">
+              Nouvelles demandes
+            </p>
+            <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
+              {accepting
+                ? "Les familles peuvent envoyer de nouveaux dossiers."
+                : "L'intake est fermé. Les dossiers déjà reçus restent actifs."}
+            </p>
           </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={accepting}
+            disabled={!canToggle}
+            onClick={toggleAccepting}
+            className="flex items-center gap-3 disabled:opacity-50"
+          >
+            <span
+              className="text-[13px] font-semibold"
+              style={{ color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)" }}
+            >
+              {accepting ? "Ouvertes" : "Fermées"}
+            </span>
+            <span
+              className="relative h-7 w-12 rounded-full transition"
+              style={{
+                background: accepting ? "var(--rc-green)" : "var(--rc-border)",
+              }}
+            >
+              <span
+                className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition"
+                style={{ left: accepting ? "1.25rem" : "0.125rem" }}
+              />
+            </span>
+          </button>
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-5">
-            <div>
-              <p className="rc-label mb-3">Services inclus</p>
-              <div className="flex flex-wrap gap-2">
-                {SERVICES_INCLUS.map((s) => (
-                  <span
-                    key={s}
-                    className="rc-pill"
-                    style={{
-                      background: "var(--rc-subtle)",
-                      borderColor: "var(--rc-border)",
-                      color: "var(--rc-ink)",
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
+      <div className="rc-card overflow-hidden">
+        <div className="flex items-center justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
+          <p className="text-[14px] font-medium text-[var(--rc-ink-muted)]">
+            Aperçu de la page vue par les familles
+          </p>
+          <a href="/community/profile" className="rc-btn rc-btn-outline">
+            Modifier la page
+          </a>
+        </div>
+
+        <div
+          className="relative flex h-[250px] items-center justify-center"
+          style={{
+            background:
+              "repeating-linear-gradient(135deg, #E8EFEC 0 12px, #F3F8F6 12px 24px)",
+          }}
+        >
+          <span
+            className="rounded-[7px] border border-[var(--rc-border)] bg-white px-3 py-1.5 text-[12px] text-[var(--rc-ink-muted)]"
+            style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+          >
+            photo de la résidence — façade
+          </span>
+        </div>
+
+        <div className="p-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="rc-serif text-[30px] leading-tight">{name}</h2>
+            <span
+              className="rounded-[7px] border px-2.5 py-1 text-[12px] font-semibold"
+              style={{
+                background: accepting ? "var(--rc-green-bg)" : "#F4F1EE",
+                borderColor: accepting ? "#C2DBD4" : "var(--rc-border)",
+                color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)",
+              }}
+            >
+              {accepting ? "Demandes ouvertes" : "Demandes fermées"}
+            </span>
+          </div>
+          <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
+            {city} · {RESIDENCE.units} unités · {RESIDENCE.type}
+          </p>
+          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-[var(--rc-ink-muted)]">
+            {description}
+          </p>
+
+          <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="overflow-hidden rounded-[10px] border border-[var(--rc-border)]">
+              <div
+                className="rc-table-head rc-label"
+                style={{ gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr" }}
+              >
+                <span>Type</span>
+                <span>Superficie</span>
+                <span>Prix indicatif</span>
+                <span>Disponibilité</span>
               </div>
+              {UNIT_PRICING.map((u) => (
+                <div
+                  key={u.type}
+                  className="rc-table-row"
+                  style={{
+                    gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr",
+                    cursor: "default",
+                  }}
+                >
+                  <p className="text-[14.5px] font-semibold">{u.type}</p>
+                  <p className="text-[14px] text-[var(--rc-ink-muted)]">{u.area}</p>
+                  <p className="text-[14px] font-medium">{u.price}</p>
+                  <p className="text-[14px]">{u.avail}</p>
+                </div>
+              ))}
             </div>
 
-            <div
-              className="rounded-[10px] p-5 text-white"
-              style={{ background: "var(--rc-black)" }}
-            >
-              <p className="rc-label" style={{ color: "#8E9B96" }}>
-                Depuis cette page
-              </p>
-              <p className="rc-serif mt-3 text-[38px] leading-none">38</p>
-              <p className="mt-2 text-[13.5px] text-[#C5D2CD]">
-                demandes déposées au cours des 90 derniers jours
-              </p>
+            <div className="flex flex-col gap-5">
+              <div>
+                <p className="rc-label mb-3">Services inclus</p>
+                <div className="flex flex-wrap gap-2">
+                  {SERVICES_INCLUS.map((s) => (
+                    <span
+                      key={s}
+                      className="rc-pill"
+                      style={{
+                        background: "var(--rc-subtle)",
+                        borderColor: "var(--rc-border)",
+                        color: "var(--rc-ink)",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="rounded-[10px] p-5 text-white"
+                style={{ background: "var(--rc-black)" }}
+              >
+                <p className="rc-label" style={{ color: "#8E9B96" }}>
+                  Depuis cette page
+                </p>
+                <p className="rc-serif mt-3 text-[38px] leading-none">38</p>
+                <p className="mt-2 text-[13.5px] text-[#C5D2CD]">
+                  demandes déposées au cours des 90 derniers jours
+                </p>
+              </div>
             </div>
           </div>
         </div>

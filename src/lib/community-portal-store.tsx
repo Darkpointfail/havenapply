@@ -21,9 +21,11 @@ import {
   updateSharedFromCommunity,
 } from "@/lib/admissions-bridge";
 import {
+  COMMUNITY_PORTAL_STORAGE_KEY as STORAGE_KEY,
   communityRoleHas,
   computeDashboardStats,
   ensureDemoApplications,
+  notifyCommunityProfileChanged,
   resolveCommunityResidenceId,
   seedCommunityWorkspace,
   type AvailabilityUnit,
@@ -49,8 +51,6 @@ import {
 } from "@/lib/patient-transfer";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { useT } from "@/lib/i18n/locale";
-
-const STORAGE_KEY = "haven-community-portal-v10";
 
 type PortalContextValue = {
   ready: boolean;
@@ -131,6 +131,10 @@ function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
   );
   return {
     ...ws,
+    profile: {
+      ...ws.profile,
+      acceptingApplications: ws.profile?.acceptingApplications !== false,
+    },
     notifications,
     patientTransfers: Array.isArray(ws.patientTransfers) ? ws.patientTransfers : [],
   };
@@ -933,12 +937,21 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       if (!can("editProfile") && !can("editPricing") && !can("editAdmissions")) {
         return { ok: false, error: "You don’t have permission to edit the profile." };
       }
-      persist((ws) =>
-        pushAudit(
+      let residenceId = "";
+      let auditMsg = "Updated community profile";
+      if (typeof patch.acceptingApplications === "boolean") {
+        auditMsg = patch.acceptingApplications
+          ? "Opened new applications"
+          : "Closed new applications";
+      }
+      persist((ws) => {
+        residenceId = ws.residenceId;
+        return pushAudit(
           { ...ws, profile: { ...ws.profile, ...patch } },
-          "Updated community profile",
-        ),
-      );
+          auditMsg,
+        );
+      });
+      notifyCommunityProfileChanged(residenceId || undefined);
       return { ok: true };
     },
     [can, persist, pushAudit],

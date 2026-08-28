@@ -26,6 +26,7 @@ import { useProfessional } from "@/lib/professional-store";
 import { getCommunityDetail } from "@/lib/residence-detail";
 import { formatCurrency } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { useResidenceAcceptingApplications } from "@/lib/use-residence-accepting";
 
 function ApplyReviewInner({ communityId }: { communityId: string }) {
   const t = useT();
@@ -38,6 +39,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
+  const accepting = useResidenceAcceptingApplications(communityId);
 
   const residence = getResidence(communityId);
   const detail = getCommunityDetail(communityId);
@@ -61,6 +63,34 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
         <Button href="/professional/communities" className="mt-6">
           {t("Browse communities")}
         </Button>
+      </div>
+    );
+  }
+
+  if (!accepting && !already && !doneId) {
+    return (
+      <div className="mx-auto max-w-lg px-5 py-16">
+        <Link
+          href={`/find-senior-living/${communityId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
+        >
+          <ArrowLeft size={14} /> Back to community
+        </Link>
+        <Card className="mt-6 p-6">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {t("Not accepting applications")}
+          </h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            {t("This community has temporarily closed new applications.")}{" "}
+            {residence.name} {t("is not receiving new dossiers right now.")}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button href="/professional/communities">{t("Browse communities")}</Button>
+            <Button href={`/find-senior-living/${communityId}`} variant="secondary">
+              {t("Back")}
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -195,7 +225,7 @@ function ApplyReviewInner({ communityId }: { communityId: string }) {
   }
 
   const submit = () => {
-    if (!consent || sending || already) return;
+    if (!consent || sending || already || !accepting) return;
     setSending(true);
     setError(null);
     const result = submitApplication(patient.id, residence.id, residence.name);

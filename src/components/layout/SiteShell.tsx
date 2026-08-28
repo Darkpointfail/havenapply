@@ -33,6 +33,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   const isCoreFamily = isFamilyPortalPath(pathname);
   const isBrowse = isSharedBrowsePath(pathname);
+  const isFamilyEspace = pathname.startsWith("/family/espace");
   const isCommunity = pathname.startsWith("/community") || pathname.startsWith("/admin");
   const isProfessional = isProfessionalPortalPath(pathname);
   const isInternal = pathname.startsWith("/internal");
@@ -87,6 +88,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   if (showFamilyShell) {
+    if (isFamilyEspace) {
+      return <main className="flex-1">{children}</main>;
+    }
     return (
       <>
         <PortalHeader

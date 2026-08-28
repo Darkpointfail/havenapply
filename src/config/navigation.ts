@@ -30,6 +30,7 @@ export const publicAuthLinks = {
  * Apply happens on each community profile.
  */
 export const familyNav: NavItem[] = [
+  { href: "/family/espace", label: "Espace famille" },
   { href: "/family/dashboard", label: "Dashboard" },
   { href: "/family/dossier", label: "Dossier" },
   { href: "/family/profile", label: "Profile" },

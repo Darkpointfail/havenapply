@@ -9,6 +9,7 @@ import { InternalAdminProvider } from "@/lib/internal-admin-store";
 import { MessagingProvider } from "@/lib/messaging-store";
 import { NotificationsTasksProvider } from "@/lib/notifications-tasks-store";
 import { PrivacySecurityProvider } from "@/lib/privacy-security-store";
+import { ConsentGovernanceProvider } from "@/lib/consent/store";
 import { ProfessionalProvider } from "@/lib/professional-store";
 import { LocaleProvider } from "@/lib/i18n/locale";
 import { ThemeProvider } from "@/lib/theme";
@@ -26,7 +27,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
                     <InternalAdminProvider>
                       <NotificationsTasksProvider>
                         <PrivacySecurityProvider>
-                          <AiProvider>{children}</AiProvider>
+                          <ConsentGovernanceProvider>
+                            <AiProvider>{children}</AiProvider>
+                          </ConsentGovernanceProvider>
                         </PrivacySecurityProvider>
                       </NotificationsTasksProvider>
                     </InternalAdminProvider>

@@ -17,6 +17,11 @@ import { useAuth } from "@/lib/auth";
 import type { SignupRole } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import {
+  ConsentCapture,
+  type ConsentCaptureValue,
+} from "@/components/consent/ConsentCapture";
+import { persistSignupConsentGrant } from "@/lib/consent/persist-signup";
 
 const ROLE_OPTIONS: {
   id: SignupRole;
@@ -105,6 +110,7 @@ function GetStartedInner() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [consentCapture, setConsentCapture] = useState<ConsentCaptureValue | null>(null);
   const [organization, setOrganization] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
@@ -124,6 +130,10 @@ function GetStartedInner() {
     e.preventDefault();
     if (!role || submitting) return;
     setError(null);
+    if (!acceptedTerms || !consentCapture) {
+      setError("Complete consent selections. No boxes are pre-checked.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -144,6 +154,16 @@ function GetStartedInner() {
     if (!result.ok) {
       setError(result.error);
       return;
+    }
+    try {
+      persistSignupConsentGrant({
+        email: result.data.email,
+        userId: result.data.id || `pending-${result.data.email}`,
+        displayName: `${firstName} ${lastName}`.trim() || result.data.email,
+        capture: consentCapture,
+      });
+    } catch {
+      /* non-blocking */
     }
     if (result.pendingConfirmation) {
       router.push(
@@ -376,20 +396,15 @@ function GetStartedInner() {
                 />
               </AuthField>
 
-              <label className="flex items-start gap-3 text-sm text-ink-muted">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                />
-                <span>
-                  I accept the <span className="font-medium text-ink">Terms of Use</span> and{" "}
-                  <span className="font-medium text-ink">Privacy Policy</span>.
-                </span>
-              </label>
+              <ConsentCapture
+                mode="signup"
+                onChange={(v, valid) => {
+                  setConsentCapture(v);
+                  setAcceptedTerms(valid);
+                }}
+              />
 
-              <Button type="submit" className="w-full" size="lg" disabled={submitting || !role}>
+              <Button type="submit" className="w-full" size="lg" disabled={submitting || !role || !acceptedTerms}>
                 {submitting ? "Creating account…" : "Create account"}
               </Button>
             </form>

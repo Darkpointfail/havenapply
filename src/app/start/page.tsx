@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import "@/components/marketing/public-home.css";
@@ -60,16 +61,7 @@ function StartChoiceInner() {
     >
       <header className="border-b border-[var(--hp-border)] bg-white">
         <div className="hp-wrap flex h-[58px] items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <span
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[14px] font-semibold text-white"
-              style={{ background: "var(--hp-green)" }}
-              aria-hidden
-            >
-              H
-            </span>
-            <span className="hp-serif text-[19px] text-[var(--hp-ink)]">HavenApply</span>
-          </Link>
+          <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
           <Link href="/family/dashboard" className="hp-btn-ghost text-[14px]">
             Passer à l&apos;espace famille
           </Link>

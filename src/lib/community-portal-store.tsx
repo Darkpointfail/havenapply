@@ -253,7 +253,8 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     ) {
       return "admin";
     }
-    return "admissions_manager";
+    // Signed-in facility account not on the seed team = org owner
+    return "admin";
   }, [user, workspace]);
 
   const can = useCallback(
@@ -934,7 +935,12 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(
     (patch: Partial<CommunityProfile>) => {
-      if (!can("editProfile") && !can("editPricing") && !can("editAdmissions")) {
+      const onlyAccepting =
+        Object.keys(patch).length === 1 && typeof patch.acceptingApplications === "boolean";
+      const canEditProfile =
+        can("editProfile") || can("editPricing") || can("editAdmissions");
+      const canToggleIntake = canEditProfile || can("acceptDecline");
+      if (onlyAccepting ? !canToggleIntake : !canEditProfile) {
         return { ok: false, error: "You don’t have permission to edit the profile." };
       }
       let residenceId = "";

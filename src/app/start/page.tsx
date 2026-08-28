@@ -23,7 +23,7 @@ function StartChoiceInner() {
   useEffect(() => {
     if (!ready || !familyReady || !user) return;
     if (profileReady) {
-      router.replace("/");
+      router.replace("/family/dashboard");
     }
   }, [ready, familyReady, user, profileReady, router]);
 

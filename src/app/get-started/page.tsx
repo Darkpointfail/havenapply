@@ -158,7 +158,7 @@ function GetStartedInner() {
             ? "/community/dashboard"
             : role === "professional"
               ? "/professional/dashboard"
-              : "/",
+              : "/family/dashboard",
         )}`,
       );
       return;
@@ -168,7 +168,7 @@ function GetStartedInner() {
         ? "/community/dashboard"
         : role === "professional"
           ? "/professional/dashboard"
-          : "/",
+          : "/family/dashboard",
     );
   };
 
@@ -410,7 +410,7 @@ function GetStartedInner() {
 export default function GetStartedPage() {
 
   const t = useT();  return (
-    <RedirectIfAuthenticated fallbackHref="/">
+    <RedirectIfAuthenticated fallbackHref="/family/dashboard">
       <Suspense
         fallback={
           <div className="flex min-h-[50vh] items-center justify-center">

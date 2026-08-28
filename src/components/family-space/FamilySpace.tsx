@@ -391,7 +391,7 @@ export function FamilySpace() {
   };
 
   const withdrawAccess = (name: string) => {
-    if (!window.confirm(`Retirer l'accès de ${name} au dossier ?`)) return;
+    if (!window.confirm(`Retirer la demande auprès de ${name} ?`)) return;
     const app = applications.find((a) => a.residenceName === name);
     if (app) withdrawApplication(app.id);
   };
@@ -1652,24 +1652,35 @@ function Dossier({
         </div>
 
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Qui voit ce dossier</h3>
+          <h3 className="fs-serif text-[19px]">Où ai-je appliqué ?</h3>
           <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-            Seules les résidences auprès desquelles vous déposez une demande y ont accès. Vous
-            pouvez retirer un accès en tout temps.
+            Voici les résidences auxquelles vous avez transmis le dossier. Vous pouvez retirer
+            une demande en tout temps.
           </p>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
-            {applications.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-3 py-3">
-                <span className="text-[14.5px] font-medium">{a.residenceName}</span>
-                <button
-                  type="button"
-                  className="text-[13.5px] font-semibold text-[var(--fs-ink-muted)] hover:text-[var(--fs-terra)]"
-                  onClick={() => onWithdrawAccess(a.residenceName)}
-                >
-                  Retirer l&apos;accès
-                </button>
+            {applications.length === 0 ? (
+              <li className="py-3 text-[14.5px] text-[var(--fs-ink-muted)]">
+                Aucune demande envoyée pour le moment.
               </li>
-            ))}
+            ) : (
+              applications.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <span className="block text-[14.5px] font-medium">{a.residenceName}</span>
+                    <span className="mt-0.5 block text-[13px] text-[var(--fs-ink-muted)]">
+                      {a.city} · {a.status}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 text-[13.5px] font-semibold text-[var(--fs-ink-muted)] hover:text-[var(--fs-terra)]"
+                    onClick={() => onWithdrawAccess(a.residenceName)}
+                  >
+                    Retirer la demande
+                  </button>
+                </li>
+              ))
+            )}
           </ul>
         </div>
       </div>

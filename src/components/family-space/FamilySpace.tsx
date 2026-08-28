@@ -19,6 +19,7 @@ import {
   type FamilyApplication,
   type FamilyDoc,
   type FamilyView,
+  type DossierPanel,
   type Residence,
 } from "@/data/family-space";
 import { useAuth } from "@/lib/auth";
@@ -50,8 +51,7 @@ const publicSans = Public_Sans({
 const NAV: { id: FamilyView; label: string }[] = [
   { id: "accueil", label: "Accueil" },
   { id: "residences", label: "Résidences" },
-  { id: "profil", label: "Créer le profil" },
-  { id: "dossier", label: "Notre dossier" },
+  { id: "dossier", label: "Dossier" },
   { id: "demandes", label: "Mes demandes" },
   { id: "assistance", label: "Assistance" },
 ];
@@ -105,9 +105,10 @@ export function FamilySpace() {
   } = useFamilyData();
 
   const [view, setView] = useState<FamilyView>("accueil");
+  const [dossierPanel, setDossierPanel] = useState<DossierPanel>("manage");
   const [resId, setResId] = useState<string | null>(null);
   const [applyStep, setApplyStep] = useState(1);
-  const [profileStep, setProfileStep] = useState(2);
+  const [profileStep, setProfileStep] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [consent, setConsent] = useState(false);
   const [claireOpen, setClaireOpen] = useState(true);
@@ -157,6 +158,9 @@ export function FamilySpace() {
   }, [data.applications]);
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
+  const hasDossier = Boolean(
+    data.seniorCreated || data.senior.firstName || user?.onboardingCompleted,
+  );
 
   useEffect(() => {
     if (!familyReady || !user || user.role !== "family" || seeded) return;
@@ -188,8 +192,34 @@ export function FamilySpace() {
   }, [profileStep]);
 
   const go = (v: FamilyView) => {
+    if (v === "dossier") {
+      openDossier();
+      return;
+    }
     setView(v);
     if (v !== "fiche" && v !== "depot") setResId(null);
+  };
+
+  const openDossier = (panel?: DossierPanel) => {
+    const next =
+      panel ??
+      (hasDossier ? "manage" : "create");
+    setDossierPanel(next);
+    if (next === "create") {
+      setProfileStep(0);
+      setClaireOpen(true);
+    }
+    if (next === "edit") {
+      setClaireOpen(false);
+    }
+    setView("dossier");
+    setResId(null);
+  };
+
+  const finishDossierForm = () => {
+    finalizeSeniorProfile();
+    setDossierPanel("manage");
+    setView("dossier");
   };
 
   const openResidence = (id: string) => {
@@ -284,7 +314,7 @@ export function FamilySpace() {
         livingSituationOther: m.includes("fauteuil") ? "Fauteuil roulant" : "Marche avec canne",
       });
     }
-    if (profileStep === 6) finalizeSeniorProfile();
+    if (profileStep === 6) finishDossierForm();
   };
 
   const withdrawAccess = (name: string) => {
@@ -359,7 +389,9 @@ export function FamilySpace() {
             firstName={displayUser.firstName}
             progress={progress}
             applications={applications}
-            onComplete={() => go("dossier")}
+            hasDossier={hasDossier}
+            onOpenDossier={() => openDossier()}
+            onCreateDossier={() => openDossier("create")}
             onSearch={() => go("residences")}
             onOpenApp={() => go("demandes")}
           />
@@ -395,8 +427,9 @@ export function FamilySpace() {
             onSend={sendApplication}
           />
         )}
-        {view === "profil" && (
+        {view === "dossier" && dossierPanel !== "manage" && (
           <Profil
+            mode={dossierPanel === "edit" ? "edit" : "create"}
             step={profileStep}
             setStep={setProfileStep}
             claireOpen={claireOpen}
@@ -406,9 +439,11 @@ export function FamilySpace() {
             setChatInput={setChatInput}
             onSend={() => sendToClaire(chatInput)}
             onSuggest={sendToClaire}
+            onDone={finishDossierForm}
+            onBackToManage={hasDossier ? () => openDossier("manage") : undefined}
           />
         )}
-        {view === "dossier" && (
+        {view === "dossier" && dossierPanel === "manage" && (
           <Dossier
             seniorName={displaySenior.fullName}
             docs={docs}
@@ -418,7 +453,16 @@ export function FamilySpace() {
             onUpload={uploadDoc}
             applications={applications}
             onWithdrawAccess={withdrawAccess}
-            onEdit={() => go("profil")}
+            onEdit={() => openDossier("edit")}
+            onCreateNew={() => {
+              if (
+                window.confirm(
+                  "Créer un nouveau dossier ? Vous pourrez toujours revenir modifier le dossier actuel.",
+                )
+              ) {
+                openDossier("create");
+              }
+            }}
           />
         )}
         {view === "demandes" && (
@@ -426,7 +470,7 @@ export function FamilySpace() {
             applications={applications}
             onWithdraw={withdrawApp}
             onWrite={() => go("assistance")}
-            onViewDossier={() => go("dossier")}
+            onViewDossier={() => openDossier("manage")}
           />
         )}
         {view === "assistance" && (
@@ -457,14 +501,18 @@ function Accueil({
   firstName,
   progress,
   applications,
-  onComplete,
+  hasDossier,
+  onOpenDossier,
+  onCreateDossier,
   onSearch,
   onOpenApp,
 }: {
   firstName: string;
   progress: { received: number; total: number; percent: number; next: string | null };
   applications: FamilyApplication[];
-  onComplete: () => void;
+  hasDossier: boolean;
+  onOpenDossier: () => void;
+  onCreateDossier: () => void;
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
@@ -474,13 +522,19 @@ function Accueil({
         <div className="fs-card p-7">
           <h1 className="fs-serif text-[34px] leading-tight">Bonjour {firstName}</h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            Le dossier de votre mère est prêt pour toutes vos demandes. Deux pièces restent à
-            ajouter avant que les résidences puissent l&apos;évaluer.
+            {hasDossier
+              ? "Votre dossier d'admission est prêt pour toutes vos demandes. Complétez les pièces manquantes, modifiez les renseignements, ou créez un nouveau dossier."
+              : "Créez le dossier d'admission une seule fois. Ensuite vous pourrez le gérer, le modifier, et l'envoyer aux résidences choisies."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" className="fs-btn fs-btn-primary" onClick={onComplete}>
-              Compléter le dossier
+            <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
+              {hasDossier ? "Gérer le dossier" : "Créer le dossier"}
             </button>
+            {hasDossier ? (
+              <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateDossier}>
+                Nouveau dossier
+              </button>
+            ) : null}
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
               Chercher une résidence
             </button>
@@ -1053,6 +1107,7 @@ function Depot({
 }
 
 function Profil({
+  mode,
   step,
   setStep,
   claireOpen,
@@ -1062,7 +1117,10 @@ function Profil({
   setChatInput,
   onSend,
   onSuggest,
+  onDone,
+  onBackToManage,
 }: {
+  mode: "create" | "edit";
   step: number;
   setStep: (n: number) => void;
   claireOpen: boolean;
@@ -1072,28 +1130,41 @@ function Profil({
   setChatInput: (v: string) => void;
   onSend: () => void;
   onSuggest: (t: string) => void;
+  onDone: () => void;
+  onBackToManage?: () => void;
 }) {
   const suggestions = assistantSuggestions(step);
+  const isLast = step >= PROFILE_STEPS.length - 1;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="fs-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="fs-serif text-[28px]">Création du profil d&apos;admission</h1>
+            <h1 className="fs-serif text-[28px]">
+              {mode === "edit" ? "Modifier le dossier" : "Créer le dossier d'admission"}
+            </h1>
             <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
-              Les renseignements saisis ici forment le dossier transmis aux résidences. Vous
-              pouvez interrompre et reprendre en tout temps.
+              {mode === "edit"
+                ? "Mettez à jour les renseignements du dossier. Les changements s'appliquent à toutes vos demandes."
+                : "Les renseignements saisis ici forment le dossier transmis aux résidences. Une fois créé, vous le gérez au même endroit."}
             </p>
           </div>
-          <p className="text-[14px] font-medium text-[var(--fs-ink-muted)]">
-            Étape {step + 1} sur 7
-          </p>
+          <div className="flex flex-col items-end gap-2">
+            <p className="text-[14px] font-medium text-[var(--fs-ink-muted)]">
+              Étape {step + 1} sur {PROFILE_STEPS.length}
+            </p>
+            {onBackToManage ? (
+              <button type="button" className="fs-btn fs-btn-outline" onClick={onBackToManage}>
+                Retour au dossier
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
           <div
             className="h-full rounded-full bg-[var(--fs-green)]"
-            style={{ width: `${((step + 1) / 7) * 100}%` }}
+            style={{ width: `${((step + 1) / PROFILE_STEPS.length) * 100}%` }}
           />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -1136,16 +1207,21 @@ function Profil({
               {PROFILE_STEPS[step]}
             </p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className="fs-btn fs-btn-outline">
+              <button type="button" className="fs-btn fs-btn-outline" onClick={onDone}>
                 Enregistrer et reprendre plus tard
               </button>
               <button
                 type="button"
                 className="fs-btn fs-btn-primary"
-                disabled={step === 6}
-                onClick={() => setStep(Math.min(6, step + 1))}
+                onClick={() => {
+                  if (isLast) {
+                    onDone();
+                    return;
+                  }
+                  setStep(Math.min(PROFILE_STEPS.length - 1, step + 1));
+                }}
               >
-                Suivant
+                {isLast ? (mode === "edit" ? "Enregistrer le dossier" : "Terminer et gérer le dossier") : "Suivant"}
               </button>
             </div>
           </div>
@@ -1154,7 +1230,7 @@ function Profil({
             className="fs-btn-ghost mt-4 text-[13px]"
             onClick={() => setClaireOpen(!claireOpen)}
           >
-            {claireOpen ? "Remplir moi-même" : "Reprendre avec Claire"}
+            {claireOpen ? "Remplir moi-même" : "Continuer avec Claire"}
           </button>
         </div>
 
@@ -1456,6 +1532,7 @@ function Dossier({
   applications,
   onWithdrawAccess,
   onEdit,
+  onCreateNew,
 }: {
   seniorName: string;
   docs: import("@/data/family-space").FamilyDoc[];
@@ -1466,6 +1543,7 @@ function Dossier({
   applications: FamilyApplication[];
   onWithdrawAccess: (name: string) => void;
   onEdit: () => void;
+  onCreateNew: () => void;
 }) {
   return (
     <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.4fr_1fr]">
@@ -1514,9 +1592,14 @@ function Dossier({
                   </div>
                 ))}
               </div>
-              <button type="button" className="fs-btn fs-btn-outline mt-5" onClick={onEdit}>
-                Modifier les renseignements
-              </button>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onEdit}>
+                  Modifier le dossier
+                </button>
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateNew}>
+                  Nouveau dossier
+                </button>
+              </div>
             </div>
           </div>
         </div>

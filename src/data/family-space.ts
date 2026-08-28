@@ -5,10 +5,12 @@ export type FamilyView =
   | "residences"
   | "fiche"
   | "depot"
-  | "profil"
   | "dossier"
   | "demandes"
   | "assistance";
+
+/** Create vs manage the same admission dossier. */
+export type DossierPanel = "manage" | "create" | "edit";
 
 export type DocStatus = "reçu" | "en attente";
 

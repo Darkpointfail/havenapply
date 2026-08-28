@@ -10,9 +10,12 @@
   --fs-black-soft: #16302a;
   --fs-terra: #a6572b;
   --fs-terra-bg: #fbeee4;
+  --fs-amber: #c08a4b;
   --fs-success: #2c6b4f;
   --fs-success-bg: #e6f0ea;
   --fs-green-tint: #e2f3ef;
+  --fs-green-tint-2: #f1f8f6;
+  --fs-green-line: #c2dbd4;
   --fs-surface: #ffffff;
   --fs-canvas: #ecf2f0;
   --fs-subtle: #f7faf9;
@@ -44,7 +47,7 @@
 .fs-label {
   font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--fs-ink-muted);
 }
@@ -82,7 +85,7 @@
   color: #fff;
 }
 .fs-btn-primary:hover {
-  background: #0a6f63;
+  background: var(--fs-black);
 }
 
 .fs-btn-outline {

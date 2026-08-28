@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { Logo } from "@/components/brand/Logo";
+import { ResidencesBrowse, ResidenceFiche } from "@/components/family-space/ResidencesPage";
 import {
   askAssistant,
   assistantOpener,
@@ -14,9 +15,7 @@ import {
   PROFILE_STEPS,
   RESIDENCES,
   SENIOR,
-  SERVICES,
   TODOS,
-  UNIT_TYPES,
   USER,
   INITIAL_APPLICATIONS,
   type FamilyApplication,
@@ -139,10 +138,9 @@ export function FamilySpace() {
     },
   ]);
   const [helpInput, setHelpInput] = useState("");
-  const [unitFilter, setUnitFilter] = useState<string[]>(["3½"]);
-  const [serviceFilter, setServiceFilter] = useState<string[]>(["Repas", "Soins infirmiers"]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(false);
+  const [ficheFocus, setFicheFocus] = useState<"match" | "full">("full");
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -293,8 +291,9 @@ export function FamilySpace() {
     setView("dossier");
   };
 
-  const openResidence = (id: string) => {
+  const openResidence = (id: string, focus: "match" | "full" = "full") => {
     setResId(id);
+    setFicheFocus(focus);
     setView("fiche");
   };
 
@@ -513,18 +512,12 @@ export function FamilySpace() {
           />
         )}
         {view === "residences" && (
-          <Residences
-            unitFilter={unitFilter}
-            setUnitFilter={setUnitFilter}
-            serviceFilter={serviceFilter}
-            setServiceFilter={setServiceFilter}
-            onOpen={openResidence}
-            onApply={startApply}
-          />
+          <ResidencesBrowse onOpen={openResidence} onApply={startApply} />
         )}
         {view === "fiche" && selectedRes && (
-          <Fiche
+          <ResidenceFiche
             residence={selectedRes}
+            focus={ficheFocus}
             onBack={() => go("residences")}
             onApply={() => startApply(selectedRes.id)}
           />
@@ -792,292 +785,6 @@ function Accueil({
               </li>
             ))}
           </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Residences({
-  unitFilter,
-  setUnitFilter,
-  serviceFilter,
-  setServiceFilter,
-  onOpen,
-  onApply,
-}: {
-  unitFilter: string[];
-  setUnitFilter: (v: string[]) => void;
-  serviceFilter: string[];
-  setServiceFilter: (v: string[]) => void;
-  onOpen: (id: string) => void;
-  onApply: (id: string) => void;
-}) {
-  const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
-    set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
-  };
-
-  return (
-    <div className="fs-grid-search grid gap-6 lg:grid-cols-[290px_1fr]">
-      <aside className="fs-card sticky top-[74px] h-fit p-5">
-        <p className="fs-label">Critères</p>
-        <div className="mt-4 space-y-5">
-          <Field label="Secteur">
-            <input className="fs-input" defaultValue="Québec et Lévis" />
-          </Field>
-          <div>
-            <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Type d&apos;unité</p>
-            <div className="flex flex-wrap gap-2">
-              {UNIT_TYPES.map((u) => {
-                const on = unitFilter.includes(u);
-                return (
-                  <button
-                    key={u}
-                    type="button"
-                    onClick={() => toggle(unitFilter, u, setUnitFilter)}
-                    className="fs-pill"
-                    style={{
-                      background: on ? "var(--fs-green-tint)" : "var(--fs-subtle)",
-                      color: on ? "#0A6F63" : "var(--fs-ink-muted)",
-                      borderColor: on ? "transparent" : "var(--fs-border)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {u}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Budget mensuel</p>
-            <p className="text-[14.5px] font-medium">jusqu&apos;à 3 700 $</p>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
-              <div className="h-full w-[62%] rounded-full bg-[var(--fs-green)]" />
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Services requis</p>
-            <div className="flex flex-wrap gap-2">
-              {SERVICES.map((s) => {
-                const on = serviceFilter.includes(s);
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => toggle(serviceFilter, s, setServiceFilter)}
-                    className="fs-pill"
-                    style={{
-                      background: on ? "var(--fs-green-tint)" : "var(--fs-subtle)",
-                      color: on ? "#0A6F63" : "var(--fs-ink-muted)",
-                      borderColor: on ? "transparent" : "var(--fs-border)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {s}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
-            Votre dossier est déjà prêt : déposer une demande prend moins d&apos;une minute par
-            résidence.
-          </p>
-        </div>
-      </aside>
-
-      <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[14.5px] text-[var(--fs-ink-muted)]">
-            3 résidences correspondent à vos critères
-          </p>
-          <p className="text-[14px] font-medium">Trier par disponibilité</p>
-        </div>
-        <div className="space-y-4">
-          {RESIDENCES.map((r) => (
-            <article
-              key={r.id}
-              className="fs-card grid overflow-hidden md:grid-cols-[300px_1fr]"
-            >
-              <div
-                className="min-h-[180px]"
-                style={{
-                  background:
-                    "repeating-linear-gradient(135deg, #E2F3EF 0 12px, #F7FAF9 12px 24px)",
-                }}
-              />
-              <div className="p-5 md:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="fs-serif text-[23px] leading-tight">{r.name}</h3>
-                    <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                      {r.city} · {r.units} unités
-                    </p>
-                  </div>
-                  <StatusPill tone={r.badgeTone === "green" ? "green" : "neutral"}>
-                    {r.badge}
-                  </StatusPill>
-                </div>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                  {r.description}
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[10px] bg-[var(--fs-subtle)] px-3 py-2.5">
-                    <p className="text-[13px] text-[var(--fs-ink-muted)]">{r.unitType}</p>
-                    <p className="fs-serif mt-0.5 text-[18px]">{r.price}</p>
-                  </div>
-                  <div className="rounded-[10px] bg-[var(--fs-subtle)] px-3 py-2.5">
-                    <p className="text-[13px] text-[var(--fs-ink-muted)]">Délai</p>
-                    <p className="mt-0.5 text-[15px] font-semibold">{r.response}</p>
-                  </div>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="fs-btn fs-btn-primary"
-                    onClick={() => onApply(r.id)}
-                  >
-                    Déposer une demande
-                  </button>
-                  <button
-                    type="button"
-                    className="fs-btn fs-btn-outline"
-                    onClick={() => onOpen(r.id)}
-                  >
-                    Voir la résidence
-                  </button>
-                  <button type="button" className="fs-btn fs-btn-outline">
-                    Comparer
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Fiche({
-  residence,
-  onBack,
-  onApply,
-}: {
-  residence: Residence;
-  onBack: () => void;
-  onApply: () => void;
-}) {
-  const units = useMemo(
-    () => [
-      {
-        type: residence.unitType,
-        area: residence.area,
-        price: residence.price,
-        avail: residence.availability,
-        tone: residence.availabilityTone,
-      },
-      { type: "2½", area: "480 pi²", price: "2 850 $/mois", avail: "Complet", tone: "terra" as const },
-      { type: "1½", area: "320 pi²", price: "2 200 $/mois", avail: "2 libres", tone: "green" as const },
-    ],
-    [residence],
-  );
-
-  return (
-    <div className="flex flex-col gap-4">
-      <button type="button" className="fs-btn-ghost w-fit" onClick={onBack}>
-        ← Retour aux résultats
-      </button>
-      <div className="fs-card overflow-hidden">
-        <div
-          className="h-[320px] w-full"
-          style={{
-            background:
-              "repeating-linear-gradient(135deg, #E2F3EF 0 14px, #F1F7F5 14px 28px)",
-          }}
-        />
-        <div className="p-7">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="fs-serif text-[30px] leading-tight">{residence.name}</h1>
-              <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                {residence.city} · {residence.units} unités · {residence.response}
-              </p>
-            </div>
-            <StatusPill tone={residence.badgeTone === "green" ? "green" : "neutral"}>
-              {residence.badge}
-            </StatusPill>
-          </div>
-          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            {residence.description}
-          </p>
-
-          <div className="fs-grid-main mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-            <div className="overflow-hidden rounded-[12px] border border-[var(--fs-border)]">
-              <div className="bg-[var(--fs-subtle)] px-4 py-3">
-                <p className="fs-serif text-[19px]">Types d&apos;unités et prix indicatifs</p>
-              </div>
-              <div
-                className="grid gap-3 border-b border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-2.5 text-[12.5px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]"
-                style={{ gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr" }}
-              >
-                <span>Type</span>
-                <span>Superficie</span>
-                <span>Prix indicatif</span>
-                <span>Disponibilité</span>
-              </div>
-              {units.map((u) => (
-                <div
-                  key={u.type}
-                  className="grid gap-3 border-b border-[var(--fs-border-faint)] px-4 py-3 last:border-0"
-                  style={{ gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr" }}
-                >
-                  <span className="font-semibold">{u.type}</span>
-                  <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
-                  <span>{u.price}</span>
-                  <span
-                    style={{
-                      color: u.tone === "terra" ? "var(--fs-terra)" : "var(--fs-success)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {u.avail}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="fs-label mb-3">Services inclus</p>
-                <div className="flex flex-wrap gap-2">
-                  {residence.services.map((s) => (
-                    <span
-                      key={s}
-                      className="fs-pill"
-                      style={{
-                        background: "var(--fs-subtle)",
-                        borderColor: "var(--fs-border)",
-                        color: "var(--fs-ink)",
-                      }}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-[12px] p-5" style={{ background: "var(--fs-subtle)" }}>
-                <p className="text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                  Votre dossier est déjà constitué. Le déposer auprès de cette résidence prend
-                  moins d&apos;une minute.
-                </p>
-                <button type="button" className="fs-btn fs-btn-primary mt-4 w-full" onClick={onApply}>
-                  Déposer une demande
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

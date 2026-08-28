@@ -55,6 +55,7 @@ export function CommunityProfileEditor() {
   useEffect(() => {
     if (workspace) {
       const profile = { ...workspace.profile };
+      profile.acceptingApplications = profile.acceptingApplications !== false;
       profile.admissionFlags = profile.admissionFlags || {
         medicaid: false,
         privatePay: true,
@@ -141,6 +142,52 @@ export function CommunityProfileEditor() {
             </Button>
           )}
         </header>
+
+        {/* New applications open/close */}
+        <Section
+          title={t("New applications")}
+          hint={t(
+            "Open or close intake for new family applications. Existing dossiers stay active.",
+          )}
+        >
+          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
+            <label className="flex items-center justify-between gap-3 rounded-xl bg-bg-soft/80 px-3 py-3 text-sm">
+              <div>
+                <p className="font-medium text-ink">
+                  {draft.acceptingApplications
+                    ? t("Accepting new applications")
+                    : t("Not accepting new applications")}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  {draft.acceptingApplications
+                    ? t("Families can send new dossiers to your community.")
+                    : t("Families see that intake is closed and cannot submit.")}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={draft.acceptingApplications}
+                disabled={!can("editAdmissions") && !can("editProfile")}
+                onClick={() =>
+                  patch({ acceptingApplications: !draft.acceptingApplications })
+                }
+                className={cn(
+                  "relative h-7 w-12 shrink-0 rounded-full transition",
+                  draft.acceptingApplications ? "bg-brand" : "bg-line-strong",
+                  !can("editAdmissions") && !can("editProfile") && "opacity-50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition",
+                    draft.acceptingApplications ? "left-5" : "left-0.5",
+                  )}
+                />
+              </button>
+            </label>
+          </div>
+        </Section>
 
         {/* 1. Photos */}
         <Section

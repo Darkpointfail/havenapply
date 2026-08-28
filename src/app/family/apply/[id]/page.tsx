@@ -32,6 +32,7 @@ import { getCommunityDetail } from "@/lib/residence-detail";
 import { labelForId, URGENCY_OPTIONS } from "@/lib/senior-profile";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { useResidenceAcceptingApplications } from "@/lib/use-residence-accepting";
 
 function reasonIcon(tone: MatchReason["tone"]) {
   if (tone === "fit") return <ThumbsUp size={14} className="text-success" />;
@@ -96,6 +97,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
   const already = residence
     ? hasActiveSubmission(data.applications, residence.id)
     : false;
+  const accepting = useResidenceAcceptingApplications(residenceId);
   const activeApp = data.applications.find(
     (a) =>
       a.residenceId === residenceId &&
@@ -118,6 +120,34 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
         <Button href="/family/find-communities" className="mt-6">
           {t("Browse communities")}
         </Button>
+      </div>
+    );
+  }
+
+  if (!accepting && !already && !doneId) {
+    return (
+      <div className="mx-auto max-w-lg px-5 py-16">
+        <Link
+          href={`/find-senior-living/${residenceId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
+        >
+          <ArrowLeft size={14} /> Back to community
+        </Link>
+        <Card className="mt-6 p-6">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {t("Not accepting applications")}
+          </h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            {t("This community has temporarily closed new applications.")}{" "}
+            {residence.name} {t("is not receiving new dossiers right now.")}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button href="/family/find-communities">{t("Browse communities")}</Button>
+            <Button href={`/find-senior-living/${residenceId}`} variant="secondary">
+              {t("Back")}
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -166,7 +196,7 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
     : "";
 
   const submit = () => {
-    if (!user || !consent || sending || already) return;
+    if (!user || !consent || sending || already || !accepting) return;
     setSending(true);
     setError(null);
     const draft = emptyDraftApplication(residence, {
@@ -185,7 +215,11 @@ function ApplyReviewInner({ residenceId }: { residenceId: string }) {
     ]);
     setSending(false);
     if (!results.length) {
-      setError("Could not submit. You may already have an active application here.");
+      setError(
+        accepting
+          ? "Could not submit. You may already have an active application here."
+          : t("This community is not accepting new applications right now."),
+      );
       return;
     }
     setDoneId(results[0].id);

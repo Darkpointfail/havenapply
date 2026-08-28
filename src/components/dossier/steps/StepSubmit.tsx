@@ -17,6 +17,7 @@ import {
   emptyDraftApplication,
   hasActiveSubmission,
 } from "@/lib/family-applications";
+import { isResidenceAcceptingApplications } from "@/lib/community-portal";
 import { statusTone } from "@/data/applications";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,7 @@ export function StepSubmit({
       .map((id) => residences.find((r) => r.id === id))
       .filter(Boolean)
       .filter((r) => !hasActiveSubmission(data.applications, r!.id))
+      .filter((r) => isResidenceAcceptingApplications(r!.id))
       .map((r) => {
         const draft = emptyDraftApplication(r!, {
           name: user.name || "",
@@ -176,15 +178,17 @@ export function StepSubmit({
         {results.map((r) => {
           const on = selected.has(r.id);
           const active = hasActiveSubmission(data.applications, r.id);
+          const closed = !isResidenceAcceptingApplications(r.id);
+          const blocked = Boolean(active || closed);
           return (
             <button
               key={r.id}
               type="button"
-              disabled={Boolean(active)}
+              disabled={blocked}
               onClick={() => toggle(r.id)}
               className={cn(
                 "flex w-full items-center gap-4 rounded-[1.5rem] border p-3 text-left transition sm:p-4",
-                active
+                blocked
                   ? "cursor-not-allowed border-line bg-bg-soft opacity-70"
                   : on
                     ? "border-brand bg-brand-soft/60 shadow-soft"
@@ -202,6 +206,11 @@ export function StepSubmit({
                 {active ? (
                   <p className="mt-1 text-xs font-medium text-brand">
                     {t("Already submitted")}
+                  </p>
+                ) : null}
+                {closed && !active ? (
+                  <p className="mt-1 text-xs font-medium text-ink-muted">
+                    {t("Not accepting applications")}
                   </p>
                 ) : null}
               </div>

@@ -9,6 +9,7 @@ import {
   canUseFamilyApplyFlow,
   canUseProfessionalApplyFlow,
 } from "@/lib/permissions";
+import { useResidenceAcceptingApplications } from "@/lib/use-residence-accepting";
 
 /**
  * Navigates to the role-appropriate apply flow.
@@ -31,13 +32,22 @@ export function ApplyButton({
   /** @deprecated ignored */
   autoOpen?: boolean;
 }) {
-
-  const t = useT();  const { user, ready } = useAuth();
+  const t = useT();
+  const { user, ready } = useAuth();
+  const accepting = useResidenceAcceptingApplications(residenceId);
 
   if (!ready) {
     return (
       <Button size={size} variant={variant} className={cn(className)} disabled>
         {children}
+      </Button>
+    );
+  }
+
+  if (residenceId && !accepting) {
+    return (
+      <Button size={size} variant="secondary" className={cn(className)} disabled>
+        {t("Not accepting applications")}
       </Button>
     );
   }

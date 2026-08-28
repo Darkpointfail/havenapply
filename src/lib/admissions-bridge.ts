@@ -4,7 +4,10 @@
  */
 
 import type { ApplicationStatus } from "@/data/applications";
-import type { CommunityApplication } from "@/lib/community-portal";
+import {
+  COMMUNITY_PORTAL_STORAGE_KEY,
+  type CommunityApplication,
+} from "@/lib/community-portal";
 import {
   canonicalSeniorName,
   scrubDemoNamesDeep,
@@ -13,6 +16,8 @@ import type { CommunityDecisionKind, FamilyApplication } from "@/lib/family-appl
 import { applyCommunityDecision, withdrawApplication } from "@/lib/family-applications";
 
 const SHARED_KEY = "haven-shared-admissions-v2";
+const COMMUNITY_PORTAL_KEY = COMMUNITY_PORTAL_STORAGE_KEY;
+export const COMMUNITY_ADMISSIONS_EVENT = "haven-community-admissions";
 
 export type SharedAdmissionPacket = {
   id: string;
@@ -148,9 +153,6 @@ export function publishFamilyApplication(
   notifyCommunityPortalOfApplication(saved);
   return saved;
 }
-
-const COMMUNITY_PORTAL_KEY = "haven-community-portal-v6";
-export const COMMUNITY_ADMISSIONS_EVENT = "haven-community-admissions";
 
 type PortalNotification = {
   id: string;

@@ -466,6 +466,8 @@ export type CommunityProfile = {
   }[];
   promotions: string;
   waitlistNotes: string;
+  /** When false, families and professionals cannot submit new applications. */
+  acceptingApplications: boolean;
   admissionFlags?: {
     medicaid: boolean;
     privatePay: boolean;
@@ -475,6 +477,39 @@ export type CommunityProfile = {
     notes: string;
   };
 };
+
+/** localStorage key shared by the community portal store and family apply gate. */
+export const COMMUNITY_PORTAL_STORAGE_KEY = "haven-community-portal-v10";
+
+/** Fired when a facility updates profile fields that families need to re-read. */
+export const COMMUNITY_PROFILE_CHANGED_EVENT = "haven-community-profile-changed";
+
+/** Default true when no workspace is saved yet (seed / first open). */
+export function isResidenceAcceptingApplications(residenceId: string): boolean {
+  if (typeof window === "undefined" || !residenceId) return true;
+  try {
+    const raw = localStorage.getItem(COMMUNITY_PORTAL_STORAGE_KEY);
+    if (!raw) return true;
+    const map = JSON.parse(raw) as Record<
+      string,
+      { profile?: { acceptingApplications?: boolean } }
+    >;
+    const profile = map[residenceId]?.profile;
+    if (!profile) return true;
+    return profile.acceptingApplications !== false;
+  } catch {
+    return true;
+  }
+}
+
+export function notifyCommunityProfileChanged(residenceId?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(COMMUNITY_PROFILE_CHANGED_EVENT, {
+      detail: { residenceId },
+    }),
+  );
+}
 
 export type CommunityTeamMember = {
   id: string;
@@ -1598,6 +1633,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       })),
       promotions: "Spring move-in credit: first community fee waived for May admissions.",
       waitlistNotes: "Memory care waitlist currently ~4–6 weeks for private suites.",
+      acceptingApplications: true,
       admissionFlags: {
         medicaid: r.acceptsMedicaid,
         privatePay: true,

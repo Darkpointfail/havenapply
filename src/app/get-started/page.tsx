@@ -2,101 +2,129 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useId, useRef, useState } from "react";
-import { Briefcase, Building2, HeartHandshake } from "lucide-react";
-import {
-  AuthAlert,
-  AuthField,
-  authInputClass,
-} from "@/components/auth/AuthForm";
+import { FormEvent, Suspense, useId, useState } from "react";
+import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { AuthAlert } from "@/components/auth/AuthForm";
 import { RedirectIfAuthenticated } from "@/components/auth/RequireAuth";
 import { Logo } from "@/components/brand/Logo";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth";
 import type { SignupRole } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/locale";
+import "./get-started.css";
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-public-sans",
+  display: "swap",
+});
+
+type GetStartedRole = Extract<SignupRole, "family" | "facility">;
 
 const ROLE_OPTIONS: {
-  id: SignupRole;
+  id: GetStartedRole;
+  initial: string;
   title: string;
-  subtitle: string;
-  examples?: string[];
-  icon: typeof HeartHandshake;
-  accent: "brand" | "soft" | "accent";
+  description: string;
+  points: string[];
 }[] = [
   {
     id: "family",
-    title: "Family",
-    subtitle: "For yourself or a loved one looking for the right care community.",
-    icon: HeartHandshake,
-    accent: "brand",
-  },
-  {
-    id: "professional",
-    title: "Care Professional",
-    subtitle: "Submit and manage applications on behalf of your patients.",
-    examples: [
-      "Social Worker",
-      "Case Manager",
-      "Hospital Discharge Planner",
-      "Physician",
-      "Care Coordinator",
+    initial: "P",
+    title: "Proche aidant",
+    description: "Pour vous-même ou pour un proche à la recherche d'un milieu de vie.",
+    points: [
+      "Un seul dossier d'admission, réutilisé partout",
+      "Des résidences suggérées selon le profil",
+      "Le suivi des demandes au même endroit",
     ],
-    icon: Briefcase,
-    accent: "soft",
   },
   {
     id: "facility",
-    title: "Care Community",
-    subtitle: "Receive, review and manage resident applications.",
-    examples: [
-      "Assisted Living",
-      "Nursing Home",
-      "Skilled Nursing Facility",
-      "Memory Care Community",
+    initial: "É",
+    title: "Établissement",
+    description: "Pour recevoir, évaluer et suivre les demandes d'admission.",
+    points: [
+      "Des dossiers complets et normalisés",
+      "Une console d'admission et une liste d'attente",
+      "Vos disponibilités visibles par les familles",
     ],
-    icon: Building2,
-    accent: "accent",
   },
 ];
 
-function roleFromQuery(value: string | null): SignupRole | null {
-  if (value === "family" || value === "professional" || value === "facility") return value;
+const FAMILY_FOR = [
+  "Un parent",
+  "Mon conjoint ou ma conjointe",
+  "Moi-même",
+  "Un autre proche",
+] as const;
+
+const FACILITY_TYPES = [
+  "Résidence privée pour aînés",
+  "CHSLD",
+  "Ressource intermédiaire",
+  "Unité de soins de mémoire",
+] as const;
+
+function roleFromQuery(value: string | null): GetStartedRole | null {
+  if (value === "family" || value === "facility") return value;
   if (value === "community") return "facility";
   return null;
 }
 
-function accentClasses(accent: "brand" | "soft" | "accent", selected: boolean) {
-  if (accent === "brand") {
-    return {
-      icon: "bg-brand-soft text-brand",
-      ring: selected ? "border-brand bg-brand-soft/40 shadow-soft ring-2 ring-brand/25" : "",
-    };
-  }
-  if (accent === "accent") {
-    return {
-      icon: "bg-accent-soft text-accent",
-      ring: selected ? "border-accent bg-accent-soft/50 shadow-soft ring-2 ring-accent/25" : "",
-    };
-  }
-  return {
-    icon: "bg-bg-soft text-ink",
-    ring: selected ? "border-brand bg-bg-soft shadow-soft ring-2 ring-brand/20" : "",
-  };
+function ChipGroup({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  return (
+    <fieldset>
+      <legend className="gs-field-label mb-2.5">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const on = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt)}
+              aria-pressed={on}
+              className="rounded-[20px] border px-3.5 py-2 text-[13.5px] font-medium transition-colors"
+              style={{
+                background: on ? "var(--gs-green-tint)" : "var(--gs-subtle)",
+                borderColor: on ? "var(--gs-green-line)" : "var(--gs-border)",
+                color: on ? "var(--gs-green)" : "var(--gs-ink-muted)",
+              }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
 }
 
 function GetStartedInner() {
-  const t = useT();
   const { signUp, ready } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
   const formId = useId();
-  const formRef = useRef<HTMLDivElement>(null);
 
-  const [role, setRole] = useState<SignupRole | null>(() => roleFromQuery(params.get("as")));
+  const [role, setRole] = useState<GetStartedRole | null>(() => roleFromQuery(params.get("as")));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,28 +137,20 @@ function GetStartedInner() {
   const [organization, setOrganization] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
+  const [familyFor, setFamilyFor] = useState<string>(FAMILY_FOR[0]);
+  const [facilityType, setFacilityType] = useState<string>(FACILITY_TYPES[0]);
 
-  const needsOrg = role === "professional" || role === "facility";
-  const selectedMeta = ROLE_OPTIONS.find((o) => o.id === role);
   const nextParam = params.get("next");
   const safeNext =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
   const familyHome = safeNext?.startsWith("/family") ? safeNext : "/family/dashboard";
-
-  useEffect(() => {
-    if (!role || !formRef.current) return;
-    const t = window.setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 180);
-    return () => window.clearTimeout(t);
-  }, [role]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!role || submitting) return;
     setError(null);
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
     setSubmitting(true);
@@ -141,294 +161,343 @@ function GetStartedInner() {
       email,
       password,
       acceptedTerms,
-      organization: needsOrg ? organization : undefined,
-      jobTitle: needsOrg ? jobTitle : undefined,
-      phone: needsOrg ? phone : undefined,
+      organization: role === "facility" ? organization : undefined,
+      jobTitle: role === "facility" ? jobTitle || facilityType : undefined,
+      phone: role === "facility" ? phone : undefined,
     });
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
+    const destination = role === "facility" ? "/community/dashboard" : familyHome;
     if (result.pendingConfirmation) {
       router.push(
-        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}&next=${encodeURIComponent(
-          role === "facility"
-            ? "/community/dashboard"
-            : role === "professional"
-              ? "/professional/dashboard"
-              : familyHome,
-        )}`,
+        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}&next=${encodeURIComponent(destination)}`,
       );
       return;
     }
     if (result.needsManualSignIn) {
       router.push(
-        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(
-          role === "facility"
-            ? "/community/dashboard"
-            : role === "professional"
-              ? "/professional/dashboard"
-              : familyHome,
-        )}`,
+        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(destination)}`,
       );
       return;
     }
-    router.push(
-      role === "facility"
-        ? "/community/dashboard"
-        : role === "professional"
-          ? "/professional/dashboard"
-          : familyHome,
-    );
+    router.push(destination);
   };
 
   if (!ready) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-10 w-10 animate-pulse-soft rounded-full bg-brand-soft" />
+      <div className="flex min-h-[50vh] items-center justify-center bg-[var(--gs-canvas,#ECF2F0)]">
+        <div className="h-10 w-10 animate-pulse rounded-full" style={{ background: "#E2F3EF" }} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12 md:py-16">
-      <div className="mb-6">
-        <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
-      </div>
-      <PageHeader
-        title={t("Who are you using HavenApply as?")}
-        description="Choose your role once, then create your account."
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Get Started" }]}
-      />
+    <div
+      className={cn("gs min-h-[100dvh]", sourceSerif.variable, publicSans.variable)}
+      style={{ fontFamily: "var(--font-public-sans), 'Public Sans', system-ui, sans-serif" }}
+    >
+      <header className="gs-header">
+        <div className="gs-header-inner">
+          <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
+          <p className="text-[14px] text-white/75">
+            Vous avez déjà un compte ?{" "}
+            <Link href="/sign-in" className="font-semibold no-underline" style={{ color: "var(--gs-green-light)" }}>
+              Se connecter
+            </Link>
+          </p>
+        </div>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {ROLE_OPTIONS.map((option) => {
-          const selected = role === option.id;
-          const Icon = option.icon;
-          const accents = accentClasses(option.accent, selected);
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => {
-                setRole(option.id);
-                setError(null);
-              }}
-              aria-pressed={selected}
-              className={cn(
-                "group flex h-full flex-col rounded-3xl border border-line bg-surface p-5 text-left transition duration-300 ease-out",
-                "hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-soft",
-                accents.ring,
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-flex h-12 w-12 items-center justify-center rounded-2xl transition",
-                  accents.icon,
-                )}
-              >
-                <Icon size={22} />
-              </span>
-              <p className="mt-4 text-lg font-semibold tracking-tight text-ink">{option.title}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{option.subtitle}</p>
-              {option.examples ? (
-                <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
-                  {option.examples.join(" · ")}
-                </p>
-              ) : (
-                <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
-                  {t("Yourself or a family member seeking care.")}
-                </p>
-              )}
-              <span
-                className={cn(
-                  "mt-auto pt-4 text-sm font-medium transition",
-                  selected ? "text-brand" : "text-ink-muted group-hover:text-brand",
-                )}
-              >
-                {selected ? "Selected" : "Select"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <main className="gs-main">
+        <p className="gs-eyebrow">Créer un compte</p>
+        <h1 className="gs-h1">Vous utilisez HavenApply à quel titre ?</h1>
+        <p className="gs-lead">
+          Choisissez votre rôle une seule fois. Il reste associé à votre compte et détermine ce que
+          vous voyez à la connexion.
+        </p>
 
-      <div
-        ref={formRef}
-        className={cn(
-          "grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out",
-          role ? "mt-8 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0",
-        )}
-        aria-hidden={!role}
-      >
-        <div className="overflow-hidden">
-          <Card className="p-6 md:p-8">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                  {t("Create account")}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-ink">
-                  {selectedMeta ? `${selectedMeta.title} registration` : "Registration"}
-                </h2>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {t("Your role is saved with your account for future access.")}
-                </p>
-              </div>
-              {role ? (
-                <button
-                  type="button"
-                  className="text-sm text-ink-muted hover:text-brand"
-                  onClick={() => {
-                    setRole(null);
-                    setError(null);
+        <div className="mt-9 grid gap-[18px] md:grid-cols-2">
+          {ROLE_OPTIONS.map((option) => {
+            const selected = role === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => {
+                  setRole(option.id);
+                  setError(null);
+                }}
+                className="gs-role-card text-left"
+                style={{
+                  borderColor: selected ? "var(--gs-green)" : "var(--gs-border)",
+                  background: selected ? "var(--gs-green-tint-2)" : "var(--gs-surface)",
+                }}
+              >
+                <span
+                  className="gs-role-mark"
+                  style={{
+                    background: selected ? "var(--gs-green)" : "var(--gs-green-tint)",
+                    color: selected ? "#fff" : "var(--gs-green)",
                   }}
                 >
-                  {t("Change role")}
-                </button>
-              ) : null}
-            </div>
+                  {option.initial}
+                </span>
+                <h2 className="gs-role-title">{option.title}</h2>
+                <p className="mt-2 text-[15px] leading-relaxed text-[var(--gs-ink-body)]">
+                  {option.description}
+                </p>
+                <ul className="mt-5 space-y-2.5">
+                  {option.points.map((point) => (
+                    <li
+                      key={point}
+                      className="flex gap-2.5 text-[14.5px] leading-relaxed text-[var(--gs-ink-body)]"
+                    >
+                      <span
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: "var(--gs-green)" }}
+                        aria-hidden
+                      />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div
+                  className="mt-5 border-t pt-4 text-[14px] font-medium"
+                  style={{
+                    borderColor: "var(--gs-border-faint)",
+                    color: selected ? "var(--gs-green)" : "var(--gs-ink-muted)",
+                  }}
+                >
+                  {selected ? "Sélectionné" : "Choisir ce rôle"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-            <form id={formId} onSubmit={onSubmit} className="mt-6 space-y-4">
-              {error ? <AuthAlert>{error}</AuthAlert> : null}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <AuthField label={t("First name")}>
-                  <input
-                    required
-                    className={authInputClass}
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    autoComplete="given-name"
-                  />
-                </AuthField>
-                <AuthField label={t("Last name")}>
-                  <input
-                    required
-                    className={authInputClass}
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    autoComplete="family-name"
-                  />
-                </AuthField>
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out",
+            role ? "mt-8 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0",
+          )}
+          aria-hidden={!role}
+        >
+          <div className="overflow-hidden">
+            <div className="gs-form-card">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="gs-eyebrow !tracking-[0.07em]">Inscription</p>
+                  <h2 className="gs-h2 mt-1.5">
+                    {role === "facility" ? "Compte établissement" : "Compte proche aidant"}
+                  </h2>
+                  <p className="mt-2 max-w-xl text-[14.5px] text-[var(--gs-ink-muted)]">
+                    {role === "facility"
+                      ? "Votre établissement sera vérifié avant la mise en ligne de sa fiche."
+                      : "Votre rôle est enregistré avec votre compte pour vos prochaines connexions."}
+                  </p>
+                </div>
+                {role ? (
+                  <button
+                    type="button"
+                    className="text-[14px] font-medium text-[var(--gs-ink-muted)] hover:text-[var(--gs-green)]"
+                    onClick={() => {
+                      setRole(null);
+                      setError(null);
+                    }}
+                  >
+                    Changer de rôle
+                  </button>
+                ) : null}
               </div>
 
-              <AuthField label={t("Email")}>
-                <input
-                  required
-                  type="email"
-                  className={authInputClass}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                />
-              </AuthField>
+              <form id={formId} onSubmit={onSubmit} className="mt-7 space-y-5">
+                {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-              {needsOrg ? (
-                <>
-                  <AuthField
-                    label={role === "facility" ? "Community / organization" : "Organization"}
-                  >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="gs-field-label">Prénom</span>
                     <input
                       required
-                      className={authInputClass}
-                      value={organization}
-                      onChange={(e) => setOrganization(e.target.value)}
-                      autoComplete="organization"
-                      placeholder={
-                        role === "facility" ? "Maple Grove Residence" : "City Hospital Case Management"
-                      }
+                      className="gs-input"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      autoComplete="given-name"
                     />
-                  </AuthField>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <AuthField label={t("Job title")}>
+                  </label>
+                  <label className="block">
+                    <span className="gs-field-label">Nom</span>
+                    <input
+                      required
+                      className="gs-input"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      autoComplete="family-name"
+                    />
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="gs-field-label">Courriel</span>
+                  <input
+                    required
+                    type="email"
+                    className="gs-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </label>
+
+                {role === "family" ? (
+                  <ChipGroup
+                    label="Pour qui préparez-vous le dossier ?"
+                    options={FAMILY_FOR}
+                    value={familyFor}
+                    onChange={setFamilyFor}
+                  />
+                ) : null}
+
+                {role === "facility" ? (
+                  <>
+                    <label className="block">
+                      <span className="gs-field-label">Nom de l&apos;établissement</span>
                       <input
                         required
-                        className={authInputClass}
-                        value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
-                        autoComplete="organization-title"
-                        placeholder={
-                          role === "facility" ? "Director of Admissions" : "Social Worker"
-                        }
+                        className="gs-input"
+                        value={organization}
+                        onChange={(e) => setOrganization(e.target.value)}
+                        autoComplete="organization"
+                        placeholder="Résidence Les Jardins du Fleuve"
                       />
-                    </AuthField>
-                    <AuthField label={t("Phone")} hint="Optional">
-                      <input
-                        type="tel"
-                        className={authInputClass}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        autoComplete="tel"
-                      />
-                    </AuthField>
-                  </div>
-                </>
-              ) : null}
+                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="gs-field-label">Fonction</span>
+                        <input
+                          required
+                          className="gs-input"
+                          value={jobTitle}
+                          onChange={(e) => setJobTitle(e.target.value)}
+                          autoComplete="organization-title"
+                          placeholder="Direction des admissions"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="gs-field-label">Téléphone</span>
+                        <input
+                          type="tel"
+                          className="gs-input"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          autoComplete="tel"
+                          placeholder="418 555-0142"
+                        />
+                      </label>
+                    </div>
+                    <ChipGroup
+                      label="Type d'établissement"
+                      options={FACILITY_TYPES}
+                      value={facilityType}
+                      onChange={setFacilityType}
+                    />
+                  </>
+                ) : null}
 
-              <AuthField label={t("Password")} hint="At least 8 characters">
-                <input
-                  required
-                  type="password"
-                  minLength={8}
-                  className={authInputClass}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                />
-              </AuthField>
-              <AuthField label={t("Confirm password")}>
-                <input
-                  required
-                  type="password"
-                  minLength={8}
-                  className={authInputClass}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  autoComplete="new-password"
-                />
-              </AuthField>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="gs-field-label">Mot de passe</span>
+                    <input
+                      required
+                      type="password"
+                      minLength={8}
+                      className="gs-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <span className="mt-1.5 block text-[12.5px] text-[var(--gs-ink-faint)]">
+                      Au moins 8 caractères
+                    </span>
+                  </label>
+                  <label className="block">
+                    <span className="gs-field-label">Confirmation</span>
+                    <input
+                      required
+                      type="password"
+                      minLength={8}
+                      className="gs-input"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                </div>
 
-              <label className="flex items-start gap-3 text-sm text-ink-muted">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                />
-                <span>
-                  I accept the <span className="font-medium text-ink">Terms of Use</span> and{" "}
-                  <span className="font-medium text-ink">Privacy Policy</span>.
-                </span>
-              </label>
+                <label className="flex items-start gap-3 text-[14.5px] leading-relaxed text-[var(--gs-ink-body)]">
+                  <input
+                    type="checkbox"
+                    required
+                    className="mt-1 h-4 w-4"
+                    style={{ accentColor: "var(--gs-green)" }}
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  />
+                  <span>
+                    J&apos;accepte les{" "}
+                    <Link href="/family/privacy" className="font-medium text-[var(--gs-green)] no-underline">
+                      conditions d&apos;utilisation
+                    </Link>{" "}
+                    et la{" "}
+                    <Link href="/family/privacy" className="font-medium text-[var(--gs-green)] no-underline">
+                      politique de confidentialité
+                    </Link>
+                    .
+                  </span>
+                </label>
 
-              <Button type="submit" className="w-full" size="lg" disabled={submitting || !role}>
-                {submitting ? "Creating account…" : "Create account"}
-              </Button>
-            </form>
-          </Card>
+                <button
+                  type="submit"
+                  disabled={submitting || !role}
+                  className="gs-submit"
+                >
+                  {submitting ? "Création du compte…" : "Créer mon compte"}
+                </button>
+
+                <p className="text-center text-[13.5px] text-[var(--gs-ink-muted)]">
+                  {role === "facility"
+                    ? "Nous validons votre établissement sous un jour ouvrable, puis votre console d'admission est activée."
+                    : "Vous pourrez commencer le dossier de votre proche immédiatement et le reprendre en tout temps."}
+                </p>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <p className="mt-8 text-center text-sm text-ink-muted">
-        Already have an account?{" "}
-        <Link href="/sign-in" className="font-medium text-brand hover:underline">
-          {t("Log in")}
-        </Link>
-      </p>
+        {!role ? (
+          <p className="mt-10 text-center text-[14.5px] text-[var(--gs-ink-muted)]">
+            Vous représentez un CISSS, un CIUSSS ou un groupe de résidences ?{" "}
+            <Link href="/contact" className="font-semibold text-[var(--gs-green)] no-underline">
+              Écrivez-nous
+            </Link>{" "}
+            et nous configurons vos accès.
+          </p>
+        ) : null}
+      </main>
     </div>
   );
 }
 
 export default function GetStartedPage() {
-
-  const t = useT();  return (
+  return (
     <RedirectIfAuthenticated fallbackHref="/family/dashboard">
       <Suspense
         fallback={
-          <div className="flex min-h-[50vh] items-center justify-center">
-            <div className="h-10 w-10 animate-pulse-soft rounded-full bg-brand-soft" />
+          <div className="flex min-h-[50vh] items-center justify-center bg-[#ECF2F0]">
+            <div className="h-10 w-10 animate-pulse rounded-full bg-[#E2F3EF]" />
           </div>
         }
       >

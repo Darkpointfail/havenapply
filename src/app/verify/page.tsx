@@ -17,7 +17,7 @@ function VerifyInner() {
   const { confirmEmail } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") || "";
-  const next = params.get("next") || "/setup";
+  const next = params.get("next") || "/family/dashboard";
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -78,7 +78,7 @@ function VerifyInner() {
             {t("After you sign in, you can choose to talk with Haven or fill the profile with forms.")}
           </p>
           <Button
-            href={`/sign-in?next=${encodeURIComponent(next.startsWith("/") ? next : "/setup")}`}
+            href={`/sign-in?next=${encodeURIComponent(next.startsWith("/") ? next : "/family/dashboard")}`}
             className="w-full"
             size="lg"
           >

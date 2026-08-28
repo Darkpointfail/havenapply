@@ -13,8 +13,8 @@ export type NavGroup = {
 };
 
 export const publicNav: NavItem[] = [
-  { href: "/for-communities", label: "For Residences" },
-  { href: "/for-families", label: "For Families" },
+  { href: "/#comment", label: "Comment ça marche" },
+  { href: "/get-started", label: "Commencer" },
   { href: "/contact", label: "Contact" },
 ];
 

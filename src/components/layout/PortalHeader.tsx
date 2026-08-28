@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { useAuth } from "@/lib/auth";
+import { useAi } from "@/lib/ai";
 import { useT } from "@/lib/i18n/locale";
 import { useMessaging } from "@/lib/messaging-store";
 import { useNotificationsTasksOptional } from "@/lib/notifications-tasks-store";
@@ -46,6 +47,7 @@ export function PortalHeader({
   const notifTasks = useNotificationsTasksOptional();
   const notifUnread = notifTasks?.unreadCount ?? 0;
   const { theme, toggle } = useTheme();
+  const { setOpen: openAi } = useAi();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -389,7 +391,7 @@ export function PortalHeader({
               size="sm"
               variant="soft"
               className="hidden sm:inline-flex"
-              href="/assistant"
+              onClick={() => openAi(true)}
             >
               <Sparkles size={14} /> {t("Assistant")}
             </Button>

@@ -560,7 +560,7 @@ export function homeForUser(user: SessionUser) {
     return user.communityStatus === "verified" ? "/community/dashboard" : "/community/pending";
   }
   if (user.role === "professional") return "/professional/dashboard";
-  return user.onboardingCompleted ? "/family/dashboard" : "/start";
+  return "/family/dashboard";
 }
 
 export function homeForRole(role: UserRole) {

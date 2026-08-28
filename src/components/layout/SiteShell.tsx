@@ -42,6 +42,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname === "/internal/sign-in";
   const isCommunityPending = pathname === "/community/pending";
   const isSiteAccess = pathname === "/site-access";
+  const isPublicHome = pathname === "/";
   const isPublicAuth =
     pathname === "/sign-in" ||
     pathname === "/get-started" ||
@@ -52,7 +53,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  if (isSiteAccess) {
+  if (isSiteAccess || isPublicHome) {
     return <main className="flex-1">{children}</main>;
   }
 

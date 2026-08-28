@@ -66,7 +66,7 @@ function OnboardingInner() {
   useEffect(() => {
     if (!ready) return;
     if (user?.onboardingCompleted && data.seniorCreated) {
-      router.replace("/family/dashboard");
+      router.replace("/");
       return;
     }
     setStep(Math.min(data.onboarding.stepIndex, ONBOARDING_STEPS.length - 1));
@@ -168,7 +168,7 @@ function OnboardingInner() {
 
   const saveAndExit = () => {
     setOnboardingStep(step);
-    router.push("/family/dashboard");
+    router.push("/");
   };
 
   const toggleHousing = (id: string) => {
@@ -220,7 +220,7 @@ function OnboardingInner() {
     setSubmitting(true);
     finalizeSeniorProfile();
     completeOnboarding();
-    router.push("/family/dashboard");
+    router.push("/");
   };
 
   const stepMeta = ONBOARDING_STEPS[step];

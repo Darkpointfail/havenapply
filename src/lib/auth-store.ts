@@ -523,12 +523,12 @@ export function homeForUser(user: SessionUser) {
     return user.communityStatus === "verified" ? "/community/dashboard" : "/community/pending";
   }
   if (user.role === "professional") return "/professional/dashboard";
-  return user.onboardingCompleted ? "/family/dashboard" : "/start";
+  return user.onboardingCompleted ? "/" : "/start";
 }
 
 export function homeForRole(role: UserRole) {
   if (isFacilityRole(role)) return "/community/dashboard";
   if (role === "internal") return "/internal/overview";
   if (role === "professional") return "/professional/dashboard";
-  return "/family/dashboard";
+  return "/";
 }

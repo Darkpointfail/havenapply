@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { FamilySpace } from "@/components/family-space/FamilySpace";
-
-export default function FamilyEspacePage() {
-  return <FamilySpace />;
+/** Legacy path — the family space now lives at the site root. */
+export default function FamilyEspaceRedirectPage() {
+  redirect("/");
 }

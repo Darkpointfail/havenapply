@@ -7,6 +7,7 @@ import { familyMobileNav } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
 const icons = {
+  "/": Home,
   "/family/dashboard": Home,
   "/family/find-communities": Search,
   "/family/applications": CheckSquare,

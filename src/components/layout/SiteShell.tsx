@@ -33,7 +33,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   const isCoreFamily = isFamilyPortalPath(pathname);
   const isBrowse = isSharedBrowsePath(pathname);
-  const isFamilyEspace = pathname.startsWith("/family/espace");
+  const isFamilyEspaceUi =
+    pathname === "/" ||
+    pathname === "/family/dashboard" ||
+    pathname.startsWith("/family/espace");
+  const isCommunityConsoleUi =
+    pathname === "/community/dashboard" || pathname.startsWith("/community/console");
   const isCommunity = pathname.startsWith("/community") || pathname.startsWith("/admin");
   const isProfessional = isProfessionalPortalPath(pathname);
   const isInternal = pathname.startsWith("/internal");
@@ -53,7 +58,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  if (isSiteAccess) {
+  // Full-bleed product UIs: family space (root / B2C) and residence console (B2B).
+  if (isSiteAccess || pathname === "/") {
     return <main className="flex-1">{children}</main>;
   }
 
@@ -88,7 +94,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   if (showFamilyShell) {
-    if (isFamilyEspace) {
+    if (isFamilyEspaceUi) {
       return <main className="flex-1">{children}</main>;
     }
     return (
@@ -122,6 +128,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   if (isCommunity && !isPortalAuth && !isCommunityPending && communitySession) {
+    if (isCommunityConsoleUi) {
+      return <main className="flex-1">{children}</main>;
+    }
     return (
       <>
         <PortalHeader

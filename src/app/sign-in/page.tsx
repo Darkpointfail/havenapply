@@ -113,7 +113,7 @@ function SignInForm() {
 export default function SignInPage() {
 
   const t = useT();  return (
-    <RedirectIfAuthenticated fallbackHref="/family/dashboard">
+    <RedirectIfAuthenticated fallbackHref="/">
       <Suspense
         fallback={
           <div className="flex min-h-[50vh] items-center justify-center">

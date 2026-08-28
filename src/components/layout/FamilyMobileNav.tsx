@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 const icons: Record<string, typeof Home> = {
+  "/": Home,
   "/family/dashboard": Home,
   "/family/profile": UserRound,
   "/family/find-communities": Search,
@@ -27,7 +28,7 @@ export function FamilyMobileNav() {
           const Icon = icons[item.href] ?? Home;
           const active =
             pathname === item.href ||
-            pathname.startsWith(item.href + "/") ||
+            (item.href !== "/" && pathname.startsWith(item.href + "/")) ||
             (item.href === "/family/profile" &&
               (pathname.startsWith("/family/senior-profile") ||
                 pathname.startsWith("/family/documents") ||

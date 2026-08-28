@@ -1,0 +1,157 @@
+/* Scoped design tokens for the residence admissions console */
+.rc-console {
+  --rc-ink: #121a17;
+  --rc-ink-muted: #586863;
+  --rc-ink-faint: #8e9b96;
+  --rc-green: #0e9384;
+  --rc-green-deep: #0a6f63;
+  --rc-black: #101815;
+  --rc-black-soft: #16302a;
+  --rc-terra: #a6572b;
+  --rc-terra-bg: #fbeee4;
+  --rc-green-bg: #e2f3ef;
+  --rc-surface: #ffffff;
+  --rc-canvas: #ecf2f0;
+  --rc-subtle: #f7faf9;
+  --rc-hover: #f3f8f6;
+  --rc-border: #dce6e2;
+  --rc-border-faint: #ecf2f0;
+
+  --rc-font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  --rc-font-sans: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+
+  font-family: var(--rc-font-sans);
+  color: var(--rc-ink);
+  background: var(--rc-canvas);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.rc-console * {
+  box-sizing: border-box;
+}
+
+.rc-serif {
+  font-family: var(--rc-font-serif);
+  font-weight: 600;
+}
+
+.rc-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--rc-ink-muted);
+}
+
+.rc-card {
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-border);
+  border-radius: 10px;
+}
+
+.rc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.rc-btn-primary {
+  background: var(--rc-green);
+  color: #fff;
+}
+.rc-btn-primary:hover {
+  background: var(--rc-black);
+}
+
+.rc-btn-outline {
+  background: transparent;
+  border-color: var(--rc-border);
+  color: var(--rc-ink);
+}
+.rc-btn-outline:hover {
+  background: var(--rc-hover);
+}
+
+.rc-btn-terra {
+  background: var(--rc-terra);
+  color: #fff;
+}
+.rc-btn-terra:hover {
+  background: #8d4623;
+}
+
+.rc-btn-ghost {
+  background: var(--rc-subtle);
+  color: var(--rc-ink);
+}
+.rc-btn-ghost:hover {
+  background: var(--rc-hover);
+}
+
+.rc-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--rc-border);
+  border-radius: 7px;
+  background: var(--rc-subtle);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--rc-ink);
+  outline: none;
+}
+.rc-input::placeholder {
+  color: var(--rc-ink-faint);
+}
+.rc-input:focus {
+  border-color: var(--rc-green);
+  background: var(--rc-surface);
+}
+
+.rc-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.rc-table-head {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: var(--rc-subtle);
+  border-bottom: 1px solid var(--rc-border);
+}
+
+.rc-table-row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rc-border-faint);
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+.rc-table-row:last-child {
+  border-bottom: none;
+}
+.rc-table-row:hover {
+  background: var(--rc-subtle);
+}

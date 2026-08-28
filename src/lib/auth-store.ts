@@ -505,6 +505,43 @@ export function refreshSessionFromStore(userId: string): SessionUser | null {
   return session;
 }
 
+/** Patch display fields on the current session (and local account when present). */
+export function updateSessionProfile(
+  userId: string,
+  patch: { firstName?: string; lastName?: string; jobTitle?: string },
+): SessionUser | null {
+  const session = readSession();
+  if (!session || session.id !== userId) return null;
+
+  const firstName = (patch.firstName ?? session.firstName).trim();
+  const lastName = (patch.lastName ?? session.lastName).trim();
+  const jobTitle =
+    patch.jobTitle !== undefined ? patch.jobTitle.trim() || undefined : session.jobTitle;
+
+  const next: SessionUser = {
+    ...session,
+    firstName,
+    lastName,
+    name: `${firstName} ${lastName}`.trim() || session.name,
+    jobTitle,
+  };
+  writeSession(next);
+
+  const all = readAccounts();
+  const idx = all.findIndex((a) => a.id === userId);
+  if (idx >= 0) {
+    all[idx] = {
+      ...all[idx],
+      firstName,
+      lastName,
+      jobTitle,
+    };
+    writeAccounts(all);
+  }
+
+  return next;
+}
+
 /** Peek confirm/reset tokens for demo inbox UI only. */
 export function getDemoMailbox(email: string) {
   const account = findByEmail(email);

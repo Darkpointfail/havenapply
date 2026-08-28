@@ -24,6 +24,7 @@ import {
   signOutAccount,
   signUpWithRoleAccount,
   writeSession,
+  updateSessionProfile,
   type AuthResult,
   type SessionUser,
   type SignUpCommunityInput,
@@ -88,6 +89,11 @@ type AuthContextValue = {
   ) => Promise<AuthResult<{ email: string; resetToken: string | null; sent: boolean }>>;
   resetPassword: (input: { token: string; password: string }) => Promise<AuthResult>;
   completeOnboarding: () => void;
+  updateProfile: (patch: {
+    firstName?: string;
+    lastName?: string;
+    jobTitle?: string;
+  }) => SessionUser | null;
   signInFamily: (input: { email: string; password: string }) => Promise<AuthResult<SessionUser>>;
   signInCommunity: (input: {
     email: string;
@@ -305,6 +311,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (next) setUser(next);
   }, [user, remote]);
 
+  const updateProfile = useCallback(
+    (patch: { firstName?: string; lastName?: string; jobTitle?: string }) => {
+      if (!user) return null;
+      // Demo / open-access: update in-memory session immediately.
+      if (AUTH_OPEN_ACCESS) {
+        const firstName = (patch.firstName ?? user.firstName).trim();
+        const lastName = (patch.lastName ?? user.lastName).trim();
+        const jobTitle =
+          patch.jobTitle !== undefined ? patch.jobTitle.trim() || undefined : user.jobTitle;
+        const next: SessionUser = {
+          ...user,
+          firstName,
+          lastName,
+          name: `${firstName} ${lastName}`.trim() || user.name,
+          jobTitle,
+        };
+        writeSession(next);
+        setUser(next);
+        return next;
+      }
+      const next = updateSessionProfile(user.id, patch);
+      if (next) setUser(next);
+      return next;
+    },
+    [user],
+  );
+
   const signInFamily = useCallback(
     (input: { email: string; password: string }) =>
       signIn({ ...input, expectedRole: "family" }),
@@ -337,6 +370,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       forgotPassword,
       resetPassword,
       completeOnboarding,
+      updateProfile,
       signInFamily,
       signInCommunity,
       signInInternal,
@@ -355,6 +389,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       forgotPassword,
       resetPassword,
       completeOnboarding,
+      updateProfile,
       signInFamily,
       signInCommunity,
       signInInternal,

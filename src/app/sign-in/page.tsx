@@ -24,6 +24,7 @@ function SignInForm() {
   const params = useSearchParams();
   const next = params.get("next");
   const registered = params.get("registered") === "1";
+  const signedOut = params.get("signedOut") === "1";
   const [email, setEmail] = useState(params.get("email") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,9 @@ function SignInForm() {
       />
       <Card className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
+          {signedOut && !error ? (
+            <AuthAlert tone="success">{t("You signed out successfully.")}</AuthAlert>
+          ) : null}
           {registered && !error ? (
             <AuthAlert tone="success">{AUTH_MESSAGES.accountCreatedSignIn}</AuthAlert>
           ) : null}

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { useAuth, homeForUser } from "@/lib/auth";
 import "./public-home.css";
 
 const sourceSerif = Source_Serif_4({
@@ -252,8 +254,19 @@ function TrackingVisual() {
 }
 
 export function PublicHomePage() {
+  const router = useRouter();
+  const { user, ready, signOut } = useAuth();
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const signedIn = ready && Boolean(user);
+  const accountHome = user ? homeForUser(user) : "/sign-in";
+
+  const onSignOut = () => {
+    signOut();
+    setMobileOpen(false);
+    router.replace("/sign-in?signedOut=1");
+  };
 
   return (
     <div className={`hp ${sourceSerif.variable} ${publicSans.variable}`}>
@@ -274,12 +287,25 @@ export function PublicHomePage() {
           </nav>
 
           <div className="hp-desktop-nav flex items-center gap-5">
-            <Link href="/sign-in" className="hp-btn-ghost">
-              Se connecter
-            </Link>
-            <Link href="/get-started" className="hp-btn hp-btn-primary">
-              Commencer
-            </Link>
+            {signedIn ? (
+              <>
+                <Link href={accountHome} className="hp-btn-ghost">
+                  Mon espace
+                </Link>
+                <button type="button" className="hp-btn-ghost" onClick={onSignOut}>
+                  Se déconnecter
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/sign-in" className="hp-btn-ghost">
+                  Se connecter
+                </Link>
+                <Link href="/get-started" className="hp-btn hp-btn-primary">
+                  Commencer
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -306,16 +332,37 @@ export function PublicHomePage() {
                   {item.label}
                 </a>
               ))}
-              <Link href="/sign-in" className="hp-btn-ghost py-2" onClick={() => setMobileOpen(false)}>
-                Se connecter
-              </Link>
-              <Link
-                href="/get-started"
-                className="hp-btn hp-btn-primary w-full"
-                onClick={() => setMobileOpen(false)}
-              >
-                Commencer
-              </Link>
+              {signedIn ? (
+                <>
+                  <Link
+                    href={accountHome}
+                    className="hp-btn-ghost py-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Mon espace
+                  </Link>
+                  <button type="button" className="hp-btn-ghost py-2 text-left" onClick={onSignOut}>
+                    Se déconnecter
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/sign-in"
+                    className="hp-btn-ghost py-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Se connecter
+                  </Link>
+                  <Link
+                    href="/get-started"
+                    className="hp-btn hp-btn-primary w-full"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Commencer
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         ) : null}

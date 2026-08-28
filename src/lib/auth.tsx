@@ -41,10 +41,7 @@ import {
   clearOpenAccessSessions,
   demoUserForPath,
   hasOpenFamilySession,
-  isCommunityPortalPath,
   isFamilyAccountRequiredPath,
-  isFamilyPortalPath,
-  isProfessionalPortalPath,
   markOpenCommunitySession,
   markOpenFamilySession,
   markOpenProfessionalSession,
@@ -114,11 +111,9 @@ function useRemoteAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
-  // Path-only on first paint so SSR and client HTML match (no sessionStorage).
-  const [user, setUser] = useState<SessionUser | null>(() =>
-    AUTH_OPEN_ACCESS ? demoUserForPath(pathname) : null,
-  );
-  const [ready, setReady] = useState(!AUTH_OPEN_ACCESS);
+  // Never auto-mint a portal session on first paint — user must sign in.
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [ready, setReady] = useState(false);
   const remote = useRemoteAuth();
 
   useEffect(() => {
@@ -131,9 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (isProfessionalPortalPath(pathname)) markOpenProfessionalSession();
-    else if (isFamilyPortalPath(pathname)) markOpenFamilySession();
-    else if (isCommunityPortalPath(pathname)) markOpenCommunitySession();
+    // Restore an existing open-access session only — visiting a portal never auto-logs in.
     setUser(demoUserForPath(pathname, { useStoredSession: true }));
     setReady(true);
   }, [pathname]);
@@ -263,11 +256,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearOpenAccessSessions();
     setUser(null);
-    if (AUTH_OPEN_ACCESS) return;
     if (remote) {
       void signOutSupabase();
       return;
     }
+    if (AUTH_OPEN_ACCESS) return;
     signOutAccount();
   }, [remote]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ResidenceConsole } from "@/components/residence-console/ResidenceConsole";
 
 const sourceSerif = Source_Serif_4({
@@ -20,8 +21,10 @@ const publicSans = Public_Sans({
 /** B2B entry: community portal home is the residence admissions console. */
 export default function CommunityDashboardPage() {
   return (
-    <div className={`${sourceSerif.variable} ${publicSans.variable}`}>
-      <ResidenceConsole />
-    </div>
+    <RequireAuth role="community">
+      <div className={`${sourceSerif.variable} ${publicSans.variable}`}>
+        <ResidenceConsole />
+      </div>
+    </RequireAuth>
   );
 }

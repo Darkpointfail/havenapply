@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import {
   askAssistant,
@@ -92,7 +93,8 @@ function Field({
 }
 
 export function FamilySpace() {
-  const { user, updateProfile } = useAuth();
+  const router = useRouter();
+  const { user, updateProfile, signOut } = useAuth();
   const {
     ready: familyReady,
     data,
@@ -113,6 +115,8 @@ export function FamilySpace() {
   const [claireOpen, setClaireOpen] = useState(true);
   const [chat, setChat] = useState<AssistantTurn[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement | null>(null);
   const [helpChat, setHelpChat] = useState<AssistantTurn[]>([
     { from: "family", body: "Est-ce que je peux déposer une demande sans le bilan médical ?" },
     {
@@ -131,9 +135,32 @@ export function FamilySpace() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(false);
 
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!accountRef.current?.contains(e.target as Node)) setAccountOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountOpen]);
+
+  const handleSignOut = () => {
+    setAccountOpen(false);
+    signOut();
+    router.replace("/sign-in?signedOut=1");
+  };
+
   const displayUser = {
     firstName: user?.firstName || USER.firstName,
     fullName: user?.name || USER.fullName,
+    email: user?.email || "",
     initials:
       user?.firstName && user?.lastName
         ? `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase()
@@ -337,19 +364,52 @@ export function FamilySpace() {
           })}
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-white/15 pl-4">
-          <div className="hidden text-right sm:block">
-            <p className="text-[13.5px] font-semibold leading-tight">{displayUser.fullName}</p>
-            <p className="text-[12px] leading-tight" style={{ color: "#8E9B96" }}>
-              Dossier de {displaySenior.fullName}
-            </p>
-          </div>
-          <span
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold"
-            style={{ background: "var(--fs-black-soft)", color: "#E2F3EF" }}
+        <div
+          ref={accountRef}
+          className="relative ml-auto flex shrink-0 items-center gap-3 border-l border-white/15 pl-4"
+        >
+          <button
+            type="button"
+            className="flex items-center gap-3 rounded-[8px] text-left transition-colors hover:bg-white/5"
+            style={{ padding: "4px 6px" }}
+            aria-expanded={accountOpen}
+            aria-haspopup="menu"
+            onClick={() => setAccountOpen((v) => !v)}
           >
-            {displayUser.initials}
-          </span>
+            <div className="hidden text-right sm:block">
+              <p className="text-[13.5px] font-semibold leading-tight">{displayUser.fullName}</p>
+              <p className="text-[12px] leading-tight" style={{ color: "#8E9B96" }}>
+                Dossier de {displaySenior.fullName}
+              </p>
+            </div>
+            <span
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold"
+              style={{ background: "var(--fs-black-soft)", color: "#E2F3EF" }}
+            >
+              {displayUser.initials}
+            </span>
+          </button>
+          {accountOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[220px] overflow-hidden rounded-[10px] border border-white/10 bg-[var(--fs-black-soft)] shadow-lg"
+            >
+              <div className="border-b border-white/10 px-3 py-2.5">
+                <p className="truncate text-[13.5px] font-semibold text-white">{displayUser.fullName}</p>
+                {displayUser.email ? (
+                  <p className="mt-1 truncate text-[12px] text-[#8E9B96]">{displayUser.email}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full px-3 py-2.5 text-left text-[13.5px] text-[#E8B4A0] hover:bg-white/5"
+                onClick={handleSignOut}
+              >
+                Se déconnecter
+              </button>
+            </div>
+          ) : null}
         </div>
       </header>
 

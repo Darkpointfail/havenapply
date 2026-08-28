@@ -1412,38 +1412,43 @@ function EtablissementView() {
   const { workspace, updateProfile, can } = useCommunityPortal();
   const profile = workspace?.profile;
   const accepting = profile?.acceptingApplications !== false;
-  const canToggle = can("editAdmissions") || can("editProfile");
+  const canToggle =
+    can("editAdmissions") || can("editProfile") || can("acceptDecline");
   const name = profile?.name || RESIDENCE.name;
   const city = profile?.city || RESIDENCE.city;
   const description = profile?.description || RESIDENCE.description;
 
   const toggleAccepting = () => {
     if (!canToggle) return;
-    updateProfile({ acceptingApplications: !accepting });
+    const next = !accepting;
+    const result = updateProfile({ acceptingApplications: next });
+    if (!result.ok) {
+      console.warn(result.error);
+    }
   };
 
   return (
     <div className="flex flex-col gap-5">
       <div className="rc-card overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={accepting}
+          disabled={!canToggle}
+          onClick={toggleAccepting}
+          className="flex w-full flex-wrap items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-[var(--rc-subtle)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+        >
           <div>
             <p className="text-[14px] font-medium text-[var(--rc-ink)]">
               Nouvelles demandes
             </p>
             <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
               {accepting
-                ? "Les familles peuvent envoyer de nouveaux dossiers."
-                : "L'intake est fermé. Les dossiers déjà reçus restent actifs."}
+                ? "Les familles peuvent envoyer de nouveaux dossiers. Cliquez pour fermer."
+                : "L'intake est fermé. Les dossiers déjà reçus restent actifs. Cliquez pour rouvrir."}
             </p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={accepting}
-            disabled={!canToggle}
-            onClick={toggleAccepting}
-            className="flex items-center gap-3 disabled:opacity-50"
-          >
+          <span className="flex items-center gap-3">
             <span
               className="text-[13px] font-semibold"
               style={{ color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)" }}
@@ -1451,7 +1456,7 @@ function EtablissementView() {
               {accepting ? "Ouvertes" : "Fermées"}
             </span>
             <span
-              className="relative h-7 w-12 rounded-full transition"
+              className="relative h-7 w-12 shrink-0 rounded-full transition"
               style={{
                 background: accepting ? "var(--rc-green)" : "var(--rc-border)",
               }}
@@ -1461,8 +1466,8 @@ function EtablissementView() {
                 style={{ left: accepting ? "1.25rem" : "0.125rem" }}
               />
             </span>
-          </button>
-        </div>
+          </span>
+        </button>
       </div>
 
       <div className="rc-card overflow-hidden">

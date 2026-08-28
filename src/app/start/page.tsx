@@ -23,7 +23,7 @@ function StartChoiceInner() {
   useEffect(() => {
     if (!ready || !familyReady || !user) return;
     if (profileReady) {
-      router.replace("/family/dashboard");
+      router.replace("/");
     }
   }, [ready, familyReady, user, profileReady, router]);
 
@@ -102,7 +102,7 @@ function StartChoiceInner() {
       <p className="mt-8 text-center text-sm text-ink-muted">
         {t("You can switch methods anytime.")}{" "}
         <Button
-          href="/family/dashboard"
+          href="/"
           variant="ghost"
           size="sm"
           className="inline h-auto p-0 text-brand"

@@ -58,7 +58,7 @@ export function canMessageCommunity(user: SessionUser | null | undefined): boole
 }
 
 export function applySignInHref(residenceId?: string): string {
-  const next = residenceId ? `/family/apply/${residenceId}` : "/family/dashboard";
+  const next = residenceId ? `/family/apply/${residenceId}` : "/";
   return `/sign-in?next=${encodeURIComponent(next)}`;
 }
 
@@ -99,7 +99,7 @@ export function signInPathForRole(role: UserRole): string {
 export function openAccessHomeForPath(pathname: string): string {
   if (pathname.startsWith("/professional")) return "/professional/dashboard";
   if (pathname.startsWith("/community")) return "/community/dashboard";
-  return "/family/dashboard";
+  return "/";
 }
 
 /** Shared compare URL (not under /family, so Care Professionals can open it). */

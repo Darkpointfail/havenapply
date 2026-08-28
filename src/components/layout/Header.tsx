@@ -35,7 +35,7 @@ const marketingLinks = [
 ];
 
 const familyLinks = [
-  { href: "/family/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/", label: "Accueil", icon: LayoutDashboard },
   { href: "/family/find-communities", label: "Communities", icon: Search },
   { href: "/family/applications", label: "My applications", icon: CheckSquare },
   { href: "/family/documents", label: "Documents", icon: FileText },
@@ -119,7 +119,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-line bg-surface/85 backdrop-blur-xl">
       <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-3 pl-0 pr-5 md:h-20 md:pr-8">
         <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-4 md:gap-7">
-          <Logo href={isFamily ? "/family/dashboard" : "/"} size="lg" />
+          <Logo href="/" size="lg" />
           <nav
             className="hidden flex-nowrap items-center gap-0.5 lg:flex"
             aria-label={t("Primary")}

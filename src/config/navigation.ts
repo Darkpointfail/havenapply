@@ -30,8 +30,7 @@ export const publicAuthLinks = {
  * Apply happens on each community profile.
  */
 export const familyNav: NavItem[] = [
-  { href: "/family/espace", label: "Espace famille" },
-  { href: "/family/dashboard", label: "Dashboard" },
+  { href: "/", label: "Accueil" },
   { href: "/family/dossier", label: "Dossier" },
   { href: "/family/profile", label: "Profile" },
   { href: "/family/find-communities", label: "Communities" },
@@ -44,9 +43,9 @@ export const familyNav: NavItem[] = [
 export const familyNavGroups: NavGroup[] = [
   {
     id: "dashboard",
-    label: "Dashboard",
-    href: "/family/dashboard",
-    children: [{ href: "/family/dashboard", label: "Home" }],
+    label: "Accueil",
+    href: "/",
+    children: [{ href: "/", label: "Espace famille" }],
   },
   {
     id: "dossier",
@@ -100,7 +99,7 @@ export const familyNavGroups: NavGroup[] = [
 
 /** Bottom bar, mirrors the journey steps */
 export const familyMobileNav: NavItem[] = [
-  { href: "/family/dashboard", label: "Home" },
+  { href: "/", label: "Accueil" },
   { href: "/family/dossier", label: "Dossier" },
   { href: "/family/find-communities", label: "Communities" },
   { href: "/family/applications", label: "My applications" },
@@ -108,10 +107,10 @@ export const familyMobileNav: NavItem[] = [
 
 /**
  * Community portal, intelligent admissions inbox.
- * Admissions · Messages · Community · Team
+ * Console · Transition · History · Messages · Community · Team
  */
 export const communityNav: NavItem[] = [
-  { href: "/community/dashboard", label: "Admissions" },
+  { href: "/community/dashboard", label: "Console" },
   { href: "/community/transition", label: "Transition" },
   { href: "/community/applications?filter=history", label: "History" },
   { href: "/community/messages", label: "Messages" },
@@ -195,7 +194,7 @@ export const professionalNav: NavItem[] = [
   { href: "/professional/organization", label: "My Organization" },
 ];
 
-export const familyHome = "/family/dashboard";
+export const familyHome = "/";
 export const communityHome = "/community/dashboard";
 export const internalHome = "/internal/overview";
 export const professionalHome = "/professional/dashboard";

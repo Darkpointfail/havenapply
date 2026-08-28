@@ -64,6 +64,26 @@ export type Residence = {
   availabilityTone: "green" | "terra";
   services: string[];
   responseLabel: string;
+  partner: boolean;
+  distanceKm: number;
+  priceAmount: number;
+  confirmed: boolean;
+  recommended?: boolean;
+  why: string[];
+  consider: string[];
+  compatibilityBase: number;
+  unitRows: {
+    type: string;
+    area: string;
+    price: string;
+    availability: string;
+    availabilityTone: "green" | "terra";
+  }[];
+  care: { label: string; value: string; offered: boolean }[];
+  location: { address: string; travel: string; transit: string };
+  documents: { name: string; inDossier: boolean }[];
+  waitNote: string;
+  photoLabels: string[];
 };
 
 export const USER = {
@@ -141,13 +161,49 @@ export const RESIDENCES: Residence[] = [
     area: "620 pi²",
     availability: "3 libres",
     availabilityTone: "green",
-    services: [
-      "Repas quotidiens",
-      "Infirmerie 24 h",
-      "Aide à la mobilité",
-      "Activités sociales",
-      "Transport médical",
+    services: ["Repas quotidiens", "Infirmerie 24 h", "Aide à la mobilité", "Activités sociales", "Transport médical"],
+    partner: true,
+    distanceKm: 8,
+    priceAmount: 3620,
+    confirmed: true,
+    recommended: true,
+    compatibilityBase: 92,
+    why: [
+      "Budget respecté",
+      "Soins infirmiers disponibles",
+      "Aide au bain offerte",
+      "Unité recherchée disponible",
+      "Située dans le secteur souhaité",
     ],
+    consider: [
+      "Transport non inclus dans le forfait de base",
+      "Prix proche de votre budget maximal",
+      "Animaux non acceptés",
+    ],
+    unitRows: [
+      { type: "3½ avec services", area: "620 pi²", price: "3 620 $/mois", availability: "3 libres", availabilityTone: "green" },
+      { type: "2½", area: "480 pi²", price: "2 850 $/mois", availability: "Complet", availabilityTone: "terra" },
+      { type: "1½", area: "320 pi²", price: "2 200 $/mois", availability: "2 libres", availabilityTone: "green" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "Semi-autonome à assistance légère", offered: true },
+      { label: "Soins infirmiers", value: "Offerts 24 h", offered: true },
+      { label: "Aide au bain", value: "Incluse", offered: true },
+      { label: "Soins de mémoire", value: "Non offerts", offered: false },
+    ],
+    location: {
+      address: "2140 chemin du Fleuve, Sainte-Foy (Québec)",
+      travel: "8 km · environ 15 minutes depuis Sillery",
+      transit: "Desserte RTC à 4 minutes à pied",
+    },
+    documents: [
+      { name: "Pièce d'identité", inDossier: true },
+      { name: "Bilan médical", inDossier: false },
+      { name: "Liste de médicaments", inDossier: true },
+      { name: "Preuve de revenus", inDossier: false },
+    ],
+    waitNote: "Les disponibilités sont mises à jour chaque semaine par la résidence partenaire.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
   },
   {
     id: "lakeside-haven",
@@ -161,16 +217,51 @@ export const RESIDENCES: Residence[] = [
     unitType: "3½ avec soins",
     price: "3 950 $/mois",
     response: "attente estimée 2 à 4 mois",
-    responseLabel: "Attente estimée 2 à 4 mois",
+    responseLabel: "Réponse en 2 jours",
     area: "640 pi²",
     availability: "Complet",
     availabilityTone: "terra",
-    services: [
-      "Soins infirmiers",
-      "Aide complète",
-      "Repas adaptés",
-      "Surveillance 24 h",
+    services: ["Soins infirmiers", "Aide complète", "Repas adaptés", "Surveillance 24 h"],
+    partner: true,
+    distanceKm: 21,
+    priceAmount: 3950,
+    confirmed: true,
+    recommended: true,
+    compatibilityBase: 81,
+    why: [
+      "Soins infirmiers en continu",
+      "Aide au bain offerte",
+      "Petit milieu de vie recherché",
+      "Unité 3½ disponible à moyen terme",
     ],
+    consider: [
+      "Prix supérieur au budget indiqué",
+      "Liste d'attente de deux à quatre mois",
+      "Secteur plus éloigné de la famille",
+    ],
+    unitRows: [
+      { type: "3½ avec soins", area: "640 pi²", price: "3 950 $/mois", availability: "Liste d'attente", availabilityTone: "terra" },
+      { type: "2½", area: "500 pi²", price: "3 400 $/mois", availability: "Complet", availabilityTone: "terra" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "Assistance à soins intermédiaires", offered: true },
+      { label: "Soins infirmiers", value: "Offerts en continu", offered: true },
+      { label: "Aide au bain", value: "Incluse", offered: true },
+      { label: "Soins de mémoire", value: "Unité dédiée disponible", offered: true },
+    ],
+    location: {
+      address: "880 rue de la Pointe, Lévis",
+      travel: "21 km · environ 30 minutes depuis Sillery",
+      transit: "Ligne STLévis à proximité",
+    },
+    documents: [
+      { name: "Pièce d'identité", inDossier: true },
+      { name: "Bilan médical", inDossier: false },
+      { name: "Évaluation d'autonomie", inDossier: false },
+      { name: "Liste de médicaments", inDossier: true },
+    ],
+    waitNote: "Le délai d'attente varie selon l'urgence clinique et la complétude du dossier.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
   },
   {
     id: "cedar-memory",
@@ -188,15 +279,192 @@ export const RESIDENCES: Residence[] = [
     area: "580 pi²",
     availability: "1 libre",
     availabilityTone: "green",
-    services: [
-      "Repas",
-      "Entretien ménager",
-      "Activités",
-      "Infirmerie de jour",
+    services: ["Repas", "Entretien ménager", "Activités", "Infirmerie de jour", "Transport adapté"],
+    partner: true,
+    distanceKm: 16,
+    priceAmount: 3280,
+    confirmed: true,
+    recommended: true,
+    compatibilityBase: 76,
+    why: [
+      "Budget respecté",
+      "Transport adapté inclus",
+      "Unité 3½ disponible",
+      "Activités quotidiennes",
     ],
+    consider: [
+      "Soins infirmiers offerts le jour seulement",
+      "Aide au bain à la carte",
+      "Une seule unité libre",
+    ],
+    unitRows: [
+      { type: "3½", area: "580 pi²", price: "3 280 $/mois", availability: "1 libre", availabilityTone: "green" },
+      { type: "2½", area: "460 pi²", price: "2 760 $/mois", availability: "Complet", availabilityTone: "terra" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "Semi-autonome", offered: true },
+      { label: "Soins infirmiers", value: "Jour seulement", offered: true },
+      { label: "Aide au bain", value: "À la carte", offered: false },
+      { label: "Soins de mémoire", value: "Non offerts", offered: false },
+    ],
+    location: {
+      address: "4500 1re Avenue, Charlesbourg (Québec)",
+      travel: "16 km · environ 22 minutes depuis Sillery",
+      transit: "Parcours RTC régulier à proximité",
+    },
+    documents: [
+      { name: "Pièce d'identité", inDossier: true },
+      { name: "Bilan médical", inDossier: false },
+      { name: "Liste de médicaments", inDossier: true },
+      { name: "Preuve de revenus", inDossier: false },
+    ],
+    waitNote: "Une seule unité 3½ est libre ; les autres types sont complets.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
+  },
+  {
+    id: "erable",
+    name: "Le Domaine des Érables",
+    city: "Beauport, Québec",
+    units: 96,
+    badge: "à vérifier",
+    badgeTone: "neutral",
+    description:
+      "Résidence indépendante hors réseau partenaire HavenApply. Les tarifs et disponibilités doivent être confirmés directement.",
+    unitType: "3½",
+    price: "2 950 $/mois",
+    response: "à confirmer",
+    responseLabel: "À confirmer",
+    area: "540 pi²",
+    availability: "À vérifier",
+    availabilityTone: "terra",
+    services: ["Repas", "Loisirs"],
+    partner: false,
+    distanceKm: 19,
+    priceAmount: 2950,
+    confirmed: false,
+    compatibilityBase: 58,
+    why: ["Budget sous le plafond indiqué", "Secteur accessible depuis Québec"],
+    consider: ["Information à vérifier auprès de la résidence", "Non partenaire HavenApply"],
+    unitRows: [
+      { type: "3½", area: "540 pi²", price: "2 950 $/mois", availability: "À vérifier", availabilityTone: "terra" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "À confirmer", offered: false },
+      { label: "Soins infirmiers", value: "À confirmer", offered: false },
+      { label: "Aide au bain", value: "À confirmer", offered: false },
+      { label: "Soins de mémoire", value: "À confirmer", offered: false },
+    ],
+    location: {
+      address: "1200 avenue des Érables, Beauport",
+      travel: "19 km · environ 25 minutes depuis Sillery",
+      transit: "Desserte locale à confirmer",
+    },
+    documents: [
+      { name: "Pièce d'identité", inDossier: true },
+      { name: "Bilan médical", inDossier: false },
+    ],
+    waitNote: "Les renseignements affichés n'ont pas été confirmés par la résidence.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
+  },
+  {
+    id: "vieux-port",
+    name: "Résidence du Vieux-Port",
+    city: "Québec",
+    units: 64,
+    badge: "à vérifier",
+    badgeTone: "neutral",
+    description:
+      "Petite résidence en centre-ville. Hors réseau partenaire : l'envoi de dossier en ligne n'est pas disponible.",
+    unitType: "2½",
+    price: "4 100 $/mois",
+    response: "à confirmer",
+    responseLabel: "À confirmer",
+    area: "420 pi²",
+    availability: "À vérifier",
+    availabilityTone: "terra",
+    services: ["Repas", "Conciergerie"],
+    partner: false,
+    distanceKm: 11,
+    priceAmount: 4100,
+    confirmed: false,
+    compatibilityBase: 49,
+    why: ["Proximité du centre-ville"],
+    consider: ["Prix au-dessus du budget", "Information à vérifier", "Non partenaire HavenApply"],
+    unitRows: [
+      { type: "2½", area: "420 pi²", price: "4 100 $/mois", availability: "À vérifier", availabilityTone: "terra" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "À confirmer", offered: false },
+      { label: "Soins infirmiers", value: "À confirmer", offered: false },
+      { label: "Aide au bain", value: "À confirmer", offered: false },
+      { label: "Soins de mémoire", value: "Non", offered: false },
+    ],
+    location: {
+      address: "18 rue Saint-Pierre, Québec",
+      travel: "11 km · environ 18 minutes depuis Sillery",
+      transit: "Très bien desservi",
+    },
+    documents: [{ name: "Pièce d'identité", inDossier: true }],
+    waitNote: "Coordonnées à utiliser pour une prise de contact directe.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
+  },
+  {
+    id: "cap-rouge",
+    name: "Habitations Cap-Rouge",
+    city: "Cap-Rouge, Québec",
+    units: 88,
+    badge: "2 unités libres",
+    badgeTone: "green",
+    description:
+      "Résidence partenaire dans le secteur ouest, adaptée à un profil semi-autonome avec un budget plus serré.",
+    unitType: "3½",
+    price: "2 780 $/mois",
+    response: "réponse en 1 jour",
+    responseLabel: "Réponse en 1 jour",
+    area: "560 pi²",
+    availability: "2 libres",
+    availabilityTone: "green",
+    services: ["Repas", "Entretien", "Activités", "Transport"],
+    partner: true,
+    distanceKm: 13,
+    priceAmount: 2780,
+    confirmed: true,
+    compatibilityBase: 71,
+    why: ["Budget largement respecté", "Deux unités libres", "Transport offert"],
+    consider: ["Soins infirmiers limités", "Aide au bain à la carte"],
+    unitRows: [
+      { type: "3½", area: "560 pi²", price: "2 780 $/mois", availability: "2 libres", availabilityTone: "green" },
+      { type: "2½", area: "430 pi²", price: "2 350 $/mois", availability: "Complet", availabilityTone: "terra" },
+    ],
+    care: [
+      { label: "Niveau d'autonomie accepté", value: "Semi-autonome", offered: true },
+      { label: "Soins infirmiers", value: "Présence diurne", offered: true },
+      { label: "Aide au bain", value: "À la carte", offered: false },
+      { label: "Soins de mémoire", value: "Non offerts", offered: false },
+    ],
+    location: {
+      address: "4500 boulevard Chaudière, Cap-Rouge",
+      travel: "13 km · environ 20 minutes depuis Sillery",
+      transit: "Parcours RTC de banlieue",
+    },
+    documents: [
+      { name: "Pièce d'identité", inDossier: true },
+      { name: "Bilan médical", inDossier: false },
+      { name: "Liste de médicaments", inDossier: true },
+    ],
+    waitNote: "Disponibilités confirmées par la résidence partenaire.",
+    photoLabels: ["Salle à manger", "Unité type", "Espaces communs", "Visite virtuelle"],
   },
 ];
 
+export const MARGUERITE_PROFILE = {
+  budgetMax: 3700,
+  sector: "Québec et Lévis",
+  needsNursing: true,
+  needsBathHelp: true,
+  unitPreference: "3½",
+  maxDistanceKm: 25,
+} as const;
 export const INITIAL_APPLICATIONS: FamilyApplication[] = [
   {
     id: "a1",

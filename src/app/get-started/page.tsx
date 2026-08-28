@@ -10,6 +10,7 @@ import {
   authInputClass,
 } from "@/components/auth/AuthForm";
 import { RedirectIfAuthenticated } from "@/components/auth/RequireAuth";
+import { Logo } from "@/components/brand/Logo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -111,6 +112,10 @@ function GetStartedInner() {
 
   const needsOrg = role === "professional" || role === "facility";
   const selectedMeta = ROLE_OPTIONS.find((o) => o.id === role);
+  const nextParam = params.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
+  const familyHome = safeNext?.startsWith("/family") ? safeNext : "/family/dashboard";
 
   useEffect(() => {
     if (!role || !formRef.current) return;
@@ -147,7 +152,13 @@ function GetStartedInner() {
     }
     if (result.pendingConfirmation) {
       router.push(
-        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}`,
+        `/check-email?email=${encodeURIComponent(result.data.email)}&role=${encodeURIComponent(role)}&next=${encodeURIComponent(
+          role === "facility"
+            ? "/community/dashboard"
+            : role === "professional"
+              ? "/professional/dashboard"
+              : familyHome,
+        )}`,
       );
       return;
     }
@@ -158,7 +169,7 @@ function GetStartedInner() {
             ? "/community/dashboard"
             : role === "professional"
               ? "/professional/dashboard"
-              : "/family/dashboard",
+              : familyHome,
         )}`,
       );
       return;
@@ -168,7 +179,7 @@ function GetStartedInner() {
         ? "/community/dashboard"
         : role === "professional"
           ? "/professional/dashboard"
-          : "/family/dashboard",
+          : familyHome,
     );
   };
 
@@ -182,6 +193,9 @@ function GetStartedInner() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 md:py-16">
+      <div className="mb-6">
+        <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
+      </div>
       <PageHeader
         title={t("Who are you using HavenApply as?")}
         description="Choose your role once, then create your account."

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { Logo } from "@/components/brand/Logo";
 import {
   askAssistant,
   assistantOpener,
@@ -92,6 +94,8 @@ function Field({
 }
 
 export function FamilySpace() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, updateProfile } = useAuth();
   const {
     ready: familyReady,
@@ -112,8 +116,13 @@ export function FamilySpace() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [consent, setConsent] = useState(false);
   const [claireOpen, setClaireOpen] = useState(true);
+  const [chatFirst, setChatFirst] = useState(false);
+  const [claireTyping, setClaireTyping] = useState(false);
   const [chat, setChat] = useState<AssistantTurn[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const claireBootstrapped = useRef(false);
   const [helpChat, setHelpChat] = useState<AssistantTurn[]>([
     { from: "family", body: "Est-ce que je peux déposer une demande sans le bilan médical ?" },
     {
@@ -131,6 +140,38 @@ export function FamilySpace() {
   const [serviceFilter, setServiceFilter] = useState<string[]>(["Repas", "Soins infirmiers"]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(false);
+
+  const openClaireChat = (opts?: { replaceUrl?: boolean }) => {
+    setDossierPanel("create");
+    setView("dossier");
+    setClaireOpen(true);
+    setChatFirst(true);
+    setProfileStep((s) => s);
+    setChat((prev) =>
+      prev.length ? prev : [{ from: "claire", body: assistantOpener(profileStep) }],
+    );
+    setResId(null);
+    if (opts?.replaceUrl !== false) {
+      router.replace("/family/dashboard?claire=1", { scroll: false });
+    }
+    window.setTimeout(() => chatInputRef.current?.focus(), 80);
+  };
+
+  useEffect(() => {
+    if (claireBootstrapped.current) return;
+    const wantsClaire =
+      searchParams.get("claire") === "1" ||
+      searchParams.get("with") === "claire" ||
+      searchParams.get("view") === "profil";
+    if (!wantsClaire) return;
+    claireBootstrapped.current = true;
+    openClaireChat({ replaceUrl: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chat, claireTyping, view, claireOpen]);
 
   const displayUser = {
     firstName: user?.firstName || USER.firstName,
@@ -189,6 +230,7 @@ export function FamilySpace() {
   useEffect(() => {
     setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
     setChatInput("");
+    setClaireTyping(false);
   }, [profileStep]);
 
   const go = (v: FamilyView) => {
@@ -198,6 +240,7 @@ export function FamilySpace() {
     }
     setView(v);
     if (v !== "fiche" && v !== "depot") setResId(null);
+    setChatFirst(false);
   };
 
   const openDossier = (panel?: DossierPanel) => {
@@ -295,11 +338,14 @@ export function FamilySpace() {
 
   const sendToClaire = async (text: string) => {
     const message = text.trim();
-    if (!message) return;
+    if (!message || claireTyping) return;
     setChat((c) => [...c, { from: "family", body: message }]);
     setChatInput("");
+    setClaireTyping(true);
     const reply = await askAssistant(profileStep, message);
     setChat((c) => [...c, { from: "claire", body: reply }]);
+    setClaireTyping(false);
+    window.setTimeout(() => chatInputRef.current?.focus(), 40);
     const m = message.toLowerCase();
     if (profileStep === 0) {
       if (m.includes("hôpital") || m.includes("hopital")) {
@@ -334,15 +380,13 @@ export function FamilySpace() {
         className="sticky top-0 z-40 flex h-[58px] items-center gap-4 px-5 text-white md:px-8"
         style={{ background: "var(--fs-black)" }}
       >
-        <div className="flex shrink-0 items-center gap-2.5">
-          <span
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[14px] font-semibold"
-            style={{ background: "var(--fs-green)" }}
-            aria-hidden
-          >
-            H
-          </span>
-          <span className="fs-serif text-[19px]">HavenApply</span>
+        <div className="flex shrink-0 items-center">
+          <Logo
+            href="/family/dashboard"
+            size="nav"
+            light
+            className="!ml-0 !translate-y-0"
+          />
         </div>
 
         <nav className="fs-nav-scroll min-w-0 flex-1">
@@ -392,6 +436,7 @@ export function FamilySpace() {
             hasDossier={hasDossier}
             onOpenDossier={() => openDossier()}
             onCreateDossier={() => openDossier("create")}
+            onClaire={openClaireChat}
             onSearch={() => go("residences")}
             onOpenApp={() => go("demandes")}
           />
@@ -434,9 +479,14 @@ export function FamilySpace() {
             setStep={setProfileStep}
             claireOpen={claireOpen}
             setClaireOpen={setClaireOpen}
+            chatFirst={chatFirst}
+            setChatFirst={setChatFirst}
+            claireTyping={claireTyping}
             chat={chat}
             chatInput={chatInput}
             setChatInput={setChatInput}
+            chatInputRef={chatInputRef}
+            chatEndRef={chatEndRef}
             onSend={() => sendToClaire(chatInput)}
             onSuggest={sendToClaire}
             onDone={finishDossierForm}
@@ -504,6 +554,7 @@ function Accueil({
   hasDossier,
   onOpenDossier,
   onCreateDossier,
+  onClaire,
   onSearch,
   onOpenApp,
 }: {
@@ -513,6 +564,7 @@ function Accueil({
   hasDossier: boolean;
   onOpenDossier: () => void;
   onCreateDossier: () => void;
+  onClaire: () => void;
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
@@ -524,17 +576,28 @@ function Accueil({
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
             {hasDossier
               ? "Votre dossier d'admission est prêt pour toutes vos demandes. Complétez les pièces manquantes, modifiez les renseignements, ou créez un nouveau dossier."
-              : "Créez le dossier d'admission une seule fois. Ensuite vous pourrez le gérer, le modifier, et l'envoyer aux résidences choisies."}
+              : "Créez le dossier d'admission avec Claire, votre accompagnatrice. Ensuite vous pourrez le gérer, le modifier, et l'envoyer aux résidences choisies."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
-              {hasDossier ? "Gérer le dossier" : "Créer le dossier"}
-            </button>
             {hasDossier ? (
-              <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateDossier}>
-                Nouveau dossier
-              </button>
-            ) : null}
+              <>
+                <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
+                  Gérer le dossier
+                </button>
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateDossier}>
+                  Nouveau dossier
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="fs-btn fs-btn-primary" onClick={onClaire}>
+                  Créer le dossier avec Claire
+                </button>
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenDossier}>
+                  Remplir le formulaire
+                </button>
+              </>
+            )}
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
               Chercher une résidence
             </button>
@@ -1112,9 +1175,14 @@ function Profil({
   setStep,
   claireOpen,
   setClaireOpen,
+  chatFirst,
+  setChatFirst,
+  claireTyping,
   chat,
   chatInput,
   setChatInput,
+  chatInputRef,
+  chatEndRef,
   onSend,
   onSuggest,
   onDone,
@@ -1125,9 +1193,14 @@ function Profil({
   setStep: (n: number) => void;
   claireOpen: boolean;
   setClaireOpen: (v: boolean) => void;
+  chatFirst: boolean;
+  setChatFirst: (v: boolean) => void;
+  claireTyping: boolean;
   chat: AssistantTurn[];
   chatInput: string;
   setChatInput: (v: string) => void;
+  chatInputRef: RefObject<HTMLInputElement | null>;
+  chatEndRef: RefObject<HTMLDivElement | null>;
   onSend: () => void;
   onSuggest: (t: string) => void;
   onDone: () => void;
@@ -1135,6 +1208,122 @@ function Profil({
 }) {
   const suggestions = assistantSuggestions(step);
   const isLast = step >= PROFILE_STEPS.length - 1;
+
+  const clairePanel = (
+    <div
+      className={`fs-card flex overflow-hidden ${chatFirst ? "min-h-[min(72vh,720px)] flex-col" : ""}`}
+    >
+      <div
+        className="flex items-center gap-3 px-4 py-3.5 text-white"
+        style={{ background: "var(--fs-black)" }}
+      >
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold"
+          style={{ background: "var(--fs-black-soft)" }}
+        >
+          C
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold">Claire, votre accompagnatrice</p>
+          <p className="text-[12px] text-[#8E9B96]">
+            {claireTyping
+              ? "Claire écrit…"
+              : "Discussion en direct — elle remplit le dossier avec vous"}
+          </p>
+        </div>
+        {chatFirst ? (
+          <button
+            type="button"
+            className="shrink-0 rounded-[8px] px-2.5 py-1.5 text-[12.5px] font-medium text-white/85 hover:bg-white/10"
+            onClick={() => setChatFirst(false)}
+          >
+            Voir le formulaire
+          </button>
+        ) : null}
+      </div>
+      <div
+        className={`space-y-3 overflow-y-auto p-4 ${chatFirst ? "min-h-0 flex-1" : "max-h-[360px]"}`}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
+        {chat.map((m, i) => (
+          <div
+            key={`${i}-${m.body.slice(0, 12)}`}
+            className={`flex ${m.from === "family" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className="max-w-[90%] px-3 py-2 text-[14px] leading-relaxed"
+              style={
+                m.from === "family"
+                  ? {
+                      background: "var(--fs-green)",
+                      color: "#fff",
+                      borderRadius: "12px 12px 4px 12px",
+                    }
+                  : {
+                      background: "var(--fs-hover)",
+                      borderRadius: "12px 12px 12px 4px",
+                    }
+              }
+            >
+              {m.body}
+            </div>
+          </div>
+        ))}
+        {claireTyping ? (
+          <div className="flex justify-start">
+            <div
+              className="px-3 py-2 text-[13px] text-[var(--fs-ink-muted)]"
+              style={{ background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }}
+            >
+              Claire écrit…
+            </div>
+          </div>
+        ) : null}
+        <div ref={chatEndRef} />
+      </div>
+      <div className="space-y-2 border-t border-[var(--fs-border)] p-3">
+        <div className="flex flex-wrap gap-1.5">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              disabled={claireTyping}
+              onClick={() => onSuggest(s)}
+              className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)] disabled:opacity-50"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSend();
+          }}
+        >
+          <input
+            ref={chatInputRef}
+            className="fs-input"
+            placeholder="Répondre à Claire…"
+            value={chatInput}
+            disabled={claireTyping}
+            onChange={(e) => setChatInput(e.target.value)}
+            aria-label="Message à Claire"
+          />
+          <button
+            type="submit"
+            className="fs-btn fs-btn-primary"
+            disabled={claireTyping || !chatInput.trim()}
+          >
+            Envoyer
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -1147,7 +1336,9 @@ function Profil({
             <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
               {mode === "edit"
                 ? "Mettez à jour les renseignements du dossier. Les changements s'appliquent à toutes vos demandes."
-                : "Les renseignements saisis ici forment le dossier transmis aux résidences. Une fois créé, vous le gérez au même endroit."}
+                : chatFirst
+                  ? "Discutez avec Claire. Elle pose les questions et remplit le dossier à partir de vos réponses."
+                  : "Les renseignements saisis ici forment le dossier transmis aux résidences. Une fois créé, vous le gérez au même endroit."}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -1189,24 +1380,26 @@ function Profil({
         </div>
       </div>
 
-      <div
-        className={`fs-grid-main grid gap-5 ${claireOpen ? "lg:grid-cols-[1fr_372px]" : ""}`}
-      >
-        <div className="fs-card p-6">
-          <ProfileStepFields step={step} />
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fs-border)] pt-5">
-            <button
-              type="button"
-              className="fs-btn fs-btn-outline"
-              disabled={step === 0}
-              onClick={() => setStep(step - 1)}
-            >
-              Précédent
-            </button>
-            <p className="text-[13.5px] text-[var(--fs-ink-muted)]">
-              {PROFILE_STEPS[step]}
+      {chatFirst && claireOpen ? (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+          <div className="fs-claire-sticky sticky top-[74px] h-fit">{clairePanel}</div>
+          <div className="fs-card p-5">
+            <p className="fs-label">Aperçu du formulaire</p>
+            <p className="mt-2 text-[14px] text-[var(--fs-ink-body)]">
+              Claire met à jour ces champs pendant la conversation. Vous pouvez aussi les
+              modifier directement.
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-4">
+              <ProfileStepFields step={step} />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-[var(--fs-border)] pt-4">
+              <button
+                type="button"
+                className="fs-btn fs-btn-outline"
+                onClick={() => setChatFirst(false)}
+              >
+                Remplir moi-même
+              </button>
               <button type="button" className="fs-btn fs-btn-outline" onClick={onDone}>
                 Enregistrer et reprendre plus tard
               </button>
@@ -1221,95 +1414,85 @@ function Profil({
                   setStep(Math.min(PROFILE_STEPS.length - 1, step + 1));
                 }}
               >
-                {isLast ? (mode === "edit" ? "Enregistrer le dossier" : "Terminer et gérer le dossier") : "Suivant"}
+                {isLast
+                  ? mode === "edit"
+                    ? "Enregistrer le dossier"
+                    : "Terminer et gérer le dossier"
+                  : "Étape suivante"}
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            className="fs-btn-ghost mt-4 text-[13px]"
-            onClick={() => setClaireOpen(!claireOpen)}
-          >
-            {claireOpen ? "Remplir moi-même" : "Continuer avec Claire"}
-          </button>
         </div>
-
-        {claireOpen ? (
-          <aside className="fs-claire-sticky sticky top-[74px] h-fit">
-            <div className="fs-card overflow-hidden">
-              <div
-                className="flex items-center gap-3 px-4 py-3.5 text-white"
-                style={{ background: "var(--fs-black)" }}
+      ) : (
+        <div
+          className={`fs-grid-main grid gap-5 ${claireOpen ? "lg:grid-cols-[1fr_372px]" : ""}`}
+        >
+          <div className="fs-card p-6">
+            <ProfileStepFields step={step} />
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fs-border)] pt-5">
+              <button
+                type="button"
+                className="fs-btn fs-btn-outline"
+                disabled={step === 0}
+                onClick={() => setStep(step - 1)}
               >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold"
-                  style={{ background: "var(--fs-black-soft)" }}
+                Précédent
+              </button>
+              <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{PROFILE_STEPS[step]}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onDone}>
+                  Enregistrer et reprendre plus tard
+                </button>
+                <button
+                  type="button"
+                  className="fs-btn fs-btn-primary"
+                  onClick={() => {
+                    if (!claireOpen) {
+                      setClaireOpen(true);
+                      setChatFirst(true);
+                      return;
+                    }
+                    if (isLast) {
+                      onDone();
+                      return;
+                    }
+                    setStep(Math.min(PROFILE_STEPS.length - 1, step + 1));
+                  }}
                 >
-                  C
-                </span>
-                <div>
-                  <p className="text-[14px] font-semibold">Claire, votre accompagnatrice</p>
-                  <p className="text-[12px] text-[#8E9B96]">Elle remplit le formulaire avec vous</p>
-                </div>
-              </div>
-              <div className="max-h-[360px] space-y-3 overflow-y-auto p-4">
-                {chat.map((m, i) => (
-                  <div
-                    key={`${i}-${m.body.slice(0, 12)}`}
-                    className={`flex ${m.from === "family" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className="max-w-[90%] px-3 py-2 text-[14px] leading-relaxed"
-                      style={
-                        m.from === "family"
-                          ? {
-                              background: "var(--fs-green)",
-                              color: "#fff",
-                              borderRadius: "12px 12px 4px 12px",
-                            }
-                          : {
-                              background: "var(--fs-hover)",
-                              borderRadius: "12px 12px 12px 4px",
-                            }
-                      }
-                    >
-                      {m.body}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-2 border-t border-[var(--fs-border)] p-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => onSuggest(s)}
-                      className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)]"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    className="fs-input"
-                    placeholder="Répondre à Claire…"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") onSend();
-                    }}
-                  />
-                  <button type="button" className="fs-btn fs-btn-primary" onClick={onSend}>
-                    Envoyer
-                  </button>
-                </div>
+                  {!claireOpen
+                    ? "Créer le dossier avec Claire"
+                    : isLast
+                      ? mode === "edit"
+                        ? "Enregistrer le dossier"
+                        : "Terminer et gérer le dossier"
+                      : "Suivant"}
+                </button>
               </div>
             </div>
-          </aside>
-        ) : null}
-      </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              className="fs-btn fs-btn-outline self-start"
+              onClick={() => {
+                if (claireOpen) {
+                  setClaireOpen(false);
+                  setChatFirst(false);
+                } else {
+                  setClaireOpen(true);
+                  setChatFirst(true);
+                }
+              }}
+            >
+              {claireOpen ? "Remplir moi-même" : "Créer le dossier avec Claire"}
+            </button>
+            {claireOpen ? (
+              <aside className="fs-claire-sticky sticky top-[74px] h-fit">{clairePanel}</aside>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

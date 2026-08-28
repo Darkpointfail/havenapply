@@ -9,6 +9,7 @@ import {
   authInputClass,
 } from "@/components/auth/AuthForm";
 import { RedirectIfAuthenticated } from "@/components/auth/RequireAuth";
+import { Logo } from "@/components/brand/Logo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -66,6 +67,9 @@ function CommunitySignInForm() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-12 md:py-16">
+      <div className="mb-6">
+        <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
+      </div>
       <PageHeader
         title={t("Community sign in")}
         description="Access your HavenApply admissions workspace."

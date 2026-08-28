@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { Logo } from "@/components/brand/Logo";
+import { askAssistant, type AssistantTurn } from "@/data/assistant";
 import "./public-home.css";
 
 const sourceSerif = Source_Serif_4({
@@ -104,24 +106,6 @@ const RES_TILES = [
     body: "Unités libres et délais affichés tels que transmis par votre équipe.",
   },
 ] as const;
-
-function LogoMark({ size = 34 }: { size?: number }) {
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-[9px] font-semibold text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.42,
-        background: "var(--hp-green)",
-        fontFamily: "var(--hp-serif)",
-      }}
-    >
-      H
-    </span>
-  );
-}
 
 function Check() {
   return (
@@ -251,6 +235,131 @@ function TrackingVisual() {
   );
 }
 
+function ClaireHomeDemo() {
+  const claireHref = `/get-started?next=${encodeURIComponent("/family/dashboard?claire=1")}`;
+  const [messages, setMessages] = useState<AssistantTurn[]>([
+    {
+      from: "claire",
+      body: "Bonjour. Parlons de votre proche. Vit-elle encore à la maison en ce moment ?",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const suggestions = ["Elle est à l'hôpital", "Elle marche avec une canne", "Fauteuil roulant"];
+
+  const send = async (text: string) => {
+    const message = text.trim();
+    if (!message || typing) return;
+    setMessages((m) => [...m, { from: "family", body: message }]);
+    setInput("");
+    setTyping(true);
+    const reply = await askAssistant(0, message);
+    setMessages((m) => [...m, { from: "claire", body: reply }]);
+    setTyping(false);
+  };
+
+  return (
+    <div className="hp-card hp-chat-shadow overflow-hidden p-0">
+      <div className="flex items-center gap-3 border-b border-[var(--hp-border)] px-5 py-4">
+        <span
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold"
+          style={{ background: "var(--hp-green-tint)", color: "var(--hp-green-deep)" }}
+        >
+          C
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold text-[var(--hp-ink)]">Claire</p>
+          <p className="text-[13px] text-[var(--hp-ink-muted)]">
+            {typing ? "Claire écrit…" : "Accompagnatrice HavenApply · chat en direct"}
+          </p>
+        </div>
+      </div>
+      <div className="max-h-[320px] space-y-3.5 overflow-y-auto bg-white px-5 py-5" role="log">
+        {messages.map((m, i) => (
+          <div
+            key={`${i}-${m.body.slice(0, 10)}`}
+            className={m.from === "family" ? "flex justify-end" : "max-w-[94%]"}
+          >
+            <div
+              className="px-3.5 py-2.5 text-[14.5px] leading-relaxed"
+              style={
+                m.from === "family"
+                  ? {
+                      background: "var(--hp-green)",
+                      color: "#fff",
+                      borderRadius: "12px 12px 4px 12px",
+                      maxWidth: "88%",
+                    }
+                  : {
+                      background: "#F3F8F6",
+                      color: "var(--hp-ink)",
+                      borderRadius: "12px 12px 12px 4px",
+                    }
+              }
+            >
+              {m.body}
+            </div>
+          </div>
+        ))}
+        {typing ? (
+          <div className="max-w-[70%]">
+            <div
+              className="px-3.5 py-2.5 text-[13px] text-[var(--hp-ink-muted)]"
+              style={{ background: "#F3F8F6", borderRadius: "12px 12px 12px 4px" }}
+            >
+              Claire écrit…
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div className="space-y-2 border-t border-[var(--hp-border)] bg-white px-4 py-3">
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              disabled={typing}
+              onClick={() => send(s)}
+              className="rounded-[20px] border border-[var(--hp-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--hp-ink-body)] transition-colors hover:bg-[var(--hp-wash)] disabled:opacity-50"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send(input);
+          }}
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={typing}
+            placeholder="Répondre à Claire…"
+            aria-label="Message à Claire"
+            className="min-h-[44px] flex-1 rounded-[12px] border border-[var(--hp-border)] px-3 text-[14.5px] outline-none focus:border-[var(--hp-green)]"
+          />
+          <button
+            type="submit"
+            disabled={typing || !input.trim()}
+            className="hp-btn hp-btn-primary !min-h-[44px] !px-4 !text-[14px]"
+          >
+            Envoyer
+          </button>
+        </form>
+        <Link
+          href={claireHref}
+          className="inline-flex min-h-[40px] items-center text-[14px] font-semibold text-[var(--hp-green)] no-underline"
+        >
+          Créer mon dossier avec Claire →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function PublicHomePage() {
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -260,10 +369,7 @@ export function PublicHomePage() {
       {/* 1. Sticky header */}
       <header className="hp-header">
         <div className="hp-wrap flex h-[68px] items-center justify-between gap-6">
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <LogoMark />
-            <span className="hp-serif text-[20px] text-[var(--hp-ink)]">HavenApply</span>
-          </Link>
+          <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
 
           <nav className="hp-desktop-nav flex items-center gap-7">
             {NAV.map((item) => (
@@ -437,67 +543,15 @@ export function PublicHomePage() {
                 </li>
               ))}
             </ul>
+            <Link
+              href={`/get-started?next=${encodeURIComponent("/family/dashboard?claire=1")}`}
+              className="hp-btn hp-btn-primary mt-9 inline-flex"
+            >
+              Créer mon dossier avec Claire
+            </Link>
           </div>
 
-          <div className="hp-card hp-chat-shadow overflow-hidden p-0">
-            <div className="flex items-center gap-3 border-b border-[var(--hp-border)] px-5 py-4">
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold"
-                style={{ background: "var(--hp-green-tint)", color: "var(--hp-green-deep)" }}
-              >
-                C
-              </span>
-              <div>
-                <p className="text-[15px] font-semibold text-[var(--hp-ink)]">Claire</p>
-                <p className="text-[13px] text-[var(--hp-ink-muted)]">
-                  Accompagnatrice HavenApply
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3.5 bg-white px-5 py-5">
-              <div className="max-w-[92%]">
-                <div
-                  className="px-3.5 py-2.5 text-[14.5px] leading-relaxed text-[var(--hp-ink)]"
-                  style={{ background: "#F3F8F6", borderRadius: "12px 12px 12px 4px" }}
-                >
-                  Bonjour Sophie. Parlons de votre mère. Vit-elle encore à la maison en ce moment
-                  ?
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <div
-                  className="max-w-[88%] px-3.5 py-2.5 text-[14.5px] leading-relaxed text-white"
-                  style={{ background: "var(--hp-green)", borderRadius: "12px 12px 4px 12px" }}
-                >
-                  Elle est à l&apos;hôpital depuis sa chute, ils veulent la transférer d&apos;ici
-                  deux semaines.
-                </div>
-              </div>
-              <div className="max-w-[94%]">
-                <div
-                  className="px-3.5 py-2.5 text-[14.5px] leading-relaxed text-[var(--hp-ink)]"
-                  style={{ background: "#F3F8F6", borderRadius: "12px 12px 12px 4px" }}
-                >
-                  Compris. J&apos;ai noté « hôpital » et j&apos;ai marqué le dossier comme urgent —
-                  les résidences le verront en priorité. Est-ce qu&apos;elle a besoin d&apos;aide
-                  pour se déplacer ?
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {["Elle marche avec une canne", "Fauteuil roulant", "Je ne sais pas"].map(
-                  (s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      className="rounded-[20px] border border-[var(--hp-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--hp-ink-body)] transition-colors hover:bg-[var(--hp-wash)]"
-                    >
-                      {s}
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-          </div>
+          <ClaireHomeDemo />
         </div>
       </section>
 
@@ -642,8 +696,7 @@ export function PublicHomePage() {
       <footer style={{ background: "var(--hp-black-deep)" }}>
         <div className="hp-wrap flex flex-col gap-6 py-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <LogoMark size={26} />
-            <span className="hp-serif text-[18px] text-white">HavenApply</span>
+            <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
             <span className="text-[14px] text-white/55">
               Plateforme d&apos;admissions en résidence
             </span>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import {
   DASHBOARD_FUNNEL,
   DEMANDES,
@@ -45,12 +47,20 @@ const NAV: { id: ConsoleView; label: string; badge?: boolean }[] = [
 ];
 
 function todayLabel() {
-  return new Date().toLocaleDateString("fr-CA", {
+  const raw = new Date().toLocaleDateString("fr-CA", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+function initialsFrom(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "??";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
 function StatusPill({ status }: { status: DemandeStatus }) {
@@ -118,18 +128,190 @@ function ViewHeader({
           />
         ) : null}
         <span className="h-8 w-px bg-[var(--rc-border)]" aria-hidden />
-        <div className="text-right">
-          <p className="rc-label">{todayLabel()}</p>
-          <p className="mt-1 text-[13.5px] font-medium text-[var(--rc-ink)]">
-            4 demandes à traiter aujourd&apos;hui
-          </p>
-        </div>
+        <p className="whitespace-nowrap text-[13.5px] font-medium text-[var(--rc-ink)]">
+          {todayLabel()}
+        </p>
       </div>
     </header>
   );
 }
 
+function AccountMenu() {
+  const { user, signOut, updateProfile } = useAuth();
+  const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+
+  const displayName =
+    user?.name?.trim() ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    RESIDENCE.staff.name;
+  const displayRole = user?.jobTitle?.trim() || RESIDENCE.staff.role;
+  const initials = initialsFrom(displayName);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setEditing(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setEditing(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const startEdit = () => {
+    setFirstName(user?.firstName || displayName.split(/\s+/)[0] || "");
+    setLastName(
+      user?.lastName ||
+        displayName.split(/\s+/).slice(1).join(" ") ||
+        "",
+    );
+    setJobTitle(displayRole);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    updateProfile({
+      firstName: firstName.trim() || displayName,
+      lastName: lastName.trim(),
+      jobTitle: jobTitle.trim() || displayRole,
+    });
+    setEditing(false);
+    setOpen(false);
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    router.push("/community/sign-in?signedOut=1");
+  };
+
+  return (
+    <div ref={rootRef} className="relative mt-4">
+      <button
+        type="button"
+        className="flex w-full items-center gap-3 rounded-[7px] text-left transition-colors hover:bg-white/5"
+        style={{ padding: "8px 6px" }}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => {
+          setOpen((v) => !v);
+          setEditing(false);
+        }}
+      >
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
+          style={{ background: "var(--rc-black-soft)", color: "#E2F3EF" }}
+        >
+          {initials}
+        </span>
+        <span className="min-w-0 flex-1 text-[13px] leading-snug text-[#C5D2CD]">
+          <span className="block truncate font-medium text-white">{displayName}</span>
+          <span className="block truncate text-[12px] text-[#8E9B96]">{displayRole}</span>
+        </span>
+        <span className="text-[11px] text-[#8E9B96]" aria-hidden>
+          ▾
+        </span>
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          className="absolute bottom-[calc(100%+8px)] left-0 right-0 z-50 overflow-hidden rounded-[10px] border border-white/10 bg-[var(--rc-black-soft)] shadow-lg"
+        >
+          {editing ? (
+            <div className="space-y-3 p-3">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8E9B96]">
+                Modifier le compte
+              </p>
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">Prénom</span>
+                <input
+                  className="rc-input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">Nom</span>
+                <input
+                  className="rc-input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">Poste</span>
+                <input
+                  className="rc-input"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                />
+              </label>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  className="rc-btn rc-btn-outline flex-1 border-white/15 text-white hover:bg-white/5"
+                  onClick={() => setEditing(false)}
+                >
+                  Annuler
+                </button>
+                <button type="button" className="rc-btn rc-btn-primary flex-1" onClick={saveEdit}>
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-1.5">
+              <div className="border-b border-white/10 px-3 py-2.5">
+                <p className="truncate text-[13.5px] font-semibold text-white">{displayName}</p>
+                <p className="truncate text-[12px] text-[#8E9B96]">{displayRole}</p>
+                {user?.email ? (
+                  <p className="mt-1 truncate text-[12px] text-[#8E9B96]">{user.email}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                className="mt-1 flex w-full rounded-[7px] px-3 py-2.5 text-left text-[13.5px] text-[#C5D2CD] hover:bg-white/5 hover:text-white"
+                onClick={startEdit}
+              >
+                Corriger prénom ou poste
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full rounded-[7px] px-3 py-2.5 text-left text-[13.5px] text-[#E8B4A0] hover:bg-white/5"
+                onClick={handleSignOut}
+              >
+                Se déconnecter
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function ResidenceConsole() {
+  const { user } = useAuth();
   const [view, setView] = useState<ConsoleView>("demandes");
   const [filter, setFilter] = useState<FilterId>("Toutes");
   const [selId, setSelId] = useState<string | null>(null);
@@ -312,22 +494,9 @@ export function ResidenceConsole() {
             Établissement
           </p>
           <p className="mt-1.5 text-[14px] font-medium leading-snug text-white">
-            {RESIDENCE.name}
+            {user?.organization?.trim() || RESIDENCE.name}
           </p>
-          <div className="mt-4 flex items-center gap-3">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-semibold"
-              style={{ background: "var(--rc-black-soft)", color: "#E2F3EF" }}
-            >
-              {RESIDENCE.staff.initials}
-            </span>
-            <p className="text-[13px] leading-snug text-[#C5D2CD]">
-              {RESIDENCE.staff.name}
-              <span className="block text-[12px] text-[#8E9B96]">
-                {RESIDENCE.staff.role}
-              </span>
-            </p>
-          </div>
+          <AccountMenu />
         </div>
       </aside>
 

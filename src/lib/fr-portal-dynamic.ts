@@ -182,6 +182,14 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
     progress: progressForStatus(status),
     update,
     updateTone,
+    visit:
+      frStatus === "Visite planifiée" || status === "tour_requested" || app.upcomingAppointment
+        ? {
+            dateLabel: app.upcomingAppointment || "Date à confirmer",
+            timeLabel: "",
+            place: app.residenceName,
+          }
+        : null,
   };
 }
 

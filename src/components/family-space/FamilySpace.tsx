@@ -18,6 +18,7 @@ import {
   TODOS,
   UNIT_TYPES,
   USER,
+  INITIAL_APPLICATIONS,
   type FamilyApplication,
   type FamilyDoc,
   type FamilyView,
@@ -217,11 +218,13 @@ export function FamilySpace() {
 
   const docs = useMemo(() => docsFromVault(data.documents), [data.documents]);
   const progress = docsProgressFromVault(data.documents);
-  const applications = useMemo(() => {
+  const liveApplications = useMemo(() => {
     return data.applications
       .map(storeAppToUi)
       .filter((a): a is FamilyApplication => Boolean(a));
   }, [data.applications]);
+  const hasLiveApplications = liveApplications.length > 0;
+  const applications = hasLiveApplications ? liveApplications : INITIAL_APPLICATIONS;
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
   const hasDossier = Boolean(
@@ -586,9 +589,11 @@ export function FamilySpace() {
         {view === "demandes" && (
           <Demandes
             applications={applications}
+            isDemo={!hasLiveApplications}
             onWithdraw={withdrawApp}
             onWrite={() => go("assistance")}
             onViewDossier={() => openDossier("manage")}
+            onSearch={() => go("residences")}
           />
         )}
         {view === "assistance" && (
@@ -636,6 +641,9 @@ function Accueil({
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
+  const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
+  const visit = nextVisit?.visit;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.5fr_1fr]">
@@ -723,30 +731,42 @@ function Accueil({
       <div className="fs-grid-main grid gap-5 lg:grid-cols-2">
         <div className="fs-card p-6">
           <h3 className="fs-serif text-[19px]">Prochaine visite</h3>
-          <div className="mt-4 flex gap-4">
-            <div
-              className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
-              style={{ background: "var(--fs-subtle)" }}
-            >
-              <span className="fs-label">Septembre</span>
-              <span className="fs-serif text-[28px] leading-none">3</span>
-              <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">14 h 00</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold">{RESIDENCES[0].name}</p>
-              <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                {RESIDENCES[0].unitType} · Sainte-Foy
-              </p>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="fs-btn fs-btn-outline">
-                  Déplacer
-                </button>
-                <button type="button" className="fs-btn fs-btn-outline">
-                  Annuler
-                </button>
+          {nextVisit && visit ? (
+            <div className="mt-4 flex gap-4">
+              <div
+                className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
+                style={{ background: "var(--fs-subtle)" }}
+              >
+                <span className="fs-label">
+                  {visit.dateLabel.split(" ")[1] || "Visite"}
+                </span>
+                <span className="fs-serif text-[28px] leading-none">
+                  {visit.dateLabel.split(" ")[0] || "—"}
+                </span>
+                {visit.timeLabel ? (
+                  <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
+                    {visit.timeLabel}
+                  </span>
+                ) : null}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold">{nextVisit.residenceName}</p>
+                <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
+                  {nextVisit.unit} · {nextVisit.city}
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
+                    Voir le planning
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">
+              Aucune visite planifiée pour le moment. Les créneaux confirmés par les résidences
+              apparaîtront ici.
+            </p>
+          )}
         </div>
 
         <div className="fs-card p-6">
@@ -1952,90 +1972,234 @@ function Dossier({
 
 function Demandes({
   applications,
+  isDemo,
   onWithdraw,
   onWrite,
   onViewDossier,
+  onSearch,
 }: {
   applications: FamilyApplication[];
+  isDemo?: boolean;
   onWithdraw: (id: string) => void;
   onWrite: () => void;
   onViewDossier: () => void;
+  onSearch: () => void;
 }) {
   const segments = ["Demande reçue", "Dossier vérifié", "Visite", "Décision"];
+  const visits = applications.filter(
+    (app) => app.visit || app.status === "Visite planifiée",
+  );
+  const byStatus = {
+    active: applications.length,
+    visits: visits.length,
+    waiting: applications.filter((a) => a.status === "Liste d'attente").length,
+  };
 
   return (
-    <div className="space-y-4">
-      {applications.map((app) => (
-        <article key={app.id} className="fs-card p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="fs-serif text-[22px]">{app.residenceName}</h2>
-              <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                {app.city} · {app.unit} · demande déposée le {app.depositedOn}
+    <div className="flex flex-col gap-6">
+      <div className="fs-card p-6 md:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">Mes demandes</h1>
+            <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
+              Suivez l&apos;évolution de chaque demande envoyée pour votre proche, et retrouvez
+              ici les visites déjà planifiées avec les résidences.
+            </p>
+          </div>
+          <button type="button" className="fs-btn fs-btn-primary" onClick={onSearch}>
+            Nouvelle demande
+          </button>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            ["Demandes actives", String(byStatus.active)],
+            ["Visites planifiées", String(byStatus.visits)],
+            ["Listes d'attente", String(byStatus.waiting)],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-[12px] px-4 py-3"
+              style={{ background: "var(--fs-subtle)" }}
+            >
+              <p className="fs-label">{label}</p>
+              <p className="fs-serif mt-1 text-[28px] leading-none text-[var(--fs-ink)]">
+                {value}
               </p>
             </div>
-            <StatusPill
-              tone={app.status === "Liste d'attente" ? "neutral" : "green"}
-            >
-              {app.status}
-            </StatusPill>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          <div className="mt-5 grid grid-cols-4 gap-2">
-            {segments.map((label, i) => {
-              const done = i <= app.progress;
-              return (
-                <div key={label}>
-                  <div
-                    className="h-2 rounded-full"
-                    style={{
-                      background: done ? "var(--fs-green)" : "var(--fs-border)",
-                    }}
-                  />
-                  <p className="mt-2 text-[12.5px] text-[var(--fs-ink-muted)]">{label}</p>
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 className="fs-serif text-[22px]">Évolution des demandes</h2>
+          {isDemo ? (
+            <p className="text-[13px] text-[var(--fs-ink-muted)]">
+              Exemple de suivi — vos envois réels apparaîtront ici
+            </p>
+          ) : null}
+        </div>
+
+        {applications.length === 0 ? (
+          <div className="fs-card p-8 text-center">
+            <h3 className="fs-serif text-[22px]">Aucune demande pour le moment</h3>
+            <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--fs-ink-body)]">
+              Quand vous enverrez un dossier à une résidence, son statut et ses prochaines
+              étapes s&apos;afficheront ici.
+            </p>
+            <button type="button" className="fs-btn fs-btn-primary mt-6" onClick={onSearch}>
+              Chercher une résidence
+            </button>
+          </div>
+        ) : (
+          applications.map((app) => (
+            <article key={app.id} className="fs-card p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="fs-serif text-[22px]">{app.residenceName}</h3>
+                  <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
+                    {app.city} · {app.unit} · déposée le {app.depositedOn}
+                  </p>
                 </div>
+                <StatusPill tone={app.status === "Liste d'attente" ? "neutral" : "green"}>
+                  {app.status}
+                </StatusPill>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
+                {segments.map((label, i) => {
+                  const done = i <= app.progress;
+                  const current = i === app.progress;
+                  return (
+                    <div key={label}>
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
+                          background: done ? "var(--fs-green)" : "var(--fs-border)",
+                        }}
+                      />
+                      <p
+                        className="mt-2 text-[12.5px]"
+                        style={{
+                          color: current ? "var(--fs-ink)" : "var(--fs-ink-muted)",
+                          fontWeight: current ? 600 : 400,
+                        }}
+                      >
+                        {label}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div
+                className="mt-5 rounded-[10px] px-4 py-3 text-[14.5px]"
+                style={{
+                  background:
+                    app.updateTone === "terra"
+                      ? "var(--fs-terra-bg)"
+                      : app.updateTone === "neutral"
+                        ? "var(--fs-subtle)"
+                        : "var(--fs-green-tint)",
+                  color:
+                    app.updateTone === "terra"
+                      ? "var(--fs-terra)"
+                      : app.updateTone === "neutral"
+                        ? "var(--fs-ink-body)"
+                        : "#0A6F63",
+                }}
+              >
+                {app.update}
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onWrite}>
+                  Écrire à la résidence
+                </button>
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onViewDossier}>
+                  Voir le dossier transmis
+                </button>
+                {!isDemo ? (
+                  <button
+                    type="button"
+                    className="fs-btn fs-btn-outline"
+                    style={{ color: "var(--fs-terra)" }}
+                    onClick={() => onWithdraw(app.id)}
+                  >
+                    Retirer la demande
+                  </button>
+                ) : null}
+              </div>
+            </article>
+          ))
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="fs-serif text-[22px]">Planning des visites</h2>
+        {visits.length === 0 ? (
+          <div className="fs-card p-6">
+            <p className="text-[15px] text-[var(--fs-ink-body)]">
+              Aucune visite n&apos;est encore organisée. Dès qu&apos;une résidence propose un
+              créneau, il apparaîtra dans ce planning.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {visits.map((app) => {
+              const visit = app.visit ?? {
+                dateLabel: "Date à confirmer",
+                timeLabel: "",
+                place: `${app.residenceName} · ${app.city}`,
+              };
+              const [dayToken, ...monthParts] = visit.dateLabel.split(" ");
+              const day = /^\d+$/.test(dayToken) ? dayToken : "—";
+              const month = monthParts[0] || "Visite";
+              return (
+                <article key={`visit-${app.id}`} className="fs-card p-5">
+                  <div className="flex gap-4">
+                    <div
+                      className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[12px] text-center"
+                      style={{ background: "var(--fs-green-tint)", color: "#0A6F63" }}
+                    >
+                      <span className="fs-label" style={{ color: "inherit" }}>
+                        {month}
+                      </span>
+                      <span className="fs-serif text-[28px] leading-none">{day}</span>
+                      {visit.timeLabel ? (
+                        <span className="mt-1 text-[12.5px] font-medium">{visit.timeLabel}</span>
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <StatusPill tone="green">Visite planifiée</StatusPill>
+                      <p className="fs-serif mt-3 text-[18px] leading-snug">{app.residenceName}</p>
+                      <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
+                        {visit.place || `${app.city} · ${app.unit}`}
+                      </p>
+                      <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">
+                        {visit.dateLabel}
+                        {visit.timeLabel ? ` · ${visit.timeLabel}` : ""}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button type="button" className="fs-btn fs-btn-outline" onClick={onWrite}>
+                          Contacter la résidence
+                        </button>
+                        <button
+                          type="button"
+                          className="fs-btn fs-btn-outline"
+                          onClick={onViewDossier}
+                        >
+                          Préparer le dossier
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
               );
             })}
           </div>
-
-          <div
-            className="mt-5 rounded-[10px] px-4 py-3 text-[14.5px]"
-            style={{
-              background:
-                app.updateTone === "terra"
-                  ? "var(--fs-terra-bg)"
-                  : app.updateTone === "neutral"
-                    ? "var(--fs-subtle)"
-                    : "var(--fs-green-tint)",
-              color:
-                app.updateTone === "terra"
-                  ? "var(--fs-terra)"
-                  : app.updateTone === "neutral"
-                    ? "var(--fs-ink-body)"
-                    : "#0A6F63",
-            }}
-          >
-            {app.update}
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="fs-btn fs-btn-outline" onClick={onWrite}>
-              Écrire à la résidence
-            </button>
-            <button type="button" className="fs-btn fs-btn-outline" onClick={onViewDossier}>
-              Voir le dossier transmis
-            </button>
-            <button
-              type="button"
-              className="fs-btn fs-btn-outline"
-              style={{ color: "var(--fs-terra)" }}
-              onClick={() => onWithdraw(app.id)}
-            >
-              Retirer la demande
-            </button>
-          </div>
-        </article>
-      ))}
+        )}
+      </section>
     </div>
   );
 }

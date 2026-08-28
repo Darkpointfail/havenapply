@@ -121,6 +121,11 @@ export function FamilySpace() {
   const [chat, setChat] = useState<AssistantTurn[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [accountOpen, setAccountOpen] = useState(false);
+  const [accountEditing, setAccountEditing] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRelationship, setEditRelationship] = useState("");
   const accountRef = useRef<HTMLDivElement | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -145,10 +150,16 @@ export function FamilySpace() {
   useEffect(() => {
     if (!accountOpen) return;
     const onDoc = (e: MouseEvent) => {
-      if (!accountRef.current?.contains(e.target as Node)) setAccountOpen(false);
+      if (!accountRef.current?.contains(e.target as Node)) {
+        setAccountOpen(false);
+        setAccountEditing(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAccountOpen(false);
+      if (e.key === "Escape") {
+        setAccountOpen(false);
+        setAccountEditing(false);
+      }
     };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
@@ -158,8 +169,31 @@ export function FamilySpace() {
     };
   }, [accountOpen]);
 
+  const startAccountEdit = () => {
+    setEditFirstName(user?.firstName || USER.firstName || "");
+    setEditLastName(user?.lastName || "");
+    setEditPhone(user?.phone || "");
+    setEditRelationship(data.senior.relationship || "Fille");
+    setAccountEditing(true);
+  };
+
+  const saveAccountEdit = () => {
+    const first = editFirstName.trim() || user?.firstName || USER.firstName;
+    updateProfile({
+      firstName: first,
+      lastName: editLastName.trim(),
+      phone: editPhone.trim(),
+    });
+    updateSeniorDraft({
+      relationship: editRelationship.trim() || data.senior.relationship || "Famille",
+    });
+    setAccountEditing(false);
+    setAccountOpen(false);
+  };
+
   const handleSignOut = () => {
     setAccountOpen(false);
+    setAccountEditing(false);
     signOut();
     router.replace("/sign-in?signedOut=1");
   };
@@ -440,7 +474,10 @@ export function FamilySpace() {
               className="fs-account-trigger"
               aria-expanded={accountOpen}
               aria-haspopup="menu"
-              onClick={() => setAccountOpen((v) => !v)}
+              onClick={() => {
+                setAccountOpen((v) => !v);
+                setAccountEditing(false);
+              }}
             >
               <span
                 className="fs-account-avatar"
@@ -475,22 +512,127 @@ export function FamilySpace() {
             </button>
             {accountOpen ? (
               <div role="menu" className="fs-account-menu">
-                <div className="border-b border-white/10 px-3.5 py-3">
-                  <p className="truncate text-[13.5px] font-semibold text-white">
-                    {displayUser.fullName}
-                  </p>
-                  {displayUser.email ? (
-                    <p className="mt-1 truncate text-[12px] text-[#9AABA4]">{displayUser.email}</p>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="fs-account-menu-item"
-                  onClick={handleSignOut}
-                >
-                  Se déconnecter
-                </button>
+                {accountEditing ? (
+                  <div className="space-y-3 p-3.5">
+                    <div>
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-[#9AABA4]">
+                        Profil contact
+                      </p>
+                      <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#9AABA4]">
+                        Ces renseignements sont associés au dossier de{" "}
+                        {displaySenior.fullName} comme contact principal.
+                      </p>
+                    </div>
+                    <label className="block">
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Prénom</span>
+                      <input
+                        className="fs-account-input"
+                        value={editFirstName}
+                        onChange={(e) => setEditFirstName(e.target.value)}
+                        autoFocus
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Nom</span>
+                      <input
+                        className="fs-account-input"
+                        value={editLastName}
+                        onChange={(e) => setEditLastName(e.target.value)}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Courriel</span>
+                      <input
+                        className="fs-account-input"
+                        value={displayUser.email}
+                        disabled
+                        readOnly
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Téléphone</span>
+                      <input
+                        className="fs-account-input"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="418 555-0198"
+                        autoComplete="tel"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">
+                        Lien avec le proche
+                      </span>
+                      <select
+                        className="fs-account-input"
+                        value={editRelationship}
+                        onChange={(e) => setEditRelationship(e.target.value)}
+                      >
+                        {["Fille", "Fils", "Conjoint", "Conjointe", "Autre proche", "Moi-même"].map(
+                          (opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        className="fs-account-menu-item flex-1 !py-2 text-center text-white/85"
+                        onClick={() => setAccountEditing(false)}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="button"
+                        className="flex-1 rounded-[8px] px-3 py-2 text-[13.5px] font-semibold text-white"
+                        style={{ background: "var(--fs-green)" }}
+                        onClick={saveAccountEdit}
+                      >
+                        Enregistrer
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="border-b border-white/10 px-3.5 py-3">
+                      <p className="truncate text-[13.5px] font-semibold text-white">
+                        {displayUser.fullName}
+                      </p>
+                      {displayUser.email ? (
+                        <p className="mt-1 truncate text-[12px] text-[#9AABA4]">
+                          {displayUser.email}
+                        </p>
+                      ) : null}
+                      {user?.phone ? (
+                        <p className="mt-1 truncate text-[12px] text-[#9AABA4]">{user.phone}</p>
+                      ) : null}
+                      {data.senior.relationship ? (
+                        <p className="mt-1 text-[12px] text-[#9AABA4]">
+                          Contact · {data.senior.relationship}
+                        </p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fs-account-menu-item"
+                      onClick={startAccountEdit}
+                    >
+                      Modifier mon profil contact
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fs-account-menu-item"
+                      onClick={handleSignOut}
+                    >
+                      Se déconnecter
+                    </button>
+                  </>
+                )}
               </div>
             ) : null}
           </div>

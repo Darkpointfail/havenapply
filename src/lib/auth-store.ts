@@ -77,6 +77,7 @@ export type SessionUser = {
   role: UserRole;
   organization?: string;
   jobTitle?: string;
+  phone?: string;
   emailConfirmed: boolean;
   communityStatus?: CommunityStatus;
   onboardingCompleted: boolean;
@@ -109,6 +110,7 @@ export function toSessionUser(a: AccountRecord): SessionUser {
     role: a.role,
     organization: a.organization,
     jobTitle: a.jobTitle,
+    phone: a.phone,
     emailConfirmed: a.emailConfirmed,
     communityStatus: a.communityStatus,
     onboardingCompleted: a.onboardingCompleted,
@@ -148,6 +150,7 @@ export function readSession(): SessionUser | null {
       role,
       organization: parsed.organization ? String(parsed.organization) : undefined,
       jobTitle: parsed.jobTitle ? String(parsed.jobTitle) : undefined,
+      phone: parsed.phone ? String(parsed.phone) : undefined,
       emailConfirmed: Boolean(parsed.emailConfirmed),
       communityStatus: parsed.communityStatus as SessionUser["communityStatus"],
       onboardingCompleted: Boolean(parsed.onboardingCompleted),
@@ -508,7 +511,7 @@ export function refreshSessionFromStore(userId: string): SessionUser | null {
 /** Patch display fields on the current session (and local account when present). */
 export function updateSessionProfile(
   userId: string,
-  patch: { firstName?: string; lastName?: string; jobTitle?: string },
+  patch: { firstName?: string; lastName?: string; jobTitle?: string; phone?: string },
 ): SessionUser | null {
   const session = readSession();
   if (!session || session.id !== userId) return null;
@@ -517,6 +520,7 @@ export function updateSessionProfile(
   const lastName = (patch.lastName ?? session.lastName).trim();
   const jobTitle =
     patch.jobTitle !== undefined ? patch.jobTitle.trim() || undefined : session.jobTitle;
+  const phone = patch.phone !== undefined ? patch.phone.trim() || undefined : session.phone;
 
   const next: SessionUser = {
     ...session,
@@ -524,6 +528,7 @@ export function updateSessionProfile(
     lastName,
     name: `${firstName} ${lastName}`.trim() || session.name,
     jobTitle,
+    phone,
   };
   writeSession(next);
 
@@ -535,6 +540,7 @@ export function updateSessionProfile(
       firstName,
       lastName,
       jobTitle,
+      phone,
     };
     writeAccounts(all);
   }

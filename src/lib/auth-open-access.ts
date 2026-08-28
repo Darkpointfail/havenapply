@@ -10,10 +10,11 @@ export const AUTH_OPEN_ACCESS = process.env.NEXT_PUBLIC_AUTH_OPEN_ACCESS === "tr
 export const DEMO_FAMILY_USER: SessionUser = {
   id: "demo_family",
   email: "demo.family@havenapply.local",
-  firstName: "Alex",
-  lastName: "Martin",
-  name: "Alex Martin",
+  firstName: "Sophie",
+  lastName: "Lévesque",
+  name: "Sophie Lévesque",
   role: "family",
+  phone: "418 555-0198",
   emailConfirmed: true,
   // False until the loved-one profile is finalized in onboarding/assistant.
   onboardingCompleted: false,

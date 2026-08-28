@@ -90,6 +90,7 @@ type AuthContextValue = {
     firstName?: string;
     lastName?: string;
     jobTitle?: string;
+    phone?: string;
   }) => SessionUser | null;
   signInFamily: (input: { email: string; password: string }) => Promise<AuthResult<SessionUser>>;
   signInCommunity: (input: {
@@ -305,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, remote]);
 
   const updateProfile = useCallback(
-    (patch: { firstName?: string; lastName?: string; jobTitle?: string }) => {
+    (patch: { firstName?: string; lastName?: string; jobTitle?: string; phone?: string }) => {
       if (!user) return null;
       // Demo / open-access: update in-memory session immediately.
       if (AUTH_OPEN_ACCESS) {
@@ -313,12 +314,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const lastName = (patch.lastName ?? user.lastName).trim();
         const jobTitle =
           patch.jobTitle !== undefined ? patch.jobTitle.trim() || undefined : user.jobTitle;
+        const phone = patch.phone !== undefined ? patch.phone.trim() || undefined : user.phone;
         const next: SessionUser = {
           ...user,
           firstName,
           lastName,
           name: `${firstName} ${lastName}`.trim() || user.name,
           jobTitle,
+          phone,
         };
         writeSession(next);
         setUser(next);

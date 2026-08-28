@@ -309,7 +309,7 @@
   right: 0;
   top: calc(100% + 10px);
   z-index: 50;
-  min-width: 232px;
+  min-width: 268px;
   overflow: hidden;
   border-radius: 12px;
   border: 1px solid rgba(226, 243, 239, 0.12);
@@ -335,6 +335,32 @@
 
 .fs-account-menu-item:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.fs-account-input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(226, 243, 239, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 10px;
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.fs-account-input:focus {
+  border-color: rgba(79, 191, 174, 0.55);
+}
+
+.fs-account-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.fs-account-input option {
+  color: #121a17;
 }
 
 @keyframes fs-nav-underline {

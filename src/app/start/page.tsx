@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import "@/components/marketing/public-home.css";

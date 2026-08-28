@@ -1,2 +1,2 @@
 # Home marketing assets
-# hero.jpg — full-bleed hero (happy seniors / residence atmosphere)
+# hero.jpg / hero.webp — mother and adult daughter at home (family admissions hero)

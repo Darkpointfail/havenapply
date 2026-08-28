@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
@@ -130,45 +131,23 @@ function Check() {
 }
 
 function HeroPhoto() {
-  const [url, setUrl] = useState<string | null>(null);
-
   return (
-    <label className="block cursor-pointer">
-      <div
-        className="relative w-full overflow-hidden rounded-2xl"
-        style={{
-          height: 440,
-          background: url
-            ? undefined
-            : "repeating-linear-gradient(135deg, #E2F3EF 0 14px, #F1F7F5 14px 28px)",
-          border: "1px solid var(--hp-border)",
-        }}
-      >
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="hp-muted max-w-xs">
-              Photo chaleureuse : une fille adulte et sa mère âgée, ensemble, à la maison
-            </p>
-            <p className="text-[13px] font-medium" style={{ color: "var(--hp-green-deep)" }}>
-              Déposer une image
-            </p>
-          </div>
-        )}
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          setUrl(URL.createObjectURL(file));
-        }}
+    <div
+      className="relative w-full overflow-hidden rounded-2xl"
+      style={{
+        height: 440,
+        border: "1px solid var(--hp-border)",
+      }}
+    >
+      <Image
+        src="/home/hero.jpg"
+        alt="Une fille adulte et sa mère âgée, assises ensemble à la maison"
+        fill
+        priority
+        sizes="(max-width: 768px) 100vw, 520px"
+        className="object-cover object-[50%_30%]"
       />
-    </label>
+    </div>
   );
 }
 

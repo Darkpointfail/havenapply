@@ -401,87 +401,97 @@ export function FamilySpace() {
 
   return (
     <div className={`fs ${sourceSerif.variable} ${publicSans.variable}`}>
-      <header
-        className="sticky top-0 z-40 flex h-[58px] items-center gap-4 px-5 text-white md:px-8"
-        style={{ background: "var(--fs-black)" }}
-      >
-        <div className="flex shrink-0 items-center">
-          <Logo
-            href="/family/dashboard"
-            size="nav"
-            light
-            className="!ml-0 !translate-y-0"
-          />
-        </div>
+      <header className="fs-header sticky top-0 z-40 text-white">
+        <div className="fs-header-inner">
+          <div className="flex shrink-0 items-center gap-3">
+            <Logo
+              href="/family/dashboard"
+              size="nav"
+              light
+              className="!ml-0 !translate-y-0"
+            />
+            <span className="fs-header-eyebrow hidden lg:inline">Espace famille</span>
+          </div>
 
-        <nav className="fs-nav-scroll min-w-0 flex-1">
-          {NAV.map((item) => {
-            const active =
-              view === item.id ||
-              (item.id === "residences" && (view === "fiche" || view === "depot"));
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => go(item.id)}
-                className="shrink-0 rounded-[7px] px-3 py-2 text-[14px] transition-colors"
-                style={{
-                  background: active ? "var(--fs-black-soft)" : "transparent",
-                  color: active ? "#fff" : "#C5D2CD",
-                }}
+          <nav className="fs-nav-scroll fs-header-nav min-w-0 flex-1" aria-label="Navigation principale">
+            {NAV.map((item) => {
+              const active =
+                view === item.id ||
+                (item.id === "residences" && (view === "fiche" || view === "depot"));
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => go(item.id)}
+                  className={`fs-nav-item shrink-0 ${active ? "fs-nav-item-active" : ""}`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div ref={accountRef} className="fs-header-account relative ml-auto shrink-0">
+            <button
+              type="button"
+              className="fs-account-trigger"
+              aria-expanded={accountOpen}
+              aria-haspopup="menu"
+              onClick={() => setAccountOpen((v) => !v)}
+            >
+              <span
+                className="fs-account-avatar"
+                aria-hidden
               >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div
-          ref={accountRef}
-          className="relative ml-auto flex shrink-0 items-center gap-3 border-l border-white/15 pl-4"
-        >
-          <button
-            type="button"
-            className="flex items-center gap-3 rounded-[8px] text-left transition-colors hover:bg-white/5"
-            style={{ padding: "4px 6px" }}
-            aria-expanded={accountOpen}
-            aria-haspopup="menu"
-            onClick={() => setAccountOpen((v) => !v)}
-          >
-            <div className="hidden text-right sm:block">
-              <p className="text-[13.5px] font-semibold leading-tight">{displayUser.fullName}</p>
-              <p className="text-[12px] leading-tight" style={{ color: "#8E9B96" }}>
-                Dossier de {displaySenior.fullName}
-              </p>
-            </div>
-            <span
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold"
-              style={{ background: "var(--fs-black-soft)", color: "#E2F3EF" }}
-            >
-              {displayUser.initials}
-            </span>
-          </button>
-          {accountOpen ? (
-            <div
-              role="menu"
-              className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-[220px] overflow-hidden rounded-[10px] border border-white/10 bg-[var(--fs-black-soft)] shadow-lg"
-            >
-              <div className="border-b border-white/10 px-3 py-2.5">
-                <p className="truncate text-[13.5px] font-semibold text-white">{displayUser.fullName}</p>
-                {displayUser.email ? (
-                  <p className="mt-1 truncate text-[12px] text-[#8E9B96]">{displayUser.email}</p>
-                ) : null}
+                {displayUser.initials}
+              </span>
+              <span className="hidden min-w-0 text-left sm:block">
+                <span className="block truncate text-[13.5px] font-semibold leading-tight text-white">
+                  {displayUser.fullName}
+                </span>
+                <span className="mt-0.5 block truncate text-[12px] leading-tight text-[#9AABA4]">
+                  Dossier de {displaySenior.fullName}
+                </span>
+              </span>
+              <svg
+                className={`fs-account-chevron hidden sm:block ${accountOpen ? "fs-account-chevron-open" : ""}`}
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden
+              >
+                <path
+                  d="M2.5 4.5L6 8l3.5-3.5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {accountOpen ? (
+              <div role="menu" className="fs-account-menu">
+                <div className="border-b border-white/10 px-3.5 py-3">
+                  <p className="truncate text-[13.5px] font-semibold text-white">
+                    {displayUser.fullName}
+                  </p>
+                  {displayUser.email ? (
+                    <p className="mt-1 truncate text-[12px] text-[#9AABA4]">{displayUser.email}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="fs-account-menu-item"
+                  onClick={handleSignOut}
+                >
+                  Se déconnecter
+                </button>
               </div>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2.5 text-left text-[13.5px] text-[#E8B4A0] hover:bg-white/5"
-                onClick={handleSignOut}
-              >
-                Se déconnecter
-              </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </header>
 

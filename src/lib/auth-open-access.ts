@@ -231,13 +231,16 @@ export function demoUserForPath(
   }
 
   if (isProfessionalPortalPath(pathname)) {
-    return DEMO_PROFESSIONAL_USER;
+    if (options?.useStoredSession && hasOpenProfessionalSession()) return DEMO_PROFESSIONAL_USER;
+    return null;
   }
   if (isCommunityPortalPath(pathname)) {
-    return DEMO_COMMUNITY_USER;
+    if (options?.useStoredSession && hasOpenCommunitySession()) return DEMO_COMMUNITY_USER;
+    return null;
   }
   if (isFamilyPortalPath(pathname)) {
-    return DEMO_FAMILY_USER;
+    if (options?.useStoredSession && hasOpenFamilySession()) return DEMO_FAMILY_USER;
+    return null;
   }
   // sessionStorage is client-only, never read during SSR / first paint
   if (options?.useStoredSession && isSharedBrowsePath(pathname)) {

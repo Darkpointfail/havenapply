@@ -14,6 +14,8 @@ export const frMessages: Record<string, string> = {
   Register: "S’inscrire",
   "Sign out": "Se déconnecter",
   "Sign in": "Connexion",
+  "My space": "Mon espace",
+  "You signed out successfully.": "Vous êtes déconnecté.",
   Assistant: "Assistant",
   "Close menu": "Fermer le menu",
   "Open menu": "Ouvrir le menu",

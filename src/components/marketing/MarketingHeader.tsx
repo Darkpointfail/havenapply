@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Logo } from "@/components/brand/Logo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { publicAuthLinks, publicNav } from "@/config/navigation";
+import { useAuth, homeForUser } from "@/lib/auth";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +17,13 @@ const focusRing =
 
 export function MarketingHeader() {
   const t = useT();
+  const router = useRouter();
   const pathname = usePathname();
+  const { user, ready, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const signedIn = ready && Boolean(user);
+  const accountHome = user ? homeForUser(user) : publicAuthLinks.signIn;
 
   useEffect(() => setMounted(true), []);
   useEffect(() => setOpen(false), [pathname]);
@@ -36,6 +41,12 @@ export function MarketingHeader() {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  const onSignOut = () => {
+    signOut();
+    setOpen(false);
+    router.replace("/sign-in?signedOut=1");
+  };
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -106,26 +117,53 @@ export function MarketingHeader() {
               <div className="flex justify-center">
                 <LanguageSwitcher />
               </div>
-              <Link
-                href={publicAuthLinks.signIn}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex h-14 w-full items-center justify-center rounded-[14px] border-[1.5px] border-[var(--line-strong)] text-[17px] font-semibold text-[var(--ink)]",
-                  focusRing,
-                )}
-              >
-                {t("Log in")}
-              </Link>
-              <Link
-                href={publicAuthLinks.register}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex h-14 w-full items-center justify-center rounded-[14px] bg-[var(--brand-strong)] text-[17px] font-semibold text-white",
-                  focusRing,
-                )}
-              >
-                {t("Get started")}
-              </Link>
+              {signedIn ? (
+                <>
+                  <Link
+                    href={accountHome}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex h-14 w-full items-center justify-center rounded-[14px] border-[1.5px] border-[var(--line-strong)] text-[17px] font-semibold text-[var(--ink)]",
+                      focusRing,
+                    )}
+                  >
+                    {t("My space")}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className={cn(
+                      "flex h-14 w-full items-center justify-center rounded-[14px] bg-[var(--brand-strong)] text-[17px] font-semibold text-white",
+                      focusRing,
+                    )}
+                  >
+                    {t("Sign out")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={publicAuthLinks.signIn}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex h-14 w-full items-center justify-center rounded-[14px] border-[1.5px] border-[var(--line-strong)] text-[17px] font-semibold text-[var(--ink)]",
+                      focusRing,
+                    )}
+                  >
+                    {t("Log in")}
+                  </Link>
+                  <Link
+                    href={publicAuthLinks.register}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex h-14 w-full items-center justify-center rounded-[14px] bg-[var(--brand-strong)] text-[17px] font-semibold text-white",
+                      focusRing,
+                    )}
+                  >
+                    {t("Get started")}
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </aside>
@@ -161,24 +199,50 @@ export function MarketingHeader() {
 
         <div className="ml-auto hidden items-center gap-3 self-center lg:flex">
           <LanguageSwitcher />
-          <Link
-            href={publicAuthLinks.signIn}
-            className={cn(
-              "inline-flex h-11 min-w-[7rem] items-center justify-center rounded-[14px] px-4 text-[16px] font-semibold leading-none text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)]",
-              focusRing,
-            )}
-          >
-            {t("Log in")}
-          </Link>
-          <Link
-            href={publicAuthLinks.register}
-            className={cn(
-              "inline-flex h-11 items-center justify-center rounded-[14px] bg-[var(--brand-strong)] px-5 text-[16px] font-semibold leading-none text-white transition-colors hover:brightness-95",
-              focusRing,
-            )}
-          >
-            {t("Get started")}
-          </Link>
+          {signedIn ? (
+            <>
+              <Link
+                href={accountHome}
+                className={cn(
+                  "inline-flex h-11 min-w-[7rem] items-center justify-center rounded-[14px] px-4 text-[16px] font-semibold leading-none text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)]",
+                  focusRing,
+                )}
+              >
+                {t("My space")}
+              </Link>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className={cn(
+                  "inline-flex h-11 items-center justify-center rounded-[14px] bg-[var(--brand-strong)] px-5 text-[16px] font-semibold leading-none text-white transition-colors hover:brightness-95",
+                  focusRing,
+                )}
+              >
+                {t("Sign out")}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href={publicAuthLinks.signIn}
+                className={cn(
+                  "inline-flex h-11 min-w-[7rem] items-center justify-center rounded-[14px] px-4 text-[16px] font-semibold leading-none text-[var(--ink)] transition-colors hover:bg-[var(--bg-soft)]",
+                  focusRing,
+                )}
+              >
+                {t("Log in")}
+              </Link>
+              <Link
+                href={publicAuthLinks.register}
+                className={cn(
+                  "inline-flex h-11 items-center justify-center rounded-[14px] bg-[var(--brand-strong)] px-5 text-[16px] font-semibold leading-none text-white transition-colors hover:brightness-95",
+                  focusRing,
+                )}
+              >
+                {t("Get started")}
+              </Link>
+            </>
+          )}
         </div>
 
         <button

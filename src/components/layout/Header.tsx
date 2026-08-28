@@ -35,7 +35,7 @@ const marketingLinks = [
 ];
 
 const familyLinks = [
-  { href: "/", label: "Accueil", icon: LayoutDashboard },
+  { href: "/family/dashboard", label: "Accueil", icon: LayoutDashboard },
   { href: "/family/find-communities", label: "Communities", icon: Search },
   { href: "/family/applications", label: "My applications", icon: CheckSquare },
   { href: "/family/documents", label: "Documents", icon: FileText },

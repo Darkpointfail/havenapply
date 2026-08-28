@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { FamilySpace } from "@/components/family-space/FamilySpace";
+import { HomePageView } from "@/components/marketing/HomePageView";
 
 export const metadata: Metadata = {
-  title: "HavenApply : Espace famille",
+  title: "HavenApply — Une demande, toutes les résidences",
   description:
-    "Constituez le dossier d'admission de votre proche, cherchez des résidences et suivez vos demandes au même endroit.",
+    "Fini les dossiers papier. Remplissez une demande d'admission une seule fois et envoyez-la en ligne à toutes les résidences pour aînés que vous choisissez.",
 };
 
 export default function HomePage() {
-  return <FamilySpace />;
+  return <HomePageView />;
 }

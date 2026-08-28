@@ -64,7 +64,7 @@ function ProfileHubInner() {
       {
         label: "Basic profile",
         done: data.seniorCreated && completeness >= 40,
-        href: "/onboarding",
+        href: "/family/dossier",
       },
       {
         label: "Care needs",

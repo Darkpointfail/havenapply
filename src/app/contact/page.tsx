@@ -86,9 +86,9 @@ export default function ContactPage() {
                 </p>
                 <ul className="mt-3 space-y-2">
                   {[
-                    { href: "/for-families", label: "For families" },
-                    { href: "/for-communities", label: "For communities" },
-                    { href: "/how-it-works", label: "How it works" },
+                    { href: "/get-started", label: "For families" },
+                    { href: "/community/sign-in", label: "For communities" },
+                    { href: "/#comment", label: "How it works" },
                     { href: "/get-started", label: "Create a family profile" },
                   ].map((l) => (
                     <li key={l.href}>

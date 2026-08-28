@@ -150,11 +150,11 @@ export function AiAssistant() {
             </button>
           </form>
           <Link
-            href="/assistant"
+            href="/family/dashboard"
             className="mt-2 block text-center text-xs font-medium text-brand"
             onClick={() => setOpen(false)}
           >
-            {t("Open full assistant")}
+            {t("Go to family space")}
           </Link>
         </div>
       </div>

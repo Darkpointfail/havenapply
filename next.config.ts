@@ -35,7 +35,21 @@ const nextConfig: NextConfig = {
       { source: "/admin", destination: "/community/dashboard", permanent: false },
       { source: "/admin/:path*", destination: "/community/:path*", permanent: false },
       { source: "/residence-login", destination: "/community/sign-in", permanent: false },
-      { source: "/for-residences", destination: "/for-communities", permanent: false },
+      // Obsolete marketing / onboarding surfaces
+      { source: "/onboarding", destination: "/family/dashboard", permanent: false },
+      { source: "/onboarding/:path*", destination: "/family/dashboard", permanent: false },
+      { source: "/how-it-works", destination: "/", permanent: false },
+      { source: "/setup", destination: "/family/dashboard", permanent: false },
+      { source: "/start", destination: "/family/dashboard", permanent: false },
+      { source: "/assistant", destination: "/family/dashboard", permanent: false },
+      { source: "/about", destination: "/", permanent: false },
+      { source: "/resources", destination: "/", permanent: false },
+      { source: "/for-families", destination: "/", permanent: false },
+      { source: "/for-communities", destination: "/", permanent: false },
+      { source: "/for-residences", destination: "/community/sign-in", permanent: false },
+      { source: "/hospital", destination: "/", permanent: false },
+      { source: "/hospital/:path*", destination: "/", permanent: false },
+      { source: "/hospital-login", destination: "/sign-in", permanent: false },
     ];
   },
   async headers() {

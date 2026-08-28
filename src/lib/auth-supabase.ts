@@ -285,7 +285,7 @@ export async function signUpWithRoleSupabase(
       ? "/community/profile?welcome=1"
       : input.role === "professional"
         ? "/professional/dashboard"
-        : "/start";
+        : "/family/dashboard";
 
   const metadata: Record<string, unknown> = {
     first_name: input.firstName.trim(),

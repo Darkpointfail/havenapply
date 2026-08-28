@@ -34,7 +34,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const isCoreFamily = isFamilyPortalPath(pathname);
   const isBrowse = isSharedBrowsePath(pathname);
   const isPublicHome = pathname === "/";
-  const isStartPage = pathname === "/start";
   const isFamilyEspaceUi =
     pathname === "/family/dashboard" || pathname.startsWith("/family/espace");
   const isCommunityConsoleUi =
@@ -58,8 +57,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify");
 
-  // Marketing homepage, onboarding start, and full-bleed product UIs own their chrome.
-  if (isSiteAccess || isPublicHome || isStartPage) {
+  // Marketing homepage and full-bleed product UIs own their chrome.
+  if (isSiteAccess || isPublicHome) {
     return <main className="flex-1">{children}</main>;
   }
 

@@ -52,7 +52,7 @@ export function Hero() {
             {t("home.hero.ctaPrimary")}
           </Link>
           <Link
-            href="/how-it-works"
+            href="/#comment"
             className={cn(
               "inline-flex h-[60px] w-full items-center justify-center rounded-[14px] border-[1.5px] border-white bg-transparent px-7 text-[17px] font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto",
               focusRing,

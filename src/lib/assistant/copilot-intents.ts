@@ -68,13 +68,13 @@ export function answerCopilot(input: {
 
   if (q.includes("profile") || q.includes("continue") || q.includes("setup")) {
     return {
-      text: "Let's continue building the profile together in the assistant.",
-      href: "/assistant",
+      text: "Let's continue building the profile together in your family space.",
+      href: "/family/dashboard",
     };
   }
 
   return {
     text: "I can check application status, missing documents, or help you search. Try asking “Where is my application?” or “What document am I missing?”",
-    href: "/assistant",
+    href: "/family/dashboard",
   };
 }

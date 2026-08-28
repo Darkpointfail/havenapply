@@ -60,9 +60,7 @@ export function Header() {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot") ||
     pathname.startsWith("/verify") ||
-    pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/community/sign-in") ||
-    pathname.startsWith("/hospital-login");
+    pathname.startsWith("/community/sign-in");
 
   const isCommunityUser =
     user?.role === "community" || user?.role === "facility";
@@ -70,7 +68,6 @@ export function Header() {
   const isPortal =
     pathname.startsWith("/community") ||
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/hospital") ||
     isCommunityUser;
 
   if (isPortal && isCommunityUser) {

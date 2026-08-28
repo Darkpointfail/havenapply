@@ -28,6 +28,12 @@ export type AppStatus =
   | "Liste d'attente"
   | "Décision attendue";
 
+export type FamilyVisit = {
+  dateLabel: string;
+  timeLabel: string;
+  place?: string;
+};
+
 export type FamilyApplication = {
   id: string;
   residenceId: string;
@@ -39,6 +45,7 @@ export type FamilyApplication = {
   progress: number; // 0-3 segments completed
   update: string;
   updateTone: "green" | "neutral" | "terra";
+  visit?: FamilyVisit | null;
 };
 
 export type Residence = {
@@ -202,6 +209,11 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
     progress: 2,
     update: "Visite planifiée le 3 septembre à 14 h.",
     updateTone: "green",
+    visit: {
+      dateLabel: "3 septembre 2026",
+      timeLabel: "14 h 00",
+      place: "Résidence Les Jardins du Fleuve · Sainte-Foy",
+    },
   },
   {
     id: "a2",

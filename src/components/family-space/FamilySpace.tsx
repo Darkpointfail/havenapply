@@ -9,10 +9,7 @@ import {
   type AssistantTurn,
 } from "@/data/assistant";
 import {
-  docsProgress,
-  INITIAL_APPLICATIONS,
   PROFILE_STEPS,
-  REQUIRED_DOCS,
   RESIDENCES,
   SENIOR,
   SERVICES,
@@ -24,6 +21,16 @@ import {
   type FamilyView,
   type Residence,
 } from "@/data/family-space";
+import { useAuth } from "@/lib/auth";
+import { useFamilyData } from "@/lib/family-data";
+import { putDocBlob } from "@/lib/doc-blobs";
+import {
+  buildSubmitDraft,
+  categoryForFrDocId,
+  docsFromVault,
+  docsProgressFromVault,
+  storeAppToUi,
+} from "@/lib/fr-portal-dynamic";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -85,13 +92,22 @@ function Field({
 }
 
 export function FamilySpace() {
+  const { user, updateProfile } = useAuth();
+  const {
+    ready: familyReady,
+    data,
+    addDocument,
+    replaceDocumentFile,
+    submitApplication,
+    withdrawApplication,
+    updateSeniorDraft,
+    finalizeSeniorProfile,
+  } = useFamilyData();
+
   const [view, setView] = useState<FamilyView>("accueil");
   const [resId, setResId] = useState<string | null>(null);
   const [applyStep, setApplyStep] = useState(1);
-  const [profileStep, setProfileStep] = useState(2); // Étape 3 sur 7 as in brief
-  const [docs, setDocs] = useState<FamilyDoc[]>(REQUIRED_DOCS);
-  const [applications, setApplications] =
-    useState<FamilyApplication[]>(INITIAL_APPLICATIONS);
+  const [profileStep, setProfileStep] = useState(2);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [consent, setConsent] = useState(false);
   const [claireOpen, setClaireOpen] = useState(true);
@@ -113,9 +129,58 @@ export function FamilySpace() {
   const [unitFilter, setUnitFilter] = useState<string[]>(["3½"]);
   const [serviceFilter, setServiceFilter] = useState<string[]>(["Repas", "Soins infirmiers"]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [seeded, setSeeded] = useState(false);
 
-  const progress = docsProgress(docs);
+  const displayUser = {
+    firstName: user?.firstName || USER.firstName,
+    fullName: user?.name || USER.fullName,
+    initials:
+      user?.firstName && user?.lastName
+        ? `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase()
+        : USER.initials,
+  };
+
+  const displaySenior = {
+    ...SENIOR,
+    firstName: data.senior.firstName || SENIOR.firstName,
+    lastName: data.senior.lastName || SENIOR.lastName,
+    fullName:
+      [data.senior.firstName, data.senior.lastName].filter(Boolean).join(" ") || SENIOR.fullName,
+  };
+
+  const docs = useMemo(() => docsFromVault(data.documents), [data.documents]);
+  const progress = docsProgressFromVault(data.documents);
+  const applications = useMemo(() => {
+    return data.applications
+      .map(storeAppToUi)
+      .filter((a): a is FamilyApplication => Boolean(a));
+  }, [data.applications]);
+
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
+
+  useEffect(() => {
+    if (!familyReady || !user || user.role !== "family" || seeded) return;
+    if (!data.senior.firstName) {
+      updateSeniorDraft({
+        filledBy: "I'm a family member or friend",
+        relationship: "Daughter",
+        firstName: "Marguerite",
+        lastName: "Lévesque",
+        dateOfBirth: "1942-03-12",
+        gender: "Female",
+        city: "Sillery",
+        state: "QC",
+      });
+      if (user.firstName === "Alex" || !user.firstName) {
+        updateProfile({
+          firstName: "Sophie",
+          lastName: "Lévesque",
+          jobTitle: user.jobTitle,
+        });
+      }
+    }
+    setSeeded(true);
+  }, [familyReady, user, seeded, data.senior.firstName, updateSeniorDraft, updateProfile]);
 
   useEffect(() => {
     setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
@@ -140,31 +205,61 @@ export function FamilySpace() {
     setView("depot");
   };
 
-  const uploadDoc = (id: string) => {
-    setDocs((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: "reçu" as const } : d)),
-    );
+  const uploadDoc = async (id: string, file?: File | null) => {
+    const category = categoryForFrDocId(id);
+    const label = docs.find((d) => d.id === id)?.name || "Document";
+    const existing = data.documents.find((d) => d.category === category);
+    if (existing) {
+      if (file) {
+        await putDocBlob(existing.id, file);
+        replaceDocumentFile(existing.id, {
+          name: file.name || label,
+          size: `${Math.round(file.size / 1024)} Ko`,
+          sizeBytes: file.size,
+          mimeType: file.type || "application/octet-stream",
+        });
+      } else {
+        replaceDocumentFile(existing.id, {
+          name: existing.name || label,
+          size: existing.size || "1 Ko",
+          sizeBytes: existing.sizeBytes || 1024,
+          mimeType: existing.mimeType || "application/pdf",
+        });
+      }
+      return;
+    }
+    const docId = addDocument({
+      name: file?.name || label,
+      category,
+      description: docs.find((d) => d.id === id)?.detail,
+      hasFile: Boolean(file),
+      size: file ? `${Math.round(file.size / 1024)} Ko` : "1 Ko",
+      sizeBytes: file?.size || 1024,
+      mimeType: file?.type || "application/pdf",
+      status: "uploaded",
+    });
+    if (file && docId) await putDocBlob(docId, file);
   };
 
   const sendApplication = () => {
     if (!selectedRes || !selectedUnit || !consent) return;
-    const app: FamilyApplication = {
-      id: `a-${Date.now()}`,
+    const draft = buildSubmitDraft({
       residenceId: selectedRes.id,
       residenceName: selectedRes.name,
-      city: selectedRes.city.split(",")[0] || selectedRes.city,
       unit: selectedUnit,
-      depositedOn: new Date().toLocaleDateString("fr-CA", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      status: "Demande reçue",
-      progress: 0,
-      update: "Demande reçue par la résidence.",
-      updateTone: "green",
-    };
-    setApplications((prev) => [app, ...prev.filter((a) => a.residenceId !== selectedRes.id)]);
+      userName: displayUser.fullName,
+      userEmail: user?.email || "famille@havenapply.local",
+      documentIds: data.documents
+        .filter((d) => d.hasFile || d.status === "uploaded" || d.status === "verified")
+        .map((d) => d.id),
+    });
+    if (!draft) return;
+    const saved = submitApplication(draft);
+    if (!saved) {
+      window.alert("Une demande est déjà active pour cette résidence. Consultez Mes demandes.");
+      setView("demandes");
+      return;
+    }
     setView("demandes");
   };
 
@@ -175,16 +270,32 @@ export function FamilySpace() {
     setChatInput("");
     const reply = await askAssistant(profileStep, message);
     setChat((c) => [...c, { from: "claire", body: reply }]);
+    const m = message.toLowerCase();
+    if (profileStep === 0) {
+      if (m.includes("hôpital") || m.includes("hopital")) {
+        updateSeniorDraft({ livingSituation: "hospital" });
+      }
+      if (m.includes("marguerite")) {
+        updateSeniorDraft({ firstName: "Marguerite", lastName: "Lévesque" });
+      }
+    }
+    if (profileStep === 5 && (m.includes("canne") || m.includes("fauteuil"))) {
+      updateSeniorDraft({
+        livingSituationOther: m.includes("fauteuil") ? "Fauteuil roulant" : "Marche avec canne",
+      });
+    }
+    if (profileStep === 6) finalizeSeniorProfile();
   };
 
   const withdrawAccess = (name: string) => {
     if (!window.confirm(`Retirer l'accès de ${name} au dossier ?`)) return;
-    setApplications((prev) => prev.filter((a) => a.residenceName !== name));
+    const app = applications.find((a) => a.residenceName === name);
+    if (app) withdrawApplication(app.id);
   };
 
-  const withdrawApplication = (id: string) => {
+  const withdrawApp = (id: string) => {
     if (!window.confirm("Retirer cette demande ? Cette action est irréversible.")) return;
-    setApplications((prev) => prev.filter((a) => a.id !== id));
+    withdrawApplication(id);
   };
 
   return (
@@ -228,16 +339,16 @@ export function FamilySpace() {
 
         <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-white/15 pl-4">
           <div className="hidden text-right sm:block">
-            <p className="text-[13.5px] font-semibold leading-tight">{USER.fullName}</p>
+            <p className="text-[13.5px] font-semibold leading-tight">{displayUser.fullName}</p>
             <p className="text-[12px] leading-tight" style={{ color: "#8E9B96" }}>
-              Dossier de {SENIOR.fullName}
+              Dossier de {displaySenior.fullName}
             </p>
           </div>
           <span
             className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold"
             style={{ background: "var(--fs-black-soft)", color: "#E2F3EF" }}
           >
-            {USER.initials}
+            {displayUser.initials}
           </span>
         </div>
       </header>
@@ -245,6 +356,7 @@ export function FamilySpace() {
       <div className="fs-wrap">
         {view === "accueil" && (
           <Accueil
+            firstName={displayUser.firstName}
             progress={progress}
             applications={applications}
             onComplete={() => go("dossier")}
@@ -298,9 +410,10 @@ export function FamilySpace() {
         )}
         {view === "dossier" && (
           <Dossier
+            seniorName={displaySenior.fullName}
             docs={docs}
             progress={progress}
-            photoUrl={photoUrl}
+            photoUrl={photoUrl || data.senior.photoDataUrl || null}
             onPhoto={(f) => f && setPhotoUrl(URL.createObjectURL(f))}
             onUpload={uploadDoc}
             applications={applications}
@@ -311,7 +424,7 @@ export function FamilySpace() {
         {view === "demandes" && (
           <Demandes
             applications={applications}
-            onWithdraw={withdrawApplication}
+            onWithdraw={withdrawApp}
             onWrite={() => go("assistance")}
             onViewDossier={() => go("dossier")}
           />
@@ -341,13 +454,15 @@ export function FamilySpace() {
 }
 
 function Accueil({
+  firstName,
   progress,
   applications,
   onComplete,
   onSearch,
   onOpenApp,
 }: {
-  progress: ReturnType<typeof docsProgress>;
+  firstName: string;
+  progress: { received: number; total: number; percent: number; next: string | null };
   applications: FamilyApplication[];
   onComplete: () => void;
   onSearch: () => void;
@@ -357,7 +472,7 @@ function Accueil({
     <div className="flex flex-col gap-6">
       <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="fs-card p-7">
-          <h1 className="fs-serif text-[34px] leading-tight">Bonjour {USER.firstName}</h1>
+          <h1 className="fs-serif text-[34px] leading-tight">Bonjour {firstName}</h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
             Le dossier de votre mère est prêt pour toutes vos demandes. Deux pièces restent à
             ajouter avant que les résidences puissent l&apos;évaluer.
@@ -1332,6 +1447,7 @@ function ProfileStepFields({ step }: { step: number }) {
 }
 
 function Dossier({
+  seniorName,
   docs,
   progress,
   photoUrl,
@@ -1341,11 +1457,12 @@ function Dossier({
   onWithdrawAccess,
   onEdit,
 }: {
-  docs: FamilyDoc[];
-  progress: ReturnType<typeof docsProgress>;
+  seniorName: string;
+  docs: import("@/data/family-space").FamilyDoc[];
+  progress: { received: number; total: number; percent: number; next: string | null };
   photoUrl: string | null;
   onPhoto: (f: File | null) => void;
-  onUpload: (id: string) => void;
+  onUpload: (id: string, file?: File | null) => void;
   applications: FamilyApplication[];
   onWithdrawAccess: (name: string) => void;
   onEdit: () => void;
@@ -1380,7 +1497,7 @@ function Dossier({
               </p>
             </label>
             <div className="min-w-0 flex-1">
-              <h1 className="fs-serif text-[28px] leading-tight">{SENIOR.fullName}</h1>
+              <h1 className="fs-serif text-[28px] leading-tight">{seniorName}</h1>
               <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
                 {SENIOR.age} ans · {SENIOR.city} · dossier créé le {SENIOR.dossierCreated}
               </p>
@@ -1435,13 +1552,15 @@ function Dossier({
                   >
                     {d.status === "reçu" ? "Reçu" : "En attente"}
                   </span>
-                  <button
-                    type="button"
-                    className="fs-btn fs-btn-outline"
-                    onClick={() => onUpload(d.id)}
-                  >
+                  <label className="fs-btn fs-btn-outline cursor-pointer">
                     {d.status === "reçu" ? "Remplacer" : "Téléverser"}
-                  </button>
+                    <input
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,image/*,application/pdf"
+                      onChange={(e) => onUpload(d.id, e.target.files?.[0] ?? null)}
+                    />
+                  </label>
                 </div>
               </li>
             ))}

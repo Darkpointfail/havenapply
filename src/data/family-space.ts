@@ -117,7 +117,7 @@ export const REQUIRED_DOCS: FamilyDoc[] = [
 
 export const RESIDENCES: Residence[] = [
   {
-    id: "jardins",
+    id: "maple-grove",
     name: "Résidence Les Jardins du Fleuve",
     city: "Sainte-Foy, Québec",
     units: 112,
@@ -141,7 +141,7 @@ export const RESIDENCES: Residence[] = [
     ],
   },
   {
-    id: "manoir",
+    id: "lakeside-haven",
     name: "Manoir de la Pointe",
     city: "Lévis",
     units: 74,
@@ -164,7 +164,7 @@ export const RESIDENCES: Residence[] = [
     ],
   },
   {
-    id: "villa",
+    id: "cedar-memory",
     name: "Villa Sainte-Anne",
     city: "Charlesbourg, Québec",
     units: 138,
@@ -191,7 +191,7 @@ export const RESIDENCES: Residence[] = [
 export const INITIAL_APPLICATIONS: FamilyApplication[] = [
   {
     id: "a1",
-    residenceId: "jardins",
+    residenceId: "maple-grove",
     residenceName: "Résidence Les Jardins du Fleuve",
     city: "Sainte-Foy",
     unit: "3½ avec services",
@@ -203,7 +203,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
   },
   {
     id: "a2",
-    residenceId: "manoir",
+    residenceId: "lakeside-haven",
     residenceName: "Manoir de la Pointe",
     city: "Lévis",
     unit: "3½ avec soins",
@@ -215,7 +215,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
   },
   {
     id: "a3",
-    residenceId: "villa",
+    residenceId: "cedar-memory",
     residenceName: "Villa Sainte-Anne",
     city: "Charlesbourg",
     unit: "3½",

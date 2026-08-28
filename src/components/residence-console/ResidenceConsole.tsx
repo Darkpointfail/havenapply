@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { useCommunityPortal } from "@/lib/community-portal-store";
+import {
+  communityAppToDemande,
+  communityAppsToWaitlist,
+} from "@/lib/fr-portal-dynamic";
 import {
   DASHBOARD_FUNNEL,
   DEMANDES,
@@ -312,13 +317,17 @@ function AccountMenu() {
 
 export function ResidenceConsole() {
   const { user } = useAuth();
+  const portal = useCommunityPortal();
   const [view, setView] = useState<ConsoleView>("demandes");
   const [filter, setFilter] = useState<FilterId>("Toutes");
   const [selId, setSelId] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => sortWaitlist(INITIAL_WAITLIST));
   const [placed, setPlaced] = useState<Record<string, UrgenceLevel>>({});
-  const [demandes, setDemandes] = useState<Demande[]>(DEMANDES);
+  // Local overlay for optimistic edits when portal apps empty (seed fallback)
+  const [localDemandes, setLocalDemandes] = useState<Demande[]>(DEMANDES);
+  const [localWaitlist, setLocalWaitlist] = useState<WaitlistEntry[]>(() =>
+    sortWaitlist(INITIAL_WAITLIST),
+  );
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<
@@ -338,6 +347,21 @@ export function ResidenceConsole() {
     },
   ]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  const portalApps = portal.workspace?.applications ?? [];
+  const demandes = useMemo(() => {
+    if (!portalApps.length) return localDemandes;
+    return portalApps
+      .filter((a) => a.status !== "withdrawn" && a.status !== "closed" && a.status !== "declined")
+      .map(communityAppToDemande);
+  }, [portalApps, localDemandes]);
+
+  useEffect(() => {
+    const fromPortal = communityAppsToWaitlist(portalApps);
+    if (fromPortal.length) setLocalWaitlist(sortWaitlist(fromPortal));
+  }, [portalApps]);
+
+  const waitlist = localWaitlist;
 
   const activeCount = demandes.filter((d) =>
     ["Nouvelle", "En évaluation", "Documents manquants", "Visite planifiée"].includes(d.statut),
@@ -369,22 +393,38 @@ export function ResidenceConsole() {
     setView("dossier");
   };
 
-  const acceptWithUrgence = (urgence: UrgenceLevel) => {
-    if (!selected) return;
-    const entry: WaitlistEntry = {
-      id: `w-${selected.id}`,
-      nom: selected.nom,
-      age: selected.age,
-      unite: selected.unite,
-      joursAttente: 0,
-      urgence,
-      dossierComplet: selected.piecesManquantes === 0,
-    };
-    setWaitlist((prev) => sortWaitlist([entry, ...prev.filter((w) => w.nom !== selected.nom)]));
-    setDemandes((prev) =>
-      prev.map((d) => (d.id === selected.id ? { ...d, statut: "Liste d'attente" as const } : d)),
-    );
-    setPlaced((p) => ({ ...p, [selected.id]: urgence }));
+  const acceptWithUrgence = (demandeId: string, urgence: UrgenceLevel) => {
+    setPlaced((p) => ({ ...p, [demandeId]: urgence }));
+    const priority = urgence === "Urgente" ? "high" : urgence === "Élevée" ? "medium" : "low";
+    // Prefer waitlist placement for capacity management; accept when urgent+complete
+    const result = portal.changeStatus(demandeId, "waitlisted");
+    if (!result.ok) {
+      // Fallback local mock mutation
+      setLocalDemandes((prev) =>
+        prev.map((d) =>
+          d.id === demandeId ? { ...d, statut: "Liste d'attente" as DemandeStatus } : d,
+        ),
+      );
+      const d = (portalApps.length ? demandes : localDemandes).find((x) => x.id === demandeId);
+      if (d) {
+        setLocalWaitlist((prev) =>
+          sortWaitlist([
+            {
+              id: d.id,
+              nom: d.nom,
+              age: d.age,
+              unite: d.unite,
+              joursAttente: 1,
+              urgence,
+              dossierComplet: d.piecesManquantes === 0,
+            },
+            ...prev.filter((w) => w.id !== d.id),
+          ]),
+        );
+      }
+    } else {
+      void priority;
+    }
     setAccepting(false);
     setView("attente");
   };
@@ -530,7 +570,7 @@ export function ResidenceConsole() {
                 setView("demandes");
                 setAccepting(false);
               }}
-              onAccept={acceptWithUrgence}
+              onAccept={(u) => acceptWithUrgence(selected.id, u)}
               messages={messages}
               message={message}
               setMessage={setMessage}
@@ -560,7 +600,13 @@ export function ResidenceConsole() {
           {view === "attente" && (
             <AttenteView
               waitlist={waitlist}
-              setWaitlist={setWaitlist}
+              setWaitlist={setLocalWaitlist}
+              onRemove={(id) => {
+                const r = portal.changeStatus(id, "under_review");
+                if (!r.ok) {
+                  setLocalWaitlist((prev) => prev.filter((w) => w.id !== id));
+                }
+              }}
             />
           )}
           {view === "tableau" && <TableauView />}
@@ -1174,9 +1220,11 @@ function VisitesView() {
 function AttenteView({
   waitlist,
   setWaitlist,
+  onRemove,
 }: {
   waitlist: WaitlistEntry[];
   setWaitlist: React.Dispatch<React.SetStateAction<WaitlistEntry[]>>;
+  onRemove?: (id: string) => void;
 }) {
   const urgentCount = waitlist.filter((w) => w.urgence === "Urgente").length;
 
@@ -1187,7 +1235,8 @@ function AttenteView({
   };
 
   const remove = (id: string) => {
-    setWaitlist((prev) => prev.filter((w) => w.id !== id));
+    if (onRemove) onRemove(id);
+    else setWaitlist((prev) => prev.filter((w) => w.id !== id));
   };
 
   return (

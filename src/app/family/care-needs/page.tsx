@@ -142,7 +142,7 @@ export default function CareNeedsPage() {
           <p className="mt-2 text-ink-muted">
             {t("Care needs build on the primary senior dossier from onboarding.")}
           </p>
-          <Button href="/onboarding" className="mt-6">
+          <Button href="/family/dossier" className="mt-6">
             Continue onboarding <ArrowRight size={16} />
           </Button>
         </Card>

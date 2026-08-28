@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import {
@@ -467,15 +468,13 @@ export function ResidenceConsole() {
       {/* Sidebar */}
       <aside className="sticky top-0 flex h-screen w-[262px] shrink-0 flex-col bg-[var(--rc-black)] text-white">
         <div className="flex items-center gap-3 px-5 pb-6 pt-7">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-[9px] text-[15px] font-semibold"
-            style={{ background: "var(--rc-green)" }}
-            aria-hidden
-          >
-            H
-          </div>
           <div>
-            <p className="rc-serif text-[21px] leading-none text-white">HavenApply</p>
+            <Logo
+              href="/community/dashboard"
+              size="nav"
+              light
+              className="!ml-0 !translate-y-0"
+            />
             <p
               className="mt-1.5 text-[12px] font-semibold uppercase tracking-[0.1em]"
               style={{ color: "#8E9B96" }}

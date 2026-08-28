@@ -162,10 +162,6 @@ export function isFamilyBrowsePath(pathname: string) {
 export function isFamilyPortalPath(pathname: string) {
   return (
     pathname.startsWith("/family") ||
-    pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/assistant") ||
-    pathname.startsWith("/start") ||
-    pathname.startsWith("/setup") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/documents") ||
     pathname.startsWith("/applications") ||
@@ -218,11 +214,7 @@ export function isCommunityPortalPath(pathname: string) {
 }
 
 export function isProfessionalPortalPath(pathname: string) {
-  return (
-    pathname.startsWith("/professional") ||
-    pathname === "/hospital" ||
-    pathname.startsWith("/hospital/")
-  );
+  return pathname.startsWith("/professional");
 }
 
 /** Demo session for the current path. Pass useStoredSession only after mount (client). */

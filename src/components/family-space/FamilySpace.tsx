@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { Logo } from "@/components/brand/Logo";
 import {
   askAssistant,
   assistantOpener,
@@ -347,15 +348,13 @@ export function FamilySpace() {
         className="sticky top-0 z-40 flex h-[58px] items-center gap-4 px-5 text-white md:px-8"
         style={{ background: "var(--fs-black)" }}
       >
-        <div className="flex shrink-0 items-center gap-2.5">
-          <span
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[14px] font-semibold"
-            style={{ background: "var(--fs-green)" }}
-            aria-hidden
-          >
-            H
-          </span>
-          <span className="fs-serif text-[19px]">HavenApply</span>
+        <div className="flex shrink-0 items-center">
+          <Logo
+            href="/family/dashboard"
+            size="nav"
+            light
+            className="!ml-0 !translate-y-0"
+          />
         </div>
 
         <nav className="fs-nav-scroll min-w-0 flex-1">

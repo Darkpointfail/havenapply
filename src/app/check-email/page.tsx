@@ -18,7 +18,7 @@ function CheckEmailInner() {
   const email = params.get("email") || "";
   const token = params.get("token");
   const role = params.get("role") || "family";
-  const next = params.get("next") || (role === "family" ? "/setup" : "/sign-in");
+  const next = params.get("next") || (role === "family" ? "/family/dashboard" : "/sign-in");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

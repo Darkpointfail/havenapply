@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { Logo } from "@/components/brand/Logo";
 import { askAssistant, type AssistantTurn } from "@/data/assistant";
 import "./public-home.css";
 
@@ -105,24 +106,6 @@ const RES_TILES = [
     body: "Unités libres et délais affichés tels que transmis par votre équipe.",
   },
 ] as const;
-
-function LogoMark({ size = 34 }: { size?: number }) {
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-[9px] font-semibold text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.42,
-        background: "var(--hp-green)",
-        fontFamily: "var(--hp-serif)",
-      }}
-    >
-      H
-    </span>
-  );
-}
 
 function Check() {
   return (
@@ -386,10 +369,7 @@ export function PublicHomePage() {
       {/* 1. Sticky header */}
       <header className="hp-header">
         <div className="hp-wrap flex h-[68px] items-center justify-between gap-6">
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <LogoMark />
-            <span className="hp-serif text-[20px] text-[var(--hp-ink)]">HavenApply</span>
-          </Link>
+          <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
 
           <nav className="hp-desktop-nav flex items-center gap-7">
             {NAV.map((item) => (
@@ -716,8 +696,7 @@ export function PublicHomePage() {
       <footer style={{ background: "var(--hp-black-deep)" }}>
         <div className="hp-wrap flex flex-col gap-6 py-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <LogoMark size={26} />
-            <span className="hp-serif text-[18px] text-white">HavenApply</span>
+            <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
             <span className="text-[14px] text-white/55">
               Plateforme d&apos;admissions en résidence
             </span>

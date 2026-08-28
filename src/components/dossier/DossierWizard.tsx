@@ -14,6 +14,7 @@ import { useFamilyData } from "@/lib/family-data";
 import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/brand/Logo";
 import { StepResident } from "@/components/dossier/steps/StepResident";
 import { StepHealth } from "@/components/dossier/steps/StepHealth";
 import { StepCare } from "@/components/dossier/steps/StepCare";
@@ -102,10 +103,10 @@ export function DossierWizard() {
             {t("Exit")}
           </Link>
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">
-              HavenApply
-            </p>
-            <p className="text-sm font-medium text-ink">{t("Resident dossier")}</p>
+            <div className="flex justify-center">
+              <Logo href="/family/dashboard" size="nav" className="!ml-0 !translate-y-0" />
+            </div>
+            <p className="mt-1 text-sm font-medium text-ink">{t("Resident dossier")}</p>
           </div>
           <div className="flex min-w-[7rem] items-center justify-end gap-1.5 text-xs text-ink-muted">
             <Cloud size={14} className={saveState === "saving" ? "animate-pulse" : ""} />

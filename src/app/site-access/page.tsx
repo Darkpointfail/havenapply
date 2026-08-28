@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/locale";
 import {
@@ -53,10 +54,10 @@ function SiteAccessForm() {
       />
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
-            HavenApply
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+          <div className="flex justify-center">
+            <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
+          </div>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-ink">
             {t("Private preview")}
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">

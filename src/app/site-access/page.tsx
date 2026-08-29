@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -10,6 +10,14 @@ import {
   SITE_ACCESS_PASSWORD_MAX_LENGTH,
   safeSiteNextPath,
 } from "@/lib/site-access";
+import {
+  coarseDeviceCategoryFromUa,
+  trackPasswordAccessGranted,
+} from "@/lib/analytics";
+
+function readUtm(params: URLSearchParams, key: string) {
+  return params.get(key)?.slice(0, 120) || undefined;
+}
 
 function SiteAccessForm() {
   const t = useT();
@@ -21,6 +29,23 @@ function SiteAccessForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const entryHints = useMemo(() => {
+    const entryPage = next;
+    return {
+      language: typeof navigator !== "undefined" ? navigator.language : undefined,
+      timeZone:
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined,
+      entryPage,
+      referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
+      utmSource: readUtm(params, "utm_source"),
+      utmMedium: readUtm(params, "utm_medium"),
+      utmCampaign: readUtm(params, "utm_campaign"),
+      hostname: typeof window !== "undefined" ? window.location.hostname : undefined,
+    };
+  }, [next, params]);
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -30,14 +55,28 @@ function SiteAccessForm() {
       const res = await fetch("/api/site-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({
+          password,
+          ...entryHints,
+        }),
       });
+      // Clear password from memory as soon as the request is sent.
+      setPassword("");
       if (!res.ok) {
-        // Fixed copy only — never render the submitted password.
         setError(t("Incorrect password. Try again."));
         setSubmitting(false);
         return;
       }
+
+      const device =
+        typeof navigator !== "undefined"
+          ? coarseDeviceCategoryFromUa(navigator.userAgent)
+          : "unknown";
+      trackPasswordAccessGranted({
+        device_category: device,
+        entry_page: entryHints.entryPage || "/",
+      });
+
       router.replace(next);
       router.refresh();
     } catch {

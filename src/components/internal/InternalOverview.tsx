@@ -73,9 +73,14 @@ export function InternalOverview() {
           { label: "Overview" },
         ]}
         actions={
-          <Button href="/internal/audit-logs" size="sm" variant="secondary">
-            {t("Audit logs")}
-          </Button>
+          <>
+            <Button href="/internal/audit-logs" size="sm" variant="secondary">
+              {t("Audit logs")}
+            </Button>
+            <Button href="/internal/access-logs" size="sm" variant="secondary">
+              Site access
+            </Button>
+          </>
         }
       />
 

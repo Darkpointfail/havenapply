@@ -28,6 +28,7 @@ import {
   apiRequestDeletion,
   apiUploadDocument,
   apiReplaceDocument,
+  apiSyncApplications,
   fetchFamilyBundle,
   syncFamilySession,
   documentPreviewUrl,
@@ -508,6 +509,18 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
     },
     [user],
   );
+
+  const syncAppsServer = useCallback((applications: FamilyApplication[]) => {
+    void apiSyncApplications(applications).then((result) => {
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+    });
+  }, [applyBundle]);
 
   const updatePerson = useCallback(
     (patch: Partial<ProfilePerson>) => {
@@ -1095,9 +1108,16 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         };
       });
 
+      if (result) {
+        // Push canonical list after local update settles
+        setData((curr) => {
+          syncAppsServer(curr.applications);
+          return curr;
+        });
+      }
       return result;
     },
-    [persist],
+    [persist, syncAppsServer],
   );
 
   const submitApplicationBatch = useCallback(
@@ -1148,9 +1168,13 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         return { ...prev, applications, documents };
       });
 
+      setData((curr) => {
+        syncAppsServer(curr.applications);
+        return curr;
+      });
       return results;
     },
-    [persist],
+    [persist, syncAppsServer],
   );
 
   const setCommunityDecision = useCallback(
@@ -1168,14 +1192,15 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
   const withdrawApplication = useCallback(
     (applicationId: string) => {
       markSharedWithdrawn(applicationId);
-      persist((prev) => ({
-        ...prev,
-        applications: prev.applications.map((a) =>
+      persist((prev) => {
+        const applications = prev.applications.map((a) =>
           a.id === applicationId ? withdrawFamilyApp(a) : a,
-        ),
-      }));
+        );
+        syncAppsServer(applications);
+        return { ...prev, applications };
+      });
     },
-    [persist],
+    [persist, syncAppsServer],
   );
 
   const inviteFamilyToApplication = useCallback(

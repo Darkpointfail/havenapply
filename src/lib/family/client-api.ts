@@ -171,6 +171,16 @@ export async function apiReplaceDocument(id: string, file: File) {
   return parse<{ bundle: FamilyBundle }>(res);
 }
 
+export async function apiSyncApplications(applications: import("@/lib/family-applications").FamilyApplication[]) {
+  const res = await fetch("/api/family/applications", {
+    method: "PUT",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ applications }),
+  });
+  return parse<{ bundle: FamilyBundle }>(res);
+}
+
 export function documentPreviewUrl(id: string) {
   return `/api/family/documents/${encodeURIComponent(id)}`;
 }

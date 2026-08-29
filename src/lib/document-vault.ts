@@ -59,6 +59,12 @@ export type VaultDocument = {
   sharedWith: string[];
   /** Application ids this document is attached to for submission */
   attachedToApplications: string[];
+  /** Server-side document id when stored via secure upload API */
+  serverDocumentId?: string | null;
+  /** Opaque server storage file name (never the original filename) */
+  storageFileName?: string | null;
+  /** Soft-delete timestamp (ISO) — hidden from default vault lists when set */
+  deletedAt?: string | null;
 };
 
 export type DocumentRequest = {
@@ -164,6 +170,9 @@ export function migrateDocument(raw: Record<string, unknown>): VaultDocument {
     attachedToApplications: Array.isArray(raw.attachedToApplications)
       ? (raw.attachedToApplications as string[])
       : [],
+    serverDocumentId: (raw.serverDocumentId as string | null) ?? null,
+    storageFileName: (raw.storageFileName as string | null) ?? null,
+    deletedAt: (raw.deletedAt as string | null) ?? null,
   };
 }
 
@@ -278,4 +287,5 @@ export const SHARE_TARGETS = [
   { id: "community-orchard", label: "Orchard House (preview share)", kind: "community" as const },
 ];
 
-export const MAX_DOC_BYTES = 4 * 1024 * 1024; // 4 MB local demo limit
+export const MAX_DOC_BYTES = 4 * 1024 * 1024; // client UX hint; server enforces DOCUMENT_MAX_BYTES
+export { DOCUMENT_MAX_BYTES, DOCUMENT_FILE_INPUT_ACCEPT } from "@/lib/documents/policy";

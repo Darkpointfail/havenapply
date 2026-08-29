@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# private document blobs (PHI) — never commit
+/data/private-documents/**
+!/data/private-documents/.gitkeep
+!/data/private-documents/README.md
+!/data/private-documents/.gitignore
 
 # vercel
 .vercel

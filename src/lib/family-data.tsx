@@ -604,6 +604,9 @@ type FamilyDataContextValue = {
     expires?: string | null;
     hasFile?: boolean;
     status?: VaultDocument["status"];
+    serverDocumentId?: string | null;
+    storageFileName?: string | null;
+    id?: string;
   }) => string;
   updateDocument: (id: string, patch: Partial<VaultDocument>) => void;
   replaceDocumentFile: (
@@ -935,10 +938,16 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       expires?: string | null;
       hasFile?: boolean;
       status?: VaultDocument["status"];
+      serverDocumentId?: string | null;
+      storageFileName?: string | null;
+      id?: string;
     }) => {
       const name = input.name.trim();
       if (!name) return "";
-      const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const id =
+        input.id ||
+        input.serverDocumentId ||
+        `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       persist((prev) => {
         const doc: VaultDocument = {
           id,
@@ -956,6 +965,9 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           attachedToApplications: [],
           versions: 1,
           hasFile: Boolean(input.hasFile),
+          serverDocumentId: input.serverDocumentId ?? null,
+          storageFileName: input.storageFileName ?? null,
+          deletedAt: null,
         };
         return { ...prev, documents: [doc, ...prev.documents] };
       });
@@ -1013,10 +1025,21 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const removeDocument = useCallback(
     (id: string) => {
+      // Logical delete first — keep metadata tombstone; drop local blob cache.
       void deleteDocBlob(id);
       persist((prev) => ({
         ...prev,
-        documents: prev.documents.filter((d) => d.id !== id),
+        documents: prev.documents.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                deletedAt: new Date().toISOString(),
+                hasFile: false,
+                status: "rejected" as const,
+                updated: formatDate(),
+              }
+            : d,
+        ),
       }));
     },
     [persist],

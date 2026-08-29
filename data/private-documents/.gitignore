@@ -1,0 +1,4 @@
+# Private document object store (server-side). Never commit real files.
+*
+!.gitkeep
+!README.md

@@ -60,6 +60,7 @@ import {
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
+import { syncFamilySession } from "@/lib/family/client-api";
 
 export type { SessionUser, UserRole };
 export type AuthUser = SessionUser;
@@ -142,7 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (remote) {
         try {
           const sessionUser = await getSupabaseSessionUser();
-          if (!cancelled) setUser(sessionUser);
+          if (!cancelled) {
+            setUser(sessionUser);
+            if (sessionUser?.role === "family") void syncFamilySession(sessionUser);
+          }
         } catch {
           if (!cancelled) setUser(null);
         }
@@ -161,7 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await ensureSeedAccounts();
       if (cancelled) return;
-      setUser(readSession());
+      const session = readSession();
+      setUser(session);
+      if (session?.role === "family") void syncFamilySession(session);
       setReady(true);
     })();
 
@@ -178,11 +184,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await signUpWithRoleSupabase(input);
         if (result.ok && !result.pendingConfirmation && !result.needsManualSignIn) {
           setUser(result.data);
+          if (result.data.role === "family") void syncFamilySession(result.data);
         }
         return result;
       }
       const result = await signUpWithRoleAccount(input);
-      if (result.ok) setUser(result.data);
+      if (result.ok) {
+        setUser(result.data);
+        if (result.data.role === "family") void syncFamilySession(result.data);
+      }
       return result;
     },
     [remote],
@@ -222,7 +232,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Prefer real auth when Supabase is configured, even if open-access demo is on.
       if (remote) {
         const result = await signInSupabase(input);
-        if (result.ok) setUser(result.data);
+        if (result.ok) {
+          setUser(result.data);
+          if (result.data.role === "family") void syncFamilySession(result.data);
+        }
         return result;
       }
       if (AUTH_OPEN_ACCESS) {
@@ -248,7 +261,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: true as const, data: demo };
       }
       const result = await signInAccount(input);
-      if (result.ok) setUser(result.data);
+      if (result.ok) {
+        setUser(result.data);
+        if (result.data.role === "family") void syncFamilySession(result.data);
+      }
       return result;
     },
     [remote],
@@ -257,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearOpenAccessSessions();
     setUser(null);
+    void syncFamilySession(null);
     if (remote) {
       void signOutSupabase();
       return;

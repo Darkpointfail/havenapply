@@ -81,11 +81,19 @@ export function FamilySpace() {
   const { user, updateProfile, signOut } = useAuth();
   const {
     data,
+    completeness,
     submitApplication,
     withdrawApplication,
     updateSeniorDraft,
-    addDocument,
+    saveStatus,
+    saveError,
+    recordProfileConsent,
+    requestAccountDeletion,
+    uploadVaultDocument,
+    deleteVaultDocument,
   } = useFamilyData();
+  const [profileConsentChecked, setProfileConsentChecked] = useState(false);
+  const [deletionPending, setDeletionPending] = useState(false);
 
   const [view, setView] = useState<FamilyView>("accueil");
   const [mode, setMode] = useState<DossierMode>("overview");
@@ -367,13 +375,38 @@ export function FamilySpace() {
   };
 
   const uploadProfileDoc = (docId: string) => {
-    const meta = REQUIRED_DOCS.find((d) => d.id === docId);
-    addDocument({
-      name: meta?.name || "Document",
-      category: categoryForFrDocId(docId),
-      description: meta?.detail || "",
-      hasFile: true,
-      status: "uploaded",
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/pdf,image/jpeg,image/png,image/webp";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      void uploadVaultDocument({
+        file,
+        category: categoryForFrDocId(docId),
+        description: REQUIRED_DOCS.find((d) => d.id === docId)?.detail || "",
+      }).then((ok) => {
+        if (!ok) {
+          window.alert(saveError || "Le fichier n'a pas pu être téléversé.");
+        }
+      });
+    };
+    input.click();
+  };
+
+  const confirmDeleteAccount = () => {
+    const ok = window.confirm(
+      "Demander la suppression de votre compte et de vos données personnelles ? Cette demande sera enregistrée et traitée selon la politique de conservation HavenApply.",
+    );
+    if (!ok) return;
+    setDeletionPending(true);
+    void requestAccountDeletion("account").then((success) => {
+      setDeletionPending(false);
+      if (!success) {
+        window.alert(saveError || "Impossible d'enregistrer la demande de suppression.");
+      } else {
+        window.alert("Votre demande de suppression a été enregistrée. Elle apparaît dans votre compte.");
+      }
     });
   };
 
@@ -614,6 +647,49 @@ export function FamilySpace() {
                     >
                       Modifier mon profil contact
                     </button>
+                    <div className="border-b border-white/10 px-3.5 py-3">
+                      <label className="flex cursor-pointer items-start gap-2 text-[12.5px] leading-snug text-[#C5D4CD]">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={profileConsentChecked}
+                          onChange={(e) => {
+                            const granted = e.target.checked;
+                            setProfileConsentChecked(granted);
+                            void recordProfileConsent(granted);
+                          }}
+                        />
+                        <span>
+                          Je consens à la création et à la conservation de mon profil familial
+                          (Loi 25). Cela n&apos;autorise pas la transmission à une résidence.
+                        </span>
+                      </label>
+                      {saveStatus === "saving" ? (
+                        <p className="mt-2 text-[11px] text-[#9AABA4]">Enregistrement…</p>
+                      ) : null}
+                      {saveStatus === "saved" ? (
+                        <p className="mt-2 text-[11px] text-[#7dbaa8]">Enregistré</p>
+                      ) : null}
+                      {saveStatus === "error" && saveError ? (
+                        <p className="mt-2 text-[11px] text-[#e8a090]" role="alert">
+                          {saveError}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-[11px] text-[#9AABA4]">
+                        Complétude du dossier : {completeness} %
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fs-account-menu-item text-[#e8a090]"
+                      onClick={confirmDeleteAccount}
+                      disabled={deletionPending}
+                    >
+                      {deletionPending
+                        ? "Envoi de la demande…"
+                        : "Demander la suppression du compte"}
+                    </button>
                     <button
                       type="button"
                       role="menuitem"
@@ -635,6 +711,9 @@ export function FamilySpace() {
           <Accueil
             firstName={displayUser.firstName}
             progress={progress}
+            profileCompleteness={completeness}
+            saveStatus={saveStatus}
+            saveError={saveError}
             applications={applications}
             nextSteps={nextSteps}
             hasProfile={Boolean(activeProfile && !activeProfile.draft)}
@@ -739,6 +818,9 @@ export function FamilySpace() {
 function Accueil({
   firstName,
   progress,
+  profileCompleteness,
+  saveStatus,
+  saveError,
   applications,
   nextSteps,
   hasProfile,
@@ -748,6 +830,9 @@ function Accueil({
 }: {
   firstName: string;
   progress: { received: number; total: number; percent: number; next: string | null };
+  profileCompleteness: number;
+  saveStatus: "idle" | "saving" | "saved" | "error";
+  saveError: string | null;
   applications: FamilyApplication[];
   nextSteps: FamilyNextStep[];
   hasProfile: boolean;
@@ -756,6 +841,7 @@ function Accueil({
   onOpenApp: () => void;
 }) {
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
+  const displayPercent = hasProfile ? profileCompleteness : 0;
   const intro = !hasProfile
     ? "Créez le dossier de votre proche pour déposer des demandes auprès des résidences partenaires."
     : progress.next
@@ -772,6 +858,14 @@ function Accueil({
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
             {intro}
           </p>
+          {saveStatus === "saving" ? (
+            <p className="mt-3 text-[13px] text-[var(--fs-ink-muted)]">Sauvegarde en cours…</p>
+          ) : null}
+          {saveStatus === "error" && saveError ? (
+            <p className="mt-3 text-[13px] text-[#b4533a]" role="alert">
+              {saveError}
+            </p>
+          ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
               {hasProfile ? "Compléter le dossier" : "Créer un dossier"}
@@ -783,14 +877,14 @@ function Accueil({
         </div>
         <div className="fs-card p-6" style={{ background: "var(--fs-subtle)" }}>
           <p className="fs-label">Dossier complété</p>
-          <p className="fs-serif mt-3 text-[42px] leading-none">{progress.percent} %</p>
+          <p className="fs-serif mt-3 text-[42px] leading-none">{displayPercent} %</p>
           <p className="mt-2 text-[13.5px] text-[var(--fs-ink-muted)]">
             {progress.received} pièces sur {progress.total}
           </p>
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
             <div
               className="h-full rounded-full"
-              style={{ width: `${progress.percent}%`, background: "var(--fs-green)" }}
+              style={{ width: `${displayPercent}%`, background: "var(--fs-green)" }}
             />
           </div>
           <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">

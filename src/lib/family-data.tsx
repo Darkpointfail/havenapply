@@ -14,13 +14,26 @@ import { emptyCareNeeds, type CareNeeds } from "@/lib/care-needs";
 import { scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { deleteDocBlob } from "@/lib/doc-blobs";
 import {
-  DEMO_DOCUMENT_REQUESTS,
   formatFileSize,
   migrateDocument,
   type DocCategoryId,
   type DocumentRequest,
   type VaultDocument,
 } from "@/lib/document-vault";
+import {
+  apiDeleteDocument,
+  apiPatchCareNeeds,
+  apiPatchSenior,
+  apiRecordConsent,
+  apiRequestDeletion,
+  apiUploadDocument,
+  apiReplaceDocument,
+  fetchFamilyBundle,
+  syncFamilySession,
+  documentPreviewUrl,
+} from "@/lib/family/client-api";
+import { bundleToFamilyData } from "@/lib/family/map-bundle";
+import type { FamilyBundle } from "@/lib/family/types";
 import {
   emptyOnboardingMeta,
   emptySeniorProfile,
@@ -136,225 +149,6 @@ function emptyFamilyData(): FamilyData {
   };
 }
 
-function demoFamilyData(): FamilyData {
-  const senior: SeniorProfile = {
-    ...emptySeniorProfile(),
-    filledBy: "I'm a family member or friend",
-    relationship: "Father",
-    seniorParticipates: "sometimes",
-    hasAuthorization: "yes",
-    firstName: "Paul",
-    middleName: "",
-    lastName: "Gilbert",
-    dateOfBirth: "1947-04-12",
-    gender: "Male",
-    primaryLanguage: "English",
-    phone: "(514) 555-0142",
-    email: "",
-    address: "42 Maple Avenue",
-    city: "Montreal",
-    state: "QC",
-    zip: "H2X 1Y4",
-    livingSituation: "family",
-    housingTypes: ["assisted", "memory"],
-    urgency: "1to3",
-    searchZones: [{ id: "z1", query: "Montreal, QC", radiusMiles: 25 }],
-    proximityToFamily: "Within 30 minutes of family",
-    openToOtherStates: "no",
-    budgetMin: "3500",
-    budgetMax: "5500",
-    budgetUnsure: false,
-    fundingModes: ["private", "family"],
-    hasHomeEquity: "yes",
-    hasLtcInsurance: "no",
-    hasVeteransBenefits: "no",
-    medicaidMedicare: "neither",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  return {
-    person: personFromSenior(senior),
-    senior,
-    onboarding: { stepIndex: 8, startedAt: new Date().toISOString(), lastSavedAt: new Date().toISOString() },
-    seniorCreated: true,
-    residentDossier: emptyResidentDossier(),
-    careNeeds: {
-      ...emptyCareNeeds(),
-      completedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      mobility: ["Uses a cane outdoors"],
-      cognition: ["Mild cognitive impairment"],
-      health: ["Hypertension"],
-    },
-    sections: [
-      {
-        id: "general",
-        title: "General health",
-        summary: "Generally stable",
-        items: ["Blood type: A+", "Primary physician: Dr. Amélie Caron"],
-      },
-      {
-        id: "conditions",
-        title: "Conditions",
-        summary: "2 conditions",
-        items: ["Mild cognitive impairment", "Hypertension"],
-      },
-      {
-        id: "medications",
-        title: "Medications",
-        summary: "2 medications",
-        items: ["Amlodipine 5mg, morning", "Donepezil 5mg, evening"],
-      },
-      {
-        id: "allergies",
-        title: "Allergies",
-        summary: "1 allergy",
-        items: ["Penicillin, rash"],
-      },
-      {
-        id: "vaccinations",
-        title: "Vaccinations",
-        summary: "Up to date",
-        items: ["Influenza, Oct 2025"],
-      },
-      {
-        id: "mobility",
-        title: "Mobility",
-        summary: "Uses walker outdoors",
-        items: ["Walks short distances independently", "Uses walker outdoors"],
-      },
-      {
-        id: "cognitive",
-        title: "Cognitive assessment",
-        summary: "Mild impairment",
-        items: ["Short-term memory: mild difficulty"],
-      },
-      {
-        id: "care",
-        title: "Care requirements",
-        summary: "Assistance with meds & bathing",
-        items: ["Medication supervision", "Bathing assistance 3× week"],
-      },
-      {
-        id: "insurance",
-        title: "Insurance",
-        summary: "Provincial coverage",
-        items: ["RAMQ active"],
-      },
-      {
-        id: "emergency",
-        title: "Emergency contacts",
-        summary: "1 contact",
-        items: ["Alex Martin, Son, Primary"],
-      },
-    ],
-    documents: [
-      {
-        id: "d-demo-1",
-        name: "Medical history summary.pdf",
-        category: "medical_history",
-        description: "Primary care summary",
-        status: "verified",
-        updated: formatDate(),
-        createdAt: new Date().toISOString(),
-        size: "1.2 MB",
-        sizeBytes: 1_200_000,
-        mimeType: "application/pdf",
-        expires: null,
-        sharedWith: [],
-        attachedToApplications: [],
-        versions: 1,
-        hasFile: false,
-      },
-      {
-        id: "d-demo-2",
-        name: "Insurance card front.jpg",
-        category: "insurance_card",
-        description: "",
-        status: "uploaded",
-        updated: formatDate(),
-        createdAt: new Date().toISOString(),
-        size: "420 KB",
-        sizeBytes: 420_000,
-        mimeType: "image/jpeg",
-        expires: "2026-12-31",
-        sharedWith: [],
-        attachedToApplications: [],
-        versions: 1,
-        hasFile: false,
-      },
-      {
-        id: "d-demo-3",
-        name: "Photo ID.pdf",
-        category: "identification",
-        description: "Government photo ID",
-        status: "verified",
-        updated: formatDate(),
-        createdAt: new Date().toISOString(),
-        size: "380 KB",
-        sizeBytes: 380_000,
-        mimeType: "application/pdf",
-        expires: null,
-        sharedWith: [],
-        attachedToApplications: [],
-        versions: 1,
-        hasFile: false,
-      },
-      {
-        id: "d-demo-4",
-        name: "Physician report H&P.pdf",
-        category: "physician_report",
-        description: "History & physical",
-        status: "verified",
-        updated: formatDate(),
-        createdAt: new Date().toISOString(),
-        size: "890 KB",
-        sizeBytes: 890_000,
-        mimeType: "application/pdf",
-        expires: null,
-        sharedWith: [],
-        attachedToApplications: [],
-        versions: 1,
-        hasFile: false,
-      },
-      {
-        id: "d-demo-5",
-        name: "Current medication list.pdf",
-        category: "medication_list",
-        description: "",
-        status: "uploaded",
-        updated: formatDate(),
-        createdAt: new Date().toISOString(),
-        size: "210 KB",
-        sizeBytes: 210_000,
-        mimeType: "application/pdf",
-        expires: null,
-        sharedWith: [],
-        attachedToApplications: [],
-        versions: 1,
-        hasFile: false,
-      },
-    ],
-    documentRequests: DEMO_DOCUMENT_REQUESTS,
-    savedFavorites: [
-      {
-        ...emptyFavorite("maple-grove", 0),
-        tags: ["top_choice", "best_care_fit"],
-        note: "Mom liked the courtyard on our first drive-by.",
-        sharedWithFamily: true,
-      },
-      {
-        ...emptyFavorite("orchard-house", 1),
-        tags: ["affordable", "tour_scheduled"],
-        note: "Tour booked for Saturday.",
-      },
-    ],
-    compareIds: ["maple-grove", "orchard-house"],
-    applications: [],
-  };
-}
-
 function formatDate() {
   return new Date().toLocaleDateString("en-CA", {
     month: "short",
@@ -423,7 +217,7 @@ function migrateFamilyData(raw: Partial<FamilyData> & { person?: ProfilePerson }
     documents: (raw.documents || []).map((d) => migrateDocument(d as unknown as Record<string, unknown>)),
     documentRequests: raw.documentRequests?.length
       ? raw.documentRequests
-      : DEMO_DOCUMENT_REQUESTS,
+      : [],
     savedFavorites: migrateSavedFavorites(
       raw as Partial<{ savedFavorites: SavedFavorite[]; savedCommunityIds: string[] }>,
     ),
@@ -633,8 +427,24 @@ type FamilyDataContextValue = {
   withdrawApplication: (applicationId: string) => void;
   inviteFamilyToApplication: (applicationId: string, memberName: string) => void;
   scheduleApplicationVisit: (applicationId: string, when: string) => void;
+  /** @deprecated Demo data removed — no-op kept for type compatibility */
   loadDemo: () => void;
   resetData: () => void;
+  saveStatus: "idle" | "saving" | "saved" | "error";
+  saveError: string | null;
+  serverProgress: number;
+  recordProfileConsent: (granted: boolean) => Promise<boolean>;
+  requestAccountDeletion: (scope: "profile" | "account", reason?: string) => Promise<boolean>;
+  uploadVaultDocument: (input: {
+    file: File;
+    category: DocCategoryId;
+    description?: string;
+    expires?: string | null;
+    onProgress?: (pct: number) => void;
+  }) => Promise<boolean>;
+  deleteVaultDocument: (id: string) => Promise<boolean>;
+  replaceVaultDocument: (id: string, file: File) => Promise<boolean>;
+  documentUrl: (id: string) => string;
 };
 
 const FamilyDataContext = createContext<FamilyDataContextValue | null>(null);
@@ -643,56 +453,61 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
   const { user, ready: authReady } = useAuth();
   const [data, setData] = useState<FamilyData>(emptyFamilyData);
   const [ready, setReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [serverProgress, setServerProgress] = useState(0);
+  const [seniorId, setSeniorId] = useState<string | null>(null);
+
+  const applyBundle = useCallback((bundle: FamilyBundle) => {
+    setData(bundleToFamilyData(bundle));
+    setServerProgress(bundle.progress.percent);
+    setSeniorId(bundle.seniors[0]?.id ?? null);
+  }, []);
 
   useEffect(() => {
-    if (!authReady) return;
-    if (!user || user.role !== "family") {
-      setData(emptyFamilyData());
-      setReady(true);
-      return;
-    }
-    try {
-      const raw = localStorage.getItem(storageKey(user.email));
-      const base = raw ? migrateFamilyData(JSON.parse(raw)) : emptyFamilyData();
-      const synced = {
-        ...base,
-        applications: syncAppsFromSharedBridge(base.applications),
-      };
-      setData(synced);
-      if (raw && JSON.stringify(synced.applications) !== JSON.stringify(base.applications)) {
-        localStorage.setItem(storageKey(user.email), JSON.stringify(synced));
+    let cancelled = false;
+    (async () => {
+      if (!authReady) return;
+      if (!user || user.role !== "family") {
+        setData(emptyFamilyData());
+        setReady(true);
+        return;
       }
-    } catch {
-      setData(emptyFamilyData());
-    }
-    setReady(true);
-  }, [authReady, user]);
+      await syncFamilySession(user);
+      const result = await fetchFamilyBundle();
+      if (cancelled) return;
+      if (!result.ok) {
+        setSaveError(result.error);
+        setData(emptyFamilyData());
+        setReady(true);
+        return;
+      }
+      applyBundle(result.bundle);
+      setSaveError(null);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, user, applyBundle]);
 
+  /** Optimistic local update + optional localStorage cache (not source of truth). */
   const persist = useCallback(
     (updater: FamilyData | ((prev: FamilyData) => FamilyData)) => {
       setData((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         if (user?.role === "family") {
-          localStorage.setItem(storageKey(user.email), JSON.stringify(next));
+          try {
+            localStorage.setItem(storageKey(user.email), JSON.stringify(next));
+          } catch {
+            /* ignore quota */
+          }
         }
         return next;
       });
     },
     [user],
   );
-
-  // Re-sync community decisions when family returns to the tab
-  useEffect(() => {
-    if (!authReady || !user || user.role !== "family") return;
-    const onFocus = () => {
-      persist((prev) => ({
-        ...prev,
-        applications: syncAppsFromSharedBridge(prev.applications),
-      }));
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [authReady, user, persist]);
 
   const updatePerson = useCallback(
     (patch: Partial<ProfilePerson>) => {
@@ -703,6 +518,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const updateSeniorDraft = useCallback(
     (patch: Partial<SeniorProfile>) => {
+      // Optimistic UI, then server confirm
       persist((prev) => {
         const senior = {
           ...prev.senior,
@@ -716,12 +532,23 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           onboarding: {
             ...prev.onboarding,
             startedAt: prev.onboarding.startedAt || new Date().toISOString(),
-            lastSavedAt: new Date().toISOString(),
+            lastSavedAt: prev.onboarding.lastSavedAt,
           },
         };
       });
+      setSaveStatus("saving");
+      setSaveError(null);
+      void apiPatchSenior(patch, { seniorId: seniorId || undefined }).then((result) => {
+        if (!result.ok) {
+          setSaveStatus("error");
+          setSaveError(result.error);
+          return;
+        }
+        applyBundle(result.bundle);
+        setSaveStatus("saved");
+      });
     },
-    [persist],
+    [persist, seniorId, applyBundle],
   );
 
   const setOnboardingStep = useCallback(
@@ -732,11 +559,22 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           ...prev.onboarding,
           stepIndex,
           startedAt: prev.onboarding.startedAt || new Date().toISOString(),
-          lastSavedAt: new Date().toISOString(),
         },
       }));
+      setSaveStatus("saving");
+      void apiPatchSenior({}, { seniorId: seniorId || undefined, onboardingStep: stepIndex }).then(
+        (result) => {
+          if (!result.ok) {
+            setSaveStatus("error");
+            setSaveError(result.error);
+            return;
+          }
+          applyBundle(result.bundle);
+          setSaveStatus("saved");
+        },
+      );
     },
-    [persist],
+    [persist, seniorId, applyBundle],
   );
 
   const finalizeSeniorProfile = useCallback(() => {
@@ -766,33 +604,36 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const updateCareNeeds = useCallback(
     (patch: Partial<CareNeeds> | ((prev: CareNeeds) => CareNeeds)) => {
+      let nextCare: CareNeeds = emptyCareNeeds();
       persist((prev) => {
-        const nextCare =
+        nextCare =
           typeof patch === "function"
             ? patch(prev.careNeeds)
             : { ...prev.careNeeds, ...patch };
-        return {
-          ...prev,
-          careNeeds: {
-            ...nextCare,
-            updatedAt: new Date().toISOString(),
-          },
-        };
+        nextCare = { ...nextCare, updatedAt: new Date().toISOString() };
+        return { ...prev, careNeeds: nextCare };
+      });
+      setSaveStatus("saving");
+      setSaveError(null);
+      void apiPatchCareNeeds(nextCare, seniorId || undefined).then((result) => {
+        if (!result.ok) {
+          setSaveStatus("error");
+          setSaveError(result.error);
+          return;
+        }
+        applyBundle(result.bundle);
+        setSaveStatus("saved");
       });
     },
-    [persist],
+    [persist, seniorId, applyBundle],
   );
 
   const markCareNeedsComplete = useCallback(() => {
-    persist((prev) => ({
+    updateCareNeeds((prev) => ({
       ...prev,
-      careNeeds: {
-        ...prev.careNeeds,
-        updatedAt: new Date().toISOString(),
-        completedAt: prev.careNeeds.completedAt || new Date().toISOString(),
-      },
+      completedAt: prev.completedAt || new Date().toISOString(),
     }));
-  }, [persist]);
+  }, [updateCareNeeds]);
 
   const updateResidentDossier = useCallback(
     (patch: Partial<ResidentDossier> | ((prev: ResidentDossier) => ResidentDossier)) => {
@@ -817,14 +658,14 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const saveResidentDossier = useCallback(
     (dossier: ResidentDossier, opts?: { finalize?: boolean }) => {
+      const now = new Date().toISOString();
+      const nextDossier: ResidentDossier = {
+        ...dossier,
+        startedAt: dossier.startedAt || now,
+        lastSavedAt: now,
+        completedAt: opts?.finalize ? dossier.completedAt || now : dossier.completedAt,
+      };
       persist((prev) => {
-        const now = new Date().toISOString();
-        const nextDossier: ResidentDossier = {
-          ...dossier,
-          startedAt: dossier.startedAt || now,
-          lastSavedAt: now,
-          completedAt: opts?.finalize ? dossier.completedAt || now : dossier.completedAt,
-        };
         const { senior: seniorPatch, careNeeds } = syncDossierToFamily(nextDossier);
         const senior = {
           ...prev.senior,
@@ -849,8 +690,27 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           },
         };
       });
+      setSaveStatus("saving");
+      void import("@/lib/family/client-api").then(({ apiPatchDossier, apiPatchSenior, apiPatchCareNeeds }) => {
+        const { senior: seniorPatch, careNeeds } = syncDossierToFamily(nextDossier);
+        void Promise.all([
+          apiPatchDossier({ dossier: nextDossier, seniorId: seniorId || undefined }),
+          apiPatchSenior(seniorPatch, { seniorId: seniorId || undefined }),
+          apiPatchCareNeeds(careNeeds, seniorId || undefined),
+        ]).then((results) => {
+          const failed = results.find((r) => !r.ok);
+          if (failed && !failed.ok) {
+            setSaveStatus("error");
+            setSaveError(failed.error);
+            return;
+          }
+          const last = results[results.length - 1];
+          if (last && last.ok) applyBundle(last.bundle);
+          setSaveStatus("saved");
+        });
+      });
     },
-    [persist],
+    [persist, seniorId, applyBundle],
   );
 
   const addItem = useCallback(
@@ -1018,8 +878,17 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         ...prev,
         documents: prev.documents.filter((d) => d.id !== id),
       }));
+      void apiDeleteDocument(id).then((result) => {
+        if (!result.ok) {
+          setSaveStatus("error");
+          setSaveError(result.error);
+          return;
+        }
+        applyBundle(result.bundle);
+        setSaveStatus("saved");
+      });
     },
-    [persist],
+    [persist, applyBundle],
   );
 
   const toggleShare = useCallback(
@@ -1362,10 +1231,115 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
-  const loadDemo = useCallback(() => persist(demoFamilyData()), [persist]);
-  const resetData = useCallback(() => persist(emptyFamilyData()), [persist]);
+  const loadDemo = useCallback(() => {
+    // Demo profiles removed — never invent user data.
+    setSaveError("Les données de démonstration ne sont plus disponibles.");
+  }, []);
+  const resetData = useCallback(() => {
+    setData(emptyFamilyData());
+    setServerProgress(0);
+  }, []);
 
-  const completeness = useMemo(() => computeCompleteness(data), [data]);
+  const recordProfileConsent = useCallback(
+    async (granted: boolean) => {
+      setSaveStatus("saving");
+      const result = await apiRecordConsent(granted);
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return false;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+      return true;
+    },
+    [applyBundle],
+  );
+
+  const requestAccountDeletion = useCallback(
+    async (scope: "profile" | "account", reason?: string) => {
+      setSaveStatus("saving");
+      const result = await apiRequestDeletion(scope, reason);
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return false;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+      return true;
+    },
+    [applyBundle],
+  );
+
+  const uploadVaultDocument = useCallback(
+    async (input: {
+      file: File;
+      category: DocCategoryId;
+      description?: string;
+      expires?: string | null;
+      onProgress?: (pct: number) => void;
+    }) => {
+      setSaveStatus("saving");
+      setSaveError(null);
+      const result = await apiUploadDocument({
+        file: input.file,
+        category: input.category,
+        seniorId: seniorId || undefined,
+        description: input.description,
+        expires: input.expires || undefined,
+        onProgress: input.onProgress,
+      });
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return false;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+      return true;
+    },
+    [seniorId, applyBundle],
+  );
+
+  const deleteVaultDocument = useCallback(
+    async (id: string) => {
+      setSaveStatus("saving");
+      const result = await apiDeleteDocument(id);
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return false;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+      return true;
+    },
+    [applyBundle],
+  );
+
+  const replaceVaultDocument = useCallback(
+    async (id: string, file: File) => {
+      setSaveStatus("saving");
+      const result = await apiReplaceDocument(id, file);
+      if (!result.ok) {
+        setSaveStatus("error");
+        setSaveError(result.error);
+        return false;
+      }
+      applyBundle(result.bundle);
+      setSaveStatus("saved");
+      return true;
+    },
+    [applyBundle],
+  );
+
+  const documentUrl = useCallback((id: string) => documentPreviewUrl(id), []);
+
+  const completeness = useMemo(
+    () => (serverProgress > 0 ? serverProgress : computeCompleteness(data)),
+    [data, serverProgress],
+  );
 
   const value = useMemo(
     () => ({
@@ -1405,6 +1379,15 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       scheduleApplicationVisit,
       loadDemo,
       resetData,
+      saveStatus,
+      saveError,
+      serverProgress,
+      recordProfileConsent,
+      requestAccountDeletion,
+      uploadVaultDocument,
+      deleteVaultDocument,
+      replaceVaultDocument,
+      documentUrl,
     }),
     [
       ready,
@@ -1443,6 +1426,15 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       scheduleApplicationVisit,
       loadDemo,
       resetData,
+      saveStatus,
+      saveError,
+      serverProgress,
+      recordProfileConsent,
+      requestAccountDeletion,
+      uploadVaultDocument,
+      deleteVaultDocument,
+      replaceVaultDocument,
+      documentUrl,
     ],
   );
 

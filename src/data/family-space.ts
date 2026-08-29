@@ -12,6 +12,9 @@ export type FamilyView =
 /** Create vs manage the same admission dossier. */
 export type DossierPanel = "manage" | "create" | "edit";
 
+/** Vue d'ensemble vs formulaire de renseignements. */
+export type DossierMode = "overview" | "edition";
+
 export type DocStatus = "reçu" | "en attente";
 
 export type FamilyDoc = {
@@ -19,6 +22,23 @@ export type FamilyDoc = {
   name: string;
   detail: string;
   status: DocStatus;
+};
+
+/** Un dossier d'admission (une personne accompagnée). */
+export type FamilyProfile = {
+  id: string;
+  prenom: string;
+  nom: string;
+  rel: string;
+  photo: string | null;
+  meta: string;
+  autonomie: string;
+  services: string;
+  budget: string;
+  move: string;
+  draft: boolean;
+  docs: FamilyDoc[];
+  accesses: { residenceId: string; residenceName: string; city: string }[];
 };
 
 export type AppStatus =
@@ -143,6 +163,59 @@ export const REQUIRED_DOCS: FamilyDoc[] = [
     status: "reçu",
   },
 ];
+
+function cloneDocs(docs: FamilyDoc[]): FamilyDoc[] {
+  return docs.map((d) => ({ ...d }));
+}
+
+export function emptyDraftDocs(): FamilyDoc[] {
+  return REQUIRED_DOCS.map((d) => ({ ...d, status: "en attente" as const }));
+}
+
+export const INITIAL_PROFILES: FamilyProfile[] = [
+  {
+    id: "p-marguerite",
+    prenom: "Marguerite",
+    nom: "Lévesque",
+    rel: "Votre mère",
+    photo: null,
+    meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
+    autonomie: "Semi-autonome",
+    services: "Repas, médicaments, aide légère",
+    budget: "3 400 $ / mois",
+    move: "Octobre 2026",
+    draft: false,
+    docs: cloneDocs(REQUIRED_DOCS),
+    accesses: [
+      { residenceId: "maple-grove", residenceName: "Résidence Les Jardins du Fleuve", city: "Sainte-Foy" },
+      { residenceId: "lakeside-haven", residenceName: "Manoir de la Pointe", city: "Lévis" },
+      { residenceId: "cedar-memory", residenceName: "Villa Sainte-Anne", city: "Charlesbourg" },
+    ],
+  },
+];
+
+export function createEmptyProfile(id: string): FamilyProfile {
+  return {
+    id,
+    prenom: "",
+    nom: "",
+    rel: "Proche",
+    photo: null,
+    meta: "Dossier en création",
+    autonomie: "À préciser",
+    services: "À préciser",
+    budget: "À préciser",
+    move: "À préciser",
+    draft: true,
+    docs: emptyDraftDocs(),
+    accesses: [],
+  };
+}
+
+export function profileDisplayName(p: FamilyProfile) {
+  const full = [p.prenom, p.nom].filter(Boolean).join(" ").trim();
+  return full || "Nouveau dossier";
+}
 
 export const RESIDENCES: Residence[] = [
   {

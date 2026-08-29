@@ -12,16 +12,17 @@ import {
 } from "@/data/assistant";
 import {
   RESIDENCES,
-  SENIOR,
-  TODOS,
-  USER,
-  INITIAL_APPLICATIONS,
-  INITIAL_PROFILES,
+  REQUIRED_DOCS,
+  buildNextSteps,
+  buildProfileFromSenior,
   createEmptyProfile,
   docsProgress,
+  emptyDraftDocs,
+  mapRequiredDocsFromDocuments,
   profileDisplayName,
   type FamilyApplication,
   type FamilyDoc,
+  type FamilyNextStep,
   type FamilyProfile,
   type FamilyView,
   type DossierMode,
@@ -29,7 +30,7 @@ import {
 } from "@/data/family-space";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
-import { buildSubmitDraft, storeAppToUi } from "@/lib/fr-portal-dynamic";
+import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -79,17 +80,25 @@ export function FamilySpace() {
   const searchParams = useSearchParams();
   const { user, updateProfile, signOut } = useAuth();
   const {
-    ready: familyReady,
     data,
+    completeness,
     submitApplication,
     withdrawApplication,
     updateSeniorDraft,
+    saveStatus,
+    saveError,
+    recordProfileConsent,
+    requestAccountDeletion,
+    uploadVaultDocument,
+    deleteVaultDocument,
   } = useFamilyData();
+  const [profileConsentChecked, setProfileConsentChecked] = useState(false);
+  const [deletionPending, setDeletionPending] = useState(false);
 
   const [view, setView] = useState<FamilyView>("accueil");
   const [mode, setMode] = useState<DossierMode>("overview");
-  const [profiles, setProfiles] = useState<FamilyProfile[]>(INITIAL_PROFILES);
-  const [activeProfileId, setActiveProfileId] = useState(INITIAL_PROFILES[0]?.id ?? "");
+  const [localDraft, setLocalDraft] = useState<FamilyProfile | null>(null);
+  const [activeProfileId, setActiveProfileId] = useState("");
   const [resId, setResId] = useState<string | null>(null);
   const [applyStep, setApplyStep] = useState(1);
   const [profileStep, setProfileStep] = useState(0);
@@ -110,19 +119,12 @@ export function FamilySpace() {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const claireBootstrapped = useRef(false);
   const [helpChat, setHelpChat] = useState<AssistantTurn[]>([
-    { from: "family", body: "Est-ce que je peux déposer une demande sans le bilan médical ?" },
     {
       from: "claire",
-      body: "Oui. La demande est transmise et la résidence voit que la pièce est en attente. Sans bilan médical, l'évaluation d'autonomie ne peut pas être complétée, ce qui retarde la décision d'environ une semaine.",
-    },
-    { from: "family", body: "Où est-ce que je l'obtiens ?" },
-    {
-      from: "claire",
-      body: "Auprès du médecin de famille ou du CLSC qui suit votre mère. Dès que vous l'avez, téléversez-le dans le dossier — toutes vos demandes en cours en profiteront.",
+      body: "Bonjour. Je peux vous aider avec votre dossier, vos documents ou vos demandes. Posez votre question.",
     },
   ]);
   const [helpInput, setHelpInput] = useState("");
-  const [seeded, setSeeded] = useState(false);
   const [ficheFocus, setFicheFocus] = useState<"match" | "full">("full");
 
   useEffect(() => {
@@ -148,7 +150,7 @@ export function FamilySpace() {
   }, [accountOpen]);
 
   const startAccountEdit = () => {
-    setEditFirstName(user?.firstName || USER.firstName || "");
+    setEditFirstName(user?.firstName || "");
     setEditLastName(user?.lastName || "");
     setEditPhone(user?.phone || "");
     setEditRelationship(data.senior.relationship || "Fille");
@@ -156,7 +158,7 @@ export function FamilySpace() {
   };
 
   const saveAccountEdit = () => {
-    const first = editFirstName.trim() || user?.firstName || USER.firstName;
+    const first = editFirstName.trim() || user?.firstName || "";
     updateProfile({
       firstName: first,
       lastName: editLastName.trim(),
@@ -205,22 +207,30 @@ export function FamilySpace() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chat, claireTyping, view, claireOpen]);
 
-  const displayUser = {
-    firstName: user?.firstName || USER.firstName,
-    fullName: user?.name || USER.fullName,
-    email: user?.email || "",
-    initials:
-      user?.firstName && user?.lastName
-        ? `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase()
-        : USER.initials,
-  };
+  const displayUser = useMemo(() => {
+    const firstName = user?.firstName || "";
+    const lastName = user?.lastName || "";
+    const fullName =
+      user?.name?.trim() ||
+      [firstName, lastName].filter(Boolean).join(" ").trim() ||
+      "";
+    const initials =
+      firstName && lastName
+        ? `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
+        : firstName
+          ? firstName[0]!.toUpperCase()
+          : "?";
+    return {
+      firstName,
+      fullName,
+      email: user?.email || "",
+      initials,
+    };
+  }, [user]);
 
-  const activeProfile =
-    profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
-
-  const progress = useMemo(
-    () => docsProgress(activeProfile?.docs ?? []),
-    [activeProfile],
+  const liveDocs = useMemo(
+    () => mapRequiredDocsFromDocuments(data.documents),
+    [data.documents],
   );
 
   const liveApplications = useMemo(() => {
@@ -228,8 +238,61 @@ export function FamilySpace() {
       .map(storeAppToUi)
       .filter((a): a is FamilyApplication => Boolean(a));
   }, [data.applications]);
-  const hasLiveApplications = liveApplications.length > 0;
-  const applications = hasLiveApplications ? liveApplications : INITIAL_APPLICATIONS;
+  const applications = liveApplications;
+
+  const accessesFromApps = useMemo(
+    () =>
+      applications.map((a) => ({
+        residenceId: a.residenceId,
+        residenceName: a.residenceName,
+        city: a.city,
+      })),
+    [applications],
+  );
+
+  const profiles = useMemo(() => {
+    const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps);
+    if (fromSenior) return [fromSenior];
+    if (localDraft) {
+      return [{ ...localDraft, docs: liveDocs.length ? liveDocs : localDraft.docs }];
+    }
+    return [];
+  }, [data.senior, liveDocs, accessesFromApps, localDraft]);
+
+  useEffect(() => {
+    if (data.senior.firstName?.trim() && data.senior.lastName?.trim()) {
+      setLocalDraft(null);
+    }
+  }, [data.senior.firstName, data.senior.lastName]);
+
+  useEffect(() => {
+    if (!profiles.length) {
+      setActiveProfileId("");
+      return;
+    }
+    if (!profiles.some((p) => p.id === activeProfileId)) {
+      setActiveProfileId(profiles[0]!.id);
+    }
+  }, [profiles, activeProfileId]);
+
+  const activeProfile =
+    profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
+
+  const progress = useMemo(
+    () => docsProgress(activeProfile?.docs ?? emptyDraftDocs()),
+    [activeProfile],
+  );
+
+  const nextSteps = useMemo(
+    () =>
+      buildNextSteps({
+        hasSeniorProfile: profiles.length > 0 && !activeProfile?.draft,
+        docs: activeProfile?.docs ?? liveDocs,
+        applicationsCount: applications.length,
+        ownerLabel: displayUser.firstName || "Vous",
+      }),
+    [profiles.length, activeProfile, liveDocs, applications.length, displayUser.firstName],
+  );
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
 
@@ -239,30 +302,6 @@ export function FamilySpace() {
       : activeProfile
         ? `Dossier de ${profileDisplayName(activeProfile)}`
         : "Aucun dossier";
-
-  useEffect(() => {
-    if (!familyReady || !user || user.role !== "family" || seeded) return;
-    if (!data.senior.firstName) {
-      updateSeniorDraft({
-        filledBy: "I'm a family member or friend",
-        relationship: "Daughter",
-        firstName: "Marguerite",
-        lastName: "Lévesque",
-        dateOfBirth: "1942-03-12",
-        gender: "Female",
-        city: "Sillery",
-        state: "QC",
-      });
-      if (user.firstName === "Alex" || !user.firstName) {
-        updateProfile({
-          firstName: "Sophie",
-          lastName: "Lévesque",
-          jobTitle: user.jobTitle,
-        });
-      }
-    }
-    setSeeded(true);
-  }, [familyReady, user, seeded, data.senior.firstName, updateSeniorDraft, updateProfile]);
 
   useEffect(() => {
     if (!claireOpen) return;
@@ -291,9 +330,16 @@ export function FamilySpace() {
   };
 
   const createProfile = () => {
-    const id = `p-${Date.now()}`;
+    if (profiles.some((p) => !p.draft)) {
+      setMode("edition");
+      setProfileStep(0);
+      setClaireOpen(false);
+      setView("dossier");
+      return;
+    }
+    const id = "p-senior";
     const draft = createEmptyProfile(id);
-    setProfiles((prev) => [...prev, draft]);
+    setLocalDraft(draft);
     setActiveProfileId(id);
     setMode("edition");
     setProfileStep(0);
@@ -302,9 +348,23 @@ export function FamilySpace() {
   };
 
   const patchActive = (patch: Partial<FamilyProfile>) => {
-    setProfiles((prev) =>
-      prev.map((p) => (p.id === activeProfileId ? { ...p, ...patch } : p)),
-    );
+    setLocalDraft((prev) => {
+      if (!prev || prev.id !== activeProfileId) return prev;
+      return { ...prev, ...patch };
+    });
+    const seniorPatch: {
+      firstName?: string;
+      lastName?: string;
+      relationship?: string;
+      photoDataUrl?: string;
+    } = {};
+    if (patch.prenom !== undefined) seniorPatch.firstName = patch.prenom;
+    if (patch.nom !== undefined) seniorPatch.lastName = patch.nom;
+    if (patch.rel !== undefined) seniorPatch.relationship = patch.rel;
+    if (patch.photo !== undefined) seniorPatch.photoDataUrl = patch.photo || "";
+    if (Object.keys(seniorPatch).length > 0) {
+      updateSeniorDraft(seniorPatch);
+    }
   };
 
   const selectProfile = (id: string) => {
@@ -315,29 +375,39 @@ export function FamilySpace() {
   };
 
   const uploadProfileDoc = (docId: string) => {
-    setProfiles((prev) =>
-      prev.map((p) => {
-        if (p.id !== activeProfileId) return p;
-        return {
-          ...p,
-          docs: p.docs.map((d) =>
-            d.id === docId ? { ...d, status: "reçu" as const } : d,
-          ),
-        };
-      }),
-    );
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/pdf,image/jpeg,image/png,image/webp";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      void uploadVaultDocument({
+        file,
+        category: categoryForFrDocId(docId),
+        description: REQUIRED_DOCS.find((d) => d.id === docId)?.detail || "",
+      }).then((ok) => {
+        if (!ok) {
+          window.alert(saveError || "Le fichier n'a pas pu être téléversé.");
+        }
+      });
+    };
+    input.click();
   };
 
-  const withdrawProfileAccess = (residenceId: string) => {
-    setProfiles((prev) =>
-      prev.map((p) => {
-        if (p.id !== activeProfileId) return p;
-        return {
-          ...p,
-          accesses: p.accesses.filter((a) => a.residenceId !== residenceId),
-        };
-      }),
+  const confirmDeleteAccount = () => {
+    const ok = window.confirm(
+      "Demander la suppression de votre compte et de vos données personnelles ? Cette demande sera enregistrée et traitée selon la politique de conservation HavenApply.",
     );
+    if (!ok) return;
+    setDeletionPending(true);
+    void requestAccountDeletion("account").then((success) => {
+      setDeletionPending(false);
+      if (!success) {
+        window.alert(saveError || "Impossible d'enregistrer la demande de suppression.");
+      } else {
+        window.alert("Votre demande de suppression a été enregistrée. Elle apparaît dans votre compte.");
+      }
+    });
   };
 
   const openResidence = (id: string, focus: "match" | "full" = "full") => {
@@ -391,14 +461,10 @@ export function FamilySpace() {
       if (m.includes("hôpital") || m.includes("hopital")) {
         patchActive({ meta: "Dossier urgent · hôpital" });
       }
-      if (m.includes("marguerite")) {
-        patchActive({ prenom: "Marguerite", nom: "Lévesque" });
-      }
     }
   };
 
   const withdrawAccess = (residenceId: string) => {
-    withdrawProfileAccess(residenceId);
     const app = data.applications.find(
       (a) => a.residenceId === residenceId && a.status !== "draft" && a.status !== "withdrawn",
     );
@@ -581,6 +647,49 @@ export function FamilySpace() {
                     >
                       Modifier mon profil contact
                     </button>
+                    <div className="border-b border-white/10 px-3.5 py-3">
+                      <label className="flex cursor-pointer items-start gap-2 text-[12.5px] leading-snug text-[#C5D4CD]">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={profileConsentChecked}
+                          onChange={(e) => {
+                            const granted = e.target.checked;
+                            setProfileConsentChecked(granted);
+                            void recordProfileConsent(granted);
+                          }}
+                        />
+                        <span>
+                          Je consens à la création et à la conservation de mon profil familial
+                          (Loi 25). Cela n&apos;autorise pas la transmission à une résidence.
+                        </span>
+                      </label>
+                      {saveStatus === "saving" ? (
+                        <p className="mt-2 text-[11px] text-[#9AABA4]">Enregistrement…</p>
+                      ) : null}
+                      {saveStatus === "saved" ? (
+                        <p className="mt-2 text-[11px] text-[#7dbaa8]">Enregistré</p>
+                      ) : null}
+                      {saveStatus === "error" && saveError ? (
+                        <p className="mt-2 text-[11px] text-[#e8a090]" role="alert">
+                          {saveError}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-[11px] text-[#9AABA4]">
+                        Complétude du dossier : {completeness} %
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fs-account-menu-item text-[#e8a090]"
+                      onClick={confirmDeleteAccount}
+                      disabled={deletionPending}
+                    >
+                      {deletionPending
+                        ? "Envoi de la demande…"
+                        : "Demander la suppression du compte"}
+                    </button>
                     <button
                       type="button"
                       role="menuitem"
@@ -602,8 +711,13 @@ export function FamilySpace() {
           <Accueil
             firstName={displayUser.firstName}
             progress={progress}
+            profileCompleteness={completeness}
+            saveStatus={saveStatus}
+            saveError={saveError}
             applications={applications}
-            onOpenDossier={() => openDossier("edition")}
+            nextSteps={nextSteps}
+            hasProfile={Boolean(activeProfile && !activeProfile.draft)}
+            onOpenDossier={() => (profiles.length ? openDossier("edition") : createProfile())}
             onSearch={() => go("residences")}
             onOpenApp={() => go("demandes")}
           />
@@ -626,7 +740,11 @@ export function FamilySpace() {
             setStep={setApplyStep}
             selectedUnit={selectedUnit}
             setSelectedUnit={setSelectedUnit}
-            docs={activeProfile?.docs ?? []}
+            docs={activeProfile?.docs ?? liveDocs}
+            seniorName={
+              activeProfile ? profileDisplayName(activeProfile) : "votre proche"
+            }
+            moveLabel={activeProfile?.move || "À préciser"}
             consent={consent}
             setConsent={setConsent}
             onBack={() => openResidence(selectedRes.id)}
@@ -667,7 +785,6 @@ export function FamilySpace() {
         {view === "demandes" && (
           <Demandes
             applications={applications}
-            isDemo={!hasLiveApplications}
             onWithdraw={withdrawApp}
             onWrite={() => go("assistance")}
             onViewDossier={() => openDossier("overview")}
@@ -701,32 +818,57 @@ export function FamilySpace() {
 function Accueil({
   firstName,
   progress,
+  profileCompleteness,
+  saveStatus,
+  saveError,
   applications,
+  nextSteps,
+  hasProfile,
   onOpenDossier,
   onSearch,
   onOpenApp,
 }: {
   firstName: string;
   progress: { received: number; total: number; percent: number; next: string | null };
+  profileCompleteness: number;
+  saveStatus: "idle" | "saving" | "saved" | "error";
+  saveError: string | null;
   applications: FamilyApplication[];
+  nextSteps: FamilyNextStep[];
+  hasProfile: boolean;
   onOpenDossier: () => void;
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
+  const displayPercent = hasProfile ? profileCompleteness : 0;
+  const intro = !hasProfile
+    ? "Créez le dossier de votre proche pour déposer des demandes auprès des résidences partenaires."
+    : progress.next
+      ? `Votre dossier est prêt pour vos demandes. Prochaine action : ajouter ${progress.next}.`
+      : "Votre dossier est à jour. Vous pouvez chercher une résidence ou suivre vos demandes en cours.";
 
   return (
     <div className="flex flex-col gap-6">
       <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="fs-card p-7">
-          <h1 className="fs-serif text-[34px] leading-tight">Bonjour {firstName}</h1>
+          <h1 className="fs-serif text-[34px] leading-tight">
+            {firstName.trim() ? `Bonjour ${firstName.trim()}` : "Bonjour"}
+          </h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            Le dossier de votre mère est prêt pour toutes vos demandes. Deux pièces restent à
-            ajouter avant que les résidences puissent l&apos;évaluer.
+            {intro}
           </p>
+          {saveStatus === "saving" ? (
+            <p className="mt-3 text-[13px] text-[var(--fs-ink-muted)]">Sauvegarde en cours…</p>
+          ) : null}
+          {saveStatus === "error" && saveError ? (
+            <p className="mt-3 text-[13px] text-[#b4533a]" role="alert">
+              {saveError}
+            </p>
+          ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
-              Compléter le dossier
+              {hasProfile ? "Compléter le dossier" : "Créer un dossier"}
             </button>
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
               Chercher une résidence
@@ -735,88 +877,111 @@ function Accueil({
         </div>
         <div className="fs-card p-6" style={{ background: "var(--fs-subtle)" }}>
           <p className="fs-label">Dossier complété</p>
-          <p className="fs-serif mt-3 text-[42px] leading-none">{progress.percent} %</p>
+          <p className="fs-serif mt-3 text-[42px] leading-none">{displayPercent} %</p>
           <p className="mt-2 text-[13.5px] text-[var(--fs-ink-muted)]">
             {progress.received} pièces sur {progress.total}
           </p>
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
             <div
               className="h-full rounded-full"
-              style={{ width: `${progress.percent}%`, background: "var(--fs-green)" }}
+              style={{ width: `${displayPercent}%`, background: "var(--fs-green)" }}
             />
           </div>
           <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">
-            Prochaine action : ajouter {progress.next ?? "les dernières précisions"}.
+            Prochaine action :{" "}
+            {hasProfile
+              ? `ajouter ${progress.next ?? "les dernières précisions"}`
+              : "créer le dossier de votre proche"}
+            .
           </p>
         </div>
       </div>
 
       <div>
         <h2 className="fs-serif text-[22px]">Vos demandes en cours</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {applications.slice(0, 3).map((app) => (
-            <button
-              key={app.id}
-              type="button"
-              onClick={onOpenApp}
-              className="fs-card p-5 text-left transition-colors hover:bg-[var(--fs-hover)]"
-            >
-              <StatusPill
-                tone={
-                  app.status === "Liste d'attente"
-                    ? "neutral"
-                    : app.status === "Visite planifiée"
-                      ? "green"
-                      : "green"
-                }
-              >
-                {app.status}
-              </StatusPill>
-              <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
-              <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-                {app.city} · {app.unit}
-              </p>
-              <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">{app.update}</p>
+        {applications.length === 0 ? (
+          <div className="fs-card mt-4 p-8 text-center">
+            <h3 className="fs-serif text-[20px]">Aucune demande pour le moment</h3>
+            <p className="mx-auto mt-2 max-w-md text-[14.5px] text-[var(--fs-ink-body)]">
+              Lorsque vous enverrez un dossier à une résidence, le suivi apparaîtra ici.
+            </p>
+            <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onSearch}>
+              Chercher une résidence
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {applications.slice(0, 3).map((app) => (
+              <button
+                key={app.id}
+                type="button"
+                onClick={onOpenApp}
+                className="fs-card p-5 text-left transition-colors hover:bg-[var(--fs-hover)]"
+              >
+                <StatusPill
+                  tone={
+                    app.status === "Liste d'attente"
+                      ? "neutral"
+                      : app.status === "Visite planifiée"
+                        ? "green"
+                        : "green"
+                  }
+                >
+                  {app.status}
+                </StatusPill>
+                <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
+                <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
+                  {app.city} · {app.unit}
+                </p>
+                <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">{app.update}</p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="fs-grid-main grid gap-5 lg:grid-cols-2">
         <div className="fs-card p-6">
           <h3 className="fs-serif text-[19px]">Prochaine visite</h3>
-          <div className="mt-4 flex gap-4">
-            <div
-              className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
-              style={{ background: "var(--fs-subtle)" }}
-            >
-              <span className="fs-label">SEPTEMBRE</span>
-              <span className="fs-serif text-[28px] leading-none">3</span>
-              <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">14 h 00</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold">
-                {nextVisit?.residenceName ?? "Résidence Les Jardins du Fleuve"}
-              </p>
-              <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                {nextVisit ? `${nextVisit.unit} · ${nextVisit.city}` : "3½ avec services · Sainte-Foy"}
-              </p>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
-                  Déplacer
-                </button>
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
-                  Annuler
-                </button>
+          {nextVisit ? (
+            <div className="mt-4 flex gap-4">
+              <div
+                className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
+                style={{ background: "var(--fs-subtle)" }}
+              >
+                <span className="fs-label">
+                  {(nextVisit.visit?.dateLabel || "Visite").split(" ")[0]?.toUpperCase() || "VISITE"}
+                </span>
+                <span className="fs-serif text-[22px] leading-none px-1">
+                  {nextVisit.visit?.dateLabel || "À venir"}
+                </span>
+                <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
+                  {nextVisit.visit?.timeLabel || "—"}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold">{nextVisit.residenceName}</p>
+                <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
+                  {nextVisit.unit} · {nextVisit.city}
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
+                    Voir la demande
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-4 rounded-[10px] px-4 py-5 text-[14.5px] text-[var(--fs-ink-muted)]" style={{ background: "var(--fs-subtle)" }}>
+              Aucune visite planifiée. Les rendez-vous confirmés par les résidences apparaîtront ici.
+            </div>
+          )}
         </div>
 
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">À faire</h3>
+          <h3 className="fs-serif text-[19px]">Prochaines étapes</h3>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
-            {TODOS.map((t) => (
+            {nextSteps.map((t) => (
               <li key={t.label} className="flex items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-2.5">
                   <span
@@ -849,6 +1014,8 @@ function Depot({
   selectedUnit,
   setSelectedUnit,
   docs,
+  seniorName,
+  moveLabel,
   consent,
   setConsent,
   onBack,
@@ -860,6 +1027,8 @@ function Depot({
   selectedUnit: string;
   setSelectedUnit: (v: string) => void;
   docs: FamilyDoc[];
+  seniorName: string;
+  moveLabel: string;
   consent: boolean;
   setConsent: (v: boolean) => void;
   onBack: () => void;
@@ -963,7 +1132,7 @@ function Depot({
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--fs-ink-muted)]">Emménagement souhaité</dt>
-                <dd className="font-medium">{SENIOR.emmenagement}</dd>
+                <dd className="font-medium">{moveLabel}</dd>
               </div>
             </dl>
             <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4 text-[14.5px]">
@@ -974,7 +1143,7 @@ function Depot({
                 onChange={(e) => setConsent(e.target.checked)}
               />
               <span>
-                Je consens au partage du dossier de {SENIOR.fullName} avec cette résidence, y
+                Je consens au partage du dossier de {seniorName} avec cette résidence, y
                 compris les pièces jointes.
               </span>
             </label>
@@ -1017,14 +1186,12 @@ function Depot({
 
 function Demandes({
   applications,
-  isDemo,
   onWithdraw,
   onWrite,
   onViewDossier,
   onSearch,
 }: {
   applications: FamilyApplication[];
-  isDemo?: boolean;
   onWithdraw: (id: string) => void;
   onWrite: () => void;
   onViewDossier: () => void;
@@ -1078,11 +1245,6 @@ function Demandes({
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 className="fs-serif text-[22px]">Évolution des demandes</h2>
-          {isDemo ? (
-            <p className="text-[13px] text-[var(--fs-ink-muted)]">
-              Exemple de suivi — vos envois réels apparaîtront ici
-            </p>
-          ) : null}
         </div>
 
         {applications.length === 0 ? (
@@ -1164,16 +1326,14 @@ function Demandes({
                 <button type="button" className="fs-btn fs-btn-outline" onClick={onViewDossier}>
                   Voir le dossier transmis
                 </button>
-                {!isDemo ? (
-                  <button
-                    type="button"
-                    className="fs-btn fs-btn-outline"
-                    style={{ color: "var(--fs-terra)" }}
-                    onClick={() => onWithdraw(app.id)}
-                  >
-                    Retirer la demande
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  className="fs-btn fs-btn-outline"
+                  style={{ color: "var(--fs-terra)" }}
+                  onClick={() => onWithdraw(app.id)}
+                >
+                  Retirer la demande
+                </button>
               </div>
             </article>
           ))

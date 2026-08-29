@@ -1,4 +1,10 @@
-/** Mock data for HavenApply family space (Sophie Lévesque / Marguerite). */
+/**
+ * Family-space catalog + UI types for the Québec family portal.
+ *
+ * DEPRECATED demo fixtures (USER, SENIOR, INITIAL_*, TODOS, MARGUERITE_PROFILE)
+ * must not be used in production UI — wire to useFamilyData + useAuth instead.
+ * RESIDENCES / UNIT_TYPES / SERVICES remain OK as a marketing browse catalog.
+ */
 
 export type FamilyView =
   | "accueil"
@@ -106,12 +112,14 @@ export type Residence = {
   photoLabels: string[];
 };
 
+/** @deprecated Demo contact — do not use in production UI. Prefer authenticated useAuth().user. */
 export const USER = {
   firstName: "Sophie",
   fullName: "Sophie Lévesque",
   initials: "SL",
 };
 
+/** @deprecated Demo senior — do not use in production UI. Prefer useFamilyData().data.senior. */
 export const SENIOR = {
   firstName: "Marguerite",
   lastName: "Lévesque",
@@ -172,6 +180,7 @@ export function emptyDraftDocs(): FamilyDoc[] {
   return REQUIRED_DOCS.map((d) => ({ ...d, status: "en attente" as const }));
 }
 
+/** @deprecated Demo dossier — do not seed production UI. Use buildProfileFromSenior(). */
 export const INITIAL_PROFILES: FamilyProfile[] = [
   {
     id: "p-marguerite",
@@ -193,6 +202,115 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     ],
   },
 ];
+
+/** Vault categories that satisfy each REQUIRED_DOCS checklist id. */
+export const REQUIRED_DOC_CATEGORIES: Record<string, string[]> = {
+  id: ["identification"],
+  ramq: ["insurance_card", "medicare"],
+  bilan: ["physician_report"],
+  meds: ["medication_list"],
+  revenus: ["financial"],
+  mandat: ["power_of_attorney", "guardianship"],
+};
+
+type VaultDocLike = {
+  category: string;
+  hasFile?: boolean;
+  status?: string;
+};
+
+/** Map live vault documents onto the REQUIRED_DOCS checklist (reçu / en attente). */
+export function mapRequiredDocsFromDocuments(documents: VaultDocLike[]): FamilyDoc[] {
+  return REQUIRED_DOCS.map((req) => {
+    const cats = REQUIRED_DOC_CATEGORIES[req.id] ?? [];
+    const hit = documents.some((d) => {
+      if (!cats.includes(d.category)) return false;
+      if (d.hasFile) return true;
+      const s = d.status || "";
+      return s === "uploaded" || s === "verified" || s === "under_review";
+    });
+    return { ...req, status: hit ? ("reçu" as const) : ("en attente" as const) };
+  });
+}
+
+type SeniorLike = {
+  firstName?: string;
+  lastName?: string;
+  relationship?: string;
+  city?: string;
+  state?: string;
+  dateOfBirth?: string;
+  budgetMax?: string;
+  budgetUnsure?: boolean;
+  urgency?: string;
+  photoDataUrl?: string;
+  createdAt?: string | null;
+};
+
+function ageFromDob(dob?: string): number | null {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  return age >= 0 && age < 130 ? age : null;
+}
+
+function urgencyToMoveLabel(urgency?: string): string {
+  const u = (urgency || "").toLowerCase();
+  if (!u) return "À préciser";
+  if (u.includes("immediate") || u.includes("urgent")) return "Dès que possible";
+  if (u.includes("1_3") || u.includes("3_month")) return "Sous 3 mois";
+  if (u.includes("3_6") || u.includes("6_month")) return "Sous 6 mois";
+  if (u.includes("6_12") || u.includes("year")) return "Sous 12 mois";
+  if (u.includes("exploring") || u.includes("research")) return "En exploration";
+  return "À préciser";
+}
+
+/**
+ * Build at most one FamilyProfile from a persisted senior.
+ * Returns null when firstName or lastName is missing (empty / create-dossier state).
+ */
+export function buildProfileFromSenior(
+  senior: SeniorLike,
+  docs: FamilyDoc[] = emptyDraftDocs(),
+  accesses: FamilyProfile["accesses"] = [],
+): FamilyProfile | null {
+  const prenom = (senior.firstName || "").trim();
+  const nom = (senior.lastName || "").trim();
+  if (!prenom || !nom) return null;
+
+  const age = ageFromDob(senior.dateOfBirth);
+  const place = [senior.city, senior.state].filter(Boolean).join(", ");
+  const meta = [age ? `${age} ans` : null, place || null].filter(Boolean).join(" · ") || "Dossier en cours";
+
+  let budget = "À préciser";
+  if (senior.budgetUnsure) budget = "Budget à confirmer";
+  else if (senior.budgetMax?.trim()) {
+    const n = Number(String(senior.budgetMax).replace(/\s/g, ""));
+    budget = Number.isFinite(n) && n > 0
+      ? `${n.toLocaleString("fr-CA")} $ / mois`
+      : `${senior.budgetMax} $ / mois`;
+  }
+
+  return {
+    id: "p-senior",
+    prenom,
+    nom,
+    rel: (senior.relationship || "").trim() || "Proche",
+    photo: senior.photoDataUrl || null,
+    meta,
+    autonomie: "À préciser",
+    services: "À préciser",
+    budget,
+    move: urgencyToMoveLabel(senior.urgency),
+    draft: false,
+    docs,
+    accesses,
+  };
+}
 
 export function createEmptyProfile(id: string): FamilyProfile {
   return {
@@ -530,6 +648,7 @@ export const RESIDENCES: Residence[] = [
   },
 ];
 
+/** @deprecated Demo care profile — do not default match scoring to this. Prefer live senior care needs. */
 export const MARGUERITE_PROFILE = {
   budgetMax: 3700,
   sector: "Québec et Lévis",
@@ -538,6 +657,8 @@ export const MARGUERITE_PROFILE = {
   unitPreference: "3½",
   maxDistanceKm: 25,
 } as const;
+
+/** @deprecated Demo applications — never fall back to these in production UI. */
 export const INITIAL_APPLICATIONS: FamilyApplication[] = [
   {
     id: "a1",
@@ -592,12 +713,64 @@ export const PROFILE_STEPS = [
   "Signature",
 ] as const;
 
+/** @deprecated Static Sophie todos — compute next steps from live gaps instead. */
 export const TODOS = [
   { label: "Ajouter le bilan médical", owner: "Sophie", tone: "terra" as const },
   { label: "Ajouter la preuve de revenus", owner: "Sophie", tone: "terra" as const },
   { label: "Confirmer la visite du 3 septembre", owner: "Sophie", tone: "green" as const },
   { label: "Relire le dossier transmis à Villa Sainte-Anne", owner: "Famille", tone: "neutral" as const },
 ];
+
+export type FamilyNextStep = {
+  label: string;
+  owner: string;
+  tone: "terra" | "green" | "neutral";
+};
+
+/** Derive « Prochaines étapes » from real dossier / docs / applications gaps. */
+export function buildNextSteps(input: {
+  hasSeniorProfile: boolean;
+  docs: FamilyDoc[];
+  applicationsCount: number;
+  ownerLabel?: string;
+}): FamilyNextStep[] {
+  const owner = (input.ownerLabel || "").trim() || "Vous";
+  const steps: FamilyNextStep[] = [];
+
+  if (!input.hasSeniorProfile) {
+    steps.push({
+      label: "Créer le dossier de votre proche",
+      owner,
+      tone: "terra",
+    });
+  }
+
+  for (const doc of input.docs.filter((d) => d.status === "en attente").slice(0, 3)) {
+    steps.push({
+      label: `Ajouter ${doc.name.charAt(0).toLowerCase()}${doc.name.slice(1)}`,
+      owner,
+      tone: "terra",
+    });
+  }
+
+  if (input.hasSeniorProfile && input.applicationsCount === 0) {
+    steps.push({
+      label: "Déposer une première demande",
+      owner,
+      tone: "neutral",
+    });
+  }
+
+  if (steps.length === 0) {
+    steps.push({
+      label: "Aucune action urgente pour le moment",
+      owner: "HavenApply",
+      tone: "green",
+    });
+  }
+
+  return steps;
+}
 
 export const UNIT_TYPES = ["3½", "2½", "1½"] as const;
 export const SERVICES = ["Repas", "Soins infirmiers", "Transport", "Aide au bain"] as const;

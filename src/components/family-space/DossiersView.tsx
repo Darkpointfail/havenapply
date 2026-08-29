@@ -67,6 +67,37 @@ export function DossiersView({
 }) {
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0];
 
+  if (!profiles.length || !activeProfile) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="fs-card flex flex-wrap items-start justify-between gap-4 p-6 md:p-7">
+          <div className="max-w-2xl">
+            <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">
+              Dossiers d&apos;admission
+            </h1>
+            <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
+              Un dossier par personne que vous accompagnez. Les renseignements et les pièces
+              d&apos;un dossier servent à toutes les demandes déposées pour cette personne.
+            </p>
+          </div>
+          <button type="button" className="fs-btn fs-btn-outline shrink-0" onClick={onCreateProfile}>
+            + Créer un dossier
+          </button>
+        </div>
+        <div className="fs-card p-10 text-center">
+          <h2 className="fs-serif text-[24px]">Aucun dossier pour le moment</h2>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--fs-ink-body)]">
+            Créez le dossier de votre proche pour y ajouter les pièces requises et déposer des
+            demandes auprès des résidences.
+          </p>
+          <button type="button" className="fs-btn fs-btn-primary mt-6" onClick={onCreateProfile}>
+            Créer un dossier
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="fs-card flex flex-wrap items-start justify-between gap-4 p-6 md:p-7">

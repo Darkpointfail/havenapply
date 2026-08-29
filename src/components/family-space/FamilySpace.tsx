@@ -1261,10 +1261,22 @@ function Assistance({
   onSend: () => void;
 }) {
   const faqs = [
-    "RPA ou CHSLD : quelle différence ?",
-    "Combien de demandes simultanées ?",
-    "Crédit d'impôt pour maintien à domicile",
-    "Comment préparer une visite ?",
+    {
+      q: "RPA ou CHSLD : quelle différence ?",
+      a: "Une RPA offre de l'hébergement avec services. Un CHSLD accueille des personnes qui ont besoin de soins plus importants au quotidien.",
+    },
+    {
+      q: "Combien de demandes simultanées ?",
+      a: "Autant que nécessaire. Un même dossier peut être déposé auprès de plusieurs résidences sans le remplir à nouveau.",
+    },
+    {
+      q: "Crédit d'impôt pour maintien à domicile",
+      a: "Certaines dépenses liées au maintien à domicile ou à la résidence peuvent ouvrir droit à un crédit. Vérifiez auprès de Revenu Québec.",
+    },
+    {
+      q: "Comment préparer une visite ?",
+      a: "Prévoyez la liste de médicaments, vos questions sur les soins, et un moment pour voir une unité type et les espaces communs.",
+    },
   ];
 
   return (
@@ -1318,13 +1330,14 @@ function Assistance({
         <div className="fs-card p-6">
           <h3 className="fs-serif text-[19px]">Questions fréquentes</h3>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
-            {faqs.map((q) => (
-              <li key={q}>
+            {faqs.map((item) => (
+              <li key={item.q}>
                 <button
                   type="button"
                   className="w-full py-3 text-left text-[14.5px] font-medium hover:text-[var(--fs-green)]"
+                  onClick={() => setInput(item.q)}
                 >
-                  {q}
+                  {item.q}
                 </button>
               </li>
             ))}
@@ -1336,7 +1349,15 @@ function Assistance({
             Un conseiller peut vous accompagner par téléphone du lundi au vendredi, de 8 h à
             18 h.
           </p>
-          <button type="button" className="fs-btn fs-btn-primary mt-4 w-full">
+          <button
+            type="button"
+            className="fs-btn fs-btn-primary mt-4 w-full"
+            onClick={() =>
+              window.alert(
+                "Votre demande d'appel a été notée. Un conseiller vous rejoindra durant les heures d'ouverture.",
+              )
+            }
+          >
             Demander un appel
           </button>
         </div>

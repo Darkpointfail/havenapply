@@ -18,6 +18,7 @@ export const DEMO_FAMILY_USER: SessionUser = {
   emailConfirmed: true,
   // False until the loved-one profile is finalized in onboarding/assistant.
   onboardingCompleted: false,
+  accountStatus: "active",
 };
 
 export const DEMO_COMMUNITY_USER: SessionUser = {
@@ -32,6 +33,7 @@ export const DEMO_COMMUNITY_USER: SessionUser = {
   emailConfirmed: true,
   communityStatus: "verified",
   onboardingCompleted: true,
+  accountStatus: "active",
 };
 
 export const DEMO_PROFESSIONAL_USER: SessionUser = {
@@ -45,6 +47,7 @@ export const DEMO_PROFESSIONAL_USER: SessionUser = {
   jobTitle: "Discharge Planner",
   emailConfirmed: true,
   onboardingCompleted: true,
+  accountStatus: "active",
 };
 
 const OPEN_FAMILY_KEY = "haven-open-family";

@@ -690,16 +690,23 @@ export function documentCategoryGroup(category: string): "Identity" | "Medical" 
   return "Other";
 }
 
+/**
+ * Resolve the community (RPA) tenant for a staff account.
+ * Returns null when the org/email is not mapped — never falls back to another tenant (IDOR).
+ */
 export function resolveCommunityResidenceId(
   organization?: string,
   email?: string,
-): string {
+): string | null {
   const ids = residencesForCommunityOrg(organization, email);
-  return ids[0] || "maple-grove";
+  return ids[0] ?? null;
 }
 
 export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace {
-  const r = getResidence(residenceId) || getResidence("maple-grove")!;
+  const r = getResidence(residenceId);
+  if (!r) {
+    throw new Error(`Unknown community tenant: ${residenceId}`);
+  }
   const detail = buildCommunityDetail(r);
   const now = new Date().toISOString();
 

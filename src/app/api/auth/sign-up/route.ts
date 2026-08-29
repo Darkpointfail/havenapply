@@ -75,8 +75,16 @@ export async function POST(request: Request) {
     metadata.phone = body.phone?.trim() || "";
   }
   if (body.role === "facility") {
-    metadata.community_status = "verified";
+    // Never trust client to self-verify a community tenant.
+    metadata.community_status = "pending";
   }
+
+  // Strip any privilege-escalation keys a client might inject.
+  delete (metadata as { platform_role?: unknown }).platform_role;
+  delete (metadata as { is_admin?: unknown }).is_admin;
+  delete (metadata as { role?: unknown }).role;
+  metadata.role = body.role;
+  metadata.account_type = accountTypeLabel(body.role);
 
   const { data, error } = await admin.auth.admin.createUser({
     email,

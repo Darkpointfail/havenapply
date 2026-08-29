@@ -118,6 +118,11 @@ Edge Functions use the **service role** only after explicit AuthZ checks mirrori
 1. Family A cannot read Family B seniors/docs/apps.  
 2. Dallas #1 staff cannot read Austin applications (same org, different site) unless org-wide role.  
 3. Org-wide `org_admin` can read all sites under org.  
+4. Support without `support_access_grants` cannot read PHI; with valid grant (justification + TTL) can read target tenant only.  
+5. Suspended / non-`active` profiles fail all helpers (`is_active_profile`).  
+6. Users cannot INSERT into `platform_roles` for themselves.  
+
+See also: `SECURITY_AUTHZ.md` and `npm run test:authz` for the TypeScript policy engine covering IDOR/BOLA cases without a live database.  
 4. Staff without `document_access` cannot download files.  
 5. Viewer family member cannot submit applications.  
 6. Platform admin reads are written to `audit_logs`.  

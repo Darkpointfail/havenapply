@@ -506,12 +506,216 @@ export async function requestDeletion(
     reason: input.reason || null,
     status: "pending",
   });
+  await client.from("rights_operation_logs").insert({
+    user_id: ownerId,
+    family_id: fam?.id ?? null,
+    operation: "deletion_request",
+    detail: `Demande enregistrée (${input.scope})`,
+  });
   return loadOrCreateSupabaseFamily({
     id: ownerId,
     email: fam?.primary_email || "",
     firstName: "",
     lastName: "",
   });
+}
+
+export async function buildFamilyExport(ownerId: string) {
+  const client = await sb();
+  const bundle = await loadOrCreateSupabaseFamily({
+    id: ownerId,
+    email: "",
+    firstName: "",
+    lastName: "",
+  });
+  await client.from("rights_operation_logs").insert({
+    user_id: ownerId,
+    family_id: bundle.account.id,
+    operation: "export",
+    detail: "Export JSON des données familiales",
+  });
+  const { data: logs } = await client
+    .from("rights_operation_logs")
+    .select("*")
+    .eq("user_id", ownerId)
+    .order("recorded_at", { ascending: false })
+    .limit(50);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    formatVersion: "haven-family-export-v1",
+    account: bundle.account,
+    seniors: bundle.seniors,
+    documents: bundle.documents,
+    applications: bundle.applications,
+    consents: bundle.consents,
+    progress: bundle.progress,
+    rightsLog: (logs || []).map((l) => ({
+      id: l.id,
+      operation: l.operation,
+      detail: l.detail || "",
+      recordedAt: l.recorded_at,
+    })),
+    notes: [
+      "Les fichiers binaires ne sont pas inclus. Téléchargez chaque document séparément.",
+      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+    ],
+  };
+}
+
+export async function listRightsLog(ownerId: string) {
+  const client = await sb();
+  const { data: logs } = await client
+    .from("rights_operation_logs")
+    .select("*")
+    .eq("user_id", ownerId)
+    .order("recorded_at", { ascending: false })
+    .limit(50);
+  return (logs || []).map((l) => ({
+    id: l.id,
+    operation: l.operation as
+      | "access_view"
+      | "export"
+      | "rectify"
+      | "consent_revoke"
+      | "deletion_request"
+      | "deletion_executed",
+    detail: l.detail || "",
+    recordedAt: l.recorded_at,
+  }));
+}
+
+export async function logRightsOperation(
+  ownerId: string,
+  operation:
+    | "access_view"
+    | "export"
+    | "rectify"
+    | "consent_revoke"
+    | "deletion_request"
+    | "deletion_executed",
+  detail?: string,
+) {
+  const client = await sb();
+  const { data: fam } = await client
+    .from("families")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const { data } = await client
+    .from("rights_operation_logs")
+    .insert({
+      user_id: ownerId,
+      family_id: fam?.id ?? null,
+      operation,
+      detail: (detail || "").slice(0, 300),
+    })
+    .select("*")
+    .single();
+  return {
+    id: data?.id || "",
+    operation,
+    detail: detail || "",
+    recordedAt: data?.recorded_at || new Date().toISOString(),
+  };
+}
+
+export async function executeAccountDeletion(
+  ownerId: string,
+  input: { scope: "profile" | "account"; reason?: string },
+) {
+  const client = await sb();
+  const { data: fam } = await client
+    .from("families")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!fam) return null;
+
+  const { data: docs } = await client
+    .from("documents")
+    .select("*")
+    .eq("family_id", fam.id)
+    .is("deleted_at", null);
+
+  for (const doc of docs || []) {
+    try {
+      await client.storage.from(doc.bucket).remove([doc.storage_path]);
+    } catch {
+      /* ignore storage miss */
+    }
+    await client
+      .from("documents")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", doc.id);
+  }
+
+  const { data: seniors } = await client
+    .from("seniors")
+    .select("id")
+    .eq("family_id", fam.id)
+    .is("deleted_at", null);
+
+  for (const s of seniors || []) {
+    await client.from("emergency_contacts").delete().eq("senior_id", s.id);
+    await client.from("senior_care_assessments").delete().eq("senior_id", s.id);
+    if (input.scope === "profile") {
+      await client
+        .from("seniors")
+        .update({
+          first_name: "",
+          last_name: "",
+          middle_name: null,
+          birth_date: null,
+          phone: null,
+          email: null,
+          address: null,
+          city: null,
+          zip_code: null,
+          dossier_json: {},
+          deleted_at: new Date().toISOString(),
+          completed_percentage: 0,
+        })
+        .eq("id", s.id);
+    } else {
+      await client
+        .from("seniors")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", s.id);
+    }
+  }
+
+  await client.from("account_deletion_requests").insert({
+    user_id: ownerId,
+    family_id: fam.id,
+    scope: input.scope,
+    reason: input.reason || null,
+    status: "completed",
+    processed_at: new Date().toISOString(),
+  });
+
+  await client.from("rights_operation_logs").insert({
+    user_id: ownerId,
+    family_id: fam.id,
+    operation: "deletion_executed",
+    detail: `Suppression exécutée (${input.scope})`,
+  });
+
+  if (input.scope === "account") {
+    await client
+      .from("families")
+      .update({
+        deleted_at: new Date().toISOString(),
+        primary_email: null,
+        primary_phone: null,
+        family_name: "Compte supprimé",
+      })
+      .eq("id", fam.id);
+  }
+
+  return { ok: true as const, scope: input.scope };
 }
 
 export async function persistApplications(_ownerId: string, _apps: FamilyApplication[]) {

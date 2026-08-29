@@ -166,4 +166,43 @@ export async function readDocumentFile(ownerId: string, docId: string) {
   return local.getDocumentFile(ownerId, docId);
 }
 
+export async function exportFamilyData(ownerId: string) {
+  if (isSupabaseBackend()) {
+    const mod = await import("@/lib/family/supabase-store");
+    return mod.buildFamilyExport(ownerId);
+  }
+  return local.buildFamilyExport(ownerId);
+}
+
+export async function executeDeletion(
+  ownerId: string,
+  input: { scope: "profile" | "account"; reason?: string },
+) {
+  if (isSupabaseBackend()) {
+    const mod = await import("@/lib/family/supabase-store");
+    return mod.executeAccountDeletion(ownerId, input);
+  }
+  return local.executeAccountDeletion(ownerId, input);
+}
+
+export async function getRightsLog(ownerId: string) {
+  if (isSupabaseBackend()) {
+    const mod = await import("@/lib/family/supabase-store");
+    return mod.listRightsLog(ownerId);
+  }
+  return local.listRightsLog(ownerId);
+}
+
+export async function recordRightsOperation(
+  ownerId: string,
+  operation: local.RightsOperation,
+  detail?: string,
+) {
+  if (isSupabaseBackend()) {
+    const mod = await import("@/lib/family/supabase-store");
+    return mod.logRightsOperation(ownerId, operation, detail);
+  }
+  return local.logRightsOperation(ownerId, operation, detail);
+}
+
 export type { FamilyBundle, VaultDocument };

@@ -88,12 +88,10 @@ export function FamilySpace() {
     saveStatus,
     saveError,
     recordProfileConsent,
-    requestAccountDeletion,
     uploadVaultDocument,
     deleteVaultDocument,
   } = useFamilyData();
   const [profileConsentChecked, setProfileConsentChecked] = useState(false);
-  const [deletionPending, setDeletionPending] = useState(false);
 
   const [view, setView] = useState<FamilyView>("accueil");
   const [mode, setMode] = useState<DossierMode>("overview");
@@ -395,19 +393,8 @@ export function FamilySpace() {
   };
 
   const confirmDeleteAccount = () => {
-    const ok = window.confirm(
-      "Demander la suppression de votre compte et de vos données personnelles ? Cette demande sera enregistrée et traitée selon la politique de conservation HavenApply.",
-    );
-    if (!ok) return;
-    setDeletionPending(true);
-    void requestAccountDeletion("account").then((success) => {
-      setDeletionPending(false);
-      if (!success) {
-        window.alert(saveError || "Impossible d'enregistrer la demande de suppression.");
-      } else {
-        window.alert("Votre demande de suppression a été enregistrée. Elle apparaît dans votre compte.");
-      }
-    });
+    setAccountOpen(false);
+    router.push("/family/droits");
   };
 
   const openResidence = (id: string, focus: "match" | "full" = "full") => {
@@ -643,6 +630,17 @@ export function FamilySpace() {
                       type="button"
                       role="menuitem"
                       className="fs-account-menu-item"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        router.push("/family/droits");
+                      }}
+                    >
+                      Vos droits (Loi 25)
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fs-account-menu-item"
                       onClick={startAccountEdit}
                     >
                       Modifier mon profil contact
@@ -684,11 +682,8 @@ export function FamilySpace() {
                       role="menuitem"
                       className="fs-account-menu-item text-[#e8a090]"
                       onClick={confirmDeleteAccount}
-                      disabled={deletionPending}
                     >
-                      {deletionPending
-                        ? "Envoi de la demande…"
-                        : "Demander la suppression du compte"}
+                      Supprimer mes données (droits Loi 25)
                     </button>
                     <button
                       type="button"

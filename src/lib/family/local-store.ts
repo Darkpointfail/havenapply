@@ -299,6 +299,11 @@ export async function recordProfileConsent(
       granted: false,
       revokedAt: ts,
     };
+    await writeStore(ownerId, store);
+    await appendRightsLog(ownerId, "consent_revoke", "Retrait du consentement de conservation");
+    // re-read after log
+    const again = await readStore(ownerId);
+    return again ? buildBundle(again) : null;
   } else if (granted) {
     const record: ConsentRecordDto = {
       id: newOpaqueId("cns"),
@@ -334,6 +339,7 @@ export async function requestAccountDeletion(
   store.account.deletionRequest = req;
   store.account.updatedAt = ts;
   await writeStore(ownerId, store);
+  await appendRightsLog(ownerId, "deletion_request", `Portée ${input.scope}`);
   return buildBundle(store);
 }
 
@@ -523,4 +529,167 @@ export async function __resetFamilyForTests(ownerId: string) {
   } catch {
     /* ignore */
   }
+}
+
+export type RightsOperation =
+  | "access_view"
+  | "export"
+  | "rectify"
+  | "consent_revoke"
+  | "deletion_request"
+  | "deletion_executed";
+
+export type RightsLogEntry = {
+  id: string;
+  operation: RightsOperation;
+  detail: string;
+  recordedAt: string;
+};
+
+function rightsLogPath(ownerId: string) {
+  return path.join(ROOT, `${ownerId}.rights-log.json`);
+}
+
+async function readRightsLog(ownerId: string): Promise<RightsLogEntry[]> {
+  await ensureDirs();
+  try {
+    const raw = await fs.readFile(rightsLogPath(ownerId), "utf8");
+    const parsed = JSON.parse(raw) as RightsLogEntry[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function appendRightsLog(
+  ownerId: string,
+  operation: RightsOperation,
+  detail = "",
+): Promise<RightsLogEntry> {
+  const logs = await readRightsLog(ownerId);
+  const entry: RightsLogEntry = {
+    id: newOpaqueId("rlog"),
+    operation,
+    detail: detail.slice(0, 300),
+    recordedAt: nowIso(),
+  };
+  logs.unshift(entry);
+  await fs.writeFile(rightsLogPath(ownerId), JSON.stringify(logs.slice(0, 200), null, 2), "utf8");
+  return entry;
+}
+
+export type FamilyExportPayload = {
+  exportedAt: string;
+  formatVersion: string;
+  account: FamilyAccountRecord;
+  seniors: SeniorRecord[];
+  documents: VaultDocument[];
+  applications: FamilyApplication[];
+  consents: ConsentRecordDto[];
+  progress: FamilyBundle["progress"];
+  rightsLog: RightsLogEntry[];
+  notes: string[];
+};
+
+export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPayload | null> {
+  const store = await readStore(ownerId);
+  if (!store) return null;
+  await appendRightsLog(ownerId, "export", "Export JSON des données familiales");
+  const bundle = buildBundle(store);
+  const rightsLog = await readRightsLog(ownerId);
+  return {
+    exportedAt: nowIso(),
+    formatVersion: "haven-family-export-v1",
+    account: bundle.account,
+    seniors: bundle.seniors.map((s) => ({
+      ...s,
+      profile: { ...s.profile, photoDataUrl: s.profile.photoDataUrl ? "[photo omise dans l'export JSON — téléchargez le document séparément si besoin]" : "" },
+    })),
+    documents: bundle.documents,
+    applications: bundle.applications,
+    consents: bundle.consents,
+    progress: bundle.progress,
+    rightsLog,
+    notes: [
+      "Les fichiers binaires ne sont pas inclus dans cet export. Utilisez le téléchargement de chaque document depuis l'espace famille.",
+      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+    ],
+  };
+}
+
+export async function listRightsLog(ownerId: string) {
+  return readRightsLog(ownerId);
+}
+
+export async function logRightsOperation(
+  ownerId: string,
+  operation: RightsOperation,
+  detail?: string,
+) {
+  return appendRightsLog(ownerId, operation, detail);
+}
+
+/**
+ * Execute deletion: remove document bytes and wipe or anonymize family store.
+ * scope=profile clears senior dossier but keeps the empty family shell.
+ * scope=account removes the family store entirely after logging.
+ */
+export async function executeAccountDeletion(
+  ownerId: string,
+  input: { scope: "profile" | "account"; reason?: string },
+): Promise<{ ok: true; scope: "profile" | "account" } | null> {
+  const store = await readStore(ownerId);
+  if (!store) return null;
+
+  // Delete document files first
+  for (const doc of store.documents) {
+    const meta = await readDocMeta(doc.id);
+    if (meta?.abs) {
+      try {
+        await fs.unlink(meta.abs);
+      } catch {
+        /* ignore */
+      }
+      try {
+        await fs.unlink(path.join(DOCS_ROOT, `_meta_${doc.id}.json`));
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  await appendRightsLog(
+    ownerId,
+    "deletion_executed",
+    `Suppression exécutée (portée: ${input.scope})`,
+  );
+
+  if (input.scope === "profile") {
+    const ts = nowIso();
+    store.seniors = [];
+    store.documents = [];
+    store.applications = [];
+    store.savedFavorites = [];
+    store.compareIds = [];
+    store.account.profileConsent = null;
+    store.account.deletionRequest = {
+      id: newOpaqueId("del"),
+      scope: "profile",
+      status: "completed",
+      reason: (input.reason || "").slice(0, 500),
+      requestedAt: ts,
+    };
+    store.account.updatedAt = ts;
+    store.account.onboarding = emptyOnboardingMeta();
+    await writeStore(ownerId, store);
+    return { ok: true, scope: "profile" };
+  }
+
+  // account: wipe store file (keep rights log without PII payloads)
+  try {
+    await fs.unlink(familyPath(ownerId));
+  } catch {
+    /* ignore */
+  }
+  return { ok: true, scope: "account" };
 }

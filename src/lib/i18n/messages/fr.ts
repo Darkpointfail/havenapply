@@ -92,7 +92,7 @@ export const fr = {
   "home.privacy.4": "Les échanges restent traçables pour les personnes autorisées",
   "home.privacy.link": "En savoir plus sur la sécurité",
   "home.privacy.proofTitle": "Emplacements de preuve : à remplir",
-  "home.privacy.proof.1": "Loi 25 : conformité et pratiques à préciser",
+  "home.privacy.proof.1": "Politique de confidentialité et avis de collecte publiés (brouillon à valider légalement)",
   "home.privacy.proof.2": "Hébergement des données : région et fournisseur à confirmer",
   "home.privacy.proof.3": "Résidences partenaires : liste vérifiée à publier",
   "home.privacy.proof.4": "Témoignages : uniquement après autorisation écrite",

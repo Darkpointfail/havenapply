@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { CollectionNotice } from "@/components/legal/CollectionNotice";
+import { SIGNUP_TERMS_LABEL } from "@/content/legal/privacy-fr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useId, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
@@ -437,6 +439,8 @@ function GetStartedInner() {
                   </label>
                 </div>
 
+                <CollectionNotice variant="account" className="mb-4" />
+
                 <label className="flex items-start gap-3 text-[14.5px] leading-relaxed text-[var(--gs-ink-body)]">
                   <input
                     type="checkbox"
@@ -447,13 +451,17 @@ function GetStartedInner() {
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
                   />
                   <span>
-                    J&apos;accepte les{" "}
-                    <Link href="/family/privacy" className="font-medium text-[var(--gs-green)] no-underline">
-                      conditions d&apos;utilisation
-                    </Link>{" "}
-                    et la{" "}
-                    <Link href="/family/privacy" className="font-medium text-[var(--gs-green)] no-underline">
-                      politique de confidentialité
+                    {SIGNUP_TERMS_LABEL.beforeLinks}
+                    <Link href="/conditions" className="font-medium text-[var(--gs-green)] no-underline">
+                      {SIGNUP_TERMS_LABEL.termsLink}
+                    </Link>
+                    {SIGNUP_TERMS_LABEL.mid}
+                    <Link href="/confidentialite" className="font-medium text-[var(--gs-green)] no-underline">
+                      {SIGNUP_TERMS_LABEL.privacyLink}
+                    </Link>
+                    {SIGNUP_TERMS_LABEL.after}{" "}
+                    <Link href="/avis-de-collecte" className="font-medium text-[var(--gs-green)] no-underline">
+                      Lire l&apos;avis de collecte
                     </Link>
                     .
                   </span>

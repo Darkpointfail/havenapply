@@ -1,39 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
-import { Logo } from "@/components/brand/Logo";
 import { ResidencesBrowse, ResidenceFiche } from "@/components/family-space/ResidencesPage";
+import { DossiersView } from "@/components/family-space/DossiersView";
 import {
   askAssistant,
   assistantOpener,
-  assistantSuggestions,
   type AssistantTurn,
 } from "@/data/assistant";
 import {
-  PROFILE_STEPS,
   RESIDENCES,
   SENIOR,
   TODOS,
   USER,
   INITIAL_APPLICATIONS,
+  INITIAL_PROFILES,
+  createEmptyProfile,
+  docsProgress,
+  profileDisplayName,
   type FamilyApplication,
   type FamilyDoc,
+  type FamilyProfile,
   type FamilyView,
-  type DossierPanel,
+  type DossierMode,
   type Residence,
 } from "@/data/family-space";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
-import { putDocBlob } from "@/lib/doc-blobs";
-import {
-  buildSubmitDraft,
-  categoryForFrDocId,
-  docsFromVault,
-  docsProgressFromVault,
-  storeAppToUi,
-} from "@/lib/fr-portal-dynamic";
+import { buildSubmitDraft, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -53,7 +49,7 @@ const publicSans = Public_Sans({
 const NAV: { id: FamilyView; label: string }[] = [
   { id: "accueil", label: "Accueil" },
   { id: "residences", label: "Résidences" },
-  { id: "dossier", label: "Dossier" },
+  { id: "dossier", label: "Dossiers" },
   { id: "demandes", label: "Mes demandes" },
   { id: "assistance", label: "Assistance" },
 ];
@@ -78,21 +74,6 @@ function StatusPill({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fs-field">
-      <label>{label}</label>
-      {children}
-    </div>
-  );
-}
-
 export function FamilySpace() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,23 +81,21 @@ export function FamilySpace() {
   const {
     ready: familyReady,
     data,
-    addDocument,
-    replaceDocumentFile,
     submitApplication,
     withdrawApplication,
     updateSeniorDraft,
-    finalizeSeniorProfile,
   } = useFamilyData();
 
   const [view, setView] = useState<FamilyView>("accueil");
-  const [dossierPanel, setDossierPanel] = useState<DossierPanel>("manage");
+  const [mode, setMode] = useState<DossierMode>("overview");
+  const [profiles, setProfiles] = useState<FamilyProfile[]>(INITIAL_PROFILES);
+  const [activeProfileId, setActiveProfileId] = useState(INITIAL_PROFILES[0]?.id ?? "");
   const [resId, setResId] = useState<string | null>(null);
   const [applyStep, setApplyStep] = useState(1);
   const [profileStep, setProfileStep] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [consent, setConsent] = useState(false);
-  const [claireOpen, setClaireOpen] = useState(true);
-  const [chatFirst, setChatFirst] = useState(false);
+  const [claireOpen, setClaireOpen] = useState(false);
   const [claireTyping, setClaireTyping] = useState(false);
   const [chat, setChat] = useState<AssistantTurn[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -139,11 +118,10 @@ export function FamilySpace() {
     { from: "family", body: "Où est-ce que je l'obtiens ?" },
     {
       from: "claire",
-      body: "Auprès du médecin de famille ou du CLSC qui suit votre mère. Dès que vous l'avez, téléversez-le dans Notre dossier — toutes vos demandes en cours en profiteront.",
+      body: "Auprès du médecin de famille ou du CLSC qui suit votre mère. Dès que vous l'avez, téléversez-le dans le dossier — toutes vos demandes en cours en profiteront.",
     },
   ]);
   const [helpInput, setHelpInput] = useState("");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(false);
   const [ficheFocus, setFicheFocus] = useState<"match" | "full">("full");
 
@@ -199,14 +177,11 @@ export function FamilySpace() {
   };
 
   const openClaireChat = (opts?: { replaceUrl?: boolean }) => {
-    setDossierPanel("create");
     setView("dossier");
+    setMode("edition");
     setClaireOpen(true);
-    setChatFirst(true);
-    setProfileStep((s) => s);
-    setChat((prev) =>
-      prev.length ? prev : [{ from: "claire", body: assistantOpener(profileStep) }],
-    );
+    setProfileStep(0);
+    setChat([{ from: "claire", body: assistantOpener(0) }]);
     setResId(null);
     if (opts?.replaceUrl !== false) {
       router.replace("/family/dashboard?claire=1", { scroll: false });
@@ -240,16 +215,14 @@ export function FamilySpace() {
         : USER.initials,
   };
 
-  const displaySenior = {
-    ...SENIOR,
-    firstName: data.senior.firstName || SENIOR.firstName,
-    lastName: data.senior.lastName || SENIOR.lastName,
-    fullName:
-      [data.senior.firstName, data.senior.lastName].filter(Boolean).join(" ") || SENIOR.fullName,
-  };
+  const activeProfile =
+    profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
 
-  const docs = useMemo(() => docsFromVault(data.documents), [data.documents]);
-  const progress = docsProgressFromVault(data.documents);
+  const progress = useMemo(
+    () => docsProgress(activeProfile?.docs ?? []),
+    [activeProfile],
+  );
+
   const liveApplications = useMemo(() => {
     return data.applications
       .map(storeAppToUi)
@@ -259,9 +232,13 @@ export function FamilySpace() {
   const applications = hasLiveApplications ? liveApplications : INITIAL_APPLICATIONS;
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
-  const hasDossier = Boolean(
-    data.seniorCreated || data.senior.firstName || user?.onboardingCompleted,
-  );
+
+  const headerDossierCaption =
+    profiles.length > 1
+      ? `${profiles.length} dossiers actifs`
+      : activeProfile
+        ? `Dossier de ${profileDisplayName(activeProfile)}`
+        : "Aucun dossier";
 
   useEffect(() => {
     if (!familyReady || !user || user.role !== "family" || seeded) return;
@@ -288,41 +265,79 @@ export function FamilySpace() {
   }, [familyReady, user, seeded, data.senior.firstName, updateSeniorDraft, updateProfile]);
 
   useEffect(() => {
+    if (!claireOpen) return;
     setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
     setChatInput("");
     setClaireTyping(false);
-  }, [profileStep]);
+  }, [profileStep, claireOpen]);
 
   const go = (v: FamilyView) => {
-    if (v === "dossier") {
-      openDossier();
-      return;
-    }
     setView(v);
-    if (v !== "fiche" && v !== "depot") setResId(null);
-    setChatFirst(false);
-  };
-
-  const openDossier = (panel?: DossierPanel) => {
-    const next =
-      panel ??
-      (hasDossier ? "manage" : "create");
-    setDossierPanel(next);
-    if (next === "create") {
-      setProfileStep(0);
-      setClaireOpen(true);
-    }
-    if (next === "edit") {
+    if (v === "dossier") {
+      setMode("overview");
       setClaireOpen(false);
     }
-    setView("dossier");
-    setResId(null);
+    if (v !== "fiche" && v !== "depot") setResId(null);
   };
 
-  const finishDossierForm = () => {
-    finalizeSeniorProfile();
-    setDossierPanel("manage");
+  const openDossier = (nextMode: DossierMode = "overview") => {
+    setMode(nextMode);
     setView("dossier");
+    setResId(null);
+    if (nextMode === "edition") {
+      setProfileStep(0);
+      setClaireOpen(false);
+    }
+  };
+
+  const createProfile = () => {
+    const id = `p-${Date.now()}`;
+    const draft = createEmptyProfile(id);
+    setProfiles((prev) => [...prev, draft]);
+    setActiveProfileId(id);
+    setMode("edition");
+    setProfileStep(0);
+    setClaireOpen(false);
+    setView("dossier");
+  };
+
+  const patchActive = (patch: Partial<FamilyProfile>) => {
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === activeProfileId ? { ...p, ...patch } : p)),
+    );
+  };
+
+  const selectProfile = (id: string) => {
+    setActiveProfileId(id);
+    setMode("overview");
+    setProfileStep(0);
+    setClaireOpen(false);
+  };
+
+  const uploadProfileDoc = (docId: string) => {
+    setProfiles((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProfileId) return p;
+        return {
+          ...p,
+          docs: p.docs.map((d) =>
+            d.id === docId ? { ...d, status: "reçu" as const } : d,
+          ),
+        };
+      }),
+    );
+  };
+
+  const withdrawProfileAccess = (residenceId: string) => {
+    setProfiles((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProfileId) return p;
+        return {
+          ...p,
+          accesses: p.accesses.filter((a) => a.residenceId !== residenceId),
+        };
+      }),
+    );
   };
 
   const openResidence = (id: string, focus: "match" | "full" = "full") => {
@@ -337,42 +352,6 @@ export function FamilySpace() {
     setSelectedUnit("");
     setConsent(false);
     setView("depot");
-  };
-
-  const uploadDoc = async (id: string, file?: File | null) => {
-    const category = categoryForFrDocId(id);
-    const label = docs.find((d) => d.id === id)?.name || "Document";
-    const existing = data.documents.find((d) => d.category === category);
-    if (existing) {
-      if (file) {
-        await putDocBlob(existing.id, file);
-        replaceDocumentFile(existing.id, {
-          name: file.name || label,
-          size: `${Math.round(file.size / 1024)} Ko`,
-          sizeBytes: file.size,
-          mimeType: file.type || "application/octet-stream",
-        });
-      } else {
-        replaceDocumentFile(existing.id, {
-          name: existing.name || label,
-          size: existing.size || "1 Ko",
-          sizeBytes: existing.sizeBytes || 1024,
-          mimeType: existing.mimeType || "application/pdf",
-        });
-      }
-      return;
-    }
-    const docId = addDocument({
-      name: file?.name || label,
-      category,
-      description: docs.find((d) => d.id === id)?.detail,
-      hasFile: Boolean(file),
-      size: file ? `${Math.round(file.size / 1024)} Ko` : "1 Ko",
-      sizeBytes: file?.size || 1024,
-      mimeType: file?.type || "application/pdf",
-      status: "uploaded",
-    });
-    if (file && docId) await putDocBlob(docId, file);
   };
 
   const sendApplication = () => {
@@ -410,23 +389,19 @@ export function FamilySpace() {
     const m = message.toLowerCase();
     if (profileStep === 0) {
       if (m.includes("hôpital") || m.includes("hopital")) {
-        updateSeniorDraft({ livingSituation: "hospital" });
+        patchActive({ meta: "Dossier urgent · hôpital" });
       }
       if (m.includes("marguerite")) {
-        updateSeniorDraft({ firstName: "Marguerite", lastName: "Lévesque" });
+        patchActive({ prenom: "Marguerite", nom: "Lévesque" });
       }
     }
-    if (profileStep === 5 && (m.includes("canne") || m.includes("fauteuil"))) {
-      updateSeniorDraft({
-        livingSituationOther: m.includes("fauteuil") ? "Fauteuil roulant" : "Marche avec canne",
-      });
-    }
-    if (profileStep === 6) finishDossierForm();
   };
 
-  const withdrawAccess = (name: string) => {
-    if (!window.confirm(`Retirer la demande auprès de ${name} ?`)) return;
-    const app = applications.find((a) => a.residenceName === name);
+  const withdrawAccess = (residenceId: string) => {
+    withdrawProfileAccess(residenceId);
+    const app = data.applications.find(
+      (a) => a.residenceId === residenceId && a.status !== "draft" && a.status !== "withdrawn",
+    );
     if (app) withdrawApplication(app.id);
   };
 
@@ -439,15 +414,17 @@ export function FamilySpace() {
     <div className={`fs ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="fs-header sticky top-0 z-40 text-white">
         <div className="fs-header-inner">
-          <div className="flex shrink-0 items-center gap-3">
-            <Logo
-              href="/family/dashboard"
-              size="nav"
-              light
-              className="!ml-0 !translate-y-0"
+          <a href="/family/dashboard" className="fs-brand" aria-label="HavenApply — accueil">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/favicon-48-v6.png"
+              alt=""
+              width={34}
+              height={34}
+              className="fs-brand-mark"
             />
-            <span className="fs-header-eyebrow hidden lg:inline">Espace famille</span>
-          </div>
+            <span className="fs-brand-name">HavenApply</span>
+          </a>
 
           <nav className="fs-nav-scroll fs-header-nav min-w-0 flex-1" aria-label="Navigation principale">
             {NAV.map((item) => {
@@ -479,36 +456,17 @@ export function FamilySpace() {
                 setAccountEditing(false);
               }}
             >
-              <span
-                className="fs-account-avatar"
-                aria-hidden
-              >
-                {displayUser.initials}
-              </span>
               <span className="hidden min-w-0 text-left sm:block">
                 <span className="block truncate text-[13.5px] font-semibold leading-tight text-white">
                   {displayUser.fullName}
                 </span>
                 <span className="mt-0.5 block truncate text-[12px] leading-tight text-[#9AABA4]">
-                  Dossier de {displaySenior.fullName}
+                  {headerDossierCaption}
                 </span>
               </span>
-              <svg
-                className={`fs-account-chevron hidden sm:block ${accountOpen ? "fs-account-chevron-open" : ""}`}
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden
-              >
-                <path
-                  d="M2.5 4.5L6 8l3.5-3.5"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span className="fs-account-avatar" aria-hidden>
+                {displayUser.initials}
+              </span>
             </button>
             {accountOpen ? (
               <div role="menu" className="fs-account-menu">
@@ -519,8 +477,8 @@ export function FamilySpace() {
                         Profil contact
                       </p>
                       <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#9AABA4]">
-                        Ces renseignements sont associés au dossier de{" "}
-                        {displaySenior.fullName} comme contact principal.
+                        Ces renseignements sont associés à votre compte famille
+                        comme contact principal.
                       </p>
                     </div>
                     <label className="block">
@@ -645,10 +603,7 @@ export function FamilySpace() {
             firstName={displayUser.firstName}
             progress={progress}
             applications={applications}
-            hasDossier={hasDossier}
-            onOpenDossier={() => openDossier()}
-            onCreateDossier={() => openDossier("create")}
-            onClaire={openClaireChat}
+            onOpenDossier={() => openDossier("edition")}
             onSearch={() => go("residences")}
             onOpenApp={() => go("demandes")}
           />
@@ -671,54 +626,42 @@ export function FamilySpace() {
             setStep={setApplyStep}
             selectedUnit={selectedUnit}
             setSelectedUnit={setSelectedUnit}
-            docs={docs}
+            docs={activeProfile?.docs ?? []}
             consent={consent}
             setConsent={setConsent}
             onBack={() => openResidence(selectedRes.id)}
             onSend={sendApplication}
           />
         )}
-        {view === "dossier" && dossierPanel !== "manage" && (
-          <Profil
-            mode={dossierPanel === "edit" ? "edit" : "create"}
-            step={profileStep}
-            setStep={setProfileStep}
+        {view === "dossier" && (
+          <DossiersView
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            mode={mode}
+            profileStep={profileStep}
             claireOpen={claireOpen}
-            setClaireOpen={setClaireOpen}
-            chatFirst={chatFirst}
-            setChatFirst={setChatFirst}
-            claireTyping={claireTyping}
             chat={chat}
             chatInput={chatInput}
-            setChatInput={setChatInput}
-            chatInputRef={chatInputRef}
-            chatEndRef={chatEndRef}
-            onSend={() => sendToClaire(chatInput)}
-            onSuggest={sendToClaire}
-            onDone={finishDossierForm}
-            onBackToManage={hasDossier ? () => openDossier("manage") : undefined}
-          />
-        )}
-        {view === "dossier" && dossierPanel === "manage" && (
-          <Dossier
-            seniorName={displaySenior.fullName}
-            docs={docs}
-            progress={progress}
-            photoUrl={photoUrl || data.senior.photoDataUrl || null}
-            onPhoto={(f) => f && setPhotoUrl(URL.createObjectURL(f))}
-            onUpload={uploadDoc}
-            applications={applications}
+            claireTyping={claireTyping}
+            onSelectProfile={selectProfile}
+            onCreateProfile={createProfile}
+            onSetMode={setMode}
+            onSetStep={setProfileStep}
+            onPatchActive={patchActive}
+            onUploadDoc={uploadProfileDoc}
             onWithdrawAccess={withdrawAccess}
-            onEdit={() => openDossier("edit")}
-            onCreateNew={() => {
-              if (
-                window.confirm(
-                  "Créer un nouveau dossier ? Vous pourrez toujours revenir modifier le dossier actuel.",
-                )
-              ) {
-                openDossier("create");
-              }
+            onToggleClaire={() => {
+              setClaireOpen((v) => {
+                const next = !v;
+                if (next && chat.length === 0) {
+                  setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
+                }
+                return next;
+              });
             }}
+            onChatInput={setChatInput}
+            onSendChat={() => sendToClaire(chatInput)}
+            onSuggest={sendToClaire}
           />
         )}
         {view === "demandes" && (
@@ -727,7 +670,7 @@ export function FamilySpace() {
             isDemo={!hasLiveApplications}
             onWithdraw={withdrawApp}
             onWrite={() => go("assistance")}
-            onViewDossier={() => openDossier("manage")}
+            onViewDossier={() => openDossier("overview")}
             onSearch={() => go("residences")}
           />
         )}
@@ -743,7 +686,7 @@ export function FamilySpace() {
                 { from: "family", body: helpInput.trim() },
                 {
                   from: "claire",
-                  body: "Merci. Un conseiller pourra préciser si besoin — en attendant, vérifiez Notre dossier pour les pièces manquantes.",
+                  body: "Merci. Un conseiller pourra préciser si besoin — en attendant, vérifiez les pièces manquantes dans Dossiers.",
                 },
               ]);
               setHelpInput("");
@@ -759,25 +702,18 @@ function Accueil({
   firstName,
   progress,
   applications,
-  hasDossier,
   onOpenDossier,
-  onCreateDossier,
-  onClaire,
   onSearch,
   onOpenApp,
 }: {
   firstName: string;
   progress: { received: number; total: number; percent: number; next: string | null };
   applications: FamilyApplication[];
-  hasDossier: boolean;
   onOpenDossier: () => void;
-  onCreateDossier: () => void;
-  onClaire: () => void;
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
-  const visit = nextVisit?.visit;
 
   return (
     <div className="flex flex-col gap-6">
@@ -785,30 +721,13 @@ function Accueil({
         <div className="fs-card p-7">
           <h1 className="fs-serif text-[34px] leading-tight">Bonjour {firstName}</h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            {hasDossier
-              ? "Votre dossier d'admission est prêt pour toutes vos demandes. Complétez les pièces manquantes, modifiez les renseignements, ou créez un nouveau dossier."
-              : "Créez le dossier d'admission avec Claire, votre accompagnatrice. Ensuite vous pourrez le gérer, le modifier, et l'envoyer aux résidences choisies."}
+            Le dossier de votre mère est prêt pour toutes vos demandes. Deux pièces restent à
+            ajouter avant que les résidences puissent l&apos;évaluer.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            {hasDossier ? (
-              <>
-                <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
-                  Gérer le dossier
-                </button>
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateDossier}>
-                  Nouveau dossier
-                </button>
-              </>
-            ) : (
-              <>
-                <button type="button" className="fs-btn fs-btn-primary" onClick={onClaire}>
-                  Créer le dossier avec Claire
-                </button>
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenDossier}>
-                  Remplir le formulaire
-                </button>
-              </>
-            )}
+            <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
+              Compléter le dossier
+            </button>
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
               Chercher une résidence
             </button>
@@ -866,42 +785,32 @@ function Accueil({
       <div className="fs-grid-main grid gap-5 lg:grid-cols-2">
         <div className="fs-card p-6">
           <h3 className="fs-serif text-[19px]">Prochaine visite</h3>
-          {nextVisit && visit ? (
-            <div className="mt-4 flex gap-4">
-              <div
-                className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
-                style={{ background: "var(--fs-subtle)" }}
-              >
-                <span className="fs-label">
-                  {visit.dateLabel.split(" ")[1] || "Visite"}
-                </span>
-                <span className="fs-serif text-[28px] leading-none">
-                  {visit.dateLabel.split(" ")[0] || "—"}
-                </span>
-                {visit.timeLabel ? (
-                  <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
-                    {visit.timeLabel}
-                  </span>
-                ) : null}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold">{nextVisit.residenceName}</p>
-                <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                  {nextVisit.unit} · {nextVisit.city}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
-                    Voir le planning
-                  </button>
-                </div>
+          <div className="mt-4 flex gap-4">
+            <div
+              className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[10px] text-center"
+              style={{ background: "var(--fs-subtle)" }}
+            >
+              <span className="fs-label">SEPTEMBRE</span>
+              <span className="fs-serif text-[28px] leading-none">3</span>
+              <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">14 h 00</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold">
+                {nextVisit?.residenceName ?? "Résidence Les Jardins du Fleuve"}
+              </p>
+              <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
+                {nextVisit ? `${nextVisit.unit} · ${nextVisit.city}` : "3½ avec services · Sainte-Foy"}
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
+                  Déplacer
+                </button>
+                <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
+                  Annuler
+                </button>
               </div>
             </div>
-          ) : (
-            <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">
-              Aucune visite planifiée pour le moment. Les créneaux confirmés par les résidences
-              apparaîtront ici.
-            </p>
-          )}
+          </div>
         </div>
 
         <div className="fs-card p-6">
@@ -1100,730 +1009,6 @@ function Depot({
               Envoyer la demande
             </button>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Profil({
-  mode,
-  step,
-  setStep,
-  claireOpen,
-  setClaireOpen,
-  chatFirst,
-  setChatFirst,
-  claireTyping,
-  chat,
-  chatInput,
-  setChatInput,
-  chatInputRef,
-  chatEndRef,
-  onSend,
-  onSuggest,
-  onDone,
-  onBackToManage,
-}: {
-  mode: "create" | "edit";
-  step: number;
-  setStep: (n: number) => void;
-  claireOpen: boolean;
-  setClaireOpen: (v: boolean) => void;
-  chatFirst: boolean;
-  setChatFirst: (v: boolean) => void;
-  claireTyping: boolean;
-  chat: AssistantTurn[];
-  chatInput: string;
-  setChatInput: (v: string) => void;
-  chatInputRef: RefObject<HTMLInputElement | null>;
-  chatEndRef: RefObject<HTMLDivElement | null>;
-  onSend: () => void;
-  onSuggest: (t: string) => void;
-  onDone: () => void;
-  onBackToManage?: () => void;
-}) {
-  const suggestions = assistantSuggestions(step);
-  const isLast = step >= PROFILE_STEPS.length - 1;
-
-  const clairePanel = (
-    <div
-      className={`fs-card flex overflow-hidden ${chatFirst ? "min-h-[min(72vh,720px)] flex-col" : ""}`}
-    >
-      <div
-        className="flex items-center gap-3 px-4 py-3.5 text-white"
-        style={{ background: "var(--fs-black)" }}
-      >
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold"
-          style={{ background: "var(--fs-black-soft)" }}
-        >
-          C
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold">Claire, votre accompagnatrice</p>
-          <p className="text-[12px] text-[#8E9B96]">
-            {claireTyping
-              ? "Claire écrit…"
-              : "Discussion en direct — elle remplit le dossier avec vous"}
-          </p>
-        </div>
-        {chatFirst ? (
-          <button
-            type="button"
-            className="shrink-0 rounded-[8px] px-2.5 py-1.5 text-[12.5px] font-medium text-white/85 hover:bg-white/10"
-            onClick={() => setChatFirst(false)}
-          >
-            Voir le formulaire
-          </button>
-        ) : null}
-      </div>
-      <div
-        className={`space-y-3 overflow-y-auto p-4 ${chatFirst ? "min-h-0 flex-1" : "max-h-[360px]"}`}
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-      >
-        {chat.map((m, i) => (
-          <div
-            key={`${i}-${m.body.slice(0, 12)}`}
-            className={`flex ${m.from === "family" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className="max-w-[90%] px-3 py-2 text-[14px] leading-relaxed"
-              style={
-                m.from === "family"
-                  ? {
-                      background: "var(--fs-green)",
-                      color: "#fff",
-                      borderRadius: "12px 12px 4px 12px",
-                    }
-                  : {
-                      background: "var(--fs-hover)",
-                      borderRadius: "12px 12px 12px 4px",
-                    }
-              }
-            >
-              {m.body}
-            </div>
-          </div>
-        ))}
-        {claireTyping ? (
-          <div className="flex justify-start">
-            <div
-              className="px-3 py-2 text-[13px] text-[var(--fs-ink-muted)]"
-              style={{ background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }}
-            >
-              Claire écrit…
-            </div>
-          </div>
-        ) : null}
-        <div ref={chatEndRef} />
-      </div>
-      <div className="space-y-2 border-t border-[var(--fs-border)] p-3">
-        <div className="flex flex-wrap gap-1.5">
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              disabled={claireTyping}
-              onClick={() => onSuggest(s)}
-              className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)] disabled:opacity-50"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-        <form
-          className="flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSend();
-          }}
-        >
-          <input
-            ref={chatInputRef}
-            className="fs-input"
-            placeholder="Répondre à Claire…"
-            value={chatInput}
-            disabled={claireTyping}
-            onChange={(e) => setChatInput(e.target.value)}
-            aria-label="Message à Claire"
-          />
-          <button
-            type="submit"
-            className="fs-btn fs-btn-primary"
-            disabled={claireTyping || !chatInput.trim()}
-          >
-            Envoyer
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="fs-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="fs-serif text-[28px]">
-              {mode === "edit" ? "Modifier le dossier" : "Créer le dossier d'admission"}
-            </h1>
-            <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
-              {mode === "edit"
-                ? "Mettez à jour les renseignements du dossier. Les changements s'appliquent à toutes vos demandes."
-                : chatFirst
-                  ? "Discutez avec Claire. Elle pose les questions et remplit le dossier à partir de vos réponses."
-                  : "Les renseignements saisis ici forment le dossier transmis aux résidences. Une fois créé, vous le gérez au même endroit."}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <p className="text-[14px] font-medium text-[var(--fs-ink-muted)]">
-              Étape {step + 1} sur {PROFILE_STEPS.length}
-            </p>
-            {onBackToManage ? (
-              <button type="button" className="fs-btn fs-btn-outline" onClick={onBackToManage}>
-                Retour au dossier
-              </button>
-            ) : null}
-          </div>
-        </div>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
-          <div
-            className="h-full rounded-full bg-[var(--fs-green)]"
-            style={{ width: `${((step + 1) / PROFILE_STEPS.length) * 100}%` }}
-          />
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {PROFILE_STEPS.map((label, i) => {
-            const on = i === step;
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setStep(i)}
-                className="fs-pill"
-                style={{
-                  background: on ? "var(--fs-black)" : "var(--fs-subtle)",
-                  color: on ? "#fff" : "var(--fs-ink-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                {i + 1}. {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {chatFirst && claireOpen ? (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-          <div className="fs-claire-sticky sticky top-[74px] h-fit">{clairePanel}</div>
-          <div className="fs-card p-5">
-            <p className="fs-label">Aperçu du formulaire</p>
-            <p className="mt-2 text-[14px] text-[var(--fs-ink-body)]">
-              Claire met à jour ces champs pendant la conversation. Vous pouvez aussi les
-              modifier directement.
-            </p>
-            <div className="mt-4">
-              <ProfileStepFields step={step} />
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-[var(--fs-border)] pt-4">
-              <button
-                type="button"
-                className="fs-btn fs-btn-outline"
-                onClick={() => setChatFirst(false)}
-              >
-                Remplir moi-même
-              </button>
-              <button type="button" className="fs-btn fs-btn-outline" onClick={onDone}>
-                Enregistrer et reprendre plus tard
-              </button>
-              <button
-                type="button"
-                className="fs-btn fs-btn-primary"
-                onClick={() => {
-                  if (isLast) {
-                    onDone();
-                    return;
-                  }
-                  setStep(Math.min(PROFILE_STEPS.length - 1, step + 1));
-                }}
-              >
-                {isLast
-                  ? mode === "edit"
-                    ? "Enregistrer le dossier"
-                    : "Terminer et gérer le dossier"
-                  : "Étape suivante"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div
-          className={`fs-grid-main grid gap-5 ${claireOpen ? "lg:grid-cols-[1fr_372px]" : ""}`}
-        >
-          <div className="fs-card p-6">
-            <ProfileStepFields step={step} />
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fs-border)] pt-5">
-              <button
-                type="button"
-                className="fs-btn fs-btn-outline"
-                disabled={step === 0}
-                onClick={() => setStep(step - 1)}
-              >
-                Précédent
-              </button>
-              <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{PROFILE_STEPS[step]}</p>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onDone}>
-                  Enregistrer et reprendre plus tard
-                </button>
-                <button
-                  type="button"
-                  className="fs-btn fs-btn-primary"
-                  onClick={() => {
-                    if (!claireOpen) {
-                      setClaireOpen(true);
-                      setChatFirst(true);
-                      return;
-                    }
-                    if (isLast) {
-                      onDone();
-                      return;
-                    }
-                    setStep(Math.min(PROFILE_STEPS.length - 1, step + 1));
-                  }}
-                >
-                  {!claireOpen
-                    ? "Créer le dossier avec Claire"
-                    : isLast
-                      ? mode === "edit"
-                        ? "Enregistrer le dossier"
-                        : "Terminer et gérer le dossier"
-                      : "Suivant"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              className="fs-btn fs-btn-outline self-start"
-              onClick={() => {
-                if (claireOpen) {
-                  setClaireOpen(false);
-                  setChatFirst(false);
-                } else {
-                  setClaireOpen(true);
-                  setChatFirst(true);
-                }
-              }}
-            >
-              {claireOpen ? "Remplir moi-même" : "Créer le dossier avec Claire"}
-            </button>
-            {claireOpen ? (
-              <aside className="fs-claire-sticky sticky top-[74px] h-fit">{clairePanel}</aside>
-            ) : null}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProfileStepFields({ step }: { step: number }) {
-  if (step === 0) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          ["Nom", "Lévesque"],
-          ["Prénom", "Marguerite"],
-          ["Second prénom", ""],
-          ["Prénom d'usage", "Marguerite"],
-          ["Date de naissance", "12 mars 1942"],
-          ["Numéro d'assurance sociale", ""],
-          ["Sexe", "Féminin"],
-          ["Affiliation religieuse (facultatif)", ""],
-        ].map(([label, value]) => (
-          <Field key={label} label={label}>
-            <input className="fs-input" defaultValue={value} />
-          </Field>
-        ))}
-        <div className="sm:col-span-2">
-          <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">État civil</p>
-          <div className="flex flex-wrap gap-4 text-[14.5px]">
-            {["Célibataire", "Mariée", "Veuve", "Divorcée"].map((s) => (
-              <label key={s} className="flex items-center gap-2">
-                <input type="checkbox" defaultChecked={s === "Veuve"} />
-                {s}
-              </label>
-            ))}
-          </div>
-        </div>
-        {[
-          ["Adresse actuelle", "1840 rue des Érables"],
-          ["Ville", "Québec"],
-          ["Province", "Québec"],
-          ["Code postal", "G1V 2M4"],
-        ].map(([label, value]) => (
-          <Field key={label} label={label}>
-            <input className="fs-input" defaultValue={value} />
-          </Field>
-        ))}
-        <div className="sm:col-span-2">
-          <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Lieu actuel</p>
-          <div className="flex flex-wrap gap-4 text-[14.5px]">
-            {["Domicile", "Hôpital", "Résidence avec services", "Autre"].map((s) => (
-              <label key={s} className="flex items-center gap-2">
-                <input type="radio" name="lieu" defaultChecked={s === "Hôpital"} />
-                {s}
-              </label>
-            ))}
-          </div>
-        </div>
-        {[
-          ["Maison funéraire préférée", ""],
-          ["Ville", ""],
-          ["Téléphone", ""],
-        ].map(([label, value]) => (
-          <Field key={label} label={label}>
-            <input className="fs-input" defaultValue={value} />
-          </Field>
-        ))}
-      </div>
-    );
-  }
-
-  if (step === 1) {
-    return (
-      <div className="space-y-6">
-        {["Contact principal", "Personne responsable (garant financier)", "Contact secondaire"].map(
-          (section) => (
-            <div key={section}>
-              <h3 className="fs-serif mb-3 text-[19px]">{section}</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {["Nom", "Lien", "Adresse", "Cellulaire", "Téléphone", "Courriel"].map((f) => (
-                  <Field key={`${section}-${f}`} label={f}>
-                    <input
-                      className="fs-input"
-                      defaultValue={
-                        section === "Contact principal" && f === "Nom"
-                          ? "Sophie Lévesque"
-                          : section === "Contact principal" && f === "Lien"
-                            ? "Fille"
-                            : ""
-                      }
-                    />
-                  </Field>
-                ))}
-              </div>
-            </div>
-          ),
-        )}
-        <div>
-          <h3 className="fs-serif mb-3 text-[19px]">Médecin traitant et pharmacie</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {["Médecin traitant", "Téléphone médecin", "Pharmacie", "Téléphone pharmacie"].map(
-              (f) => (
-                <Field key={f} label={f}>
-                  <input className="fs-input" />
-                </Field>
-              ),
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          "Mandat de protection",
-          "Procuration",
-          "Curatelle",
-          "Directives médicales anticipées",
-          "Nom du mandataire",
-        ].map((f) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" />
-          </Field>
-        ))}
-      </div>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          "Assurance maladie",
-          "Assurance privée",
-          "Numéro de police",
-          "Assurance vie",
-          "Préarrangements funéraires",
-        ].map((f) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue={f === "Assurance maladie" ? "RAMQ" : ""} />
-          </Field>
-        ))}
-      </div>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          ["Revenus mensuels", ""],
-          ["Sources", ""],
-          ["Garant financier", "Sophie Lévesque"],
-          ["Mode de paiement", ""],
-          ["Crédit d'impôt pour maintien à domicile", ""],
-        ].map(([f, v]) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue={v} />
-          </Field>
-        ))}
-      </div>
-    );
-  }
-
-  if (step === 5) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          ["Autonomie", SENIOR.autonomie],
-          ["Mobilité", "Marche avec une canne"],
-          ["Aide — repas", ""],
-          ["Aide — hygiène", ""],
-          ["Aide — habillage", ""],
-          ["Aide — médication", "Oui"],
-          ["Diagnostics", ""],
-          ["Allergies", ""],
-          ["Médication", ""],
-          ["Mémoire et orientation", ""],
-          ["Comportements à signaler", ""],
-          ["Régime alimentaire", ""],
-        ].map(([f, v]) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue={v} />
-          </Field>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <p className="text-[14.5px] text-[var(--fs-ink-body)]">
-        Récapitulatif du dossier de {SENIOR.fullName}. Vérifiez les renseignements avant de
-        signer.
-      </p>
-      <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4">
-        <input type="checkbox" className="mt-1" />
-        <span className="text-[14.5px]">
-          Je consens au partage du dossier avec les résidences choisies.
-        </span>
-      </label>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Signature du demandeur ou du mandataire">
-          <input className="fs-input" placeholder="Nom complet" />
-        </Field>
-        <Field label="Date">
-          <input className="fs-input" defaultValue="28 août 2026" />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function Dossier({
-  seniorName,
-  docs,
-  progress,
-  photoUrl,
-  onPhoto,
-  onUpload,
-  applications,
-  onWithdrawAccess,
-  onEdit,
-  onCreateNew,
-}: {
-  seniorName: string;
-  docs: import("@/data/family-space").FamilyDoc[];
-  progress: { received: number; total: number; percent: number; next: string | null };
-  photoUrl: string | null;
-  onPhoto: (f: File | null) => void;
-  onUpload: (id: string, file?: File | null) => void;
-  applications: FamilyApplication[];
-  onWithdrawAccess: (name: string) => void;
-  onEdit: () => void;
-  onCreateNew: () => void;
-}) {
-  return (
-    <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-      <div className="flex flex-col gap-5">
-        <div className="fs-card p-6">
-          <div className="flex flex-wrap gap-5">
-            <label className="cursor-pointer">
-              <div
-                className="overflow-hidden rounded-lg bg-[var(--fs-subtle)]"
-                style={{ width: 132, height: 158 }}
-              >
-                {photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-3 text-center text-[12px] text-[var(--fs-ink-faint)]">
-                    Ajouter une photo
-                  </div>
-                )}
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => onPhoto(e.target.files?.[0] ?? null)}
-              />
-              <p className="mt-2 max-w-[132px] text-[12px] text-[var(--fs-ink-faint)]">
-                Visible par les résidences
-              </p>
-            </label>
-            <div className="min-w-0 flex-1">
-              <h1 className="fs-serif text-[28px] leading-tight">{seniorName}</h1>
-              <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                {SENIOR.age} ans · {SENIOR.city} · dossier créé le {SENIOR.dossierCreated}
-              </p>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {[
-                  ["Niveau d'autonomie", SENIOR.autonomie],
-                  ["Services souhaités", SENIOR.services],
-                  ["Budget mensuel", SENIOR.budget],
-                  ["Emménagement souhaité", SENIOR.emmenagement],
-                ].map(([l, v]) => (
-                  <div key={l}>
-                    <p className="fs-label">{l}</p>
-                    <p className="mt-1 text-[15px] font-medium">{v}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onEdit}>
-                  Modifier le dossier
-                </button>
-                <button type="button" className="fs-btn fs-btn-outline" onClick={onCreateNew}>
-                  Nouveau dossier
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="fs-card p-6">
-          <h2 className="fs-serif text-[22px]">Documents</h2>
-          <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-            {progress.received} pièces sur {progress.total} · les mêmes pièces servent à toutes
-            vos demandes
-          </p>
-          <ul className="mt-5 divide-y divide-[var(--fs-border-faint)]">
-            {docs.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
-                <div className="flex items-start gap-3">
-                  <span
-                    className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{
-                      background:
-                        d.status === "reçu" ? "var(--fs-success)" : "var(--fs-terra)",
-                    }}
-                  />
-                  <div>
-                    <p className="font-semibold">{d.name}</p>
-                    <p className="text-[13px] text-[var(--fs-ink-muted)]">{d.detail}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="text-[13.5px] font-semibold"
-                    style={{
-                      color: d.status === "reçu" ? "var(--fs-success)" : "var(--fs-terra)",
-                    }}
-                  >
-                    {d.status === "reçu" ? "Reçu" : "En attente"}
-                  </span>
-                  <label className="fs-btn fs-btn-outline cursor-pointer">
-                    {d.status === "reçu" ? "Remplacer" : "Téléverser"}
-                    <input
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp,image/*,application/pdf"
-                      onChange={(e) => onUpload(d.id, e.target.files?.[0] ?? null)}
-                    />
-                  </label>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-5">
-        <div className="fs-card p-6 text-white" style={{ background: "var(--fs-black)" }}>
-          <p className="fs-label" style={{ color: "#8E9B96" }}>
-            Avancement du dossier
-          </p>
-          <p className="fs-serif mt-3 text-[44px] leading-none">{progress.percent} %</p>
-          <div
-            className="mt-4 h-2.5 overflow-hidden rounded-full"
-            style={{ background: "rgba(255,255,255,0.12)" }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${progress.percent}%`, background: "var(--fs-green-light)" }}
-            />
-          </div>
-          <p className="mt-4 text-[14px] text-[#C5D2CD]">
-            {progress.next
-              ? `Prochaine pièce à fournir : ${progress.next}.`
-              : "Toutes les pièces exigées sont reçues."}
-          </p>
-        </div>
-
-        <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Où ai-je appliqué ?</h3>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-            Voici les résidences auxquelles vous avez transmis le dossier. Vous pouvez retirer
-            une demande en tout temps.
-          </p>
-          <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
-            {applications.length === 0 ? (
-              <li className="py-3 text-[14.5px] text-[var(--fs-ink-muted)]">
-                Aucune demande envoyée pour le moment.
-              </li>
-            ) : (
-              applications.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <span className="block text-[14.5px] font-medium">{a.residenceName}</span>
-                    <span className="mt-0.5 block text-[13px] text-[var(--fs-ink-muted)]">
-                      {a.city} · {a.status}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="shrink-0 text-[13.5px] font-semibold text-[var(--fs-ink-muted)] hover:text-[var(--fs-terra)]"
-                    onClick={() => onWithdrawAccess(a.residenceName)}
-                  >
-                    Retirer la demande
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
         </div>
       </div>
     </div>

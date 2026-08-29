@@ -58,8 +58,6 @@ export default function MedicalProfilePage() {
     addItem,
     updateItem,
     removeItem,
-    loadDemo,
-    resetData,
   } = useFamilyData();
   const [active, setActive] = useState(data.sections[0]?.id ?? "general");
   const [draft, setDraft] = useState("");
@@ -147,12 +145,6 @@ export default function MedicalProfilePage() {
         <div className="flex flex-wrap justify-end gap-1.5">
           <Button size="sm" variant="soft" onClick={() => setEditingPerson(true)}>
             <UserRound size={14} /> Edit person
-          </Button>
-          <Button size="sm" variant="ghost" onClick={loadDemo}>
-            Sample
-          </Button>
-          <Button size="sm" variant="ghost" onClick={resetData}>
-            Reset
           </Button>
         </div>
       </div>

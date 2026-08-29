@@ -202,8 +202,8 @@ function GetStartedInner() {
       <header className="gs-header">
         <div className="gs-header-inner">
           <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
-          <p className="text-[14px] text-white/75">
-            Vous avez déjà un compte ?{" "}
+          <p className="gs-header-cta text-[14px] text-white/75">
+            <span className="gs-header-cta-lead">Vous avez déjà un compte ? </span>
             <Link href="/sign-in" className="font-semibold no-underline" style={{ color: "var(--gs-green-light)" }}>
               Se connecter
             </Link>

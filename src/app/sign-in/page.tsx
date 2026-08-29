@@ -106,7 +106,7 @@ function SignInForm() {
             <span className="si-brand-name">HavenApply</span>
           </Link>
           <p className="si-header-cta">
-            Pas encore de compte ?{" "}
+            <span className="si-header-cta-lead">Pas encore de compte ? </span>
             <Link href="/get-started">Créer un compte</Link>
           </p>
         </div>

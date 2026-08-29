@@ -15,6 +15,8 @@
   color: var(--si-ink);
   background: var(--si-canvas);
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -25,17 +27,19 @@
 .si-header {
   background: var(--si-black);
   color: #fff;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .si-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  height: 58px;
+  gap: 12px;
+  min-height: 58px;
   max-width: 1060px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 10px 40px;
 }
 
 .si-brand {
@@ -44,6 +48,8 @@
   gap: 10px;
   text-decoration: none;
   color: #fff;
+  min-height: 44px;
+  flex-shrink: 0;
 }
 
 .si-brand-mark {
@@ -64,13 +70,19 @@
 .si-header-cta {
   margin: 0;
   font-size: 14px;
+  line-height: 1.35;
   color: rgba(255, 255, 255, 0.75);
+  text-align: right;
 }
 
 .si-header-cta a {
   font-weight: 600;
   color: var(--si-green-light);
   text-decoration: none;
+  display: inline-block;
+  padding: 8px 0;
+  min-height: 44px;
+  line-height: 28px;
 }
 
 .si-header-cta a:hover {
@@ -81,26 +93,13 @@
   max-width: 880px;
   margin: 0 auto;
   padding: 64px 40px 72px;
+  padding-left: max(40px, env(safe-area-inset-left));
+  padding-right: max(40px, env(safe-area-inset-right));
+  padding-bottom: max(72px, env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: 56px;
   align-items: start;
-}
-
-@media (max-width: 900px) {
-  .si-main {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 40px 24px 56px;
-  }
-
-  .si-form-col {
-    order: -1;
-  }
-
-  .si-header-inner {
-    padding: 0 24px;
-  }
 }
 
 .si-eyebrow {
@@ -115,10 +114,11 @@
 .si-h1 {
   margin: 14px 0 0;
   font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
-  font-size: 36px;
+  font-size: clamp(28px, 5vw, 36px);
   font-weight: 600;
   line-height: 1.15;
   color: var(--si-ink);
+  text-wrap: balance;
 }
 
 .si-lead {
@@ -168,12 +168,14 @@
   border: 1px solid var(--si-border);
   border-radius: 14px;
   padding: 30px 30px 32px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .si-h2 {
   margin: 0;
   font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
-  font-size: 22px;
+  font-size: clamp(20px, 4vw, 22px);
   font-weight: 600;
   line-height: 1.2;
   color: var(--si-ink);
@@ -227,6 +229,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 7px;
+  flex-wrap: wrap;
 }
 
 .si-label-row .si-label {
@@ -239,6 +242,10 @@
   color: var(--si-green);
   text-decoration: none;
   white-space: nowrap;
+  padding: 4px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .si-forgot:hover {
@@ -248,15 +255,19 @@
 .si-input {
   display: block;
   width: 100%;
+  max-width: 100%;
   background: var(--si-subtle);
   border: 1px solid var(--si-border);
   border-radius: 7px;
-  padding: 11px 13px;
-  font-size: 15.5px;
+  padding: 12px 13px;
+  /* 16px avoids iOS Safari auto-zoom on focus */
+  font-size: 16px;
   line-height: 1.4;
   color: var(--si-ink);
   outline: none;
   transition: border-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .si-input::placeholder {
@@ -270,25 +281,30 @@
 .si-remember {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   font-size: 14.5px;
   line-height: 1.45;
   color: var(--si-ink-body);
   cursor: pointer;
+  min-height: 44px;
+  padding: 4px 0;
 }
 
 .si-remember input {
-  margin-top: 2px;
-  width: 16px;
-  height: 16px;
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   accent-color: var(--si-green);
 }
 
 .si-submit {
-  display: block;
+  display: flex;
   width: 100%;
+  min-height: 48px;
   margin-top: 4px;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 8px;
   background: var(--si-green);
@@ -298,6 +314,7 @@
   padding: 13px 16px;
   cursor: pointer;
   transition: background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .si-submit:hover:not(:disabled) {
@@ -325,6 +342,10 @@
   font-weight: 600;
   color: var(--si-green);
   text-decoration: none;
+  display: inline-block;
+  padding: 6px 0;
+  min-height: 44px;
+  line-height: 32px;
 }
 
 .si-card-foot-cta a:hover {
@@ -336,4 +357,103 @@
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--si-ink-muted);
+}
+
+/* Tablet and below: single column, form first */
+@media (max-width: 900px) {
+  .si-main {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 40px 24px 56px;
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+    padding-bottom: max(56px, env(safe-area-inset-bottom));
+  }
+
+  .si-form-col {
+    order: -1;
+  }
+
+  .si-header-inner {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .si-card {
+    padding: 26px 24px 28px;
+  }
+}
+
+/* Phones */
+@media (max-width: 640px) {
+  .si-header-inner {
+    padding: 8px 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .si-brand-name {
+    font-size: 17px;
+  }
+
+  .si-header-cta-lead {
+    display: none;
+  }
+
+  .si-header-cta {
+    font-size: 13.5px;
+  }
+
+  .si-main {
+    gap: 28px;
+    padding: 28px 16px 48px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+  }
+
+  .si-card {
+    border-radius: 12px;
+    padding: 22px 18px 24px;
+  }
+
+  .si-points {
+    margin-top: 22px;
+    gap: 12px;
+  }
+
+  .si-privacy {
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+
+  .si-lead,
+  .si-points li {
+    font-size: 15px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .si-brand-name {
+    font-size: 16px;
+  }
+
+  .si-brand-mark {
+    width: 28px;
+    height: 28px;
+  }
+
+  .si-main {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .si-card {
+    padding: 18px 14px 22px;
+  }
+
+  .si-h1 {
+    font-size: 26px;
+  }
 }

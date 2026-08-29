@@ -687,7 +687,9 @@ export function PublicHomePage() {
               { href: "#comment", label: "Comment ça marche" },
               { href: "#residences", label: "Pour les résidences" },
               { href: "#questions", label: "Questions" },
-              { href: "/family/privacy", label: "Confidentialité" },
+              { href: "/confidentialite", label: "Confidentialité" },
+              { href: "/avis-de-collecte", label: "Avis de collecte" },
+              { href: "/conditions", label: "Conditions" },
             ].map((l) => (
               <a
                 key={l.href}

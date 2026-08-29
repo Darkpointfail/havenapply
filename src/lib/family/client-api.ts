@@ -106,7 +106,40 @@ export async function apiRequestDeletion(scope: "profile" | "account", reason?: 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ scope, reason }),
   });
-  return parse<{ bundle: FamilyBundle }>(res);
+  return parse<{ bundle: FamilyBundle; executed: boolean }>(res);
+}
+
+export async function apiExecuteDeletion(input: {
+  scope: "profile" | "account";
+  reason?: string;
+  confirmPhrase: string;
+}) {
+  const res = await fetch("/api/family/deletion", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      scope: input.scope,
+      reason: input.reason,
+      confirmExecute: true,
+      confirmPhrase: input.confirmPhrase,
+    }),
+  });
+  return parse<{ executed: boolean; scope: string; message: string }>(res);
+}
+
+export async function apiFetchRightsLog() {
+  const res = await fetch("/api/family/rights", {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  return parse<{
+    logs: { id: string; operation: string; detail: string; recordedAt: string }[];
+  }>(res);
+}
+
+export function familyExportUrl() {
+  return "/api/family/export";
 }
 
 export async function apiUploadDocument(input: {

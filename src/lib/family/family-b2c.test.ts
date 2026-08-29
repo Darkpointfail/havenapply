@@ -238,6 +238,43 @@ describe("local family store persistence", () => {
     expect(bundle?.account.deletionRequest?.scope).toBe("account");
   });
 
+  it("exports data and executes real profile deletion", async () => {
+    await ensureFamilyForUser(userA);
+    await updateSeniorProfile(userA.id, null, {
+      firstName: "Jeanne",
+      lastName: "Côté",
+      city: "Québec",
+    });
+    const bytes = Buffer.from("%PDF-1.4");
+    await addDocument({
+      ownerId: userA.id,
+      category: "identification",
+      originalFilename: "id.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: bytes.length,
+      bytes,
+    });
+
+    const { buildFamilyExport, executeAccountDeletion, getDocumentFile: getDoc } = await import(
+      "@/lib/family/local-store"
+    );
+    const exported = await buildFamilyExport(userA.id);
+    expect(exported?.seniors[0]?.profile.firstName).toBe("Jeanne");
+    expect(exported?.documents.length).toBe(1);
+    expect(exported?.rightsLog.some((l) => l.operation === "export")).toBe(true);
+
+    const executed = await executeAccountDeletion(userA.id, { scope: "profile" });
+    expect(executed?.ok).toBe(true);
+    const after = await ensureFamilyForUser(userA);
+    expect(after.seniors).toEqual([]);
+    expect(after.documents).toEqual([]);
+    expect(after.account.deletionRequest?.status).toBe("completed");
+    // document bytes gone
+    if (exported?.documents[0]) {
+      expect(await getDoc(userA.id, exported.documents[0].id)).toBeNull();
+    }
+  });
+
   it("rejects empty invalid file content size at store boundary via validation helper", () => {
     expect(
       validateUploadMeta({

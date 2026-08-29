@@ -1,28 +1,41 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ImagePlus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { useState } from "react";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import type { CommunityProfile } from "@/lib/community-portal";
-import { cn, formatCurrency } from "@/lib/utils";
-import { useT } from "@/lib/i18n/locale";
+import { cn } from "@/lib/utils";
+import "./etablissement-profile.css";
 
 const CARE_OPTIONS = [
-  "Independent Living",
-  "Assisted Living",
-  "Memory Care",
-  "Skilled Nursing",
-  "Respite Care",
-  "Rehabilitation",
+  "Vie autonome",
+  "Assistance à la vie quotidienne",
+  "Soins de mémoire",
+  "Soins infirmiers",
+  "Hébergement temporaire / répite",
+  "Réadaptation",
 ] as const;
-
-const inputClass =
-  "mt-1.5 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-brand disabled:opacity-60";
 
 function normalizeCare(s: string) {
   return s.trim().toLowerCase();
+}
+
+function formatCad(amount: number | null | undefined) {
+  if (amount == null || Number.isNaN(amount)) return "Sur demande";
+  return new Intl.NumberFormat("fr-CA", {
+    style: "currency",
+    currency: "CAD",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function Switch({ on }: { on: boolean }) {
+  return (
+    <span className="ep-switch" data-on={on ? "true" : "false"} aria-hidden>
+      <span />
+    </span>
+  );
 }
 
 function Section({
@@ -35,10 +48,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>
-        {hint && <p className="mt-1 text-sm text-ink-muted">{hint}</p>}
+    <section className="ep-section">
+      <div className="ep-section-head">
+        <h2>{title}</h2>
+        {hint ? <p>{hint}</p> : null}
       </div>
       {children}
     </section>
@@ -46,37 +59,40 @@ function Section({
 }
 
 export function CommunityProfileEditor() {
-
-  const t = useT();  const { ready, workspace, can, updateProfile } = useCommunityPortal();
+  const { ready, workspace, can, updateProfile } = useCommunityPortal();
   const [draft, setDraft] = useState<CommunityProfile | null>(null);
+  const [syncedKey, setSyncedKey] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
 
-  useEffect(() => {
-    if (workspace) {
-      const profile = { ...workspace.profile };
-      profile.acceptingApplications = profile.acceptingApplications !== false;
-      profile.admissionFlags = profile.admissionFlags || {
-        medicaid: false,
-        privatePay: true,
-        pets: false,
-        smoking: "No smoking",
-        minAge: 65,
-        notes: "",
-      };
-      profile.photos = profile.photos?.length ? [...profile.photos] : [];
-      profile.roomTypes = (profile.roomTypes || []).map((r) => ({
-        ...r,
-        availableUnits: r.availableUnits ?? 0,
-      }));
-      setDraft(profile);
-    }
-  }, [workspace]);
+  const workspaceKey = workspace
+    ? `${workspace.residenceId}:${workspace.updatedAt}`
+    : null;
+
+  if (workspace && workspaceKey !== syncedKey) {
+    const profile = { ...workspace.profile };
+    profile.acceptingApplications = profile.acceptingApplications !== false;
+    profile.admissionFlags = profile.admissionFlags || {
+      medicaid: false,
+      privatePay: true,
+      pets: false,
+      smoking: "Non-fumeur",
+      minAge: 65,
+      notes: "",
+    };
+    profile.photos = profile.photos?.length ? [...profile.photos] : [];
+    profile.roomTypes = (profile.roomTypes || []).map((r) => ({
+      ...r,
+      availableUnits: r.availableUnits ?? 0,
+    }));
+    setSyncedKey(workspaceKey);
+    setDraft(profile);
+  }
 
   if (!ready || !workspace || !draft) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-ink-muted">
-        {t("Loading community…")}
+      <div className="ep">
+        <div className="ep-loading">Chargement du profil…</div>
       </div>
     );
   }
@@ -127,247 +143,224 @@ export function CommunityProfileEditor() {
   };
 
   return (
-    <div className="min-h-full bg-bg">
-      <div className="mx-auto max-w-[800px] space-y-12 px-5 py-8 md:px-8 md:py-12">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-ink-muted">Community</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">{draft.name}</h1>
-            <p className="mt-2 max-w-xl text-sm text-ink-muted">
-              {t("Photos, room pricing, care services, and admission rules, what families see when")}
-              they apply.
-            </p>
-          </div>
-          {editable && (
-            <Button type="button" size="sm" onClick={save}>
-              {saved ? "Saved" : "Save changes"}
-            </Button>
-          )}
+    <div className="ep">
+      <header className="ep-top">
+        <div className="ep-top-inner">
+          <Link href="/community/dashboard" className="ep-back">
+            ← Retour à la console
+          </Link>
+          {editable ? (
+            <div className="ep-top-actions">
+              <button type="button" className="ep-save" onClick={save}>
+                {saved ? "Enregistré" : "Enregistrer"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      <main className="ep-main">
+        <header className="ep-intro">
+          <p className="ep-eyebrow">Page de l&apos;établissement</p>
+          <h1>{draft.name || "Votre résidence"}</h1>
+          <p>
+            Ces renseignements apparaissent sur votre fiche publique. Les familles les voient
+            avant de déposer une demande.
+          </p>
         </header>
 
-        {/* New applications open/close */}
         <Section
-          title={t("New applications")}
-          hint={t(
-            "Open or close intake for new family applications. Existing dossiers stay active.",
-          )}
+          title="Nouvelles demandes"
+          hint="Ouvrez ou fermez l'intake. Les dossiers déjà reçus restent actifs."
         >
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-            <label className="flex items-center justify-between gap-3 rounded-xl bg-bg-soft/80 px-3 py-3 text-sm">
-              <div>
-                <p className="font-medium text-ink">
+          <div className="ep-card">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={draft.acceptingApplications}
+              disabled={!canToggleIntake}
+              className="ep-row-switch"
+              onClick={() => {
+                const next = !draft.acceptingApplications;
+                patch({ acceptingApplications: next });
+                updateProfile({ ...draft, acceptingApplications: next });
+              }}
+            >
+              <span className="ep-row-copy">
+                <strong>
                   {draft.acceptingApplications
-                    ? t("Accepting new applications")
-                    : t("Not accepting new applications")}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-muted">
+                    ? "Demandes ouvertes"
+                    : "Demandes fermées"}
+                </strong>
+                <span>
                   {draft.acceptingApplications
-                    ? t("Families can send new dossiers to your community.")
-                    : t("Families see that intake is closed and cannot submit.")}
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={draft.acceptingApplications}
-                disabled={!canToggleIntake}
-                onClick={() => {
-                  const next = !draft.acceptingApplications;
-                  patch({ acceptingApplications: next });
-                  // Persist intake toggle immediately so console + family apply stay in sync
-                  updateProfile({ ...draft, acceptingApplications: next });
-                }}
-                className={cn(
-                  "relative h-7 w-12 shrink-0 rounded-full transition",
-                  draft.acceptingApplications ? "bg-brand" : "bg-line-strong",
-                  !canToggleIntake && "opacity-50",
-                )}
-              >
-                <span
-                  className={cn(
-                    "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition",
-                    draft.acceptingApplications ? "left-5" : "left-0.5",
-                  )}
-                />
-              </button>
-            </label>
+                    ? "Les familles peuvent envoyer de nouveaux dossiers."
+                    : "Les familles voient que l'intake est fermé."}
+                </span>
+              </span>
+              <Switch on={draft.acceptingApplications} />
+            </button>
           </div>
         </Section>
 
-        {/* 1. Photos */}
         <Section
-          title={t("Photos")}
-          hint="Show the building, common areas, and rooms. The first photo is your cover image."
+          title="Photos"
+          hint="Montrez la façade, les espaces communs et les chambres. La première photo est la couverture."
         >
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
-            <div className="relative aspect-[16/9] bg-bg-soft">
+          <div className="ep-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div className="ep-cover">
               {cover ? (
                 <Image
                   src={cover}
-                  alt={`${draft.name} cover`}
+                  alt={`Couverture · ${draft.name}`}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 800px) 100vw, 800px"
-                  unoptimized={cover.startsWith("http") === false}
+                  sizes="(max-width: 880px) 100vw, 880px"
+                  unoptimized={!cover.startsWith("http")}
                 />
               ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-faint">
-                  <ImagePlus size={28} />
-                  <p className="text-sm">No cover photo yet</p>
-                </div>
+                <div className="ep-cover-empty">Aucune photo de couverture</div>
               )}
             </div>
 
-            {draft.photos.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
+            {draft.photos.length > 0 ? (
+              <div className="ep-thumbs">
                 {draft.photos.map((src, index) => (
-                  <div
-                    key={`${src}-${index}`}
-                    className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-bg-soft"
-                  >
+                  <div key={`${src}-${index}`} className="ep-thumb">
                     <Image
                       src={src}
                       alt={`Photo ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="200px"
-                      unoptimized={src.startsWith("http") === false}
+                      sizes="160px"
+                      unoptimized={!src.startsWith("http")}
                     />
-                    {index === 0 && (
-                      <span className="absolute left-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-medium text-white">
-                        Cover
-                      </span>
-                    )}
-                    {can("editProfile") && (
-                      <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-gradient-to-t from-ink/70 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
-                        {index !== 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setCover(index)}
-                            className="flex-1 rounded-lg bg-white/95 px-2 py-1 text-[11px] font-medium text-ink"
-                          >
-                            {t("Set cover")}
+                    {index === 0 ? (
+                      <span className="ep-thumb-badge">Couverture</span>
+                    ) : null}
+                    {can("editProfile") ? (
+                      <div className="ep-thumb-actions">
+                        {index !== 0 ? (
+                          <button type="button" onClick={() => setCover(index)}>
+                            Couverture
                           </button>
-                        )}
+                        ) : null}
                         <button
                           type="button"
+                          className="danger"
                           onClick={() => removePhoto(index)}
-                          className="rounded-lg bg-white/95 p-1.5 text-danger"
-                          aria-label={t("Remove photo")}
+                          aria-label="Retirer la photo"
                         >
-                          <Trash2 size={14} />
+                          Retirer
                         </button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
 
-            {can("editProfile") && (
-              <div className="flex flex-col gap-2 border-t border-line p-3 sm:flex-row">
+            {can("editProfile") ? (
+              <div className="ep-photo-add">
                 <input
-                  className={cn(inputClass, "mt-0 flex-1")}
+                  className="ep-input"
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder={t("Paste image URL…")}
+                  placeholder="Coller l'URL d'une image…"
                 />
-                <Button
+                <button
                   type="button"
-                  size="sm"
-                  variant="secondary"
+                  className="ep-add-btn"
                   onClick={addPhoto}
                   disabled={!photoUrl.trim()}
+                  style={{ marginTop: 0, opacity: photoUrl.trim() ? 1 : 0.55 }}
                 >
-                  <ImagePlus size={14} />
-                  {t("Add photo")}
-                </Button>
+                  Ajouter une photo
+                </button>
               </div>
-            )}
+            ) : null}
           </div>
         </Section>
 
-        {/* 2. About */}
-        <Section title={t("About")} hint="A short description families read first.">
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-            <label className="block text-sm">
-              Description
+        <Section title="Présentation" hint="Court texte lu en premier par les familles.">
+          <div className="ep-card ep-stack">
+            <label>
+              <span className="ep-label">Description</span>
               <textarea
+                className="ep-textarea"
                 rows={4}
-                className={inputClass}
                 value={draft.description}
                 disabled={!can("editProfile")}
                 onChange={(e) => patch({ description: e.target.value })}
-                placeholder={t("Describe your community, atmosphere, and who you serve…")}
+                placeholder="Décrivez l'ambiance, les soins et le type de résidents accueillis…"
               />
             </label>
           </div>
         </Section>
 
-        {/* 3. Contact & location */}
-        <Section title={t("Contact & location")}>
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
-            <label className="block text-sm">
-              {t("Community name")}
+        <Section title="Coordonnées et emplacement">
+          <div className="ep-card ep-stack">
+            <label>
+              <span className="ep-label">Nom de l&apos;établissement</span>
               <input
-                className={inputClass}
+                className="ep-input"
                 value={draft.name}
                 disabled={!can("editProfile")}
                 onChange={(e) => patch({ name: e.target.value })}
               />
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm sm:col-span-2">
-                {t("Street address")}
+            <div className="ep-grid-2">
+              <label className="ep-span-2">
+                <span className="ep-label">Adresse</span>
                 <input
-                  className={inputClass}
+                  className="ep-input"
                   value={draft.address}
                   disabled={!can("editProfile")}
                   onChange={(e) => patch({ address: e.target.value })}
                 />
               </label>
-              <label className="block text-sm">
-                {t("City")}
+              <label>
+                <span className="ep-label">Ville</span>
                 <input
-                  className={inputClass}
+                  className="ep-input"
                   value={draft.city}
                   disabled={!can("editProfile")}
                   onChange={(e) => patch({ city: e.target.value })}
                 />
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block text-sm">
-                  State
+              <div className="ep-grid-2" style={{ gap: 10 }}>
+                <label>
+                  <span className="ep-label">Province</span>
                   <input
-                    className={inputClass}
+                    className="ep-input"
                     value={draft.state}
                     disabled={!can("editProfile")}
                     onChange={(e) => patch({ state: e.target.value })}
                   />
                 </label>
-                <label className="block text-sm">
-                  ZIP
+                <label>
+                  <span className="ep-label">Code postal</span>
                   <input
-                    className={inputClass}
+                    className="ep-input"
                     value={draft.zip}
                     disabled={!can("editProfile")}
                     onChange={(e) => patch({ zip: e.target.value })}
                   />
                 </label>
               </div>
-              <label className="block text-sm">
-                {t("Phone")}
+              <label>
+                <span className="ep-label">Téléphone</span>
                 <input
-                  className={inputClass}
+                  className="ep-input"
                   value={draft.phone}
                   disabled={!can("editProfile")}
                   onChange={(e) => patch({ phone: e.target.value })}
                 />
               </label>
-              <label className="block text-sm">
-                {t("Admissions email")}
+              <label>
+                <span className="ep-label">Courriel des admissions</span>
                 <input
-                  className={inputClass}
+                  className="ep-input"
                   value={draft.email}
                   disabled={!can("editProfile")}
                   onChange={(e) => patch({ email: e.target.value })}
@@ -377,55 +370,51 @@ export function CommunityProfileEditor() {
           </div>
         </Section>
 
-        {/* 4. Rooms & pricing */}
         <Section
-          title={t("Rooms & pricing")}
-          hint="Monthly rates families see on your listing. Keep units simple, not a bed board."
+          title="Chambres et tarifs"
+          hint="Tarifs mensuels indicatifs visibles sur votre fiche."
         >
-          <div className="space-y-3">
-            {draft.roomTypes.length === 0 && (
-              <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-faint">
-                {t("No room types yet. Add your first rate card below.")}
-              </p>
-            )}
+          <div>
+            {draft.roomTypes.length === 0 ? (
+              <div className="ep-card" style={{ textAlign: "center", color: "var(--ep-ink-faint)" }}>
+                Aucun type de chambre. Ajoutez votre première grille tarifaire.
+              </div>
+            ) : null}
+
             {draft.roomTypes.map((room, index) => (
-              <div
-                key={`${room.name}-${index}`}
-                className="rounded-2xl border border-line bg-surface p-5 shadow-xs"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <label className="block text-sm">
-                      {t("Room type")}
-                      <input
-                        className={cn(inputClass, "font-medium")}
-                        value={room.name}
-                        disabled={!can("editPricing")}
-                        onChange={(e) => {
-                          const roomTypes = [...draft.roomTypes];
-                          roomTypes[index] = { ...room, name: e.target.value };
-                          patch({ roomTypes });
-                        }}
-                        placeholder={t("Studio, One bedroom, Memory care suite…")}
-                      />
-                    </label>
-                  </div>
-                  <div className="rounded-xl bg-brand-soft/50 px-3 py-2 text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-strong">
-                      From
-                    </p>
-                    <p className="text-lg font-semibold tabular-nums text-ink">
-                      {room.price != null ? formatCurrency(room.price) : ","}
-                      <span className="text-sm font-normal text-ink-muted"> / mo</span>
+              <div key={`${room.name}-${index}`} className="ep-room">
+                <div
+                  className="ep-grid-2"
+                  style={{ alignItems: "start", marginBottom: 12 }}
+                >
+                  <label>
+                    <span className="ep-label">Type de chambre</span>
+                    <input
+                      className={cn("ep-input")}
+                      value={room.name}
+                      disabled={!can("editPricing")}
+                      onChange={(e) => {
+                        const roomTypes = [...draft.roomTypes];
+                        roomTypes[index] = { ...room, name: e.target.value };
+                        patch({ roomTypes });
+                      }}
+                      placeholder="Studio, 1½, suite mémoire…"
+                    />
+                  </label>
+                  <div className="ep-room-price">
+                    <p className="label">À partir de</p>
+                    <p className="value">
+                      {formatCad(room.price)}
+                      <span> / mois</span>
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <label className="block text-sm text-ink-muted">
-                    Monthly price (USD)
+                <div className="ep-grid-2">
+                  <label>
+                    <span className="ep-label">Prix mensuel (CAD)</span>
                     <input
                       type="number"
-                      className={inputClass}
+                      className="ep-input"
                       value={room.price ?? ""}
                       disabled={!can("editPricing")}
                       onChange={(e) => {
@@ -438,11 +427,11 @@ export function CommunityProfileEditor() {
                       }}
                     />
                   </label>
-                  <label className="block text-sm text-ink-muted">
-                    {t("Available units")}
+                  <label>
+                    <span className="ep-label">Unités disponibles</span>
                     <input
                       type="number"
-                      className={inputClass}
+                      className="ep-input"
                       value={room.availableUnits ?? 0}
                       disabled={!can("editPricing")}
                       onChange={(e) => {
@@ -456,10 +445,10 @@ export function CommunityProfileEditor() {
                     />
                   </label>
                 </div>
-                <label className="mt-3 block text-sm text-ink-muted">
-                  {t("Notes")}
+                <label style={{ display: "block", marginTop: 12 }}>
+                  <span className="ep-label">Notes</span>
                   <input
-                    className={inputClass}
+                    className="ep-input"
                     value={room.notes}
                     disabled={!can("editPricing")}
                     onChange={(e) => {
@@ -467,29 +456,29 @@ export function CommunityProfileEditor() {
                       roomTypes[index] = { ...room, notes: e.target.value };
                       patch({ roomTypes });
                     }}
-                    placeholder={t("Includes meals, second person fee, etc.")}
+                    placeholder="Repas inclus, frais 2e personne, etc."
                   />
                 </label>
-                {can("editPricing") && (
+                {can("editPricing") ? (
                   <button
                     type="button"
-                    className="mt-3 text-xs font-medium text-danger hover:underline"
+                    className="ep-link-btn"
                     onClick={() =>
                       patch({
                         roomTypes: draft.roomTypes.filter((_, i) => i !== index),
                       })
                     }
                   >
-                    {t("Remove room type")}
+                    Retirer ce type
                   </button>
-                )}
+                ) : null}
               </div>
             ))}
-            {can("editPricing") && (
-              <Button
+
+            {can("editPricing") ? (
+              <button
                 type="button"
-                variant="secondary"
-                size="sm"
+                className="ep-add-btn"
                 onClick={() =>
                   patch({
                     roomTypes: [
@@ -504,31 +493,26 @@ export function CommunityProfileEditor() {
                   })
                 }
               >
-                {t("Add room type")}
-              </Button>
-            )}
+                Ajouter un type de chambre
+              </button>
+            ) : null}
           </div>
         </Section>
 
-        {/* 5. Care services */}
-        <Section title={t("Care services")} hint="What levels of care you offer.">
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-            <div className="grid gap-1 sm:grid-cols-2">
+        <Section title="Niveaux de soins" hint="Ce que vous offrez aux familles.">
+          <div className="ep-card">
+            <div className="ep-care-list">
               {CARE_OPTIONS.map((opt) => {
                 const checked = draft.careTypes.some(
                   (c) => normalizeCare(c) === normalizeCare(opt),
                 );
                 return (
-                  <label
-                    key={opt}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-2.5 text-sm hover:bg-bg-soft"
-                  >
+                  <label key={opt} className="ep-care-item">
                     <input
                       type="checkbox"
                       checked={checked}
                       disabled={!can("editProfile")}
                       onChange={() => toggleCare(opt)}
-                      className="h-4 w-4 rounded border-line text-brand"
                     />
                     {opt}
                   </label>
@@ -538,12 +522,14 @@ export function CommunityProfileEditor() {
           </div>
         </Section>
 
-        {/* 6. Amenities */}
-        <Section title={t("Amenities")} hint="One amenity per line, shown on your public listing.">
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
+        <Section
+          title="Services et commodités"
+          hint="Une ligne par élément, affiché sur votre fiche."
+        >
+          <div className="ep-card">
             <textarea
+              className="ep-textarea"
               rows={5}
-              className={inputClass}
               value={draft.amenities.join("\n")}
               disabled={!can("editProfile")}
               onChange={(e) =>
@@ -554,59 +540,48 @@ export function CommunityProfileEditor() {
                     .filter(Boolean),
                 })
               }
-              placeholder={"Garden courtyard\nPet friendly\nOn-site dining\nTransportation"}
+              placeholder={"Jardin intérieur\nAnimaux acceptés\nSalle à manger\nTransport"}
             />
           </div>
         </Section>
 
-        {/* 7. Admission criteria */}
         <Section
-          title={t("Admission criteria")}
-          hint="Basic rules your team uses when reviewing applications."
+          title="Critères d'admission"
+          hint="Règles de base utilisées lors de l'évaluation des dossiers."
         >
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs space-y-4">
+          <div className="ep-card">
             {(
               [
-                ["medicaid", "Accept Medicaid"],
-                ["privatePay", "Accept private pay"],
-                ["pets", "Pets allowed"],
+                ["medicaid", "Aide gouvernementale / RAMQ"],
+                ["privatePay", "Paiement privé"],
+                ["pets", "Animaux acceptés"],
               ] as const
             ).map(([key, label]) => (
-              <label
+              <button
                 key={key}
-                className="flex items-center justify-between gap-3 rounded-xl bg-bg-soft/80 px-3 py-3 text-sm"
+                type="button"
+                role="switch"
+                aria-checked={flags[key]}
+                disabled={!can("editAdmissions")}
+                className="ep-row-switch"
+                onClick={() =>
+                  patch({
+                    admissionFlags: { ...flags, [key]: !flags[key] },
+                  })
+                }
               >
-                <span>{label}</span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={flags[key]}
-                  disabled={!can("editAdmissions")}
-                  onClick={() =>
-                    patch({
-                      admissionFlags: { ...flags, [key]: !flags[key] },
-                    })
-                  }
-                  className={cn(
-                    "relative h-7 w-12 rounded-full transition",
-                    flags[key] ? "bg-brand" : "bg-line-strong",
-                    !can("editAdmissions") && "opacity-50",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition",
-                      flags[key] ? "left-5" : "left-0.5",
-                    )}
-                  />
-                </button>
-              </label>
+                <span className="ep-row-copy">
+                  <strong>{label}</strong>
+                </span>
+                <Switch on={flags[key]} />
+              </button>
             ))}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm">
-                {t("Smoking policy")}
+
+            <div className="ep-grid-2" style={{ marginTop: 8 }}>
+              <label>
+                <span className="ep-label">Politique sur le tabac</span>
                 <input
-                  className={inputClass}
+                  className="ep-input"
                   value={flags.smoking}
                   disabled={!can("editAdmissions")}
                   onChange={(e) =>
@@ -614,26 +589,29 @@ export function CommunityProfileEditor() {
                   }
                 />
               </label>
-              <label className="block text-sm">
-                {t("Minimum age")}
+              <label>
+                <span className="ep-label">Âge minimum</span>
                 <input
                   type="number"
-                  className={inputClass}
+                  className="ep-input"
                   value={flags.minAge}
                   disabled={!can("editAdmissions")}
                   onChange={(e) =>
                     patch({
-                      admissionFlags: { ...flags, minAge: Number(e.target.value) || 0 },
+                      admissionFlags: {
+                        ...flags,
+                        minAge: Number(e.target.value) || 0,
+                      },
                     })
                   }
                 />
               </label>
             </div>
-            <label className="block text-sm">
-              {t("Notes")}
+            <label style={{ display: "block", marginTop: 14 }}>
+              <span className="ep-label">Notes</span>
               <textarea
+                className="ep-textarea"
                 rows={3}
-                className={inputClass}
                 value={flags.notes}
                 disabled={!can("editAdmissions")}
                 onChange={(e) =>
@@ -644,14 +622,14 @@ export function CommunityProfileEditor() {
           </div>
         </Section>
 
-        {editable && (
-          <div className="sticky bottom-4 flex justify-end">
-            <Button type="button" onClick={save} className="shadow-md">
-              {saved ? "Saved" : "Save all changes"}
-            </Button>
+        {editable ? (
+          <div className="ep-sticky-save">
+            <button type="button" className="ep-save" onClick={save}>
+              {saved ? "Enregistré" : "Enregistrer les modifications"}
+            </button>
           </div>
-        )}
-      </div>
+        ) : null}
+      </main>
     </div>
   );
 }

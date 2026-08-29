@@ -1,6 +1,9 @@
 import type { User } from "@supabase/supabase-js";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { isValidPassword, normalizeEmail } from "@/lib/auth-crypto";
+import { assertPasswordAllowed } from "@/lib/auth-password-policy";
+import { resolvePostLoginMfa } from "@/lib/auth-mfa";
+import { recordAuthEvent } from "@/lib/auth-events-client";
 import type {
   AuthResult,
   CommunityStatus,
@@ -17,6 +20,11 @@ export type SignUpAuthResult = AuthResult<SessionUser> & {
   pendingConfirmation?: boolean;
   /** Account was created but the browser session could not be opened yet. */
   needsManualSignIn?: boolean;
+};
+
+export type SignInAuthResult = AuthResult<SessionUser> & {
+  mfa?: "challenge" | "enroll" | "suggest_enroll";
+  factorId?: string;
 };
 
 function siteOrigin() {
@@ -40,7 +48,7 @@ function buildSessionFromInput(
     organization: input.organization?.trim(),
     jobTitle: input.jobTitle?.trim(),
     emailConfirmed,
-    communityStatus: input.role === "facility" ? "verified" : undefined,
+    communityStatus: input.role === "facility" ? "pending" : undefined,
     onboardingCompleted: input.role !== "family",
   };
 }
@@ -210,6 +218,8 @@ export async function signUpWithRoleSupabase(
   if (!isValidPassword(input.password)) {
     return { ok: false, error: AUTH_MESSAGES.weakPassword };
   }
+  const allowed = await assertPasswordAllowed(input.password);
+  if (!allowed.ok) return { ok: false, error: allowed.error };
 
   const email = normalizeEmail(input.email);
 
@@ -246,7 +256,7 @@ export async function signUpWithRoleSupabase(
           role: input.role,
           organization: input.organization?.trim(),
           jobTitle: input.jobTitle?.trim(),
-          communityStatus: input.role === "facility" ? "verified" : undefined,
+          communityStatus: input.role === "facility" ? "pending" : undefined,
           onboardingCompleted: input.role !== "family",
         });
         return { ok: true, data: sessionUser };
@@ -330,7 +340,7 @@ export async function signUpWithRoleSupabase(
     role: input.role,
     organization: input.organization?.trim(),
     jobTitle: input.jobTitle?.trim(),
-    communityStatus: input.role === "facility" ? "verified" : undefined,
+    communityStatus: input.role === "facility" ? "pending" : undefined,
     onboardingCompleted: input.role !== "family",
   });
 
@@ -373,15 +383,22 @@ export async function signInSupabase(input: {
   email: string;
   password: string;
   expectedRole?: UserRole;
-}): Promise<AuthResult<SessionUser>> {
+}): Promise<SignInAuthResult> {
   const supabase = createClient();
+  const email = normalizeEmail(input.email);
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: normalizeEmail(input.email),
+    email,
     password: input.password,
   });
 
-  if (error) return { ok: false, error: mapAuthError(error.message) };
-  if (!data.user) return { ok: false, error: AUTH_MESSAGES.badCredentials };
+  if (error) {
+    void recordAuthEvent({ type: "sign_in_failure", detail: "bad_credentials" });
+    return { ok: false, error: mapAuthError(error.message) };
+  }
+  if (!data.user) {
+    void recordAuthEvent({ type: "sign_in_failure", detail: "missing_user" });
+    return { ok: false, error: AUTH_MESSAGES.badCredentials };
+  }
 
   const sessionUser = sessionFromSupabaseUser(data.user);
   if (!sessionUser) {
@@ -398,12 +415,29 @@ export async function signInSupabase(input: {
     await supabase.auth.signOut();
     return { ok: false, error: AUTH_MESSAGES.accessDenied };
   }
+
+  void recordAuthEvent({
+    type: "sign_in_success",
+    detail: `role:${sessionUser.role}`,
+  });
+
+  const mfa = await resolvePostLoginMfa(sessionUser.role);
+  if (mfa.status === "challenge") {
+    return { ok: true, data: sessionUser, mfa: "challenge", factorId: mfa.factorId };
+  }
+  if (mfa.status === "enroll") {
+    return { ok: true, data: sessionUser, mfa: "enroll" };
+  }
+  if (mfa.status === "suggest_enroll") {
+    return { ok: true, data: sessionUser, mfa: "suggest_enroll" };
+  }
   return { ok: true, data: sessionUser };
 }
 
 export async function signOutSupabase() {
   const supabase = createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "global" });
+  void recordAuthEvent({ type: "sign_out" });
 }
 
 export async function resendConfirmationSupabase(
@@ -440,13 +474,15 @@ export async function resetPasswordSupabase(input: {
   token: string;
   password: string;
 }): Promise<AuthResult> {
-  if (!isValidPassword(input.password)) {
-    return { ok: false, error: AUTH_MESSAGES.weakPassword };
-  }
+  const policy = await assertPasswordAllowed(input.password);
+  if (!policy.ok) return { ok: false, error: policy.error };
   const supabase = createClient();
   // Recovery session is established via /auth/callback; token query is unused for Supabase.
   const { error } = await supabase.auth.updateUser({ password: input.password });
   if (error) return { ok: false, error: mapAuthError(error.message) };
+  // Revoke other sessions after password reset (OWASP).
+  await supabase.auth.signOut({ scope: "others" });
+  void recordAuthEvent({ type: "password_reset_completed" });
   return { ok: true, data: undefined };
 }
 
@@ -467,9 +503,8 @@ export async function changePasswordSupabase(
   currentPassword: string,
   newPassword: string,
 ): Promise<AuthResult> {
-  if (!isValidPassword(newPassword)) {
-    return { ok: false, error: AUTH_MESSAGES.weakPassword };
-  }
+  const policy = await assertPasswordAllowed(newPassword);
+  if (!policy.ok) return { ok: false, error: policy.error };
   const supabase = createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user?.email) {
@@ -484,5 +519,11 @@ export async function changePasswordSupabase(
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) return { ok: false, error: mapAuthError(error.message) };
+  await supabase.auth.signOut({ scope: "others" });
+  void recordAuthEvent({
+    type: "password_change",
+    detail: "password_updated",
+  });
+  void recordAuthEvent({ type: "session_revoked", detail: "password_change" });
   return { ok: true, data: undefined };
 }

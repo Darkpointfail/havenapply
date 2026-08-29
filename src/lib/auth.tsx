@@ -58,6 +58,7 @@ import {
   signUpWithRoleSupabase,
   type SignUpAuthResult,
 } from "@/lib/auth-supabase";
+import { mfaRedirectPath } from "@/lib/auth-mfa-redirect";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
 
@@ -75,6 +76,7 @@ type AuthContextValue = {
     email: string;
     password: string;
     expectedRole?: UserRole;
+    nextPath?: string;
   }) => Promise<AuthResult<SessionUser>>;
   signOut: () => void;
   confirmEmail: (token: string) => AuthResult<SessionUser>;
@@ -218,11 +220,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signIn = useCallback(
-    async (input: { email: string; password: string; expectedRole?: UserRole }) => {
+    async (input: {
+      email: string;
+      password: string;
+      expectedRole?: UserRole;
+      nextPath?: string;
+    }) => {
       // Prefer real auth when Supabase is configured, even if open-access demo is on.
       if (remote) {
         const result = await signInSupabase(input);
-        if (result.ok) setUser(result.data);
+        if (result.ok) {
+          setUser(result.data);
+          if (result.mfa === "challenge" || result.mfa === "enroll") {
+            const path = mfaRedirectPath(result.mfa, {
+              factorId: result.factorId,
+              next: input.nextPath || homeForUser(result.data),
+            });
+            if (typeof window !== "undefined") window.location.assign(path);
+          }
+        }
         return result;
       }
       if (AUTH_OPEN_ACCESS) {

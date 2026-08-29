@@ -14,6 +14,8 @@ import {
   changeAccountPassword,
   requestAccountDeletion as requestAccountDeletionAuth,
 } from "@/lib/auth-store";
+import { changePasswordSupabase } from "@/lib/auth-supabase";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 import {
   isLinkExpired,
   linkExpiresAt,
@@ -342,13 +344,18 @@ export function PrivacySecurityProvider({ children }: { children: ReactNode }) {
   const changePassword = useCallback(
     async (currentPassword: string, newPassword: string) => {
       if (!user) return { ok: false, error: "Not signed in." };
-      const res = await changeAccountPassword(user.email, currentPassword, newPassword);
+      const res = isSupabaseBackend()
+        ? await changePasswordSupabase(currentPassword, newPassword)
+        : await changeAccountPassword(user.email, currentPassword, newPassword);
       if (res.ok) {
         logAccess({ action: "password_change", resource: "Account password" });
+        if (isSupabaseBackend()) {
+          window.setTimeout(() => signOut(), 100);
+        }
       }
       return res;
     },
-    [logAccess, user],
+    [logAccess, user, signOut],
   );
 
   const value = useMemo(

@@ -35,6 +35,14 @@ export type FamilyProfile = {
   id: string;
   prenom: string;
   nom: string;
+  /**
+   * Who the dossier is for.
+   * - self: the logged-in person is the resident
+   * - proche: the logged-in person helps a relative/friend
+   * - "" : not chosen yet (first wizard step)
+   */
+  profileSubject: "" | "self" | "proche";
+  /** Relationship to the resident when profileSubject is proche, or "Moi-même" when self. */
   rel: string;
   photo: string | null;
   /** ISO date (yyyy-mm-dd) when known. */
@@ -254,6 +262,7 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     id: "p-marguerite",
     prenom: "Marguerite",
     nom: "Lévesque",
+    profileSubject: "proche",
     rel: "Votre mère",
     photo: null,
     dateNaissance: "1942-03-15",
@@ -352,6 +361,7 @@ type SeniorLike = {
   firstName?: string;
   lastName?: string;
   relationship?: string;
+  filledBy?: string;
   city?: string;
   state?: string;
   address?: string;
@@ -422,7 +432,22 @@ export function buildProfileFromSenior(
     id: "p-senior",
     prenom,
     nom,
-    rel: (senior.relationship || "").trim() || "Proche",
+    profileSubject: (() => {
+      const rel = (senior.relationship || "").toLowerCase();
+      const filled = (senior.filledBy || "").toLowerCase();
+      if (
+        rel.includes("moi-même") ||
+        rel.includes("moi-meme") ||
+        rel.includes("myself") ||
+        filled.includes("pour moi") ||
+        filled.includes("looking for myself")
+      ) {
+        return "self";
+      }
+      if ((senior.relationship || "").trim() || (senior.filledBy || "").trim()) return "proche";
+      return "";
+    })(),
+    rel: (senior.relationship || "").trim(),
     photo: senior.photoDataUrl || null,
     dateNaissance: (senior.dateOfBirth || "").trim(),
     sexe: (senior.gender || "").trim(),
@@ -504,7 +529,8 @@ export function createEmptyProfile(id: string): FamilyProfile {
     id,
     prenom: "",
     nom: "",
-    rel: "Proche",
+    profileSubject: "",
+    rel: "",
     photo: null,
     dateNaissance: "",
     sexe: "",
@@ -574,6 +600,7 @@ export function familyPatchToSenior(
   firstName: string;
   lastName: string;
   relationship: string;
+  filledBy: string;
   photoDataUrl: string;
   dateOfBirth: string;
   gender: string;
@@ -588,6 +615,15 @@ export function familyPatchToSenior(
   if (patch.prenom !== undefined) out.firstName = patch.prenom;
   if (patch.nom !== undefined) out.lastName = patch.nom;
   if (patch.rel !== undefined) out.relationship = patch.rel;
+  if (patch.profileSubject !== undefined) {
+    out.filledBy =
+      patch.profileSubject === "self"
+        ? "Pour moi-même"
+        : patch.profileSubject === "proche"
+          ? "Pour un proche"
+          : "";
+    if (patch.profileSubject === "self") out.relationship = patch.rel || "Moi-même";
+  }
   if (patch.photo !== undefined) out.photoDataUrl = patch.photo || "";
   if (patch.dateNaissance !== undefined) out.dateOfBirth = patch.dateNaissance;
   if (patch.sexe !== undefined) out.gender = patch.sexe;
@@ -618,6 +654,35 @@ export function profileDisplayName(p: FamilyProfile) {
   const full = [p.prenom, p.nom].filter(Boolean).join(" ").trim();
   return full || "Nouveau dossier";
 }
+
+/** Whether this dossier is for the logged-in person. */
+export function isFamilyProfileSelf(
+  p: Pick<FamilyProfile, "profileSubject" | "rel">,
+): boolean {
+  if (p.profileSubject === "self") return true;
+  if (p.profileSubject === "proche") return false;
+  const r = (p.rel || "").toLowerCase();
+  return r.includes("moi-même") || r.includes("moi-meme") || r.includes("myself");
+}
+
+/** Short FR label for UI copy (vous / votre proche / prénom). */
+export function dossierSubjectLabel(p: FamilyProfile): string {
+  if (isFamilyProfileSelf(p)) return "vous";
+  const name = profileDisplayName(p);
+  return name !== "Nouveau dossier" ? name : "votre proche";
+}
+
+export const PROCHE_RELATIONSHIP_OPTIONS = [
+  "Parent",
+  "Beau-parent",
+  "Conjoint / conjointe",
+  "Enfant",
+  "Frère / sœur",
+  "Petit-enfant",
+  "Ami(e)",
+  "Aidant professionnel",
+  "Autre",
+] as const;
 
 /** Active RPA Québec registry catalog for family browse. */
 export { RESIDENCES, RPA_REGIONS, RPA_SOURCE } from "@/data/rpa-quebec";
@@ -678,7 +743,8 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
 ];
 
 export const PROFILE_STEPS = [
-  "Demandeur",
+  "Pour qui",
+  "Identité",
   "Contacts",
   "Statut légal",
   "Assurances",
@@ -708,13 +774,16 @@ export function buildNextSteps(input: {
   docs: FamilyDoc[];
   applicationsCount: number;
   ownerLabel?: string;
+  forSelf?: boolean;
 }): FamilyNextStep[] {
   const owner = (input.ownerLabel || "").trim() || "Vous";
   const steps: FamilyNextStep[] = [];
 
   if (!input.hasSeniorProfile) {
     steps.push({
-      label: "Créer le dossier de votre proche",
+      label: input.forSelf
+        ? "Créer votre dossier d'admission"
+        : "Créer le dossier de votre proche",
       owner,
       tone: "terra",
     });

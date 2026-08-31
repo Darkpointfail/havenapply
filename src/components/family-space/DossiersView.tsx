@@ -2,7 +2,9 @@
 
 import {
   PROFILE_STEPS,
+  PROCHE_RELATIONSHIP_OPTIONS,
   docsProgress,
+  isFamilyProfileSelf,
   profileDisplayName,
   type FamilyProfile,
   type FamilyDoc,
@@ -44,6 +46,7 @@ export function DossiersView({
   onChatInput,
   onSendChat,
   onSuggest,
+  accountUser,
 }: {
   profiles: FamilyProfile[];
   activeProfileId: string;
@@ -64,6 +67,7 @@ export function DossiersView({
   onChatInput: (v: string) => void;
   onSendChat: () => void;
   onSuggest: (msg: string) => void;
+  accountUser?: { firstName: string; lastName: string; email: string };
 }) {
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0];
 
@@ -76,19 +80,19 @@ export function DossiersView({
               Dossiers d&apos;admission
             </h1>
             <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-              Un dossier par personne que vous accompagnez. Les renseignements et les pièces
-              d&apos;un dossier servent à toutes les demandes déposées pour cette personne.
-            </p>
-          </div>
-          <button type="button" className="fs-btn fs-btn-outline shrink-0" onClick={onCreateProfile}>
-            + Créer un dossier
-          </button>
+            Un dossier pour vous, ou pour une personne que vous accompagnez. Les pièces et
+            renseignements servent à toutes les demandes déposées pour ce profil.
+          </p>
         </div>
+        <button type="button" className="fs-btn fs-btn-outline shrink-0" onClick={onCreateProfile}>
+          + Créer un dossier
+        </button>
+      </div>
         <div className="fs-card p-10 text-center">
           <h2 className="fs-serif text-[24px]">Aucun dossier pour le moment</h2>
           <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--fs-ink-body)]">
-            Créez le dossier de votre proche pour y ajouter les pièces requises et déposer des
-            demandes auprès des résidences.
+            Indiquez si le dossier est pour vous-même ou pour un proche, puis ajoutez les pièces
+            requises pour déposer des demandes.
           </p>
           <button type="button" className="fs-btn fs-btn-primary mt-6" onClick={onCreateProfile}>
             Créer un dossier
@@ -219,6 +223,7 @@ export function DossiersView({
           onChatInput={onChatInput}
           onSendChat={onSendChat}
           onSuggest={onSuggest}
+          accountUser={accountUser}
         />
       )}
     </div>
@@ -461,6 +466,7 @@ function EditionMode({
   onChatInput,
   onSendChat,
   onSuggest,
+  accountUser,
 }: {
   profile: FamilyProfile;
   profileStep: number;
@@ -475,11 +481,18 @@ function EditionMode({
   onChatInput: (v: string) => void;
   onSendChat: () => void;
   onSuggest: (msg: string) => void;
+  accountUser?: { firstName: string; lastName: string; email: string };
 }) {
   const totalSteps = PROFILE_STEPS.length;
   const isLast = profileStep >= totalSteps - 1;
+  const forSelf = isFamilyProfileSelf(profile);
+  const canProceed =
+    profileStep !== 0 ||
+    (profile.profileSubject === "self" ||
+      (profile.profileSubject === "proche" && Boolean(profile.rel.trim())));
 
   const finishOrNext = () => {
+    if (!canProceed) return;
     if (isLast) {
       onPatchActive({ draft: false });
       onSetMode("overview");
@@ -495,7 +508,11 @@ function EditionMode({
           <div>
             <h2 className="fs-serif text-[26px] leading-tight">
               {profile.draft
-                ? "Renseignements du nouveau dossier"
+                ? forSelf
+                  ? "Création de votre dossier"
+                  : profile.profileSubject === "proche"
+                    ? "Création du dossier d’un proche"
+                    : "Nouveau dossier d’admission"
                 : `Dossier de ${profileDisplayName(profile)}`}
             </h2>
             <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
@@ -539,7 +556,12 @@ function EditionMode({
         className={`fs-grid-main grid gap-5 ${claireOpen ? "lg:grid-cols-[1fr_372px]" : ""}`}
       >
         <div className="fs-card p-6">
-          <EditionStepFields step={profileStep} profile={profile} onPatchActive={onPatchActive} />
+          <EditionStepFields
+            step={profileStep}
+            profile={profile}
+            onPatchActive={onPatchActive}
+            accountUser={accountUser}
+          />
 
           <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fs-border)] pt-5">
             <button
@@ -552,6 +574,7 @@ function EditionMode({
             </button>
             <p className="text-[13.5px] text-[var(--fs-ink-muted)]">
               Étape {profileStep + 1} sur {totalSteps}
+              {!canProceed ? " · choisissez pour qui est le dossier" : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -561,7 +584,12 @@ function EditionMode({
               >
                 Enregistrer et voir le dossier
               </button>
-              <button type="button" className="fs-btn fs-btn-primary" onClick={finishOrNext}>
+              <button
+                type="button"
+                className="fs-btn fs-btn-primary"
+                disabled={!canProceed}
+                onClick={finishOrNext}
+              >
                 {isLast ? "Terminer" : "Suivant"}
               </button>
             </div>
@@ -699,14 +727,108 @@ function EditionStepFields({
   step,
   profile,
   onPatchActive,
+  accountUser,
 }: {
   step: number;
   profile: FamilyProfile;
   onPatchActive: (patch: Partial<FamilyProfile>) => void;
+  accountUser?: { firstName: string; lastName: string; email: string };
 }) {
+  const forSelf = isFamilyProfileSelf(profile);
+
   if (step === 0) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-6">
+        <div>
+          <p className="fs-serif text-[24px] leading-tight">Ce dossier est pour qui ?</p>
+          <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
+            HavenApply sert soit à votre propre recherche de résidence, soit à accompagner un
+            proche. Le parcours s’adapte à votre choix.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            className="rounded-[16px] border-2 p-5 text-left transition"
+            style={{
+              borderColor:
+                profile.profileSubject === "self" ? "var(--fs-green)" : "var(--fs-border)",
+              background:
+                profile.profileSubject === "self" ? "var(--fs-green-tint)" : "var(--fs-surface)",
+            }}
+            onClick={() =>
+              onPatchActive({
+                profileSubject: "self",
+                rel: "Moi-même",
+                prenom: profile.prenom || accountUser?.firstName || "",
+                nom: profile.nom || accountUser?.lastName || "",
+              })
+            }
+          >
+            <p className="fs-serif text-[22px]">Pour moi-même</p>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
+              Je crée mon dossier d’admission et je cherche une résidence pour moi.
+            </p>
+          </button>
+          <button
+            type="button"
+            className="rounded-[16px] border-2 p-5 text-left transition"
+            style={{
+              borderColor:
+                profile.profileSubject === "proche" ? "var(--fs-green)" : "var(--fs-border)",
+              background:
+                profile.profileSubject === "proche" ? "var(--fs-green-tint)" : "var(--fs-surface)",
+            }}
+            onClick={() =>
+              onPatchActive({
+                profileSubject: "proche",
+                rel:
+                  profile.rel && profile.rel !== "Moi-même" ? profile.rel : "",
+              })
+            }
+          >
+            <p className="fs-serif text-[22px]">Pour un proche</p>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
+              J’accompagne un parent, conjoint, ami ou autre personne dans sa recherche.
+            </p>
+          </button>
+        </div>
+        {profile.profileSubject === "proche" ? (
+          <Field label="Lien avec cette personne">
+            <select
+              className="fs-input max-w-md"
+              value={profile.rel}
+              onChange={(e) => onPatchActive({ rel: e.target.value })}
+              aria-label="Lien avec le proche"
+            >
+              <option value="">Choisir…</option>
+              {PROCHE_RELATIONSHIP_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
+        {profile.profileSubject === "self" ? (
+          <p className="text-[14px] text-[var(--fs-ink-muted)]">
+            L’étape Identité pourra reprendre votre nom de compte
+            {accountUser?.firstName ? ` (${accountUser.firstName})` : ""}.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <div className="space-y-4">
+        <p className="text-[14.5px] text-[var(--fs-ink-body)]">
+          {forSelf
+            ? "Vos renseignements personnels pour le dossier d’admission."
+            : "Renseignements sur la personne qui cherche une résidence."}
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Prénom">
           <input
             className="fs-input"
@@ -777,11 +899,12 @@ function EditionStepFields({
             autoComplete="postal-code"
           />
         </Field>
+        </div>
       </div>
     );
   }
 
-  if (step === 1) {
+  if (step === 2) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Nom du contact principal">
@@ -791,7 +914,7 @@ function EditionStepFields({
             onChange={(e) => onPatchActive({ contactPrincipalNom: e.target.value })}
           />
         </Field>
-        <Field label="Lien avec le demandeur">
+        <Field label={forSelf ? "Lien avec vous" : "Lien avec le demandeur"}>
           <input
             className="fs-input"
             value={profile.contactPrincipalLien}
@@ -822,7 +945,7 @@ function EditionStepFields({
             onChange={(e) => onPatchActive({ contactSecondaireNom: e.target.value })}
           />
         </Field>
-        <Field label="Lien avec le demandeur">
+        <Field label={forSelf ? "Lien avec vous" : "Lien avec le demandeur"}>
           <input
             className="fs-input"
             value={profile.contactSecondaireLien}
@@ -848,7 +971,7 @@ function EditionStepFields({
     );
   }
 
-  if (step === 2) {
+  if (step === 3) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <YesNoField
@@ -885,7 +1008,7 @@ function EditionStepFields({
     );
   }
 
-  if (step === 3) {
+  if (step === 4) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Assurance maladie">
@@ -920,7 +1043,7 @@ function EditionStepFields({
     );
   }
 
-  if (step === 4) {
+  if (step === 5) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Revenus mensuels">
@@ -956,7 +1079,7 @@ function EditionStepFields({
     );
   }
 
-  if (step === 5) {
+  if (step === 6) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="sm:col-span-2 lg:col-span-3 rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] p-4">
@@ -1062,7 +1185,7 @@ function EditionStepFields({
     );
   }
 
-  if (step === 6) {
+  if (step === 7) {
     const Priority = ({
       label,
       value,
@@ -1214,8 +1337,9 @@ function EditionStepFields({
   return (
     <div className="space-y-4">
       <p className="text-[14.5px] text-[var(--fs-ink-body)]">
-        Récapitulatif du dossier de {profileDisplayName(profile)}. Vérifiez les renseignements
-        avant de signer.
+        Récapitulatif du dossier
+        {forSelf ? "" : ` de ${profileDisplayName(profile)}`}. Vérifiez les renseignements avant
+        de signer.
       </p>
       <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4">
         <input

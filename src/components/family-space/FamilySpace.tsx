@@ -20,6 +20,7 @@ import {
   emptyDraftDocs,
   familyPatchToSenior,
   hasInProgressFamilyDossier,
+  isFamilyProfileSelf,
   mapRequiredDocsFromDocuments,
   profileDisplayName,
   type FamilyApplication,
@@ -200,7 +201,14 @@ export function FamilySpace() {
     setMode("edition");
     setClaireOpen(true);
     setProfileStep(0);
-    setChat([{ from: "claire", body: assistantOpener(0) }]);
+    setChat([
+      {
+        from: "claire",
+        body: assistantOpener(0, {
+          forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
+        }),
+      },
+    ]);
     setResId(null);
     if (opts?.replaceUrl !== false) {
       router.replace("/family/dashboard?claire=1", { scroll: false });
@@ -366,6 +374,7 @@ export function FamilySpace() {
         docs: activeProfile?.docs ?? liveDocs,
         applicationsCount: applications.length,
         ownerLabel: displayUser.firstName || "Vous",
+        forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
       }),
     [profiles.length, activeProfile, liveDocs, applications.length, displayUser.firstName],
   );
@@ -417,10 +426,17 @@ export function FamilySpace() {
 
   useEffect(() => {
     if (!claireOpen) return;
-    setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
+    setChat([
+      {
+        from: "claire",
+        body: assistantOpener(profileStep, {
+          forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
+        }),
+      },
+    ]);
     setChatInput("");
     setClaireTyping(false);
-  }, [profileStep, claireOpen]);
+  }, [profileStep, claireOpen, activeProfile]);
 
   const go = (v: FamilyView) => {
     setView(v);
@@ -574,12 +590,24 @@ export function FamilySpace() {
     setChat((c) => [...c, { from: "family", body: message }]);
     setChatInput("");
     setClaireTyping(true);
-    const reply = await askAssistant(profileStep, message);
+    const reply = await askAssistant(profileStep, message, {
+      forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
+    });
     setChat((c) => [...c, { from: "claire", body: reply }]);
     setClaireTyping(false);
     window.setTimeout(() => chatInputRef.current?.focus(), 40);
     const m = message.toLowerCase();
     if (profileStep === 0) {
+      if (m.includes("moi-même") || m.includes("moi-meme") || m.includes("pour moi")) {
+        patchActive({
+          profileSubject: "self",
+          rel: "Moi-même",
+          prenom: activeProfile?.prenom || displayUser.firstName || "",
+          nom: activeProfile?.nom || "",
+        });
+      } else if (m.includes("proche") || m.includes("parent")) {
+        patchActive({ profileSubject: "proche" });
+      }
       if (m.includes("hôpital") || m.includes("hopital")) {
         patchActive({ meta: "Dossier urgent · hôpital" });
       }
@@ -915,7 +943,14 @@ export function FamilySpace() {
               setClaireOpen((v) => {
                 const next = !v;
                 if (next && chat.length === 0) {
-                  setChat([{ from: "claire", body: assistantOpener(profileStep) }]);
+                  setChat([
+                    {
+                      from: "claire",
+                      body: assistantOpener(profileStep, {
+                        forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
+                      }),
+                    },
+                  ]);
                 }
                 return next;
               });
@@ -923,6 +958,11 @@ export function FamilySpace() {
             onChatInput={setChatInput}
             onSendChat={() => sendToClaire(chatInput)}
             onSuggest={sendToClaire}
+            accountUser={{
+              firstName: user?.firstName || displayUser.firstName || "",
+              lastName: user?.lastName || "",
+              email: displayUser.email,
+            }}
           />
         )}
         {view === "demandes" && (
@@ -986,7 +1026,7 @@ function Accueil({
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
   const displayPercent = hasProfile ? profileCompleteness : 0;
   const intro = !hasProfile
-    ? "Créez le dossier de votre proche pour déposer des demandes auprès des résidences partenaires."
+    ? "Créez un dossier — pour vous-même ou pour un proche — afin de déposer des demandes auprès des résidences partenaires."
     : progress.next
       ? `Votre dossier est prêt pour vos demandes. Prochaine action : ajouter ${progress.next}.`
       : "Votre dossier est à jour. Vous pouvez chercher une résidence ou suivre vos demandes en cours.";
@@ -1034,7 +1074,7 @@ function Accueil({
             Prochaine action :{" "}
             {hasProfile
               ? `ajouter ${progress.next ?? "les dernières précisions"}`
-              : "créer le dossier de votre proche"}
+              : "créer un dossier (pour vous ou un proche)"}
             .
           </p>
         </div>

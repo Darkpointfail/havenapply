@@ -10,9 +10,22 @@ import {
 } from "@/lib/family-residence-match";
 
 describe("careProfileFromFamilyInputs", () => {
-  it("returns empty profile for draft or missing dossier", () => {
+  it("still applies search criteria on a draft dossier", () => {
+    const profile = careProfileFromFamilyInputs({
+      draft: true,
+      searchCriteria: {
+        sector: "Montréal",
+        budgetMax: 3000,
+        priorities: { care: 5, geo: 5, budget: 5, size: 1, rating: 1 },
+      },
+    });
+    expect(profile.search.sector).toBe("Montréal");
+    expect(profile.search.budgetMax).toBe(3000);
+    expect(profile.sector).toBe("Montréal");
+  });
+
+  it("returns empty profile for missing dossier", () => {
     expect(careProfileFromFamilyInputs(null).autonomyScore).toBeNull();
-    expect(careProfileFromFamilyInputs({ draft: true, ville: "Québec" }).sector).toBe("");
   });
 
   it("maps autonomy score, hygiene, mobility, nursing and search priorities", () => {
@@ -93,6 +106,36 @@ describe("computeMatch weighted autonomy", () => {
     expect(lowFit.score).toBeLessThan(highFit.score);
     expect(lowFit.score).toBeLessThan(55);
     expect(lowFit.consider.some((c) => /autonomie|infirm/i.test(c))).toBe(true);
+  });
+
+  it("changes score when sector or budget criteria change", () => {
+    const montreal = RESIDENCES.find((r) => /montréal/i.test(r.city)) ?? RESIDENCES[0]!;
+    const elsewhere =
+      RESIDENCES.find((r) => !/montréal/i.test(r.city) && r.id !== montreal.id) ?? RESIDENCES[1]!;
+
+    const inSector = careProfileFromFamilyInputs({
+      searchCriteria: {
+        sector: "Montréal",
+        budgetMax: 8000,
+        priorities: { care: 1, geo: 5, budget: 5, size: 1, rating: 1 },
+      },
+    });
+    const tightBudget = careProfileFromFamilyInputs({
+      searchCriteria: {
+        sector: "Montréal",
+        budgetMax: 2000,
+        priorities: { care: 1, geo: 5, budget: 5, size: 1, rating: 1 },
+      },
+    });
+
+    const geoIn = computeMatch(inSector, montreal);
+    const geoOut = computeMatch(inSector, elsewhere);
+    expect(geoIn.score).toBeGreaterThan(geoOut.score);
+    expect(geoIn.axes.find((a) => a.id === "geo")?.score).toBeGreaterThan(50);
+
+    const budgetAxis = computeMatch(tightBudget, montreal).axes.find((a) => a.id === "budget");
+    expect(budgetAxis?.score).not.toBeNull();
+    expect(budgetAxis?.score).toBeLessThan(80);
   });
 
   it("boosts nursing residences when the dossier needs nursing", () => {

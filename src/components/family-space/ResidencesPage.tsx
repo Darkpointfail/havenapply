@@ -9,6 +9,11 @@ import {
   UNIT_TYPES,
   type Residence,
 } from "@/data/family-space";
+import {
+  computeMatch,
+  EMPTY_CARE_PROFILE,
+  type FamilyCareProfile,
+} from "@/lib/family-residence-match";
 
 const PAGE_SIZE = 24;
 
@@ -103,9 +108,11 @@ function residenceRegion(r: Residence): string {
 }
 
 export function ResidencesBrowse({
+  careProfile,
   onOpen,
   onApply,
 }: {
+  careProfile?: FamilyCareProfile;
   onOpen: (id: string, focus?: "match" | "full") => void;
   onApply: (id: string) => void;
 }) {
@@ -115,6 +122,7 @@ export function ResidencesBrowse({
   const [services, setServices] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const profile = careProfile ?? EMPTY_CARE_PROFILE;
 
   const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
@@ -130,7 +138,7 @@ export function ResidencesBrowse({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return RESIDENCES.filter((r) => {
+    const list = RESIDENCES.filter((r) => {
       if (region && residenceRegion(r) !== region) return false;
       if (services.length > 0 && !services.every((s) => r.services.includes(s))) return false;
       if (
@@ -143,7 +151,10 @@ export function ResidencesBrowse({
       const hay = `${r.name} ${r.city} ${r.location.address}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [query, region, services, unitTypes]);
+    const scored = list.map((r) => ({ r, score: computeMatch(profile, r).score }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((s) => s.r);
+  }, [query, region, services, unitTypes, profile]);
 
   const shown = filtered.slice(0, visible);
 
@@ -234,12 +245,21 @@ export function ResidencesBrowse({
                 ? ` · affichage de ${shown.length.toLocaleString("fr-CA")}`
                 : ""}
             </p>
-            <p className="text-[14px] font-medium text-[var(--fs-ink)]">Tri alphabétique</p>
+            <p className="text-[14px] font-medium text-[var(--fs-ink)]">
+              Tri par correspondance
+            </p>
           </div>
 
           <div className="space-y-4">
             {shown.map((r) => {
               const compared = compareIds.includes(r.id);
+              const match = computeMatch(profile, r);
+              const scoreColor =
+                match.tone === "strong" || match.tone === "good"
+                  ? "var(--fs-success)"
+                  : match.tone === "fair"
+                    ? "var(--fs-green)"
+                    : "var(--fs-terra)";
               return (
                 <article
                   key={r.id}
@@ -248,44 +268,53 @@ export function ResidencesBrowse({
                   <PhotoBlock height={220} className="min-h-[200px] border-0 sm:min-h-full" />
                   <div className="p-5 sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <h2 className="fs-serif text-[23px] leading-tight">{r.name}</h2>
                         <p className="mt-1 text-[14.5px] text-[var(--fs-ink-muted)]">
                           {r.city} · {r.units} unités
+                          {r.categoryLabel ? ` · ${r.categoryLabel}` : ""}
                         </p>
                       </div>
-                      <Badge tone={r.badgeTone}>{r.badge}</Badge>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="inline-flex items-baseline gap-1 rounded-full border-2 bg-white px-3 py-1"
+                          style={{ borderColor: scoreColor }}
+                          aria-label={`Score ${match.score}`}
+                        >
+                          <span
+                            className="fs-serif text-[20px] leading-none"
+                            style={{ color: scoreColor }}
+                          >
+                            {match.score}
+                          </span>
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--fs-ink-muted)]">
+                            /100
+                          </span>
+                        </span>
+                        <Badge tone={r.badgeTone}>{r.badge}</Badge>
+                      </div>
                     </div>
 
                     <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                      {r.description}
+                      {match.headline} — {match.summary}
                     </p>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[10px] bg-[var(--fs-subtle)] px-3.5 py-3">
-                        <p className="text-[13px] text-[var(--fs-ink-muted)]">{r.unitType}</p>
-                        <p className="fs-serif mt-0.5 text-[18px]">{r.price}</p>
-                      </div>
-                      <div className="rounded-[10px] bg-[var(--fs-subtle)] px-3.5 py-3">
-                        <p className="text-[13px] text-[var(--fs-ink-muted)]">Contact</p>
-                        <p className="mt-0.5 text-[15px] font-semibold">{r.responseLabel}</p>
-                      </div>
-                    </div>
-
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {r.services.slice(0, 5).map((s) => (
-                        <span
-                          key={s}
-                          className="fs-pill"
-                          style={{
-                            background: "var(--fs-surface)",
-                            borderColor: "var(--fs-border)",
-                            color: "var(--fs-ink-muted)",
-                          }}
-                        >
-                          {s}
-                        </span>
-                      ))}
+                      {(r.highlights?.length ? r.highlights : r.services)
+                        .slice(0, 5)
+                        .map((s) => (
+                          <span
+                            key={s}
+                            className="fs-pill"
+                            style={{
+                              background: "var(--fs-surface)",
+                              borderColor: "var(--fs-border)",
+                              color: "var(--fs-ink-muted)",
+                            }}
+                          >
+                            {s}
+                          </span>
+                        ))}
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -294,14 +323,14 @@ export function ResidencesBrowse({
                         className="fs-btn fs-btn-primary"
                         onClick={() => onApply(r.id)}
                       >
-                        Déposer une demande
+                        Appliquer
                       </button>
                       <button
                         type="button"
                         className="fs-btn fs-btn-outline"
-                        onClick={() => onOpen(r.id, "full")}
+                        onClick={() => onOpen(r.id, "match")}
                       >
-                        Voir la résidence
+                        Voir pourquoi
                       </button>
                       <button
                         type="button"
@@ -352,28 +381,123 @@ export function ResidencesBrowse({
 
 export function ResidenceFiche({
   residence,
+  careProfile,
+  focus = "match",
   onBack,
   onApply,
 }: {
   residence: Residence;
+  careProfile?: FamilyCareProfile;
   focus?: "match" | "full";
   onBack: () => void;
   onApply: () => void;
 }) {
+  const match = computeMatch(careProfile ?? EMPTY_CARE_PROFILE, residence);
+  const scoreColor =
+    match.tone === "strong" || match.tone === "good"
+      ? "var(--fs-success)"
+      : match.tone === "fair"
+        ? "var(--fs-green)"
+        : "var(--fs-terra)";
+  const matchFirst = focus !== "full";
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-24 lg:pb-4">
       <button type="button" className="fs-btn-ghost w-fit" onClick={onBack}>
         ← Retour aux résultats
       </button>
 
+      {/* Match panel — first visual block */}
+      <section
+        className="fs-card overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(135deg, #F3FAF8 0%, #FFFFFF 48%, #F7F3EF 100%)",
+          order: matchFirst ? 0 : 2,
+        }}
+      >
+        <div className="grid gap-5 p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:p-8">
+          <div
+            className="mx-auto flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border-[6px] bg-white"
+            style={{ borderColor: scoreColor }}
+            aria-label={`Score de correspondance ${match.score} pour cent`}
+          >
+            <span className="fs-serif text-[34px] leading-none" style={{ color: scoreColor }}>
+              {match.score}
+            </span>
+            <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
+              / 100
+            </span>
+          </div>
+
+          <div className="min-w-0 text-center md:text-left">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
+              Correspondance avec votre dossier
+            </p>
+            <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
+              {match.headline}
+            </h2>
+            <p className="mt-3 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
+              {match.summary}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
+              {match.why.slice(0, 3).map((w) => (
+                <span
+                  key={w}
+                  className="fs-pill"
+                  style={{
+                    background: "var(--fs-success-bg)",
+                    color: "var(--fs-success)",
+                    borderColor: "transparent",
+                  }}
+                >
+                  {w}
+                </span>
+              ))}
+              {match.consider.slice(0, 2).map((c) => (
+                <span
+                  key={c}
+                  className="fs-pill"
+                  style={{
+                    background: "#F8EFEA",
+                    color: "var(--fs-terra)",
+                    borderColor: "transparent",
+                  }}
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden md:block">
+            <button type="button" className="fs-btn fs-btn-primary px-6" onClick={onApply}>
+              Déposer une demande
+            </button>
+          </div>
+        </div>
+      </section>
+
       <div className="fs-card overflow-hidden">
-        <PhotoBlock height={320} className="border-0" />
+        <PhotoBlock height={220} className="border-0" label="Emplacement" />
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-[780px]">
-              <h1 className="fs-serif text-[30px] leading-tight">{residence.name}</h1>
-              <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                {residence.city} · {residence.units} unités · {residence.response}
+            <div className="max-w-[820px]">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone={residence.badgeTone}>{residence.badge}</Badge>
+                {residence.categoryLabel ? (
+                  <span className="text-[13px] text-[var(--fs-ink-muted)]">
+                    {residence.categoryLabel}
+                  </span>
+                ) : null}
+              </div>
+              <h1 className="fs-serif mt-3 text-[32px] leading-tight md:text-[36px]">
+                {residence.name}
+              </h1>
+              <p className="mt-2 text-[15px] text-[var(--fs-ink-muted)]">
+                {residence.city}
+                {residence.units ? ` · ${residence.units} unités` : ""}
+                {residence.phone ? ` · ${residence.phone}` : ""}
               </p>
               <p className="mt-4 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
                 {residence.description}
@@ -382,86 +506,150 @@ export function ResidenceFiche({
                 {residence.location.address}
               </p>
             </div>
-            <Badge tone={residence.badgeTone}>{residence.badge}</Badge>
           </div>
 
-          <div className="fs-grid-main mt-8 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-            <div>
-              <p className="fs-label mb-3">Types d&apos;unités</p>
-              <div className="overflow-hidden rounded-[12px] border border-[var(--fs-border)]">
-                <div
-                  className="grid gap-[18px] border-b border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-2.5 text-[12.5px] font-semibold uppercase tracking-[0.07em] text-[var(--fs-ink-muted)]"
-                  style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
-                >
-                  <span>Type</span>
-                  <span>Superficie</span>
-                  <span>Prix</span>
-                  <span>Disponibilité</span>
-                </div>
-                {residence.unitRows.map((u) => (
+          {residence.facts && residence.facts.length > 0 ? (
+            <div className="mt-8">
+              <p className="fs-label mb-3">En un coup d&apos;œil</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {residence.facts.map((f) => (
                   <div
-                    key={u.type}
-                    className="grid gap-[18px] border-b border-[var(--fs-border-faint)] px-4 py-3 last:border-0"
-                    style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
+                    key={f.label}
+                    className="rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-3"
                   >
-                    <span className="font-semibold">{u.type}</span>
-                    <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
-                    <span>{u.price}</span>
-                    <span
-                      className="font-semibold"
-                      style={{
-                        color:
-                          u.availabilityTone === "terra"
-                            ? "var(--fs-terra)"
-                            : "var(--fs-success)",
-                      }}
-                    >
-                      {u.availability}
-                    </span>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
+                      {f.label}
+                    </p>
+                    <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--fs-ink)]">
+                      {f.value}
+                    </p>
                   </div>
                 ))}
               </div>
+            </div>
+          ) : null}
 
-              <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--fs-ink-muted)]">
+          <div className="fs-grid-main mt-8 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+            <div className="space-y-6">
+              <div>
+                <p className="fs-label mb-3">Types d&apos;unités</p>
+                <div className="overflow-hidden rounded-[12px] border border-[var(--fs-border)]">
+                  <div
+                    className="grid gap-[18px] border-b border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-2.5 text-[12.5px] font-semibold uppercase tracking-[0.07em] text-[var(--fs-ink-muted)]"
+                    style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
+                  >
+                    <span>Type</span>
+                    <span>Superficie</span>
+                    <span>Prix</span>
+                    <span>Disponibilité</span>
+                  </div>
+                  {residence.unitRows.map((u) => (
+                    <div
+                      key={u.type}
+                      className="grid gap-[18px] border-b border-[var(--fs-border-faint)] px-4 py-3 last:border-0"
+                      style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
+                    >
+                      <span className="font-semibold">{u.type}</span>
+                      <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
+                      <span>{u.price}</span>
+                      <span
+                        className="font-semibold"
+                        style={{
+                          color:
+                            u.availabilityTone === "terra"
+                              ? "var(--fs-terra)"
+                              : "var(--fs-success)",
+                        }}
+                      >
+                        {u.availability}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="fs-label mb-3">Soins et autonomie</p>
+                <div className="space-y-2">
+                  {residence.care.map((c) => (
+                    <div
+                      key={c.label}
+                      className="flex items-start justify-between gap-3 rounded-[10px] border border-[var(--fs-border-faint)] px-3.5 py-2.5"
+                    >
+                      <div>
+                        <p className="text-[14px] font-medium">{c.label}</p>
+                        <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{c.value}</p>
+                      </div>
+                      <span
+                        className="shrink-0 text-[12.5px] font-semibold"
+                        style={{ color: c.offered ? "var(--fs-success)" : "var(--fs-ink-muted)" }}
+                      >
+                        {c.offered ? "Oui" : "Non"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
                 {residence.waitNote}
               </p>
             </div>
 
-            <div>
-              <p className="fs-label mb-3">Services déclarés</p>
-              <div className="flex flex-wrap gap-2">
-                {residence.services.map((s) => (
-                  <span
-                    key={s}
-                    className="fs-pill"
-                    style={{
-                      background: "var(--fs-surface)",
-                      borderColor: "var(--fs-border)",
-                      color: "var(--fs-ink)",
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
+            <aside className="space-y-4">
+              <div>
+                <p className="fs-label mb-3">Services déclarés</p>
+                <div className="flex flex-wrap gap-2">
+                  {residence.services.map((s) => (
+                    <span
+                      key={s}
+                      className="fs-pill"
+                      style={{
+                        background: "var(--fs-surface)",
+                        borderColor: "var(--fs-border)",
+                        color: "var(--fs-ink)",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-4 rounded-[11px] bg-[var(--fs-subtle)] p-5">
-                <p className="text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                  Votre dossier est déjà constitué. Le déposer auprès de cette résidence prend
-                  moins d&apos;une minute.
+              <div className="sticky top-[96px] rounded-[14px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] p-5">
+                <p className="fs-serif text-[20px] leading-tight">Prêt à postuler ?</p>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
+                  Déposez le dossier de votre proche en quelques clics. La résidence reçoit une
+                  demande structurée, sans formulaires redondants.
                 </p>
                 <button
                   type="button"
-                  className="fs-btn fs-btn-primary mt-4 w-full"
+                  className="fs-btn fs-btn-primary mt-4 w-full text-[15px]"
                   onClick={onApply}
                 >
-                  Déposer une demande
+                  Appliquer à cette résidence
                 </button>
+                {residence.phone ? (
+                  <a
+                    href={`tel:${residence.phone.replace(/\s/g, "")}`}
+                    className="fs-btn fs-btn-outline mt-2 w-full text-center text-[14.5px]"
+                  >
+                    Appeler {residence.phone}
+                  </a>
+                ) : null}
               </div>
-            </div>
+            </aside>
           </div>
         </div>
+      </div>
+
+      {/* Mobile sticky apply */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--fs-border)] bg-white/95 p-3 backdrop-blur lg:hidden">
+        <button type="button" className="fs-btn fs-btn-primary w-full" onClick={onApply}>
+          Appliquer · score {match.score}
+        </button>
       </div>
     </div>
   );
 }
+

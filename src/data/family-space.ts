@@ -149,10 +149,16 @@ export type Residence = {
     availabilityTone: "green" | "terra";
   }[];
   care: { label: string; value: string; offered: boolean }[];
-  location: { address: string; travel: string; transit: string };
+  location: { address: string; travel: string; transit: string; lat?: number; lng?: number };
   documents: { name: string; inDossier: boolean }[];
   waitNote: string;
   photoLabels: string[];
+  /** Easy-scan facts for the establishment fiche. */
+  facts?: { label: string; value: string }[];
+  highlights?: string[];
+  hasNursingStaff?: boolean;
+  categoryLabel?: string;
+  phone?: string | null;
 };
 
 /** @deprecated Demo contact — do not use in production UI. Prefer authenticated useAuth().user. */

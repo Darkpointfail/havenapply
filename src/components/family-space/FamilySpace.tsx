@@ -726,15 +726,16 @@ export function FamilySpace() {
                   <div className="space-y-3 p-3.5">
                     <div>
                       <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-[#9AABA4]">
-                        Profil contact
+                        {t("Contact profile")}
                       </p>
                       <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#9AABA4]">
-                        Ces renseignements sont associés à votre compte famille
-                        comme contact principal.
+                        {t(
+                          "This information is linked to your family account as the primary contact.",
+                        )}
                       </p>
                     </div>
                     <label className="block">
-                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Prénom</span>
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">{t("First name")}</span>
                       <input
                         className="fs-account-input"
                         value={editFirstName}
@@ -743,7 +744,7 @@ export function FamilySpace() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Nom</span>
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">{t("Last name")}</span>
                       <input
                         className="fs-account-input"
                         value={editLastName}
@@ -751,7 +752,7 @@ export function FamilySpace() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Courriel</span>
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">{t("Email")}</span>
                       <input
                         className="fs-account-input"
                         value={displayUser.email}

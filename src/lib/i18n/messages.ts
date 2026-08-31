@@ -2137,6 +2137,58 @@ export const frMessages: Record<string, string> = {
   "Write to us": "Écrivez-nous",
   "and we will set up your access.": "et nous configurons vos accès.",
   "Read the collection notice": "Lire l'avis de collecte",
+
+  // ——— Family residences browse ———
+  Residences: "Résidences",
+  "Browse Quebec's registry of RPAs ({count} active residences, extracted {date}) and submit a request straight from your loved one's file.":
+    "Parcourez le registre des RPA du Québec ({count} résidences actives, extraction {date}) et déposez une demande depuis le dossier de votre proche.",
+  "Complete the file to get personalized recommendations":
+    "Remplissez le dossier pour avoir des recommandations personnalisées",
+  "Match scores only appear once the essential criteria are completed (autonomy, area, and budget). In the meantime, you can browse the registry without a personalized ranking.":
+    "Les scores de correspondance s'affichent seulement lorsque les critères essentiels sont complétés (autonomie, secteur et budget). En attendant, vous pouvez explorer le registre sans ranking personnalisé.",
+  Criteria: "Critères",
+  "Name, city, or address": "Nom, ville ou adresse",
+  "Search for a residence": "Recherche de résidence",
+  Region: "Région",
+  "All of Quebec": "Tout le Québec",
+  "Unit type": "Type d'unité",
+  "Declared services": "Services déclarés",
+  "Source: {label}. Rates and availability are still to be confirmed with each residence.":
+    "Source : {label}. Tarifs et disponibilités restent à confirmer auprès de chaque résidence.",
+  "residences found": "résidences trouvées",
+  "residence found": "résidence trouvée",
+  showing: "affichage",
+  "Sorted by match": "Triées par correspondance",
+  "Sorted alphabetically": "Triées alphabétiquement",
+  units: "unités",
+  "Score {score}": "Score {score}",
+  Apply: "Appliquer",
+  "See why": "Voir pourquoi",
+  "No residences match these criteria": "Aucune résidence pour ces critères",
+  "Try a wider region or remove a service filter.":
+    "Élargissez la région ou retirez un filtre de service.",
+  "See more residences": "Voir plus de résidences",
+  "Back to results": "Retour aux résultats",
+  "Match score {score} percent": "Score de correspondance {score} pour cent",
+  "Match with your file": "Correspondance avec votre dossier",
+  "Submit an application": "Déposer une demande",
+  Match: "Correspondance",
+  "Autonomy, area, and budget are required before a score can be shown for this residence.":
+    "Autonomie, secteur et budget sont requis avant d'afficher un score pour cette résidence.",
+  "Apply without a score": "Appliquer sans score",
+  Location: "Emplacement",
+  "At a glance": "En un coup d'œil",
+  "Unit types": "Types d'unités",
+  Area: "Superficie",
+  Price: "Prix",
+  Availability: "Disponibilité",
+  "Care and autonomy": "Soins et autonomie",
+  "Ready to apply?": "Prêt à postuler ?",
+  "Submit your loved one’s file in a few clicks. The residence receives a structured application, without redundant forms.":
+    "Déposez le dossier de votre proche en quelques clics. La résidence reçoit une demande structurée, sans formulaires redondants.",
+  "Apply to this residence": "Appliquer à cette résidence",
+  "Call {phone}": "Appeler {phone}",
+  "Apply · score {score}": "Appliquer · score {score}",
 };
 
 export function translate(locale: Locale, key: string): string {

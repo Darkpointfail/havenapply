@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { RESIDENCES, SERVICES, UNIT_TYPES, type Residence } from "@/data/family-space";
+import { useMemo, useState } from "react";
+import {
+  RESIDENCES,
+  RPA_REGIONS,
+  RPA_SOURCE,
+  SERVICES,
+  UNIT_TYPES,
+  type Residence,
+} from "@/data/family-space";
 
-const FEATURED_IDS = ["maple-grove", "lakeside-haven", "cedar-memory"];
+const PAGE_SIZE = 24;
 
 function PhotoBlock({
   className = "",
@@ -90,6 +97,11 @@ function FilterPills({
   );
 }
 
+function residenceRegion(r: Residence): string {
+  const parts = r.city.split(",");
+  return parts.length > 1 ? parts.slice(1).join(",").trim() : r.city;
+}
+
 export function ResidencesBrowse({
   onOpen,
   onApply,
@@ -97,10 +109,12 @@ export function ResidencesBrowse({
   onOpen: (id: string, focus?: "match" | "full") => void;
   onApply: (id: string) => void;
 }) {
-  const [sector, setSector] = useState("Québec et Lévis");
-  const [unitTypes, setUnitTypes] = useState<string[]>(["3½"]);
-  const [services, setServices] = useState<string[]>(["Repas", "Soins infirmiers"]);
+  const [query, setQuery] = useState("");
+  const [region, setRegion] = useState("");
+  const [unitTypes, setUnitTypes] = useState<string[]>([]);
+  const [services, setServices] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
   const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
@@ -114,17 +128,33 @@ export function ResidencesBrowse({
     });
   };
 
-  const featured = FEATURED_IDS
-    .map((id) => RESIDENCES.find((r) => r.id === id))
-    .filter((r): r is Residence => Boolean(r));
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return RESIDENCES.filter((r) => {
+      if (region && residenceRegion(r) !== region) return false;
+      if (services.length > 0 && !services.every((s) => r.services.includes(s))) return false;
+      if (
+        unitTypes.length > 0 &&
+        !unitTypes.some((t) => r.unitRows.some((u) => u.type === t) || r.unitType === t)
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      const hay = `${r.name} ${r.city} ${r.location.address}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [query, region, services, unitTypes]);
+
+  const shown = filtered.slice(0, visible);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="fs-serif text-[28px] leading-tight">Résidences</h1>
         <p className="mt-2 max-w-[640px] text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-          Consultez les résidences qui correspondent aux critères de votre proche et déposez une
-          demande directement depuis son dossier.
+          Parcourez le registre des RPA du Québec ({RPA_SOURCE.count.toLocaleString("fr-CA")}{" "}
+          résidences actives, extraction {RPA_SOURCE.extractedOn}) et déposez une demande depuis le
+          dossier de votre proche.
         </p>
       </div>
 
@@ -133,43 +163,64 @@ export function ResidencesBrowse({
           <p className="fs-serif text-[18px]">Critères</p>
           <div className="mt-5 space-y-5">
             <div>
-              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Secteur</p>
+              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Recherche</p>
               <input
                 className="fs-input"
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                placeholder="Québec et Lévis"
-                aria-label="Secteur recherché"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setVisible(PAGE_SIZE);
+                }}
+                placeholder="Nom, ville ou adresse"
+                aria-label="Recherche de résidence"
               />
+            </div>
+
+            <div>
+              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Région</p>
+              <select
+                className="fs-input"
+                value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value);
+                  setVisible(PAGE_SIZE);
+                }}
+                aria-label="Région"
+              >
+                <option value="">Tout le Québec</option>
+                {RPA_REGIONS.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <FilterPills
               label="Type d'unité"
               options={[...UNIT_TYPES]}
               selected={unitTypes}
-              onToggle={(v) => toggle(unitTypes, v, setUnitTypes)}
+              onToggle={(v) => {
+                toggle(unitTypes, v, setUnitTypes);
+                setVisible(PAGE_SIZE);
+              }}
             />
 
-            <div>
-              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Budget mensuel</p>
-              <p className="text-[14.5px] font-medium">jusqu&apos;à 3 700 $</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
-                <div className="h-full w-[62%] rounded-full bg-[var(--fs-green)]" />
-              </div>
-            </div>
-
             <FilterPills
-              label="Services requis"
+              label="Services déclarés"
               options={[...SERVICES]}
               selected={services}
-              onToggle={(v) => toggle(services, v, setServices)}
+              onToggle={(v) => {
+                toggle(services, v, setServices);
+                setVisible(PAGE_SIZE);
+              }}
             />
           </div>
 
           <div className="mt-5 border-t border-[var(--fs-border)] pt-4">
             <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
-              Votre dossier est déjà prêt : déposer une demande prend moins d&apos;une minute par
-              résidence.
+              Source : {RPA_SOURCE.label}. Les tarifs et disponibilités restent à confirmer auprès
+              de chaque résidence.
             </p>
           </div>
         </aside>
@@ -177,15 +228,17 @@ export function ResidencesBrowse({
         <div className="min-w-0 flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[14.5px] text-[var(--fs-ink-muted)]">
-              {featured.length} résidences correspondent à vos critères
+              {filtered.length.toLocaleString("fr-CA")} résidence
+              {filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
+              {shown.length < filtered.length
+                ? ` · affichage de ${shown.length.toLocaleString("fr-CA")}`
+                : ""}
             </p>
-            <p className="text-[14px] font-medium text-[var(--fs-ink)]">
-              Trier par disponibilité
-            </p>
+            <p className="text-[14px] font-medium text-[var(--fs-ink)]">Tri alphabétique</p>
           </div>
 
           <div className="space-y-4">
-            {featured.map((r) => {
+            {shown.map((r) => {
               const compared = compareIds.includes(r.id);
               return (
                 <article
@@ -214,9 +267,25 @@ export function ResidencesBrowse({
                         <p className="fs-serif mt-0.5 text-[18px]">{r.price}</p>
                       </div>
                       <div className="rounded-[10px] bg-[var(--fs-subtle)] px-3.5 py-3">
-                        <p className="text-[13px] text-[var(--fs-ink-muted)]">Délai de réponse</p>
+                        <p className="text-[13px] text-[var(--fs-ink-muted)]">Contact</p>
                         <p className="mt-0.5 text-[15px] font-semibold">{r.responseLabel}</p>
                       </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {r.services.slice(0, 5).map((s) => (
+                        <span
+                          key={s}
+                          className="fs-pill"
+                          style={{
+                            background: "var(--fs-surface)",
+                            borderColor: "var(--fs-border)",
+                            color: "var(--fs-ink-muted)",
+                          }}
+                        >
+                          {s}
+                        </span>
+                      ))}
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -255,7 +324,26 @@ export function ResidencesBrowse({
                 </article>
               );
             })}
+
+            {shown.length === 0 ? (
+              <div className="fs-card p-8 text-center">
+                <p className="fs-serif text-[20px]">Aucune résidence pour ces critères</p>
+                <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
+                  Élargissez la région ou retirez un filtre de service.
+                </p>
+              </div>
+            ) : null}
           </div>
+
+          {shown.length < filtered.length ? (
+            <button
+              type="button"
+              className="fs-btn fs-btn-outline self-center"
+              onClick={() => setVisible((n) => n + PAGE_SIZE)}
+            >
+              Voir plus de résidences
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
@@ -289,6 +377,9 @@ export function ResidenceFiche({
               </p>
               <p className="mt-4 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
                 {residence.description}
+              </p>
+              <p className="mt-3 text-[14px] text-[var(--fs-ink-muted)]">
+                {residence.location.address}
               </p>
             </div>
             <Badge tone={residence.badgeTone}>{residence.badge}</Badge>
@@ -330,10 +421,14 @@ export function ResidenceFiche({
                   </div>
                 ))}
               </div>
+
+              <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--fs-ink-muted)]">
+                {residence.waitNote}
+              </p>
             </div>
 
             <div>
-              <p className="fs-label mb-3">Services inclus</p>
+              <p className="fs-label mb-3">Services déclarés</p>
               <div className="flex flex-wrap gap-2">
                 {residence.services.map((s) => (
                   <span

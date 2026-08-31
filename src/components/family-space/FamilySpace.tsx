@@ -16,13 +16,12 @@ import {
   buildNextSteps,
   buildProfileFromSenior,
   createEmptyProfile,
-  docsProgress,
-  emptyDraftDocs,
   familyPatchToSenior,
   hasInProgressFamilyDossier,
   isFamilyProfileSelf,
   mapRequiredDocsFromDocuments,
   profileDisplayName,
+  computeFamilyDossierCompleteness,
   type FamilyApplication,
   type FamilyDoc,
   type FamilyNextStep,
@@ -30,6 +29,7 @@ import {
   type FamilyView,
   type DossierMode,
   type Residence,
+  type FamilyDossierCompleteness,
 } from "@/data/family-space";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
@@ -93,7 +93,6 @@ export function FamilySpace() {
   const { user, updateProfile, signOut } = useAuth();
   const {
     data,
-    completeness,
     submitApplication,
     withdrawApplication,
     updateSeniorDraft,
@@ -362,8 +361,8 @@ export function FamilySpace() {
     }
   }, [activeProfile]);
 
-  const progress = useMemo(
-    () => docsProgress(activeProfile?.docs ?? emptyDraftDocs()),
+  const dossierCompleteness = useMemo(
+    () => computeFamilyDossierCompleteness(activeProfile),
     [activeProfile],
   );
 
@@ -375,8 +374,16 @@ export function FamilySpace() {
         applicationsCount: applications.length,
         ownerLabel: displayUser.firstName || "Vous",
         forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
+        fieldNext: dossierCompleteness.next,
       }),
-    [profiles.length, activeProfile, liveDocs, applications.length, displayUser.firstName],
+    [
+      profiles.length,
+      activeProfile,
+      liveDocs,
+      applications.length,
+      displayUser.firstName,
+      dossierCompleteness.next,
+    ],
   );
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
@@ -837,7 +844,7 @@ export function FamilySpace() {
                         </p>
                       ) : null}
                       <p className="mt-2 text-[11px] text-[#9AABA4]">
-                        Complétude du dossier : {completeness} %
+                        Complétude du dossier : {dossierCompleteness.percent} %
                       </p>
                     </div>
                     <button
@@ -870,13 +877,13 @@ export function FamilySpace() {
         {view === "accueil" && (
           <Accueil
             firstName={displayUser.firstName}
-            progress={progress}
-            profileCompleteness={completeness}
+            dossierCompleteness={dossierCompleteness}
             saveStatus={saveStatus}
             saveError={saveError}
             applications={applications}
             nextSteps={nextSteps}
             hasProfile={Boolean(activeProfile && !activeProfile.draft)}
+            hasDossier={Boolean(activeProfile)}
             onOpenDossier={() => (profiles.length ? openDossier("edition") : createProfile())}
             onSearch={() => go("residences")}
             onOpenApp={() => go("demandes")}
@@ -1000,35 +1007,38 @@ export function FamilySpace() {
 
 function Accueil({
   firstName,
-  progress,
-  profileCompleteness,
+  dossierCompleteness,
   saveStatus,
   saveError,
   applications,
   nextSteps,
   hasProfile,
+  hasDossier,
   onOpenDossier,
   onSearch,
   onOpenApp,
 }: {
   firstName: string;
-  progress: { received: number; total: number; percent: number; next: string | null };
-  profileCompleteness: number;
+  dossierCompleteness: FamilyDossierCompleteness;
   saveStatus: "idle" | "saving" | "saved" | "error";
   saveError: string | null;
   applications: FamilyApplication[];
   nextSteps: FamilyNextStep[];
   hasProfile: boolean;
+  hasDossier: boolean;
   onOpenDossier: () => void;
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
-  const displayPercent = hasProfile ? profileCompleteness : 0;
-  const intro = !hasProfile
+  const displayPercent = hasDossier ? dossierCompleteness.percent : 0;
+  const nextAction = hasDossier
+    ? dossierCompleteness.next
+    : "Créer un dossier (pour vous ou un proche)";
+  const intro = !hasDossier
     ? "Créez un dossier — pour vous-même ou pour un proche — afin de déposer des demandes auprès des résidences partenaires."
-    : progress.next
-      ? `Votre dossier est prêt pour vos demandes. Prochaine action : ajouter ${progress.next}.`
+    : dossierCompleteness.next
+      ? `Poursuivez votre dossier. Prochaine action : ${dossierCompleteness.next.charAt(0).toLowerCase()}${dossierCompleteness.next.slice(1)}.`
       : "Votre dossier est à jour. Vous pouvez chercher une résidence ou suivre vos demandes en cours.";
 
   return (
@@ -1051,7 +1061,7 @@ function Accueil({
           ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
-              {hasProfile ? "Compléter le dossier" : "Créer un dossier"}
+              {hasProfile || hasDossier ? "Compléter le dossier" : "Créer un dossier"}
             </button>
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
               Chercher une résidence
@@ -1062,7 +1072,9 @@ function Accueil({
           <p className="fs-label">Dossier complété</p>
           <p className="fs-serif mt-3 text-[42px] leading-none">{displayPercent} %</p>
           <p className="mt-2 text-[13.5px] text-[var(--fs-ink-muted)]">
-            {progress.received} pièces sur {progress.total}
+            {hasDossier
+              ? `${dossierCompleteness.fieldsDone} sections sur ${dossierCompleteness.fieldsTotal} · ${dossierCompleteness.docsReceived} pièces sur ${dossierCompleteness.docsTotal}`
+              : `0 sections · 0 pièces sur ${dossierCompleteness.docsTotal}`}
           </p>
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
             <div
@@ -1072,9 +1084,9 @@ function Accueil({
           </div>
           <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">
             Prochaine action :{" "}
-            {hasProfile
-              ? `ajouter ${progress.next ?? "les dernières précisions"}`
-              : "créer un dossier (pour vous ou un proche)"}
+            {nextAction
+              ? `${nextAction.charAt(0).toLowerCase()}${nextAction.slice(1)}`
+              : "aucune"}
             .
           </p>
         </div>
@@ -1084,12 +1096,15 @@ function Accueil({
         <h2 className="fs-serif text-[22px]">Vos demandes en cours</h2>
         {applications.length === 0 ? (
           <div className="fs-card mt-4 p-8 text-center">
-            <h3 className="fs-serif text-[20px]">Aucune demande pour le moment</h3>
+            <h3 className="fs-serif text-[20px]">
+              Pour pouvoir appliquer, merci de compléter votre dossier
+            </h3>
             <p className="mx-auto mt-2 max-w-md text-[14.5px] text-[var(--fs-ink-body)]">
-              Lorsque vous enverrez un dossier à une résidence, le suivi apparaîtra ici.
+              Une fois votre dossier prêt, vous pourrez déposer une demande auprès d&apos;une
+              résidence et suivre son avancement ici.
             </p>
-            <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onSearch}>
-              Chercher une résidence
+            <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onOpenDossier}>
+              {hasProfile || hasDossier ? "Compléter le dossier" : "Créer un dossier"}
             </button>
           </div>
         ) : (

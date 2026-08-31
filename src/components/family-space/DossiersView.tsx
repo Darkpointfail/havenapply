@@ -3,7 +3,7 @@
 import {
   PROFILE_STEPS,
   PROCHE_RELATIONSHIP_OPTIONS,
-  docsProgress,
+  computeFamilyDossierCompleteness,
   isFamilyProfileSelf,
   profileDisplayName,
   type FamilyProfile,
@@ -122,7 +122,7 @@ export function DossiersView({
       <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         {profiles.map((p) => {
           const active = p.id === activeProfile.id;
-          const prog = docsProgress(p.docs);
+          const prog = computeFamilyDossierCompleteness(p);
           return (
             <button
               key={p.id}
@@ -154,7 +154,9 @@ export function DossiersView({
                 className="mt-1 text-[13px]"
                 style={{ color: active ? "#C5D2CD" : "var(--fs-ink-muted)" }}
               >
-                {p.draft ? "Dossier en création" : `${p.rel} · ${prog.percent} % complété`}
+                {p.draft
+                  ? `En création · ${prog.percent} %`
+                  : `${p.rel} · ${prog.percent} % complété`}
               </p>
               <div
                 className="mt-3 h-[5px] overflow-hidden rounded-full"
@@ -243,7 +245,9 @@ function OverviewMode({
   onUploadDoc: (docId: string) => void;
   onWithdrawAccess: (residenceId: string) => void;
 }) {
-  const progress = docsProgress(profile.docs);
+  const progress = computeFamilyDossierCompleteness(profile);
+  const docsReceived = progress.docsReceived;
+  const docsTotal = progress.docsTotal;
   const meta = [
     ["Niveau d'autonomie", profile.draft || !profile.autonomie ? "À préciser" : profile.autonomie],
     [
@@ -341,7 +345,7 @@ function OverviewMode({
         <div className="fs-card p-6">
           <h3 className="fs-serif text-[22px]">Documents</h3>
           <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-            {progress.received} pièce{progress.received > 1 ? "s" : ""} sur {progress.total} · les
+            {docsReceived} pièce{docsReceived > 1 ? "s" : ""} sur {docsTotal} · les
             mêmes pièces servent à toutes les demandes de ce dossier
           </p>
           <ul className="mt-5 divide-y divide-[var(--fs-border-faint)]">
@@ -358,6 +362,10 @@ function OverviewMode({
             Avancement du dossier
           </p>
           <p className="fs-serif mt-3 text-[44px] leading-none">{progress.percent} %</p>
+          <p className="mt-2 text-[13px] text-[#8E9B96]">
+            {progress.fieldsDone} sections sur {progress.fieldsTotal} · {docsReceived} pièces sur{" "}
+            {docsTotal}
+          </p>
           <div
             className="mt-4 h-2.5 overflow-hidden rounded-full"
             style={{ background: "rgba(255,255,255,0.12)" }}
@@ -369,8 +377,8 @@ function OverviewMode({
           </div>
           <p className="mt-4 text-[14px] text-[#C5D2CD]">
             {progress.next
-              ? `Prochaine pièce à fournir : ${progress.next}.`
-              : "Toutes les pièces exigées sont reçues."}
+              ? `Prochaine action : ${progress.next.charAt(0).toLowerCase()}${progress.next.slice(1)}.`
+              : "Dossier complet — renseignements et pièces à jour."}
           </p>
         </div>
 

@@ -775,6 +775,8 @@ export function buildNextSteps(input: {
   applicationsCount: number;
   ownerLabel?: string;
   forSelf?: boolean;
+  /** Prefer field/section gaps (from computeFamilyDossierCompleteness) over docs-only next. */
+  fieldNext?: string | null;
 }): FamilyNextStep[] {
   const owner = (input.ownerLabel || "").trim() || "Vous";
   const steps: FamilyNextStep[] = [];
@@ -784,6 +786,17 @@ export function buildNextSteps(input: {
       label: input.forSelf
         ? "Créer votre dossier d'admission"
         : "Créer le dossier de votre proche",
+      owner,
+      tone: "terra",
+    });
+  }
+
+  const fieldNext = (input.fieldNext || "").trim();
+  const fieldIsDocHint = /^ajouter\s/i.test(fieldNext);
+  const fieldIsCreateHint = /créer un dossier/i.test(fieldNext);
+  if (fieldNext && !fieldIsDocHint && !(fieldIsCreateHint && !input.hasSeniorProfile)) {
+    steps.push({
+      label: fieldNext,
       owner,
       tone: "terra",
     });
@@ -832,7 +845,157 @@ export function docsProgress(docs: FamilyDoc[]) {
   return {
     received,
     total,
-    percent: Math.round((received / total) * 100),
+    percent: total === 0 ? 0 : Math.round((received / total) * 100),
     next: docs.find((d) => d.status === "en attente")?.name ?? null,
+  };
+}
+
+function hasProfileText(v: string | null | undefined) {
+  const t = (v || "").trim();
+  return Boolean(t) && t !== "À préciser";
+}
+
+export type FamilyDossierSectionProgress = {
+  id: string;
+  label: string;
+  complete: boolean;
+  weight: number;
+};
+
+export type FamilyDossierCompleteness = {
+  percent: number;
+  fieldsDone: number;
+  fieldsTotal: number;
+  docsReceived: number;
+  docsTotal: number;
+  /** Human next action (field gap first, then missing document). */
+  next: string | null;
+  sections: FamilyDossierSectionProgress[];
+};
+
+/**
+ * Completeness of the FR family-space dossier: wizard fields + uploaded documents.
+ * Field sections drive most of the score so typing info moves the % without uploads.
+ */
+export function computeFamilyDossierCompleteness(
+  profile: FamilyProfile | null | undefined,
+): FamilyDossierCompleteness {
+  const emptyDocs = emptyDraftDocs();
+  if (!profile) {
+    return {
+      percent: 0,
+      fieldsDone: 0,
+      fieldsTotal: 9,
+      docsReceived: 0,
+      docsTotal: emptyDocs.length,
+      next: "Créer un dossier (pour vous ou un proche)",
+      sections: [],
+    };
+  }
+
+  const sections: FamilyDossierSectionProgress[] = [
+    {
+      id: "who",
+      label: "Indiquer pour qui est le dossier",
+      complete:
+        profile.profileSubject === "self" ||
+        (profile.profileSubject === "proche" && hasProfileText(profile.rel)),
+      weight: 10,
+    },
+    {
+      id: "identity",
+      label: "Compléter l'identité (nom et ville)",
+      complete:
+        hasProfileText(profile.prenom) &&
+        hasProfileText(profile.nom) &&
+        hasProfileText(profile.ville),
+      weight: 15,
+    },
+    {
+      id: "contacts",
+      label: "Ajouter un contact principal",
+      complete:
+        hasProfileText(profile.contactPrincipalNom) &&
+        hasProfileText(profile.contactPrincipalTel),
+      weight: 10,
+    },
+    {
+      id: "legal",
+      label: "Préciser le statut légal",
+      complete:
+        hasProfileText(profile.mandatProtection) ||
+        hasProfileText(profile.procuration) ||
+        hasProfileText(profile.curatelle),
+      weight: 8,
+    },
+    {
+      id: "insurance",
+      label: "Renseigner les assurances",
+      complete:
+        (hasProfileText(profile.assuranceMaladie) &&
+          hasProfileText(profile.prenom) &&
+          hasProfileText(profile.nom)) ||
+        hasProfileText(profile.assurancePrivee) ||
+        hasProfileText(profile.numeroPolice),
+      weight: 7,
+    },
+    {
+      id: "finances",
+      label: "Indiquer le budget ou les revenus",
+      complete:
+        hasProfileText(profile.revenusMensuels) ||
+        (hasProfileText(profile.budget) && profile.budget !== "Budget à confirmer") ||
+        (profile.searchBudgetMax != null && profile.searchBudgetMax > 0),
+      weight: 10,
+    },
+    {
+      id: "care",
+      label: "Définir le niveau d'autonomie (1–10)",
+      complete: profile.autonomyScore != null && profile.autonomyScore >= 1,
+      weight: 12,
+    },
+    {
+      id: "search",
+      label: "Compléter les critères de recherche",
+      complete:
+        hasProfileText(profile.searchSector) &&
+        profile.searchBudgetMax != null &&
+        profile.searchBudgetMax > 0,
+      weight: 13,
+    },
+    {
+      id: "signature",
+      label: "Signer le consentement",
+      complete: Boolean(profile.consentPartage) && hasProfileText(profile.signatureNom),
+      weight: 5,
+    },
+  ];
+
+  const docs = profile.docs?.length ? profile.docs : emptyDocs;
+  const docsReceived = docs.filter((d) => d.status === "reçu").length;
+  const docsTotal = docs.length;
+  const docsWeight = 10;
+  const docsEarned = docsTotal > 0 ? (docsReceived / docsTotal) * docsWeight : 0;
+
+  const fieldWeight = sections.reduce((s, x) => s + x.weight, 0);
+  const fieldEarned = sections.reduce((s, x) => s + (x.complete ? x.weight : 0), 0);
+  const percent = Math.round(((fieldEarned + docsEarned) / (fieldWeight + docsWeight)) * 100);
+
+  const nextField = sections.find((s) => !s.complete);
+  const nextDoc = docs.find((d) => d.status === "en attente");
+  const next = nextField
+    ? nextField.label
+    : nextDoc
+      ? `Ajouter ${nextDoc.name}`
+      : null;
+
+  return {
+    percent: Math.max(0, Math.min(100, percent)),
+    fieldsDone: sections.filter((s) => s.complete).length,
+    fieldsTotal: sections.length,
+    docsReceived,
+    docsTotal,
+    next,
+    sections,
   };
 }

@@ -4,6 +4,7 @@ Canonical backend / data architecture for HavenApply (US senior-living common ap
 
 | Doc | Contents |
 | --- | --- |
+| [AUDIT_ORGANISATION_IDENTITES.md](./AUDIT_ORGANISATION_IDENTITES.md) | **FR · Notion** — audit + architecture d’organisation (P/D/A/R, refs `HA-*`, écarts prototype) |
 | [DATA_MODEL.md](./DATA_MODEL.md) | Domains, ERD, enums, conventions, `organizations → communities` |
 | [BACKEND.md](./BACKEND.md) | Edge Functions, outbox, Realtime, jobs |
 | [RLS_MATRIX.md](./RLS_MATRIX.md) | Who can read/write what |

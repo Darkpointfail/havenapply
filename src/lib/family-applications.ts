@@ -6,6 +6,7 @@ import {
 import type { Residence } from "@/data/residences";
 import { buildCommunityDetail } from "@/lib/residence-detail";
 import type { DocCategoryId } from "@/lib/document-vault";
+import { ensureApplicationPublicRef, nextApplicationRef } from "@/lib/public-refs";
 
 export type ApplicationQuestion = {
   id: string;
@@ -18,6 +19,11 @@ export type ApplicationQuestion = {
 
 export type FamilyApplication = {
   id: string;
+  /** Human-facing business ref, e.g. HA-A-2026-01903 (assigned on submit, then stable). */
+  publicRef?: string | null;
+  /** Optional links for multi-dossier families (MVP: set when known). */
+  personRef?: string | null;
+  dossierRef?: string | null;
   residenceId: string;
   residenceName: string;
   image: string;
@@ -315,8 +321,10 @@ export function toDisplayApplication(app: FamilyApplication): Application {
 
 export function submitFamilyApplication(draft: FamilyApplication): FamilyApplication {
   const now = new Date();
+  const withRef = ensureApplicationPublicRef(draft);
   return {
-    ...draft,
+    ...withRef,
+    publicRef: withRef.publicRef || nextApplicationRef(),
     status: "submitted",
     submittedAt: now.toISOString(),
     submittedDateLabel: formatShortDate(now),
@@ -346,7 +354,7 @@ export function submitFamilyApplication(draft: FamilyApplication): FamilyApplica
         label: "Received by community",
         date: formatTimelineDate(now),
         done: true,
-        detail: "Confirmation recorded · community notified",
+        detail: `Confirmation recorded · ref ${withRef.publicRef}`,
       },
     ],
   };

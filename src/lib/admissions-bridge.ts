@@ -22,6 +22,10 @@ export const COMMUNITY_ADMISSIONS_EVENT = "haven-community-admissions";
 export type SharedAdmissionPacket = {
   id: string;
   familyApplicationId: string;
+  /** Human-facing HA-A-… (same on family + residence). */
+  publicRef?: string | null;
+  personRef?: string | null;
+  dossierRef?: string | null;
   familyEmail: string;
   residenceId: string;
   residenceName: string;
@@ -105,6 +109,9 @@ export function publishFamilyApplication(
   const packet: SharedAdmissionPacket = {
     id: `shared-${app.id}`,
     familyApplicationId: app.id,
+    publicRef: app.publicRef || null,
+    personRef: app.personRef || null,
+    dossierRef: app.dossierRef || null,
     familyEmail: (app.submittedByEmail || "").toLowerCase(),
     residenceId: app.residenceId,
     residenceName: app.residenceName,
@@ -169,7 +176,9 @@ function applicationReceivedNote(packet: SharedAdmissionPacket): PortalNotificat
     id: `cnote-${packet.familyApplicationId}`,
     type: "application_received",
     title: "New application submitted",
-    body: `${packet.seniorName} applied via Haven. Review the dossier in Admissions.`,
+    body: packet.publicRef
+      ? `${packet.seniorName} applied via Haven (${packet.publicRef}). Review the dossier in Admissions.`
+      : `${packet.seniorName} applied via Haven. Review the dossier in Admissions.`,
     applicationId: `capp-shared-${packet.familyApplicationId}`,
     at: packet.submittedAt || new Date().toISOString(),
     read: false,
@@ -361,6 +370,9 @@ export function mergeSharedIntoCommunityApps(
     return {
       id,
       residenceId: p.residenceId,
+      publicRef: p.publicRef || prior?.publicRef || null,
+      personRef: p.personRef || prior?.personRef || null,
+      dossierRef: p.dossierRef || prior?.dossierRef || null,
       seniorName: canonicalSeniorName(p.seniorName),
       seniorAge: p.seniorAge || 80,
       seniorPhotoUrl: p.seniorPhotoUrl || prior?.seniorPhotoUrl || null,
@@ -400,7 +412,9 @@ export function mergeSharedIntoCommunityApps(
                 id: `aud-bridge-${p.familyApplicationId}`,
                 at: p.submittedAt,
                 actor: "Haven",
-                action: "Application received from family via Haven",
+                action: p.publicRef
+                  ? `Application received from family via Haven (${p.publicRef})`
+                  : "Application received from family via Haven",
               },
             ],
     };

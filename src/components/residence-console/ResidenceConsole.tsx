@@ -382,7 +382,8 @@ export function ResidenceConsole() {
         (d) =>
           d.nom.toLowerCase().includes(q) ||
           d.contact.toLowerCase().includes(q) ||
-          d.unite.toLowerCase().includes(q),
+          d.unite.toLowerCase().includes(q) ||
+          (d.publicRef || "").toLowerCase().includes(q),
       );
     }
     return list;
@@ -699,6 +700,11 @@ function DemandesView({
               <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
                 {d.age} ans · {d.contact}, {d.contactLien}
               </p>
+              {d.publicRef ? (
+                <p className="mt-1 font-mono text-[12px] tracking-wide text-[var(--rc-ink-faint)]">
+                  {d.publicRef}
+                </p>
+              ) : null}
             </div>
             <p className="text-[14.5px]">{d.unite}</p>
             <div>
@@ -818,12 +824,20 @@ function DossierView({
           <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
             {demande.age} ans · demande transmise par {demande.contact}, {demande.contactLien}
           </p>
+          {demande.publicRef ? (
+            <p className="mt-2 font-mono text-[13.5px] tracking-wide text-[var(--rc-ink-muted)]">
+              Réf. {demande.publicRef}
+            </p>
+          ) : null}
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
             {[
               ["Unité souhaitée", demande.unite],
               ["Emménagement souhaité", demande.emmenagement],
               ["Personne-ressource", `${demande.contact} (${demande.contactLien})`],
               ["Reçue le", demande.recueLe],
+              ...(demande.publicRef
+                ? ([["Référence Haven", demande.publicRef]] as [string, string][])
+                : []),
             ].map(([label, value]) => (
               <div key={label}>
                 <p className="rc-label">{label}</p>

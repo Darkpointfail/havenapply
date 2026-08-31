@@ -12,6 +12,8 @@ export type UrgenceLevel = "Urgente" | "Élevée" | "Standard";
 
 export type Demande = {
   id: string;
+  /** Human-facing HA-A-… when available */
+  publicRef?: string | null;
   nom: string;
   age: number;
   unite: string;

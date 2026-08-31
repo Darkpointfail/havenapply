@@ -165,6 +165,9 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
 
   return {
     id: app.id,
+    publicRef: app.publicRef || null,
+    personRef: app.personRef || null,
+    dossierRef: app.dossierRef || null,
     residenceId: app.residenceId,
     residenceName: app.residenceName,
     city,
@@ -249,6 +252,7 @@ export function communityAppToDemande(app: CommunityApplication): Demande {
 
   return {
     id: app.id,
+    publicRef: app.publicRef || null,
     nom: app.seniorName,
     age: app.seniorAge || 0,
     unite: app.careType || "Unité à confirmer",

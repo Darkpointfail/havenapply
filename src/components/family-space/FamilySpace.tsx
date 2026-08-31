@@ -297,8 +297,10 @@ export function FamilySpace() {
 
   const profiles = useMemo(() => {
     const inProgress = hasInProgressFamilyDossier(data.senior, data.residentDossier);
-    const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps, {
+      const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps, {
       allowIncomplete: inProgress || Boolean(localDraft),
+      personRef: data.personRef,
+      dossierRef: data.dossierRef,
     });
     if (fromSenior) {
       const fromDossier = wizardFieldsFromDossier(data.residentDossier);
@@ -494,7 +496,10 @@ export function FamilySpace() {
       return;
     }
     const id = "p-senior";
-    const draft = createEmptyProfile(id);
+    const draft = createEmptyProfile(id, {
+      personRef: data.personRef,
+      dossierRef: data.dossierRef,
+    });
     setLocalDraft(draft);
     saveFamilyWizardDraft(draft);
     setActiveProfileId(id);
@@ -519,7 +524,10 @@ export function FamilySpace() {
       // Keep an overlay draft so wizard fields remain editable before/after senior hydrate.
       const base =
         profiles.find((p) => p.id === activeProfileId) ??
-        createEmptyProfile(activeProfileId || "p-senior");
+        createEmptyProfile(activeProfileId || "p-senior", {
+          personRef: data.personRef,
+          dossierRef: data.dossierRef,
+        });
       return { ...base, ...patch, id: activeProfileId || base.id };
     });
 
@@ -1140,6 +1148,11 @@ function Accueil({
                 <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
                   {app.city} · {app.unit}
                 </p>
+                {app.publicRef ? (
+                  <p className="mt-2 font-mono text-[12.5px] tracking-wide text-[var(--fs-ink-muted)]">
+                    {app.publicRef}
+                  </p>
+                ) : null}
                 <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">{app.update}</p>
               </button>
             ))}
@@ -1480,6 +1493,11 @@ function Demandes({
                   <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
                     {app.city} · {app.unit} · déposée le {app.depositedOn}
                   </p>
+                  {app.publicRef ? (
+                    <p className="mt-1.5 font-mono text-[13px] tracking-wide text-[var(--fs-ink-muted)]">
+                      Réf. {app.publicRef}
+                    </p>
+                  ) : null}
                 </div>
                 <StatusPill tone={app.status === "Liste d'attente" ? "neutral" : "green"}>
                   {app.status}

@@ -2,13 +2,13 @@
 
 **Document :** trace d’organisation (résidences · clients · dossiers · demandes)  
 **Public :** produit / technique / Notion  
-**Statut :** référence de conception (pas encore entièrement implémentée)  
-**Date :** 2026-08-31  
+**Statut :** architecture cible + **MVP partiel livré dans le code** (références `HA-*` / `RPA-*`)  
+**Date :** 2026-08-31 (maj. implémentation MVP)  
 **Périmètre :** Québec B2C (familles) + console résidence B2B  
 **Langue du document :** français  
 
 > Objectif : anticiper les conflits d’identité (multi-proches, multi-résidences, sync local/Supabase) **avant** de coder.  
-> Ce document décrit (1) l’état actuel constaté, (2) l’architecture cible recommandée, (3) les règles anti-conflit.
+> Ce document décrit (1) l’état actuel constaté, (2) l’architecture cible recommandée, (3) les règles anti-conflit, (4) **ce qui est déjà câblé dans le MVP**.
 
 ---
 
@@ -151,9 +151,9 @@ Sinon : conflit classique « la famille modifie après envoi ».
 | Famille | `families` + store local `fam_…` | UUID / opaque |
 | Senior / personne | `seniors` + local `snr_…` ; UI souvent `p-senior` | UUID / opaque |
 | Contenu dossier | Souvent **embarqué** sur le senior (`dossier_json`) | Pas d’ID dossier dédié |
-| Demandes (runtime B2C) | `app-{residenceId}-{timestamp}-{rand}` | String volatile |
-| Demandes (schéma DB) | `applications` UUID + FKs famille/senior/community | UUID |
-| Résidences Québec | Catalogue `rpa-{ref}` (ex. `rpa-1428`) | Ref MSSS |
+| Demandes (runtime B2C) | `app-{residenceId}-{timestamp}-{rand}` + **`publicRef` `HA-A-AAAA-#####`** (MVP) | String volatile + réf métier |
+| Demandes (schéma DB) | `applications` UUID + FKs famille/senior/community | UUID (colonne `public_ref` encore à ajouter) |
+| Résidences Québec | Catalogue `rpa-{ref}` (ex. `rpa-1428`) → affichage `RPA-1428` via `residencePublicCode` | Ref MSSS |
 | Communautés DB | `communities.id` UUID | **Non aligné** sur `rpa-*` |
 | Documents | UUID / `doc_…` + Storage | Opaque |
 
@@ -176,7 +176,7 @@ User
 | --- | --- | --- | --- |
 | R1 | Trois mondes d’ID résidence (`rpa-*`, slug US, UUID DB) sans table pont | Doublons, sync B2B cassée | **Critique** |
 | R2 | Demande runtime sans `senior_id` / `dossier_id` stables | Multi-proches = collision | **Critique** |
-| R3 | Pas de référence métier `HA-A` / `HA-D` | Support & résidence ne peuvent pas citer un numéro | Élevé |
+| R3 | ~~Pas de référence métier `HA-A` / `HA-D`~~ → **MVP client livré** ; séquence serveur + colonnes DB restantes | Support & résidence | Moyen (était Élevé) |
 | R4 | Dossier non versionné à l’envoi | Divergence famille ↔ résidence | Élevé |
 | R5 | Dual store (local vs Supabase) ; persist applications partiel | Pertes / divergences | Élevé |
 | R6 | UI « un seul dossier » vs modèle multi-seniors | Bloque multi-proches propre | Moyen |
@@ -290,35 +290,63 @@ Recherche par :
 
 ---
 
-## 8. Plan d’adoption (sans précipiter le code)
+## 8. Plan d’adoption
 
 ### Phase A — Décisions (maintenant)
 - [x] Figer glossaire P / D / A / R / B  
 - [x] Figer formats `HA-*` et `RPA-*`  
-- [ ] Valider ce que la résidence voit en priorité (`HA-A` obligatoire)
+- [x] Résidence voit `HA-A` en priorité (MVP) ; `HA-P` / `HA-D` optionnels côté console
 
 ### Phase B — Fondations données
-- [ ] Table pont résidences (`uuid` ↔ `msss_ref` ↔ `legacy_slug`)  
-- [ ] Colonne `public_ref` sur personnes / dossiers / demandes  
-- [ ] Toujours persister `senior_id` + `dossier_id` sur chaque demande  
+- [ ] Table pont résidences (`uuid` ↔ `msss_ref` ↔ `legacy_slug`) — *partiel via `residencePublicCode()`*  
+- [x] Références métier côté client : `publicRef` / `personRef` / `dossierRef` (MVP localStorage + séquence)  
+- [ ] Toujours persister `senior_id` + `dossier_id` sur chaque demande (DB)  
 - [ ] Contrainte unique demande active `(dossier_id, residence_id)`
 
 ### Phase C — Produit
-- [ ] Afficher `HA-A` dans Accueil famille + console résidence  
+- [x] Afficher `HA-A` dans Accueil famille + Mes demandes + console résidence + portail community  
 - [ ] Snapshot dossier à `submitted`  
-- [ ] Support : recherche par référence métier
+- [x] Recherche console FR par `HA-A` (filtre liste demandes)  
+- [ ] Support global : recherche cross-comptes par référence métier
 
 ### Phase D — Durcissement
 - [ ] Fusion de personnes / familles doublons  
 - [ ] Multi-dossiers par personne (réadmission)  
-- [ ] Audit log immuable par `HA-A`
+- [ ] Audit log immuable par `HA-A`  
+- [ ] Séquences serveur (remplacer localStorage)
+
+---
+
+## 8bis. MVP livré dans le code (2026-08-31)
+
+Implémentation runtime (prototype / localStorage) — **pas encore colonnes Supabase dédiées**.
+
+| Livrable | Emplacement | Comportement |
+| --- | --- | --- |
+| Helpers `HA-P/D/A/B` + `RPA-*` | `src/lib/public-refs.ts` | Format, séquence locale, `ensure*` stables |
+| Tests unitaires | `src/lib/public-refs.test.ts` | Format, RPA map, monotonicité, stabilité |
+| Demande → `publicRef` à l’envoi | `submitFamilyApplication` + `migrateApplication` | Assigné une fois hors brouillon, puis figé |
+| Personne / dossier | `FamilyData.personRef` / `dossierRef` + profil UI | Alloués au chargement / création dossier |
+| Pont famille → résidence | `admissions-bridge` `SharedAdmissionPacket` | `publicRef` (+ P/D) transmis |
+| Community apps | `CommunityApplication.publicRef` | Affiché liste, dashboard, détail |
+| Console FR (`Demande`) | `communityAppToDemande` | Même `HA-A` que la famille |
+| Accueil / Mes demandes | `FamilySpace` + `storeAppToUi` | Affiche `HA-A-AAAA-#####` |
+
+**Règle d’or respectée côté UI :** la famille et la résidence citent le même `HA-A-…`.  
+Les IDs techniques (`app-…`, `capp-shared-…`) restent pour les jointures internes.
+
+**Hors MVP (prochaine vague) :**
+- séquence / unicité côté serveur (Postgres)
+- `HA-B` affiché pour multi-envoi
+- snapshot versionné du dossier à `submitted`
+- pont DB `communities.id` ↔ `rpa-*`
 
 ---
 
 ## 9. Décisions ouvertes (à trancher)
 
 1. **Séquence** : globale vs par année pour `HA-P` (recommandé : globale pour P/F, annuelle pour D/A/B)  
-2. **Visibilité résidence** : voit-elle `HA-P` / `HA-D` ou seulement `HA-A` + nom ?  
+2. **Visibilité résidence** : ~~voit-elle `HA-P` / `HA-D` ou seulement `HA-A` + nom ?~~ → **MVP : `HA-A` + nom** (P/D transmis en données, pas mis en avant UI résidence)  
 3. **Réadmission** : nouveau `HA-D` ou réouverture du même dossier ? (recommandé : **nouveau dossier**, lien `supersedes_dossier_id`)  
 4. **CHSLD / RI hors RPA** : préfixe `ETS-` ou namespace unique `HA-R-` ?  
 5. **Environnements** : préfixe `HA-` identique en staging avec range de numéros séparé, ou `HA-TEST-` ?
@@ -363,3 +391,4 @@ Au téléphone :
 | Date | Auteur | Changement |
 | --- | --- | --- |
 | 2026-08-31 | Architecture produit/tech | Création audit + architecture d’organisation (Notion) |
+| 2026-08-31 | Implémentation | MVP `HA-P/D/A` + `RPA-*` câblé (refs, pont, UI Accueil/console) ; section 8bis |

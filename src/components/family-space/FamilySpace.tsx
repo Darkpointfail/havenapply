@@ -135,7 +135,9 @@ export function FamilySpace() {
   const [helpChat, setHelpChat] = useState<AssistantTurn[]>([
     {
       from: "claire",
-      body: "Bonjour. Je peux vous aider avec votre dossier, vos documents ou vos demandes. Posez votre question.",
+      body: t(
+        "Hello. I can help with your file, your documents, or your applications. Ask your question.",
+      ),
     },
   ]);
   const [helpInput, setHelpInput] = useState("");
@@ -395,7 +397,7 @@ export function FamilySpace() {
         hasSeniorProfile: profiles.length > 0 && !activeProfile?.draft,
         docs: activeProfile?.docs ?? liveDocs,
         applicationsCount: applications.length,
-        ownerLabel: displayUser.firstName || "Vous",
+        ownerLabel: displayUser.firstName || t("You"),
         forSelf: activeProfile ? isFamilyProfileSelf(activeProfile) : false,
         fieldNext: dossierCompleteness.next,
       }),
@@ -406,6 +408,7 @@ export function FamilySpace() {
       applications.length,
       displayUser.firstName,
       dossierCompleteness.next,
+      t,
     ],
   );
 
@@ -449,10 +452,10 @@ export function FamilySpace() {
 
   const headerDossierCaption =
     profiles.length > 1
-      ? `${profiles.length} dossiers actifs`
+      ? t("{count} active files", { count: profiles.length })
       : activeProfile
-        ? `Dossier de ${profileDisplayName(activeProfile)}`
-        : "Aucun dossier";
+        ? t("File for {name}", { name: profileDisplayName(activeProfile) })
+        : t("No file");
 
   useEffect(() => {
     if (!claireOpen) return;
@@ -997,7 +1000,9 @@ export function FamilySpace() {
                 { from: "family", body: helpInput.trim() },
                 {
                   from: "claire",
-                  body: "Merci. Un conseiller pourra préciser si besoin — en attendant, vérifiez les pièces manquantes dans Dossiers.",
+                  body: t(
+                    "Thank you. An advisor can clarify if needed — in the meantime, check missing documents in Files.",
+                  ),
                 },
               ]);
               setHelpInput("");

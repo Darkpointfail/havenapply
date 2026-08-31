@@ -2374,6 +2374,34 @@ export const frMessages: Record<string, string> = {
   "Tobacco policy": "Politique tabac",
   "Minimum age": "Âge minimum",
   "Save changes": "Enregistrer les modifications",
+
+  // ——— Family privacy hub (deletion + contact) ———
+  "Before sending your request, confirm that you understand:":
+    "Avant d'envoyer votre demande, confirmez que vous comprenez :",
+  "Data concerned: family profile, senior’s file, uploaded documents, consents, and history linked to this space.":
+    "Les données concernées : profil familial, dossier de la personne aînée, documents téléversés, consentements et historique associé à cet espace.",
+  "Some data may be retained legally (retention duties, security, disputes).":
+    "Certaines données peuvent être conservées légalement (obligations de conservation, sécurité, litiges).",
+  "Deleting the account may interrupt your access to HavenApply and open applications.":
+    "La suppression du compte peut interrompre votre accès à HavenApply et aux demandes en cours.",
+  "The request will be processed after your identity is verified.":
+    "La demande sera traitée après vérification de votre identité.",
+  "Scope of the request": "Portée de la demande",
+  "Delete the senior’s file (keep the account)":
+    "Supprimer le dossier de la personne aînée (garder le compte)",
+  "Delete all family data in this space":
+    "Supprimer toutes les données familiales de cet espace",
+  "Contact the privacy officer":
+    "Contacter la personne responsable de la protection des renseignements personnels",
+  "For any privacy question or to exercise your rights outside this interface, write to the privacy officer.":
+    "Pour toute question relative à la confidentialité ou pour exercer vos droits hors de cette interface, écrivez à la personne responsable de la protection des renseignements personnels.",
+  "Contact privacy@havenapply.com": "Contacter privacy@havenapply.com",
+  "Also see the": "Consultez aussi la",
+  "privacy policy": "politique de confidentialité",
+  "and the": "et l'",
+  "collection notice": "avis de collecte",
+  Active: "Actif",
+  Withdrawn: "Retiré",
 };
 
 export function translate(locale: Locale, key: string): string {

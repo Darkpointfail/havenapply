@@ -40,8 +40,6 @@ import {
   saveFamilyWizardDraft,
 } from "@/lib/family-wizard-draft";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
-import { rightsPath } from "@/content/legal";
-import { useLocale } from "@/lib/i18n/locale";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -89,7 +87,6 @@ function StatusPill({
 export function FamilySpace() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { locale } = useLocale();
   const { user, updateProfile, signOut } = useAuth();
   const {
     data,
@@ -100,12 +97,9 @@ export function FamilySpace() {
     saveResidentDossier,
     saveStatus,
     saveError,
-    recordProfileConsent,
     uploadVaultDocument,
     deleteVaultDocument,
   } = useFamilyData();
-  const [profileConsentChecked, setProfileConsentChecked] = useState(false);
-
   const [view, setView] = useState<FamilyView>("accueil");
   const [mode, setMode] = useState<DossierMode>("overview");
   const [localDraft, setLocalDraft] = useState<FamilyProfile | null>(() => loadFamilyWizardDraft());
@@ -550,11 +544,6 @@ export function FamilySpace() {
     input.click();
   };
 
-  const confirmDeleteAccount = () => {
-    setAccountOpen(false);
-    router.push(rightsPath(locale));
-  };
-
   const openResidence = (id: string, focus: "match" | "full" = "full") => {
     setResId(id);
     setFicheFocus(focus);
@@ -800,62 +789,31 @@ export function FamilySpace() {
                       type="button"
                       role="menuitem"
                       className="fs-account-menu-item"
-                      onClick={() => {
-                        setAccountOpen(false);
-                        router.push(rightsPath(locale));
-                      }}
+                      onClick={startAccountEdit}
                     >
-                      {locale === "en" ? "Your rights (Law 25)" : "Vos droits (Loi 25)"}
+                      Mon profil
                     </button>
                     <button
                       type="button"
                       role="menuitem"
                       className="fs-account-menu-item"
-                      onClick={startAccountEdit}
+                      onClick={() => {
+                        setAccountOpen(false);
+                        router.push("/family/settings");
+                      }}
                     >
-                      Modifier mon profil contact
+                      Paramètres
                     </button>
-                    <div className="border-b border-white/10 px-3.5 py-3">
-                      <label className="flex cursor-pointer items-start gap-2 text-[12.5px] leading-snug text-[#C5D4CD]">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5"
-                          checked={profileConsentChecked}
-                          onChange={(e) => {
-                            const granted = e.target.checked;
-                            setProfileConsentChecked(granted);
-                            void recordProfileConsent(granted);
-                          }}
-                        />
-                        <span>
-                          Je consens à la création et à la conservation de mon profil familial
-                          (Loi 25). Cela n&apos;autorise pas la transmission à une résidence.
-                        </span>
-                      </label>
-                      {saveStatus === "saving" ? (
-                        <p className="mt-2 text-[11px] text-[#9AABA4]">Enregistrement…</p>
-                      ) : null}
-                      {saveStatus === "saved" ? (
-                        <p className="mt-2 text-[11px] text-[#7dbaa8]">Enregistré</p>
-                      ) : null}
-                      {saveStatus === "error" && saveError ? (
-                        <p className="mt-2 text-[11px] text-[#e8a090]" role="alert">
-                          {saveError}
-                        </p>
-                      ) : null}
-                      <p className="mt-2 text-[11px] text-[#9AABA4]">
-                        Complétude du dossier : {dossierCompleteness.percent} %
-                      </p>
-                    </div>
                     <button
                       type="button"
                       role="menuitem"
-                      className="fs-account-menu-item text-[#e8a090]"
-                      onClick={confirmDeleteAccount}
+                      className="fs-account-menu-item"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        router.push("/family/privacy");
+                      }}
                     >
-                      {locale === "en"
-                        ? "Delete my data (Law 25 rights)"
-                        : "Supprimer mes données (droits Loi 25)"}
+                      Confidentialité et données
                     </button>
                     <button
                       type="button"

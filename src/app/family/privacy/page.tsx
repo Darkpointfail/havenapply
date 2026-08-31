@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "@/components/privacy/PrivacyCenter";
+export { default } from "@/components/family/FamilyPrivacyHub";

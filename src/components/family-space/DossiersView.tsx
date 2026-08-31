@@ -17,6 +17,7 @@ import {
   type AssistantTurn,
 } from "@/data/assistant";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 
 /** PROFILE_STEPS ships pre-set French labels; map each to its English source key for t(). */
 const STEP_LABEL_KEYS: Record<string, string> = {
@@ -31,21 +32,40 @@ const STEP_LABEL_KEYS: Record<string, string> = {
   Signature: "Signature",
 };
 
-/**
- * PROCHE_RELATIONSHIP_OPTIONS values are persisted as profile.rel; only the
- * displayed label is translated, the option `value` stays the original French text.
- */
-const RELATIONSHIP_LABEL_KEYS: Record<string, string> = {
-  Parent: "Parent",
-  "Beau-parent": "Step-parent",
-  "Conjoint / conjointe": "Spouse / partner",
-  Enfant: "Child",
-  "Frère / sœur": "Sibling",
-  "Petit-enfant": "Grandchild",
-  "Ami(e)": "Friend",
-  "Aidant professionnel": "Professional caregiver",
-  Autre: "Other",
+const GENDER_OPTIONS = ["Femme", "Homme", "Autre", "Préfère ne pas dire"] as const;
+
+const GENDER_VALUE_ALIASES: Record<string, (typeof GENDER_OPTIONS)[number]> = {
+  Female: "Femme",
+  Male: "Homme",
+  Other: "Autre",
+  "Prefer not to say": "Préfère ne pas dire",
 };
+
+function normalizedGenderValue(value: string) {
+  return GENDER_VALUE_ALIASES[value] ?? value;
+}
+
+function normalizedYesNoValue(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "oui" || normalized === "yes") return "Oui";
+  if (normalized === "non" || normalized === "no") return "Non";
+  if (
+    normalized === "à préciser" ||
+    normalized === "a preciser" ||
+    normalized === "to be determined"
+  ) {
+    return "";
+  }
+  return value;
+}
+
+function localizedProfileDisplayName(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  profile: FamilyProfile,
+) {
+  const name = profileDisplayName(profile);
+  return name === "New file" ? t(name) : name;
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -183,14 +203,19 @@ export function DossiersView({
               >
                 {p.draft ? t("Draft") : t("Active")}
               </span>
-              <p className="fs-serif mt-3 text-[18px] leading-snug">{profileDisplayName(p)}</p>
+              <p className="fs-serif mt-3 text-[18px] leading-snug">
+                {localizedProfileDisplayName(t, p)}
+              </p>
               <p
                 className="mt-1 text-[13px]"
                 style={{ color: active ? "#C5D2CD" : "var(--fs-ink-muted)" }}
               >
                 {p.draft
                   ? t("In progress · {percent}%", { percent: prog.percent })
-                  : t("{rel} · {percent}% complete", { rel: p.rel, percent: prog.percent })}
+                  : t("{rel} · {percent}% complete", {
+                      rel: catalogLabel(t, p.rel || "Family"),
+                      percent: prog.percent,
+                    })}
               </p>
               <div
                 className="mt-3 h-[5px] overflow-hidden rounded-full"
@@ -291,7 +316,7 @@ function OverviewMode({
       profile.autonomie === "À préciser" ||
       profile.autonomie === "To be determined"
         ? t("To be determined")
-        : t(profile.autonomie),
+        : catalogLabel(t, profile.autonomie),
     ],
     [
       t("Autonomy score"),
@@ -304,7 +329,7 @@ function OverviewMode({
       profile.services === "À préciser" ||
       profile.services === "To be determined"
         ? t("To be determined")
-        : t(profile.services),
+        : catalogLabel(t, profile.services),
     ],
     [
       t("Search"),
@@ -322,7 +347,7 @@ function OverviewMode({
       profile.budget === "À préciser" ||
       profile.budget === "To be determined"
         ? t("To be determined")
-        : t(profile.budget),
+        : catalogLabel(t, profile.budget),
     ],
     [
       t("Desired move-in"),
@@ -331,7 +356,7 @@ function OverviewMode({
       profile.move === "À préciser" ||
       profile.move === "To be determined"
         ? t("To be determined")
-        : t(profile.move),
+        : catalogLabel(t, profile.move),
     ],
   ];
 
@@ -388,11 +413,13 @@ function OverviewMode({
               </p>
             </label>
             <div className="min-w-0 flex-1">
-              <h2 className="fs-serif text-[28px] leading-tight">{profileDisplayName(profile)}</h2>
+              <h2 className="fs-serif text-[28px] leading-tight">
+                {localizedProfileDisplayName(t, profile)}
+              </h2>
               <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
                 {profile.draft
                   ? t("File in progress")
-                  : `${t(profile.rel || "Family")} · ${t(profile.meta)}`}
+                  : `${catalogLabel(t, profile.rel || "Family")} · ${catalogLabel(t, profile.meta)}`}
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {meta.map(([l, v]) => (
@@ -520,8 +547,8 @@ function DocRow({ doc, onUpload }: { doc: FamilyDoc; onUpload: () => void }) {
           style={{ background: received ? "var(--fs-success)" : "var(--fs-terra)" }}
         />
         <div>
-          <p className="font-semibold">{doc.name}</p>
-          <p className="text-[13px] text-[var(--fs-ink-muted)]">{doc.detail}</p>
+          <p className="font-semibold">{t(doc.name)}</p>
+          <p className="text-[13px] text-[var(--fs-ink-muted)]">{t(doc.detail)}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -607,7 +634,7 @@ function EditionMode({
                   : profile.profileSubject === "proche"
                     ? t("Creating a loved one's file")
                     : t("New admission file")
-                : t("{name}'s file", { name: profileDisplayName(profile) })}
+                : t("{name}'s file", { name: localizedProfileDisplayName(t, profile) })}
             </h2>
             <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
               {t(
@@ -902,7 +929,7 @@ function EditionStepFields({
               <option value="">{t("Choose…")}</option>
               {PROCHE_RELATIONSHIP_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
-                  {t(RELATIONSHIP_LABEL_KEYS[opt] ?? opt)}
+                  {catalogLabel(t, opt)}
                 </option>
               ))}
             </select>
@@ -954,15 +981,16 @@ function EditionStepFields({
         <Field label={t("Sex")}>
           <select
             className="fs-input"
-            value={profile.sexe}
+            value={normalizedGenderValue(profile.sexe)}
             onChange={(e) => onPatchActive({ sexe: e.target.value })}
             aria-label={t("Sex")}
           >
             <option value="">{t("To be determined")}</option>
-            <option value="Femme">{t("Female")}</option>
-            <option value="Homme">{t("Male")}</option>
-            <option value="Autre">{t("Other")}</option>
-            <option value="Préfère ne pas dire">{t("Prefer not to say")}</option>
+            {GENDER_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {catalogLabel(t, value)}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label={t("Current address")}>
@@ -1445,7 +1473,7 @@ function EditionStepFields({
         {forSelf
           ? t("File summary. Review the information before signing.")
           : t("Summary of {name}'s file. Review the information before signing.", {
-              name: profileDisplayName(profile),
+              name: localizedProfileDisplayName(t, profile),
             })}
       </p>
       <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4">
@@ -1495,13 +1523,16 @@ function YesNoField({
     <Field label={label}>
       <select
         className="fs-input"
-        value={value}
+        value={normalizedYesNoValue(value)}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
       >
         <option value="">{t("To be determined")}</option>
-        <option value="Oui">{t("Yes")}</option>
-        <option value="Non">{t("No")}</option>
+        {["Oui", "Non"].map((option) => (
+          <option key={option} value={option}>
+            {catalogLabel(t, option)}
+          </option>
+        ))}
       </select>
     </Field>
   );

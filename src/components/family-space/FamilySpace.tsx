@@ -57,6 +57,14 @@ function appStatusLabel(status: string) {
   return APP_STATUS_EN[status] || status;
 }
 
+function localizedProfileDisplayName(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  profile: FamilyProfile,
+) {
+  const name = profileDisplayName(profile);
+  return name === "New file" ? t(name) : name;
+}
+
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   weight: ["600"],
@@ -467,7 +475,7 @@ export function FamilySpace() {
     profiles.length > 1
       ? t("{count} active files", { count: profiles.length })
       : activeProfile
-        ? t("File for {name}", { name: profileDisplayName(activeProfile) })
+        ? t("File for {name}", { name: localizedProfileDisplayName(t, activeProfile) })
         : t("No file");
 
   useEffect(() => {
@@ -811,18 +819,7 @@ export function FamilySpace() {
                         {["Fille", "Fils", "Conjoint", "Conjointe", "Autre proche", "Moi-même"].map(
                           (opt) => (
                             <option key={opt} value={opt}>
-                              {t(
-                                (
-                                  {
-                                    Fille: "Daughter",
-                                    Fils: "Son",
-                                    Conjoint: "Male spouse",
-                                    Conjointe: "Female spouse",
-                                    "Autre proche": "Another loved one",
-                                    "Moi-même": "Myself",
-                                  } as Record<string, string>
-                                )[opt] ?? opt,
-                              )}
+                              {catalogLabel(t, opt)}
                             </option>
                           ),
                         )}
@@ -863,19 +860,7 @@ export function FamilySpace() {
                       {data.senior.relationship ? (
                         <p className="mt-1 text-[12px] text-[#9AABA4]">
                           {t("Contact · {relationship}", {
-                            relationship: t(
-                              (
-                                {
-                                  Fille: "Daughter",
-                                  Fils: "Son",
-                                  Conjoint: "Male spouse",
-                                  Conjointe: "Female spouse",
-                                  "Autre proche": "Another loved one",
-                                  "Moi-même": "Myself",
-                                  Famille: "Family",
-                                } as Record<string, string>
-                              )[data.senior.relationship] ?? data.senior.relationship,
-                            ),
+                            relationship: catalogLabel(t, data.senior.relationship),
                           })}
                         </p>
                       ) : null}
@@ -974,9 +959,9 @@ export function FamilySpace() {
             setSelectedUnit={setSelectedUnit}
             docs={activeProfile?.docs ?? liveDocs}
             seniorName={
-              activeProfile ? profileDisplayName(activeProfile) : t("your loved one")
+              activeProfile ? localizedProfileDisplayName(t, activeProfile) : t("your loved one")
             }
-            moveLabel={activeProfile?.move || t("To be determined")}
+            moveLabel={activeProfile?.move || "To be determined"}
             consent={consent}
             setConsent={setConsent}
             onBack={() => openResidence(selectedRes.id)}
@@ -1242,7 +1227,7 @@ function Accueil({
               <div className="min-w-0">
                 <p className="font-semibold">{nextVisit.residenceName}</p>
                 <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                  {t(nextVisit.unit)} · {nextVisit.city}
+                  {catalogLabel(t, nextVisit.unit)} · {nextVisit.city}
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
@@ -1383,7 +1368,7 @@ function Depot({
             <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
               {docs.map((d) => (
                 <li key={d.id} className="flex items-center justify-between py-3">
-                  <span>{d.name}</span>
+                  <span>{t(d.name)}</span>
                   <span
                     style={{
                       color: d.status === "reçu" ? "var(--fs-success)" : "var(--fs-terra)",
@@ -1424,7 +1409,7 @@ function Depot({
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--fs-ink-muted)]">{t("Desired move-in")}</dt>
-                <dd className="font-medium">{t(moveLabel)}</dd>
+                <dd className="font-medium">{catalogLabel(t, moveLabel)}</dd>
               </div>
             </dl>
             <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4 text-[14.5px]">
@@ -1689,7 +1674,7 @@ function Demandes({
                       <StatusPill tone="green">{t("Visit scheduled")}</StatusPill>
                       <p className="fs-serif mt-3 text-[18px] leading-snug">{app.residenceName}</p>
                       <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                        {visit.place || `${app.city} · ${app.unit}`}
+                        {visit.place || `${app.city} · ${catalogLabel(t, app.unit)}`}
                       </p>
                       <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">
                         {visit.dateLabel}

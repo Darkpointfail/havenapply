@@ -81,15 +81,11 @@ function initialsFrom(name: string) {
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
-/** Contact relationship terms found in the mock data; falls back to the raw value. */
-const RELATION_EN: Record<string, string> = {
-  fille: "Daughter",
-  fils: "Son",
-};
-
-function relationLabel(t: (key: string) => string, lien: string) {
-  const key = RELATION_EN[lien];
-  return key ? t(key) : lien;
+function relationLabel(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  lien: string,
+) {
+  return catalogLabel(t, lien);
 }
 
 /** Urgency levels are French enum values kept for data compatibility; map to English for display. */
@@ -976,10 +972,10 @@ function DossierView({
               {[
                 [t("Date of birth"), t(demande.dateNaissance)],
                 [t("Current address"), demande.adresse],
-                [t("Declared autonomy level"), t(demande.autonomie)],
-                [t("Services required"), t(demande.services)],
-                [t("Stated monthly budget"), t(demande.budget)],
-                [t("Application source"), t(demande.provenance)],
+                [t("Declared autonomy level"), catalogLabel(t, demande.autonomie)],
+                [t("Services required"), catalogLabel(t, demande.services)],
+                [t("Stated monthly budget"), catalogLabel(t, demande.budget)],
+                [t("Application source"), catalogLabel(t, demande.provenance)],
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="rc-label">{label}</p>
@@ -1389,7 +1385,7 @@ function AttenteView({
                 {t("{age} yrs", { age: w.age })}
               </p>
             </div>
-            <p className="text-[14px]">{w.unite}</p>
+            <p className="text-[14px]">{catalogLabel(t, w.unite)}</p>
             <p className="text-[14px] text-[var(--rc-ink-muted)]">
               {w.joursAttente} {t("d")}
             </p>
@@ -1433,7 +1429,7 @@ function AttenteView({
           {UNIT_AVAILABILITY.map((u) => (
             <li key={u.type} className="flex items-baseline justify-between gap-4 py-3.5">
               <div>
-                <p className="text-[15px] font-semibold">{t(u.type)}</p>
+                <p className="text-[15px] font-semibold">{catalogLabel(t, u.type)}</p>
                 <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">{t(u.waiting)}</p>
               </div>
               <p
@@ -1653,7 +1649,7 @@ function EtablissementView() {
                     cursor: "default",
                   }}
                 >
-                  <p className="text-[14.5px] font-semibold">{t(u.type)}</p>
+                  <p className="text-[14.5px] font-semibold">{catalogLabel(t, u.type)}</p>
                   <p className="text-[14px] text-[var(--rc-ink-muted)]">{t(u.area)}</p>
                   <p className="text-[14px] font-medium">{t(u.price)}</p>
                   <p className="text-[14px]">{t(u.avail)}</p>

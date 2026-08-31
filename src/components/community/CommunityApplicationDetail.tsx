@@ -40,6 +40,7 @@ import {
 } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 import { ProfileAvatar } from "@/components/ProfilePhotoPicker";
 
 const DOC_ORDER = ["Identity", "Medical", "Financial", "Legal", "Other"] as const;
@@ -365,7 +366,7 @@ export function CommunityApplicationDetail() {
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-ink">{app.family.name}</p>
-            <p className="text-sm text-ink-muted">{app.family.relationship}</p>
+            <p className="text-sm text-ink-muted">{catalogLabel(t, app.family.relationship)}</p>
           </div>
         </div>
         <div className="mt-4 flex flex-col gap-2">
@@ -468,7 +469,7 @@ export function CommunityApplicationDetail() {
                     <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
                   </div>
                   <p className="mt-0.5 text-sm text-ink-muted">
-                    {applicationCareType(app)}
+                    {catalogLabel(t, applicationCareType(app))}
                     <span className="mx-1.5">·</span>
                     {t("Move-in")}{" "}
                     {app.moveInRequested
@@ -561,7 +562,7 @@ export function CommunityApplicationDetail() {
                       <div className="bg-surface p-5">
                         <p className="text-sm text-ink-faint">{t("Care type")}</p>
                         <p className="text-[17px] font-semibold text-ink">
-                          {applicationCareType(app)}
+                          {catalogLabel(t, applicationCareType(app))}
                         </p>
                       </div>
                       <div className="bg-surface p-5">
@@ -586,13 +587,19 @@ export function CommunityApplicationDetail() {
                               : undefined
                           }
                         />
-                        <Field label={t("Gender")} value={dossier?.gender} />
+                        <Field
+                          label={t("Gender")}
+                          value={dossier?.gender ? catalogLabel(t, dossier.gender) : undefined}
+                        />
                         <Field label={t("Primary language")} value={dossier?.primaryLanguage} />
                         <Field label={t("Marital status")} value={dossier?.maritalStatus} />
                         <Field label={t("Height")} value={dossier?.height} />
                         <Field label={t("Weight")} value={dossier?.weight} />
                         <Field label={t("Blood type")} value={dossier?.bloodType} />
-                        <Field label={t("Care type requested")} value={applicationCareType(app)} />
+                        <Field
+                          label={t("Care type requested")}
+                          value={catalogLabel(t, applicationCareType(app))}
+                        />
                         <Field
                           label={t("Preferred move-in")}
                           value={
@@ -939,13 +946,13 @@ export function CommunityApplicationDetail() {
                         />
                         <Field
                           label={t("Primary contact")}
-                          value={`${app.family.name} · ${app.family.relationship}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
+                          value={`${app.family.name} · ${catalogLabel(t, app.family.relationship)}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
                         />
                         <Field
                           label={t("Emergency contact")}
                           value={
                             app.emergencyContact
-                              ? `${app.emergencyContact.name} · ${app.emergencyContact.relationship}\n${app.emergencyContact.phone}`
+                              ? `${app.emergencyContact.name} · ${catalogLabel(t, app.emergencyContact.relationship)}\n${app.emergencyContact.phone}`
                               : undefined
                           }
                         />
@@ -1027,7 +1034,7 @@ export function CommunityApplicationDetail() {
                       ) : null}
                     </div>
                     <p className="mt-2 text-sm text-ink-muted">
-                      {applicationCareType(app)}
+                      {catalogLabel(t, applicationCareType(app))}
                       <span className="mx-1.5">·</span>
                       {t("Move-in")}{" "}
                       {app.moveInRequested
@@ -1060,7 +1067,7 @@ export function CommunityApplicationDetail() {
                 <div className="bg-surface p-5">
                   <p className="text-sm text-ink-faint">{t("Care type")}</p>
                   <p className="text-[17px] font-semibold text-ink">
-                    {applicationCareType(app)}
+                    {catalogLabel(t, applicationCareType(app))}
                   </p>
                 </div>
                 <div className="bg-surface p-5">
@@ -1153,13 +1160,19 @@ export function CommunityApplicationDetail() {
                             : undefined
                         }
                       />
-                      <Field label={t("Gender")} value={dossier?.gender} />
+                      <Field
+                        label={t("Gender")}
+                        value={dossier?.gender ? catalogLabel(t, dossier.gender) : undefined}
+                      />
                       <Field label={t("Primary language")} value={dossier?.primaryLanguage} />
                       <Field label={t("Marital status")} value={dossier?.maritalStatus} />
                       <Field label={t("Height")} value={dossier?.height} />
                       <Field label={t("Weight")} value={dossier?.weight} />
                       <Field label={t("Blood type")} value={dossier?.bloodType} />
-                      <Field label={t("Care type requested")} value={applicationCareType(app)} />
+                      <Field
+                        label={t("Care type requested")}
+                        value={catalogLabel(t, applicationCareType(app))}
+                      />
                       <Field
                         label={t("Preferred move-in")}
                         value={
@@ -1181,13 +1194,13 @@ export function CommunityApplicationDetail() {
                       />
                       <Field
                         label={t("Primary contact")}
-                        value={`${app.family.name} · ${app.family.relationship}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
+                        value={`${app.family.name} · ${catalogLabel(t, app.family.relationship)}\n${app.family.email}${app.family.phone ? ` · ${app.family.phone}` : ""}`}
                       />
                       <Field
                         label={t("Emergency contact")}
                         value={
                           app.emergencyContact
-                            ? `${app.emergencyContact.name} · ${app.emergencyContact.relationship}\n${app.emergencyContact.phone}`
+                            ? `${app.emergencyContact.name} · ${catalogLabel(t, app.emergencyContact.relationship)}\n${app.emergencyContact.phone}`
                             : undefined
                         }
                       />

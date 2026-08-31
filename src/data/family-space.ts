@@ -676,7 +676,7 @@ export function familyPatchToSenior(
 
 export function profileDisplayName(p: FamilyProfile) {
   const full = [p.prenom, p.nom].filter(Boolean).join(" ").trim();
-  return full || "Nouveau dossier";
+  return full || "New file";
 }
 
 /** Whether this dossier is for the logged-in person. */
@@ -689,11 +689,11 @@ export function isFamilyProfileSelf(
   return r.includes("moi-même") || r.includes("moi-meme") || r.includes("myself");
 }
 
-/** Short FR label for UI copy (vous / votre proche / prénom). */
+/** Short source-language label for UI copy (you / your loved one / first name). */
 export function dossierSubjectLabel(p: FamilyProfile): string {
-  if (isFamilyProfileSelf(p)) return "vous";
+  if (isFamilyProfileSelf(p)) return "you";
   const name = profileDisplayName(p);
-  return name !== "Nouveau dossier" ? name : "votre proche";
+  return name !== "New file" ? name : "your loved one";
 }
 
 export const PROCHE_RELATIONSHIP_OPTIONS = [

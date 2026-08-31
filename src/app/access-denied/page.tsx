@@ -8,8 +8,8 @@ import { AUTH_MESSAGES } from "@/lib/auth-messages";
 import { useT } from "@/lib/i18n/locale";
 
 export default function AccessDeniedPage() {
-
-  const t = useT();  const { user, signOut } = useAuth();
+  const t = useT();
+  const { user, signOut } = useAuth();
   const home = user ? homeForUser(user) : "/";
 
   return (
@@ -18,11 +18,11 @@ export default function AccessDeniedPage() {
         <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-danger-soft text-danger">
           <ShieldAlert size={28} />
         </span>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Access denied</h1>
-        <p className="mt-2 text-ink-muted">{AUTH_MESSAGES.accessDenied}</p>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight">{t("Access denied")}</h1>
+        <p className="mt-2 text-ink-muted">{t(AUTH_MESSAGES.accessDenied)}</p>
         <div className="mt-8 flex flex-col gap-2">
           <Button href={home} size="lg">
-            {user ? "Go to my portal" : "Go home"}
+            {user ? t("Go to my portal") : t("Go home")}
           </Button>
           {user ? (
             <Button

@@ -95,6 +95,13 @@ export const frMessages: Record<string, string> = {
   "Medical report": "Bilan médical",
   "Proof of income": "Preuve de revenus",
   "Protection mandate": "Mandat de protection",
+  "Health insurance card or driver's licence":
+    "Carte d'assurance maladie ou permis de conduire",
+  "Front and back": "Recto et verso",
+  "Family doctor or CLSC": "Médecin de famille ou CLSC",
+  "Up-to-date prescription": "Ordonnance à jour",
+  "Notice of assessment or statement": "Avis de cotisation ou relevé",
+  "Or power of attorney if applicable": "Ou procuration, s'il y a lieu",
   "Add identity document": "Ajouter pièce d'identité",
   "Add health insurance card": "Ajouter carte d'assurance maladie",
   "Add medical report": "Ajouter bilan médical",
@@ -2525,6 +2532,7 @@ export const frMessages: Record<string, string> = {
   Upload: "Téléverser",
   "Creating your file": "Création de votre dossier",
   "Creating a loved one's file": "Création du dossier d'un proche",
+  "New file": "Nouveau dossier",
   "New admission file": "Nouveau dossier d'admission",
   "{name}'s file": "Dossier de {name}",
   "You can pause at any time and pick up later: your answers are saved at every step.":
@@ -2660,6 +2668,9 @@ export const frMessages: Record<string, string> = {
   AI: "IA",
   Daughter: "Fille",
   Son: "Fils",
+  Mother: "Mère",
+  Father: "Père",
+  "Your mother": "Votre mère",
   "Male spouse": "Conjoint",
   "Female spouse": "Conjointe",
   "Another loved one": "Autre proche",
@@ -3177,6 +3188,11 @@ export const frMessages: Record<string, string> = {
   "Empty file.": "Fichier vide.",
   "File exceeds the 10 MB size limit.": "Le fichier dépasse la taille maximale de 10 Mo.",
   "Network error during upload.": "Erreur réseau lors du téléversement.",
+  "Access denied": "Accès refusé",
+  "You do not have permission to access this page.":
+    "Vous n'avez pas la permission d'accéder à cette page.",
+  "Go to my portal": "Accéder à mon espace",
+  "Go home": "Retour à l'accueil",
 };
 
 export function translate(locale: Locale, key: string): string {

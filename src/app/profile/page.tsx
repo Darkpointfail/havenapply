@@ -18,6 +18,7 @@ import {
 } from "@/lib/senior-profile";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 
 /** Sidebar groups: 4–5 main titles, sections as subtitles */
 const PROFILE_GROUPS: { id: string; title: string; sectionIds: string[] }[] = [
@@ -97,7 +98,9 @@ export default function MedicalProfilePage() {
 
   const subtitle = [
     age ? `Age ${age}` : null,
-    data.senior.relationship || data.person.relationship || null,
+    data.senior.relationship || data.person.relationship
+      ? catalogLabel(t, data.senior.relationship || data.person.relationship)
+      : null,
     data.senior.city && data.senior.state
       ? `${data.senior.city}, ${data.senior.state}`
       : null,

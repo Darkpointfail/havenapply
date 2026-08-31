@@ -73,12 +73,54 @@ export const CATALOG_LABEL_EN: Record<string, string> = {
   "Novembre 2026": "November 2026",
   // Relationship values sometimes stored in FR
   Fille: "Daughter",
+  fille: "Daughter",
   Fils: "Son",
+  fils: "Son",
   Conjoint: "Male spouse",
   Conjointe: "Female spouse",
   "Autre proche": "Another loved one",
   "Moi-même": "Myself",
   Famille: "Family",
+  Mère: "Mother",
+  Père: "Father",
+  "Beau-parent": "Step-parent",
+  "Conjoint / conjointe": "Spouse / partner",
+  Enfant: "Child",
+  "Frère / sœur": "Sibling",
+  "Petit-enfant": "Grandchild",
+  "Ami(e)": "Friend",
+  "Aidant professionnel": "Professional caregiver",
+  Autre: "Other",
+  "Votre mère": "Your mother",
+  "primary contact": "Primary contact",
+  // Persisted choice values
+  Femme: "Female",
+  Homme: "Male",
+  "Préfère ne pas dire": "Prefer not to say",
+  "Non binaire": "Non-binary",
+  Oui: "Yes",
+  Non: "No",
+  "Je ne sais pas": "Not sure",
+  "À préciser": "To be determined",
+  // Legacy family-profile and community care values
+  "Semi-autonome": "Semi-autonomous",
+  "Besoin de soins": "Needs care",
+  "Repas, médicaments, aide légère": "Meals, medication, light assistance",
+  "3 400 $ / mois": "3 400 $/month",
+  "Budget à confirmer": "Budget to confirm",
+  "Dès que possible": "As soon as possible",
+  "Dès disponibilité": "When available",
+  "Famille — demande en ligne": "Family — online application",
+  "Référence du CLSC": "CLSC referral",
+  "84 ans · Sillery, Québec · dossier créé le 12 août 2026":
+    "84 yrs · Sillery, Québec · file created August 12, 2026",
+  "84 yrs · Sillery, Québec · file created August 12, 2026":
+    "84 yrs · Sillery, Québec · file created August 12, 2026",
+  "Vie autonome": "Independent living",
+  "Assistance à la vie quotidienne": "Assisted daily living",
+  "Soins de mémoire": "Memory care support",
+  "Hébergement temporaire / répite": "Respite / short-term stay",
+  Réadaptation: "Rehabilitation",
 };
 
 export type TranslateFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -89,6 +131,8 @@ export function catalogLabel(t: TranslateFn, value: string): string {
   if (capacity) return t("Capacity {count}", { count: capacity[1] });
   const registry = value.match(/^(\d+)\s+in registry$/i) || value.match(/^(\d+)\s+au registre$/i);
   if (registry) return t("{count} in registry", { count: registry[1] });
+  const exact = CATALOG_LABEL_EN[value];
+  if (exact) return t(exact);
   if (value.includes(" | ") || value.includes(" · ")) {
     const sep = value.includes(" | ") ? " | " : " · ";
     return value
@@ -96,5 +140,5 @@ export function catalogLabel(t: TranslateFn, value: string): string {
       .map((part) => t(CATALOG_LABEL_EN[part.trim()] ?? part.trim()))
       .join(sep);
   }
-  return t(CATALOG_LABEL_EN[value] ?? value);
+  return t(value);
 }

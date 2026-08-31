@@ -1096,12 +1096,15 @@ function Accueil({
         <h2 className="fs-serif text-[22px]">Vos demandes en cours</h2>
         {applications.length === 0 ? (
           <div className="fs-card mt-4 p-8 text-center">
-            <h3 className="fs-serif text-[20px]">Aucune demande pour le moment</h3>
+            <h3 className="fs-serif text-[20px]">
+              Pour pouvoir appliquer, merci de compléter votre dossier
+            </h3>
             <p className="mx-auto mt-2 max-w-md text-[14.5px] text-[var(--fs-ink-body)]">
-              Lorsque vous enverrez un dossier à une résidence, le suivi apparaîtra ici.
+              Une fois votre dossier prêt, vous pourrez déposer une demande auprès d&apos;une
+              résidence et suivre son avancement ici.
             </p>
-            <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onSearch}>
-              Chercher une résidence
+            <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onOpenDossier}>
+              {hasProfile || hasDossier ? "Compléter le dossier" : "Créer un dossier"}
             </button>
           </div>
         ) : (

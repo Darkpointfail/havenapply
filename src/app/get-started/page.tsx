@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { CollectionNotice } from "@/components/legal/CollectionNotice";
-import { SIGNUP_TERMS_LABEL } from "@/content/legal/privacy-fr";
+import { collectionPath, getSignupTermsLabel, privacyPath, termsPath } from "@/content/legal";
+import { useLocale } from "@/lib/i18n/locale";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useId, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
@@ -122,6 +123,8 @@ function ChipGroup({
 
 function GetStartedInner() {
   const { signUp, ready } = useAuth();
+  const { locale } = useLocale();
+  const termsLabel = getSignupTermsLabel(locale);
   const router = useRouter();
   const params = useSearchParams();
   const formId = useId();
@@ -451,17 +454,17 @@ function GetStartedInner() {
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
                   />
                   <span>
-                    {SIGNUP_TERMS_LABEL.beforeLinks}
-                    <Link href="/conditions" className="font-medium text-[var(--gs-green)] no-underline">
-                      {SIGNUP_TERMS_LABEL.termsLink}
+                    {termsLabel.beforeLinks}
+                    <Link href={termsPath(locale)} className="font-medium text-[var(--gs-green)] no-underline">
+                      {termsLabel.termsLink}
                     </Link>
-                    {SIGNUP_TERMS_LABEL.mid}
-                    <Link href="/confidentialite" className="font-medium text-[var(--gs-green)] no-underline">
-                      {SIGNUP_TERMS_LABEL.privacyLink}
+                    {termsLabel.mid}
+                    <Link href={privacyPath(locale)} className="font-medium text-[var(--gs-green)] no-underline">
+                      {termsLabel.privacyLink}
                     </Link>
-                    {SIGNUP_TERMS_LABEL.after}{" "}
-                    <Link href="/avis-de-collecte" className="font-medium text-[var(--gs-green)] no-underline">
-                      Lire l&apos;avis de collecte
+                    {termsLabel.after}{" "}
+                    <Link href={collectionPath(locale)} className="font-medium text-[var(--gs-green)] no-underline">
+                      {locale === "en" ? "Read the collection notice" : "Lire l'avis de collecte"}
                     </Link>
                     .
                   </span>

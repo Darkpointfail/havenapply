@@ -92,7 +92,7 @@ export const en: Messages = {
   "home.privacy.4": "Exchanges stay traceable for authorized people",
   "home.privacy.link": "Learn more about security",
   "home.privacy.proofTitle": "Proof placeholders : to be completed",
-  "home.privacy.proof.1": "Law 25 : practices to confirm",
+  "home.privacy.proof.1": "Privacy policy and collection notices published (draft pending legal review)",
   "home.privacy.proof.2": "Data hosting : region and provider to confirm",
   "home.privacy.proof.3": "Partner residences : verified list to publish",
   "home.privacy.proof.4": "Testimonials : only after written approval",

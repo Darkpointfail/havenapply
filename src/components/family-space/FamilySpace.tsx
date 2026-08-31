@@ -31,6 +31,8 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
+import { rightsPath } from "@/content/legal";
+import { useLocale } from "@/lib/i18n/locale";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -78,6 +80,7 @@ function StatusPill({
 export function FamilySpace() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale } = useLocale();
   const { user, updateProfile, signOut } = useAuth();
   const {
     data,
@@ -394,7 +397,7 @@ export function FamilySpace() {
 
   const confirmDeleteAccount = () => {
     setAccountOpen(false);
-    router.push("/family/droits");
+    router.push(rightsPath(locale));
   };
 
   const openResidence = (id: string, focus: "match" | "full" = "full") => {
@@ -632,10 +635,10 @@ export function FamilySpace() {
                       className="fs-account-menu-item"
                       onClick={() => {
                         setAccountOpen(false);
-                        router.push("/family/droits");
+                        router.push(rightsPath(locale));
                       }}
                     >
-                      Vos droits (Loi 25)
+                      {locale === "en" ? "Your rights (Law 25)" : "Vos droits (Loi 25)"}
                     </button>
                     <button
                       type="button"
@@ -683,7 +686,9 @@ export function FamilySpace() {
                       className="fs-account-menu-item text-[#e8a090]"
                       onClick={confirmDeleteAccount}
                     >
-                      Supprimer mes données (droits Loi 25)
+                      {locale === "en"
+                        ? "Delete my data (Law 25 rights)"
+                        : "Supprimer mes données (droits Loi 25)"}
                     </button>
                     <button
                       type="button"

@@ -43,6 +43,23 @@ export const frMessages: Record<string, string> = {
 
   // Public nav
   Home: "Accueil",
+  Residences: "Résidences",
+  Files: "Dossiers",
+  "My requests": "Mes demandes",
+  Assistance: "Assistance",
+  "Don't have an account?": "Pas encore de compte ?",
+  "Already have an account?": "Vous avez déjà un compte ?",
+  "Pick up where you left off": "Reprenez là où vous en étiez",
+  "Your file, applications, and residence replies live in your space.":
+    "Votre dossier, vos demandes et les réponses des résidences se trouvent dans votre espace.",
+  "Family caregivers: your loved one's file and application tracking.":
+    "Proches aidants : le dossier de votre proche et le suivi de vos demandes.",
+  Connection: "Connexion",
+  "Signing in…": "Connexion en cours…",
+  "Invalid email or password.": "Courriel ou mot de passe invalide.",
+  "Your account is ready. Sign in to open your space.":
+    "Votre compte est créé. Connectez-vous pour accéder à votre espace.",
+  "You are signed out.": "Vous êtes déconnecté.",
   "Find Senior Living": "Trouver une résidence",
   "For Families": "Pour les familles",
   "For Residences": "Pour les résidences",
@@ -857,7 +874,7 @@ export const frMessages: Record<string, string> = {
   "Guardianship (if applicable)": "Tutelle (le cas échéant)",
   "Guardianship document": "Document de tutelle",
   "Haven can explain a status or the next step.": "Haven peut expliquer un statut ou l'étape suivante.",
-  "HavenApply home": "HavenPostuler à la page d'accueil",
+  "HavenApply home": "HavenApply : accueil",
   "Health & care": "Santé et soins",
   "Hearing / vision": "Audition/vision",
   "Hi, we’re exploring boutique assisted living and would love more information about your community.": "Bonjour, nous explorons les résidences-services en boutique et aimerions plus d'informations sur votre établissement.",

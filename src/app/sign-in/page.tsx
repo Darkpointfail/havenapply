@@ -6,8 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { RedirectIfAuthenticated } from "@/components/auth/RequireAuth";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useAuth, homeForUser } from "@/lib/auth";
 import { isFacilityRole } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n/locale";
 import "./sign-in.css";
 
 const sourceSerif = Source_Serif_4({
@@ -25,6 +27,7 @@ const publicSans = Public_Sans({
 });
 
 function SignInForm() {
+  const t = useT();
   const { signIn } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -69,19 +72,19 @@ function SignInForm() {
     ? {
         className: "si-alert si-alert-error",
         role: "alert" as const,
-        text: "Courriel ou mot de passe invalide.",
+        text: t("Invalid email or password."),
       }
     : registered
       ? {
           className: "si-alert si-alert-registered",
           role: undefined,
-          text: "Votre compte est créé. Connectez-vous pour accéder à votre espace.",
+          text: t("Your account is ready. Sign in to open your space."),
         }
       : signedOut
         ? {
             className: "si-alert si-alert-signedout",
             role: undefined,
-            text: "Vous avez été déconnectée.",
+            text: t("You are signed out."),
           }
         : null;
 
@@ -94,7 +97,7 @@ function SignInForm() {
     >
       <header className="si-header">
         <div className="si-header-inner">
-          <Link href="/" className="si-brand" aria-label="HavenApply — accueil">
+          <Link href="/" className="si-brand" aria-label={t("HavenApply home")}>
             <Image
               src="/brand/favicon-48-v6.png"
               alt=""
@@ -105,20 +108,22 @@ function SignInForm() {
             />
             <span className="si-brand-name">HavenApply</span>
           </Link>
-          <p className="si-header-cta">
-            <span className="si-header-cta-lead">Pas encore de compte ? </span>
-            <Link href="/get-started">Créer un compte</Link>
-          </p>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher compact />
+            <p className="si-header-cta">
+              <span className="si-header-cta-lead">{t("Don't have an account?")} </span>
+              <Link href="/get-started">{t("Create an account")}</Link>
+            </p>
+          </div>
         </div>
       </header>
 
       <main className="si-main">
         <div className="si-copy-col">
-          <p className="si-eyebrow">Connexion</p>
-          <h1 className="si-h1">Reprenez là où vous en étiez</h1>
+          <p className="si-eyebrow">{t("Connection")}</p>
+          <h1 className="si-h1">{t("Pick up where you left off")}</h1>
           <p className="si-lead">
-            Votre dossier, vos demandes et les réponses des résidences se trouvent dans votre
-            espace.
+            {t("Your file, applications, and residence replies live in your space.")}
           </p>
           <ul className="si-points">
             <li>
@@ -148,7 +153,7 @@ function SignInForm() {
               </div>
             ) : null}
 
-            <h2 className="si-h2">Se connecter</h2>
+            <h2 className="si-h2">{t("Log in")}</h2>
 
             <form onSubmit={onSubmit} className="si-fields">
               <div>
@@ -197,14 +202,14 @@ function SignInForm() {
               </label>
 
               <button type="submit" className="si-submit" disabled={submitting}>
-                {submitting ? "Connexion en cours…" : "Se connecter"}
+                {submitting ? t("Signing in…") : t("Log in")}
               </button>
             </form>
 
             <div className="si-card-foot">
               <p className="si-card-foot-cta">
-                Pas encore de compte ?{" "}
-                <Link href="/get-started">Créer un compte</Link>
+                {t("Don't have an account?")}{" "}
+                <Link href="/get-started">{t("Create an account")}</Link>
               </p>
               <p className="si-card-foot-note">
                 Un établissement partenaire ? Utilisez le même formulaire : votre console

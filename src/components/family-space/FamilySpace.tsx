@@ -32,6 +32,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import { applyFamilyPatchToDossier, wizardFieldsFromDossier } from "@/lib/family-dossier-wizard";
+import { careProfileFromFamilyInputs } from "@/lib/family-residence-match";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import { rightsPath } from "@/content/legal";
 import { useLocale } from "@/lib/i18n/locale";
@@ -327,6 +328,23 @@ export function FamilySpace() {
   );
 
   const selectedRes = RESIDENCES.find((r) => r.id === resId) ?? null;
+
+  const careProfile = useMemo(
+    () =>
+      careProfileFromFamilyInputs({
+        ville: activeProfile?.ville || data.senior.city,
+        budget: activeProfile?.budget,
+        budgetMax: data.senior.budgetMax,
+        autonomie: activeProfile?.autonomie,
+        aideHygiene: activeProfile?.aideHygiene,
+        aideMedication: activeProfile?.aideMedication,
+        mobilite: activeProfile?.mobilite,
+        services: activeProfile?.services,
+        searchZones: data.senior.searchZones,
+        draft: activeProfile?.draft,
+      }),
+    [activeProfile, data.senior],
+  );
 
   const headerDossierCaption =
     profiles.length > 1
@@ -767,11 +785,16 @@ export function FamilySpace() {
           />
         )}
         {view === "residences" && (
-          <ResidencesBrowse onOpen={openResidence} onApply={startApply} />
+          <ResidencesBrowse
+            careProfile={careProfile}
+            onOpen={openResidence}
+            onApply={startApply}
+          />
         )}
         {view === "fiche" && selectedRes && (
           <ResidenceFiche
             residence={selectedRes}
+            careProfile={careProfile}
             focus={ficheFocus}
             onBack={() => go("residences")}
             onApply={() => startApply(selectedRes.id)}

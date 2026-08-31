@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build slim RPA Québec catalog JSON from the MSSS annuaire Excel.
+"""Build slim RPA Québec catalog from the complete verifiable workbook.
 
 Usage: python3 scripts/build-rpa-quebec.py
 """
@@ -12,7 +12,9 @@ from pathlib import Path
 import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / "data/rpa/rpa_quebec_annuaire_2025-12-31.xlsx"
+XLSX = ROOT / "data/rpa/rpa_quebec_complet_verifiable_2025-12-31.xlsx"
+# Fallback to legacy annuaire if the complete workbook is absent.
+LEGACY = ROOT / "data/rpa/rpa_quebec_annuaire_2025-12-31.xlsx"
 OUT = ROOT / "data/rpa/quebec-residences.json"
 
 REGION_NAMES = {
@@ -54,9 +56,24 @@ SERVICE_FLAGS = [
     ("loisirs", "Loisirs"),
 ]
 
+SAFETY_FLAGS = [
+    ("rampe_dacces", "Rampe d'accès"),
+    ("gicleur", "Gicleurs"),
+    ("generatrice", "Génératrice"),
+    ("avertisseur_fumee", "Avertisseurs de fumée"),
+    ("avertisseur_monox_carbone", "Avertisseurs de monoxyde"),
+    ("detecteur_alarme_incendie", "Alarme incendie"),
+    ("dispositif_securite_immeuble", "Dispositif de sécurité immeuble"),
+]
+
 
 def yes(v) -> bool:
-    return str(v or "").strip().upper() in {"OUI", "O", "YES", "Y", "1", "TRUE"}
+    s = str(v or "").strip().upper()
+    if s in {"OUI", "O", "YES", "Y", "1", "TRUE"}:
+        return True
+    if s.startswith("GICL"):  # Giclé
+        return True
+    return False
 
 
 def num(v):
@@ -73,19 +90,25 @@ def slug(ref: str) -> str:
     return f"rpa-{clean or 'unknown'}"
 
 
+def cell(raw, idx, key):
+    if key not in idx:
+        return None
+    return raw[idx[key]]
+
+
 def main() -> None:
-    wb = openpyxl.load_workbook(XLSX, read_only=True, data_only=True)
-    ws = wb.active
+    path = XLSX if XLSX.exists() else LEGACY
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    sheet_name = "RPA_Consolidees" if "RPA_Consolidees" in wb.sheetnames else wb.sheetnames[0]
+    ws = wb[sheet_name]
     rows_iter = ws.iter_rows(values_only=True)
     headers = [str(h).strip() if h is not None else "" for h in next(rows_iter)]
     idx = {h: i for i, h in enumerate(headers)}
 
-    required = [
-        "ref_registre",
-        "nom_residence",
-        "municipalite_rpa",
-        "statut_residence",
-    ]
+    # Support both categorie_rpa (legacy) and categories_rpa (complete workbook)
+    cat_key = "categories_rpa" if "categories_rpa" in idx else "categorie_rpa"
+
+    required = ["ref_registre", "nom_residence", "municipalite_rpa", "statut_residence"]
     for key in required:
         if key not in idx:
             raise SystemExit(f"Missing column: {key}")
@@ -93,38 +116,47 @@ def main() -> None:
     out = []
     skipped = 0
     for raw in rows_iter:
-        statut = str(raw[idx["statut_residence"]] or "").strip()
+        statut = str(cell(raw, idx, "statut_residence") or "").strip()
         if statut != "Active":
             skipped += 1
             continue
 
-        ref = str(raw[idx["ref_registre"]] or "").strip()
-        name = str(raw[idx["nom_residence"]] or "").strip()
+        ref = str(cell(raw, idx, "ref_registre") or "").strip()
+        name = str(cell(raw, idx, "nom_residence") or "").strip()
         if not ref or not name:
             skipped += 1
             continue
 
-        region_code = str(raw[idx.get("region", 0)] or "").strip()
+        region_code = str(cell(raw, idx, "region") or "").strip()
         services = []
         for col, label in SERVICE_FLAGS:
-            if col in idx and yes(raw[idx[col]]):
+            if yes(cell(raw, idx, col)):
                 services.append(label)
 
-        errance = yes(raw[idx["clientele_risque_errance"]]) if "clientele_risque_errance" in idx else False
-        if errance and "Clientèle à risque d'errance" not in services:
+        if yes(cell(raw, idx, "clientele_risque_errance")):
             services.append("Clientèle à risque d'errance")
 
-        postal = str(raw[idx.get("code_postal_rpa", 0)] or "").replace(" ", "").upper()
+        safety = []
+        for col, label in SAFETY_FLAGS:
+            if yes(cell(raw, idx, col)):
+                safety.append(label)
+
+        postal = str(cell(raw, idx, "code_postal_rpa") or "").replace(" ", "").upper()
         if len(postal) == 6:
             postal = f"{postal[:3]} {postal[3:]}"
 
-        phone = str(raw[idx.get("telephone_rpa", 0)] or "").strip() or None
-        address = str(raw[idx.get("adresse_rpa", 0)] or "").strip()
-        city = str(raw[idx["municipalite_rpa"]] or "").strip()
-        category = str(raw[idx.get("categorie_rpa", 0)] or "").strip()
-        cert = str(raw[idx.get("etat_certification", 0)] or "").strip()
-        type_res = str(raw[idx.get("type_residence", 0)] or "").strip()
-        security = str(raw[idx.get("securite", 0)] or "").strip() or None
+        phone = str(cell(raw, idx, "telephone_rpa") or "").strip() or None
+        address = str(cell(raw, idx, "adresse_rpa") or "").strip()
+        city = str(cell(raw, idx, "municipalite_rpa") or "").strip()
+        category = str(cell(raw, idx, cat_key) or "").strip()
+        cert = str(cell(raw, idx, "etat_certification") or "").strip()
+        type_res = str(cell(raw, idx, "type_residence") or "").strip()
+        security = str(cell(raw, idx, "securite") or "").strip() or None
+
+        nurses_day = num(cell(raw, idx, "nbremplinfsemjour")) or 0
+        nurses_eve = num(cell(raw, idx, "nbremplinfsemsoir")) or 0
+        nurses_night = num(cell(raw, idx, "nbremplinfsemnuit")) or 0
+        aides_day = num(cell(raw, idx, "nbremplassspabsemjour")) or 0
 
         record = {
             "id": slug(ref),
@@ -136,43 +168,58 @@ def main() -> None:
             "phone": phone,
             "regionCode": region_code,
             "region": REGION_NAMES.get(region_code, f"Région {region_code}"),
-            "mrc": str(raw[idx.get("mrc", 0)] or "").strip() or None,
+            "mrc": str(cell(raw, idx, "mrc") or "").strip() or None,
             "category": category,
             "type": type_res or None,
             "certification": cert or None,
-            "capacity": num(raw[idx["capacite_daccueil_des_personnes_dans_la_rpa"]])
-            if "capacite_daccueil_des_personnes_dans_la_rpa" in idx
-            else None,
-            "residents": num(raw[idx["total_de_residents_rpa"]])
-            if "total_de_residents_rpa" in idx
-            else None,
-            "units": num(raw[idx["total_unite_rpa"]]) if "total_unite_rpa" in idx else None,
-            "roomsSingle": num(raw[idx["chambres_simples_rpa"]])
-            if "chambres_simples_rpa" in idx
-            else None,
-            "roomsDouble": num(raw[idx["chambres_doubles_rpa"]])
-            if "chambres_doubles_rpa" in idx
-            else None,
-            "apartments": num(raw[idx["logements_rpa"]]) if "logements_rpa" in idx else None,
+            "capacity": num(cell(raw, idx, "capacite_daccueil_des_personnes_dans_la_rpa")),
+            "residents": num(cell(raw, idx, "total_de_residents_rpa")),
+            "units": num(cell(raw, idx, "total_unite_rpa")),
+            "unitsByCategory": {
+                "1": num(cell(raw, idx, "unites_rpa_categorie_1")),
+                "2": num(cell(raw, idx, "unites_rpa_categorie_2")),
+                "3": num(cell(raw, idx, "unites_rpa_categorie_3")),
+                "4": num(cell(raw, idx, "unites_rpa_categorie_4")),
+            },
+            "roomsSingle": num(cell(raw, idx, "chambres_simples_rpa")),
+            "roomsDouble": num(cell(raw, idx, "chambres_doubles_rpa")),
+            "apartments": num(cell(raw, idx, "logements_rpa")),
             "services": services,
+            "safety": safety,
             "security": security,
-            "entente108": yes(raw[idx["unite_locative_rpa_avec_entente_108"]])
-            if "unite_locative_rpa_avec_entente_108" in idx
-            else False,
-            "sourceDate": str(raw[idx.get("date_extraction", 0)] or "").strip() or None,
+            "floors": num(cell(raw, idx, "nbr_detages_dans_limmeuble")),
+            "elevators": num(cell(raw, idx, "nbr_dascenseurs_reguliers")),
+            "openedOn": str(cell(raw, idx, "date_ouverture") or "").strip() or None,
+            "ages": {
+                "under65": num(cell(raw, idx, "age_65")),
+                "from65to74": num(cell(raw, idx, "age_65_a_74")),
+                "from75to84": num(cell(raw, idx, "age_75_a_84")),
+                "from85": num(cell(raw, idx, "age_85_et")),
+            },
+            "staffing": {
+                "nursesWeekday": {"day": nurses_day, "evening": nurses_eve, "night": nurses_night},
+                "aidesWeekdayDay": aides_day,
+                "hasNursingPresence": bool(nurses_day or nurses_eve or nurses_night),
+            },
+            "entente108": yes(cell(raw, idx, "unite_locative_rpa_avec_entente_108")),
+            "operator": str(cell(raw, idx, "nom_de_lentreprise") or "").strip() or None,
+            "group": str(cell(raw, idx, "regroupement") or "").strip() or None,
+            "verified": str(cell(raw, idx, "statut_verification") or "").strip() or None,
+            "sourceDate": str(cell(raw, idx, "date_extraction") or "").strip() or None,
         }
         out.append(record)
 
     out.sort(key=lambda r: (r["region"], r["city"], r["name"]))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "source": "Registre des RPA — Québec",
+        "source": "Registre des RPA — Québec (complet vérifiable)",
         "extractedOn": "2025-12-31",
+        "workbook": path.name,
         "count": len(out),
         "residences": out,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"Wrote {len(out)} active residences → {OUT.relative_to(ROOT)} (skipped {skipped})")
+    print(f"Wrote {len(out)} active residences → {OUT.relative_to(ROOT)} from {path.name} (skipped {skipped})")
 
 
 if __name__ == "__main__":

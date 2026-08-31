@@ -55,8 +55,8 @@ export function MessageButton({
       ? `/professional/messages?community=${encodeURIComponent(residenceId)}`
       : "/professional/messages"
     : residenceId
-      ? `/family/messages?community=${encodeURIComponent(residenceId)}`
-      : "/family/messages";
+      ? `/family/dashboard?view=assistance&community=${encodeURIComponent(residenceId)}`
+      : "/family/dashboard?view=assistance";
 
   return (
     <Button href={href} variant={variant} size={size} className={className}>

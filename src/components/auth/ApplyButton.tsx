@@ -78,7 +78,7 @@ export function ApplyButton({
 
   if (!residenceId) {
     return (
-      <Button href="/family/find-communities" size={size} variant={variant} className={className}>
+      <Button href="/family/dashboard?view=residences" size={size} variant={variant} className={className}>
         {children}
       </Button>
     );
@@ -86,7 +86,7 @@ export function ApplyButton({
 
   return (
     <Button
-      href={`/family/apply/${residenceId}`}
+      href={`/family/dashboard?view=residences&apply=${encodeURIComponent(residenceId)}`}
       size={size}
       variant={variant}
       className={cn(className)}

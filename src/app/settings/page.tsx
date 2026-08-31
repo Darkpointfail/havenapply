@@ -8,7 +8,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useTheme } from "@/lib/theme";
 
 const sections: { label: string; href?: string; soon?: boolean }[] = [
-  { label: "Mon profil", href: "/family/profile" },
+  { label: "Mon profil", href: "/family/dashboard?view=dossier" },
   { label: "Membres de la famille", href: "/family/family-members" },
   { label: "Notifications", href: "/family/notifications" },
   { label: "Confidentialité et données", href: "/family/privacy" },

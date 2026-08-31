@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { DossierWizard } from "@/components/dossier/DossierWizard";
-
-export default function FamilyDossierPage() {
-  return <DossierWizard />;
+/** Obsolete legacy family portal page — canonical UX is FamilySpace. */
+export default function Page() {
+  redirect("/family/dashboard?view=dossier");
 }

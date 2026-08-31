@@ -58,14 +58,16 @@ export function canMessageCommunity(user: SessionUser | null | undefined): boole
 }
 
 export function applySignInHref(residenceId?: string): string {
-  const next = residenceId ? `/family/apply/${residenceId}` : "/family/dashboard";
+  const next = residenceId
+    ? `/family/dashboard?view=residences&apply=${encodeURIComponent(residenceId)}`
+    : "/family/dashboard";
   return `/sign-in?next=${encodeURIComponent(next)}`;
 }
 
 export function messageSignInHref(residenceId?: string): string {
   const next = residenceId
-    ? `/family/messages?community=${encodeURIComponent(residenceId)}`
-    : "/family/messages";
+    ? `/family/dashboard?view=assistance&community=${encodeURIComponent(residenceId)}`
+    : "/family/dashboard?view=assistance";
   return `/sign-in?next=${encodeURIComponent(next)}`;
 }
 
@@ -102,17 +104,17 @@ export function openAccessHomeForPath(pathname: string): string {
   return "/family/dashboard";
 }
 
-/** Shared compare URL (not under /family, so Care Professionals can open it). */
+/** Compare is retired in the family space — keep a stable href for callers. */
 export function compareCommunitiesHref(ids: string[] = []): string {
-  const unique = [...new Set(ids)].filter(Boolean).slice(0, 4);
-  return unique.length ? `/compare?ids=${unique.join(",")}` : "/compare";
+  void ids;
+  return "/family/dashboard";
 }
 
 export function savedCommunitiesHref(): string {
-  return "/saved";
+  return "/family/dashboard";
 }
 
 export function applicationsHrefForUser(user: SessionUser | null | undefined): string {
   if (user?.role === "professional") return "/professional/applications";
-  return "/family/applications";
+  return "/family/dashboard?view=demandes";
 }

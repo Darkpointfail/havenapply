@@ -25,20 +25,18 @@ export const publicAuthLinks = {
 };
 
 /**
- * Primary family journey, keep this short.
- * Dashboard → Dossier → Profile → Communities → My applications
- * Apply happens on each community profile.
+ * Primary family journey — the product UI is FamilySpace at /family/dashboard.
+ * Account destinations (settings, privacy, members) stay reachable from the avatar menu.
  */
 export const familyNav: NavItem[] = [
   { href: "/family/dashboard", label: "Accueil" },
-  { href: "/family/dossier", label: "Dossier" },
-  { href: "/family/profile", label: "Profile" },
-  { href: "/family/find-communities", label: "Communities" },
-  { href: "/family/applications", label: "My applications" },
+  { href: "/family/settings", label: "Paramètres" },
+  { href: "/family/privacy", label: "Confidentialité" },
 ];
 
 /**
- * Header: journey steps. Account lives on the user name in the header.
+ * Header groups for remaining family account pages (settings, privacy, etc.).
+ * Journey pages redirect into FamilySpace and no longer need nested portal nav.
  */
 export const familyNavGroups: NavGroup[] = [
   {
@@ -48,61 +46,23 @@ export const familyNavGroups: NavGroup[] = [
     children: [{ href: "/family/dashboard", label: "Espace famille" }],
   },
   {
-    id: "dossier",
-    label: "Dossier",
-    href: "/family/dossier",
-    children: [
-      { href: "/family/dossier", label: "Resident dossier" },
-      { href: "/family/profile?tab=documents", label: "Documents" },
-    ],
-  },
-  {
-    id: "profile",
-    label: "Profile",
-    href: "/family/profile",
-    children: [
-      { href: "/family/profile", label: "Manage profile" },
-      { href: "/family/profile?tab=documents", label: "Documents" },
-    ],
-  },
-  {
-    id: "communities",
-    label: "Communities",
-    href: "/family/find-communities",
-    children: [
-      { href: "/family/find-communities", label: "Browse communities" },
-      { href: "/family/saved", label: "Saved" },
-      { href: "/family/compare", label: "Compare" },
-    ],
-  },
-  {
-    id: "applications",
-    label: "My applications",
-    href: "/family/applications",
-    children: [
-      { href: "/family/applications", label: "My applications" },
-      { href: "/family/messages", label: "Messages" },
-    ],
-  },
-  {
     id: "account",
-    label: "Account",
+    label: "Compte",
     href: "/family/settings",
     children: [
+      { href: "/family/settings", label: "Paramètres" },
+      { href: "/family/privacy", label: "Confidentialité et données" },
       { href: "/family/notifications", label: "Notifications" },
-      { href: "/family/family-members", label: "Family members" },
-      { href: "/family/privacy", label: "Privacy & security" },
-      { href: "/family/settings", label: "Settings" },
+      { href: "/family/family-members", label: "Membres de la famille" },
     ],
   },
 ];
 
-/** Bottom bar, mirrors the journey steps */
+/** Bottom bar — FamilySpace owns in-app navigation; Accueil for account pages. */
 export const familyMobileNav: NavItem[] = [
   { href: "/family/dashboard", label: "Accueil" },
-  { href: "/family/dossier", label: "Dossier" },
-  { href: "/family/find-communities", label: "Communities" },
-  { href: "/family/applications", label: "My applications" },
+  { href: "/family/settings", label: "Paramètres" },
+  { href: "/family/privacy", label: "Confidentialité" },
 ];
 
 /**

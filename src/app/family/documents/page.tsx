@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { useT } from "@/lib/i18n/locale";
 
-export default function DocumentsRedirect() {
-  redirect("/family/profile?tab=documents");
+/** Obsolete legacy family portal page — canonical UX is FamilySpace. */
+export default function Page() {
+  redirect("/family/dashboard?view=dossier");
 }

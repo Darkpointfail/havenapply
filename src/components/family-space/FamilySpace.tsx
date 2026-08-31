@@ -19,6 +19,7 @@ import {
   docsProgress,
   emptyDraftDocs,
   familyPatchToSenior,
+  hasInProgressFamilyDossier,
   mapRequiredDocsFromDocuments,
   profileDisplayName,
   type FamilyApplication,
@@ -32,7 +33,11 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import { applyFamilyPatchToDossier, wizardFieldsFromDossier } from "@/lib/family-dossier-wizard";
-import { careProfileFromFamilyInputs } from "@/lib/family-residence-match";
+import { careProfileFromFamilyInputs, getMatchReadiness } from "@/lib/family-residence-match";
+import {
+  loadFamilyWizardDraft,
+  saveFamilyWizardDraft,
+} from "@/lib/family-wizard-draft";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import { rightsPath } from "@/content/legal";
 import { useLocale } from "@/lib/i18n/locale";
@@ -103,7 +108,7 @@ export function FamilySpace() {
 
   const [view, setView] = useState<FamilyView>("accueil");
   const [mode, setMode] = useState<DossierMode>("overview");
-  const [localDraft, setLocalDraft] = useState<FamilyProfile | null>(null);
+  const [localDraft, setLocalDraft] = useState<FamilyProfile | null>(() => loadFamilyWizardDraft());
   const [activeProfileId, setActiveProfileId] = useState("");
   const [resId, setResId] = useState<string | null>(null);
   const [applyStep, setApplyStep] = useState(1);
@@ -263,26 +268,47 @@ export function FamilySpace() {
   );
 
   const profiles = useMemo(() => {
-    const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps);
+    const inProgress = hasInProgressFamilyDossier(data.senior, data.residentDossier);
+    const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps, {
+      allowIncomplete: inProgress || Boolean(localDraft),
+    });
     if (fromSenior) {
       const fromDossier = wizardFieldsFromDossier(data.residentDossier);
       const hydrated: FamilyProfile = {
         ...fromSenior,
         ...fromDossier,
         autonomie: data.residentDossier.autonomyLevel?.trim() || fromSenior.autonomie,
+        autonomyScore: fromDossier.autonomyScore ?? fromSenior.autonomyScore,
       };
       if (localDraft && localDraft.id === hydrated.id) {
-        return [
-          {
-            ...hydrated,
-            ...localDraft,
-            prenom: localDraft.prenom || hydrated.prenom,
-            nom: localDraft.nom || hydrated.nom,
-            docs: liveDocs.length ? liveDocs : localDraft.docs,
-            accesses: accessesFromApps.length ? accessesFromApps : localDraft.accesses,
-            draft: localDraft.draft && !(data.senior.firstName && data.senior.lastName),
-          },
-        ];
+        const merged: FamilyProfile = {
+          ...hydrated,
+          ...localDraft,
+          prenom: localDraft.prenom || hydrated.prenom,
+          nom: localDraft.nom || hydrated.nom,
+          docs: liveDocs.length ? liveDocs : localDraft.docs,
+          accesses: accessesFromApps.length ? accessesFromApps : localDraft.accesses,
+          draft: localDraft.draft && !(data.senior.firstName && data.senior.lastName),
+          searchSector: localDraft.searchSector?.trim() || hydrated.searchSector,
+          searchRadiusKm: localDraft.searchRadiusKm ?? hydrated.searchRadiusKm,
+          searchBudgetMax: localDraft.searchBudgetMax ?? hydrated.searchBudgetMax,
+          searchSize:
+            localDraft.searchSize && localDraft.searchSize !== "any"
+              ? localDraft.searchSize
+              : hydrated.searchSize || "any",
+          searchMinRating: localDraft.searchMinRating ?? hydrated.searchMinRating,
+          priorityCare: localDraft.priorityCare ?? hydrated.priorityCare,
+          priorityGeo: localDraft.priorityGeo ?? hydrated.priorityGeo,
+          priorityBudget: localDraft.priorityBudget ?? hydrated.priorityBudget,
+          prioritySize: localDraft.prioritySize ?? hydrated.prioritySize,
+          priorityRating: localDraft.priorityRating ?? hydrated.priorityRating,
+          autonomyScore: localDraft.autonomyScore ?? hydrated.autonomyScore,
+          autonomie:
+            localDraft.autonomie && localDraft.autonomie !== "À préciser"
+              ? localDraft.autonomie
+              : hydrated.autonomie,
+        };
+        return [merged];
       }
       return [hydrated];
     }
@@ -298,6 +324,12 @@ export function FamilySpace() {
     }
   }, [data.senior.firstName, data.senior.lastName]);
 
+  // Keep wizard draft durable across leave/refresh
+  useEffect(() => {
+    if (!localDraft) return;
+    saveFamilyWizardDraft(localDraft);
+  }, [localDraft]);
+
   useEffect(() => {
     if (!profiles.length) {
       setActiveProfileId("");
@@ -310,6 +342,17 @@ export function FamilySpace() {
 
   const activeProfile =
     profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
+
+  useEffect(() => {
+    if (
+      activeProfile &&
+      !activeProfile.draft &&
+      activeProfile.prenom.trim() &&
+      activeProfile.nom.trim()
+    ) {
+      saveFamilyWizardDraft({ ...activeProfile, draft: false });
+    }
+  }, [activeProfile]);
 
   const progress = useMemo(
     () => docsProgress(activeProfile?.docs ?? emptyDraftDocs()),
@@ -358,10 +401,12 @@ export function FamilySpace() {
               },
             }
           : null,
-        draft: activeProfile?.draft,
+        draft: false,
       }),
     [activeProfile, data.senior],
   );
+
+  const matchReadiness = useMemo(() => getMatchReadiness(careProfile), [careProfile]);
 
   const headerDossierCaption =
     profiles.length > 1
@@ -407,7 +452,15 @@ export function FamilySpace() {
     const id = "p-senior";
     const draft = createEmptyProfile(id);
     setLocalDraft(draft);
+    saveFamilyWizardDraft(draft);
     setActiveProfileId(id);
+    const now = new Date().toISOString();
+    updateResidentDossier({ startedAt: data.residentDossier.startedAt || now });
+    dossierDraftRef.current = {
+      ...dossierDraftRef.current,
+      startedAt: dossierDraftRef.current.startedAt || now,
+    };
+    saveResidentDossier(dossierDraftRef.current);
     setMode("edition");
     setProfileStep(0);
     setClaireOpen(false);
@@ -804,17 +857,23 @@ export function FamilySpace() {
         {view === "residences" && (
           <ResidencesBrowse
             careProfile={careProfile}
+            matchReady={matchReadiness.ready}
+            matchMissing={matchReadiness.missing}
             onOpen={openResidence}
             onApply={startApply}
+            onCompleteDossier={() => openDossier("edition")}
           />
         )}
         {view === "fiche" && selectedRes && (
           <ResidenceFiche
             residence={selectedRes}
             careProfile={careProfile}
+            matchReady={matchReadiness.ready}
+            matchMissing={matchReadiness.missing}
             focus={ficheFocus}
             onBack={() => go("residences")}
             onApply={() => startApply(selectedRes.id)}
+            onCompleteDossier={() => openDossier("edition")}
           />
         )}
         {view === "depot" && selectedRes && (

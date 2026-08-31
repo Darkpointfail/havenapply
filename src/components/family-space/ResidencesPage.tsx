@@ -12,6 +12,7 @@ import {
 import {
   computeMatch,
   EMPTY_CARE_PROFILE,
+  getMatchReadiness,
   type FamilyCareProfile,
 } from "@/lib/family-residence-match";
 
@@ -109,12 +110,18 @@ function residenceRegion(r: Residence): string {
 
 export function ResidencesBrowse({
   careProfile,
+  matchReady,
+  matchMissing,
   onOpen,
   onApply,
+  onCompleteDossier,
 }: {
   careProfile?: FamilyCareProfile;
+  matchReady?: boolean;
+  matchMissing?: string[];
   onOpen: (id: string, focus?: "match" | "full") => void;
   onApply: (id: string) => void;
+  onCompleteDossier?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState("");
@@ -123,6 +130,8 @@ export function ResidencesBrowse({
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const profile = careProfile ?? EMPTY_CARE_PROFILE;
+  const readiness = matchReady ?? getMatchReadiness(profile).ready;
+  const missing = matchMissing ?? getMatchReadiness(profile).missing;
 
   const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
@@ -151,10 +160,13 @@ export function ResidencesBrowse({
       const hay = `${r.name} ${r.city} ${r.location.address}`.toLowerCase();
       return hay.includes(q);
     });
+    if (!readiness) {
+      return [...list].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    }
     const scored = list.map((r) => ({ r, score: computeMatch(profile, r).score }));
     scored.sort((a, b) => b.score - a.score);
     return scored.map((s) => s.r);
-  }, [query, region, services, unitTypes, profile]);
+  }, [query, region, services, unitTypes, profile, readiness]);
 
   const shown = filtered.slice(0, visible);
 
@@ -167,6 +179,34 @@ export function ResidencesBrowse({
           résidences actives, extraction {RPA_SOURCE.extractedOn}) et déposez une demande depuis le
           dossier de votre proche.
         </p>
+        {!readiness ? (
+          <div className="mt-4 rounded-[14px] border border-[var(--fs-border)] bg-[linear-gradient(135deg,#F7F3EF_0%,#FFFFFF_55%,#F3FAF8_100%)] p-5">
+            <p className="fs-serif text-[22px] leading-tight">
+              Remplissez le dossier pour avoir des recommandations personnalisées
+            </p>
+            <p className="mt-2 max-w-[640px] text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
+              Les scores de correspondance s’affichent seulement lorsque les critères essentiels
+              sont complétés (autonomie, secteur et budget). En attendant, vous pouvez explorer le
+              registre sans ranking personnalisé.
+            </p>
+            {missing.length > 0 ? (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-[var(--fs-ink-muted)]">
+                {missing.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            ) : null}
+            {onCompleteDossier ? (
+              <button
+                type="button"
+                className="fs-btn fs-btn-primary mt-4"
+                onClick={onCompleteDossier}
+              >
+                Compléter le dossier
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="fs-grid-search grid gap-6 lg:grid-cols-[290px_1fr]">
@@ -246,18 +286,18 @@ export function ResidencesBrowse({
                 : ""}
             </p>
             <p className="text-[14px] font-medium text-[var(--fs-ink)]">
-              Tri par correspondance
+              {readiness ? "Tri par correspondance" : "Tri alphabétique"}
             </p>
           </div>
 
           <div className="space-y-4">
             {shown.map((r) => {
               const compared = compareIds.includes(r.id);
-              const match = computeMatch(profile, r);
+              const match = readiness ? computeMatch(profile, r) : null;
               const scoreColor =
-                match.tone === "strong" || match.tone === "good"
+                match && (match.tone === "strong" || match.tone === "good")
                   ? "var(--fs-success)"
-                  : match.tone === "fair"
+                  : match?.tone === "fair"
                     ? "var(--fs-green)"
                     : "var(--fs-terra)";
               return (
@@ -276,27 +316,31 @@ export function ResidencesBrowse({
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className="inline-flex items-baseline gap-1 rounded-full border-2 bg-white px-3 py-1"
-                          style={{ borderColor: scoreColor }}
-                          aria-label={`Score ${match.score}`}
-                        >
+                        {match ? (
                           <span
-                            className="fs-serif text-[20px] leading-none"
-                            style={{ color: scoreColor }}
+                            className="inline-flex items-baseline gap-1 rounded-full border-2 bg-white px-3 py-1"
+                            style={{ borderColor: scoreColor }}
+                            aria-label={`Score ${match.score}`}
                           >
-                            {match.score}
+                            <span
+                              className="fs-serif text-[20px] leading-none"
+                              style={{ color: scoreColor }}
+                            >
+                              {match.score}
+                            </span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--fs-ink-muted)]">
+                              /100
+                            </span>
                           </span>
-                          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--fs-ink-muted)]">
-                            /100
-                          </span>
-                        </span>
+                        ) : null}
                         <Badge tone={r.badgeTone}>{r.badge}</Badge>
                       </div>
                     </div>
 
                     <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                      {match.headline} — {match.summary}
+                      {match
+                        ? `${match.headline} — ${match.summary}`
+                        : r.description}
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -382,21 +426,30 @@ export function ResidencesBrowse({
 export function ResidenceFiche({
   residence,
   careProfile,
+  matchReady,
+  matchMissing,
   focus = "match",
   onBack,
   onApply,
+  onCompleteDossier,
 }: {
   residence: Residence;
   careProfile?: FamilyCareProfile;
+  matchReady?: boolean;
+  matchMissing?: string[];
   focus?: "match" | "full";
   onBack: () => void;
   onApply: () => void;
+  onCompleteDossier?: () => void;
 }) {
-  const match = computeMatch(careProfile ?? EMPTY_CARE_PROFILE, residence);
+  const profile = careProfile ?? EMPTY_CARE_PROFILE;
+  const readiness = matchReady ?? getMatchReadiness(profile).ready;
+  const missing = matchMissing ?? getMatchReadiness(profile).missing;
+  const match = readiness ? computeMatch(profile, residence) : null;
   const scoreColor =
-    match.tone === "strong" || match.tone === "good"
+    match && (match.tone === "strong" || match.tone === "good")
       ? "var(--fs-success)"
-      : match.tone === "fair"
+      : match?.tone === "fair"
         ? "var(--fs-green)"
         : "var(--fs-terra)";
   const matchFirst = focus !== "full";
@@ -416,100 +469,136 @@ export function ResidenceFiche({
           order: matchFirst ? 0 : 2,
         }}
       >
-        <div className="grid gap-5 p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:p-8">
-          <div
-            className="mx-auto flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border-[6px] bg-white"
-            style={{ borderColor: scoreColor }}
-            aria-label={`Score de correspondance ${match.score} pour cent`}
-          >
-            <span className="fs-serif text-[34px] leading-none" style={{ color: scoreColor }}>
-              {match.score}
-            </span>
-            <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
-              / 100
-            </span>
-          </div>
+        {match ? (
+          <div className="grid gap-5 p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:p-8">
+            <div
+              className="mx-auto flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border-[6px] bg-white"
+              style={{ borderColor: scoreColor }}
+              aria-label={`Score de correspondance ${match.score} pour cent`}
+            >
+              <span className="fs-serif text-[34px] leading-none" style={{ color: scoreColor }}>
+                {match.score}
+              </span>
+              <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
+                / 100
+              </span>
+            </div>
 
-          <div className="min-w-0 text-center md:text-left">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
-              Correspondance avec votre dossier
-            </p>
-            <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
-              {match.headline}
-            </h2>
-            <p className="mt-3 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
-              {match.summary}
-            </p>
-            {match.axes.filter((a) => a.score != null && a.weight > 0).length > 0 ? (
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {match.axes
-                  .filter((a) => a.score != null && a.weight > 0)
-                  .map((a) => (
-                    <div
-                      key={a.id}
-                      className="rounded-[10px] border border-[var(--fs-border-faint)] bg-white/70 px-3 py-2"
-                    >
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
-                          {a.label}
-                        </span>
-                        <span className="text-[13px] font-semibold tabular-nums">
-                          {a.score}
-                          <span className="font-normal text-[var(--fs-ink-muted)]">
-                            {" "}
-                            · {Math.round(a.weight * 100)}%
+            <div className="min-w-0 text-center md:text-left">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
+                Correspondance avec votre dossier
+              </p>
+              <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
+                {match.headline}
+              </h2>
+              <p className="mt-3 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
+                {match.summary}
+              </p>
+              {match.axes.filter((a) => a.score != null && a.weight > 0).length > 0 ? (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {match.axes
+                    .filter((a) => a.score != null && a.weight > 0)
+                    .map((a) => (
+                      <div
+                        key={a.id}
+                        className="rounded-[10px] border border-[var(--fs-border-faint)] bg-white/70 px-3 py-2"
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
+                            {a.label}
                           </span>
-                        </span>
+                          <span className="text-[13px] font-semibold tabular-nums">
+                            {a.score}
+                            <span className="font-normal text-[var(--fs-ink-muted)]">
+                              {" "}
+                              · {Math.round(a.weight * 100)}%
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${a.score}%`,
+                              background: scoreColor,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${a.score}%`,
-                            background: scoreColor,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
+              ) : null}
+              <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
+                {match.why.slice(0, 3).map((w) => (
+                  <span
+                    key={w}
+                    className="fs-pill"
+                    style={{
+                      background: "var(--fs-success-bg)",
+                      color: "var(--fs-success)",
+                      borderColor: "transparent",
+                    }}
+                  >
+                    {w}
+                  </span>
+                ))}
+                {match.consider.slice(0, 2).map((c) => (
+                  <span
+                    key={c}
+                    className="fs-pill"
+                    style={{
+                      background: "#F8EFEA",
+                      color: "var(--fs-terra)",
+                      borderColor: "transparent",
+                    }}
+                  >
+                    {c}
+                  </span>
+                ))}
               </div>
-            ) : null}
-            <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
-              {match.why.slice(0, 3).map((w) => (
-                <span
-                  key={w}
-                  className="fs-pill"
-                  style={{
-                    background: "var(--fs-success-bg)",
-                    color: "var(--fs-success)",
-                    borderColor: "transparent",
-                  }}
-                >
-                  {w}
-                </span>
-              ))}
-              {match.consider.slice(0, 2).map((c) => (
-                <span
-                  key={c}
-                  className="fs-pill"
-                  style={{
-                    background: "#F8EFEA",
-                    color: "var(--fs-terra)",
-                    borderColor: "transparent",
-                  }}
-                >
-                  {c}
-                </span>
-              ))}
+            </div>
+
+            <div className="hidden md:block">
+              <button type="button" className="fs-btn fs-btn-primary px-6" onClick={onApply}>
+                Déposer une demande
+              </button>
             </div>
           </div>
-
-          <div className="hidden md:block">
-            <button type="button" className="fs-btn fs-btn-primary px-6" onClick={onApply}>
-              Déposer une demande
-            </button>
+        ) : (
+          <div className="p-6 md:p-8">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
+              Correspondance
+            </p>
+            <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
+              Remplissez le dossier pour avoir des recommandations personnalisées
+            </h2>
+            <p className="mt-3 max-w-[640px] text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
+              Autonomie, secteur et budget sont requis avant d’afficher un score pour cette
+              résidence.
+            </p>
+            {missing.length > 0 ? (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-[var(--fs-ink-muted)]">
+                {missing.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {onCompleteDossier ? (
+                <button
+                  type="button"
+                  className="fs-btn fs-btn-primary"
+                  onClick={onCompleteDossier}
+                >
+                  Compléter le dossier
+                </button>
+              ) : null}
+              <button type="button" className="fs-btn fs-btn-outline" onClick={onApply}>
+                Appliquer sans score
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <div className="fs-card overflow-hidden">
@@ -680,7 +769,7 @@ export function ResidenceFiche({
       {/* Mobile sticky apply */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--fs-border)] bg-white/95 p-3 backdrop-blur lg:hidden">
         <button type="button" className="fs-btn fs-btn-primary w-full" onClick={onApply}>
-          Appliquer · score {match.score}
+          {match ? `Appliquer · score ${match.score}` : "Appliquer à cette résidence"}
         </button>
       </div>
     </div>

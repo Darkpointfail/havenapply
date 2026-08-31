@@ -382,19 +382,52 @@ function scoreBudgetAxis(
         ? profil.budgetMax
         : null;
   if (max == null || !Number.isFinite(max)) return { score: null };
-  if (!(residence.priceAmount > 0)) {
-    return { score: null, consider: "Tarif non publié — critère budget non scoré" };
-  }
-  if (residence.priceAmount > max) {
+
+  const priced = estimateMonthlyPrice(residence);
+  if (!priced) return { score: null };
+  const { amount, estimated } = priced;
+  const suffix = estimated ? " (estimation)" : "";
+
+  if (amount > max) {
+    const over = (amount - max) / max;
     return {
-      score: Math.max(10, 55 - Math.min(40, ((residence.priceAmount - max) / max) * 50)),
-      consider: "Tarif indicatif au-dessus du budget",
+      score: Math.max(8, Math.round(52 - Math.min(40, over * 55))),
+      consider: `Tarif indicatif ${amount.toLocaleString("fr-CA")} $ > budget ${max.toLocaleString("fr-CA")} $${suffix}`,
     };
   }
-  if (residence.priceAmount <= max * 0.9) {
-    return { score: 90, why: "Dans le budget indiqué" };
+  if (amount <= max * 0.9) {
+    return {
+      score: 92,
+      why: `Dans le budget (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+    };
   }
-  return { score: 75, why: "Proche du budget max" };
+  return {
+    score: 74,
+    why: `Proche du budget max (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+  };
+}
+
+/**
+ * Indicative monthly rent for matching when the registry has no published tariff.
+ */
+export function estimateMonthlyPrice(residence: Residence): {
+  amount: number;
+  estimated: boolean;
+} | null {
+  if (residence.priceAmount > 0) {
+    return { amount: residence.priceAmount, estimated: false };
+  }
+  const band = residenceAutonomyBand(residence);
+  const mid = (band.lo + band.hi) / 2;
+  let base = 4800 - mid * 260;
+  const hay = `${residence.city} ${residence.location.address}`.toLowerCase();
+  if (/montréal|montreal|laval|longueuil/.test(hay)) base *= 1.12;
+  else if (/québec|quebec|lévis|levis|gatineau/.test(hay)) base *= 1.05;
+  if (residence.hasNursingStaff) base += 280;
+  if (residence.units > 0 && residence.units < 40) base += 120;
+  if (residence.units >= 150) base -= 80;
+  const amount = Math.max(1800, Math.min(5500, Math.round(base / 50) * 50));
+  return { amount, estimated: true };
 }
 
 function scoreSizeAxis(
@@ -445,7 +478,7 @@ function scoreRegistryAxis(residence: Residence): { score: number; why?: string 
 
 /**
  * Derive a care-matching profile from the family dossier / search criteria.
- * Empty or draft dossiers yield EMPTY_CARE_PROFILE (registry axis only).
+ * Partial dossiers still apply whatever fields are filled (including draft).
  */
 export function careProfileFromFamilyInputs(input?: {
   ville?: string | null;
@@ -461,7 +494,12 @@ export function careProfileFromFamilyInputs(input?: {
   searchCriteria?: Partial<FamilySearchCriteria> | null;
   draft?: boolean;
 } | null): FamilyCareProfile {
-  if (!input || input.draft) return { ...EMPTY_CARE_PROFILE, search: { ...EMPTY_SEARCH_CRITERIA, priorities: { ...DEFAULT_PRIORITIES } } };
+  if (!input) {
+    return {
+      ...EMPTY_CARE_PROFILE,
+      search: { ...EMPTY_SEARCH_CRITERIA, priorities: { ...DEFAULT_PRIORITIES } },
+    };
+  }
 
   const sc = input.searchCriteria;
   const zone =
@@ -525,6 +563,35 @@ export function careProfileFromFamilyInputs(input?: {
       priorities: normalizePriorities(sc?.priorities),
     },
   };
+}
+
+export type MatchReadiness = {
+  ready: boolean;
+  missing: string[];
+};
+
+/**
+ * Personalized scores require autonomy + search sector + budget.
+ * Size may stay « any »; Google rating is optional until data exists.
+ */
+export function getMatchReadiness(profil: FamilyCareProfile): MatchReadiness {
+  const missing: string[] = [];
+  if (profil.autonomyScore == null || profil.autonomyScore < 1 || profil.autonomyScore > 10) {
+    missing.push("Score d'autonomie (1 à 10)");
+  }
+  if (!(profil.search.sector || profil.sector).trim()) {
+    missing.push("Secteur / ville recherchée");
+  }
+  const budget =
+    profil.search.budgetMax && profil.search.budgetMax > 0
+      ? profil.search.budgetMax
+      : Number.isFinite(profil.budgetMax)
+        ? profil.budgetMax
+        : null;
+  if (budget == null || !Number.isFinite(budget) || budget <= 0) {
+    missing.push("Budget mensuel maximum");
+  }
+  return { ready: missing.length === 0, missing };
 }
 
 /**

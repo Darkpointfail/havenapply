@@ -390,20 +390,24 @@ function urgencyToMoveLabel(urgency?: string): string {
 
 /**
  * Build at most one FamilyProfile from a persisted senior (+ optional resident dossier).
- * Returns null when firstName or lastName is missing (empty / create-dossier state).
+ * When `allowIncomplete` is true, returns a draft profile even if first/last name are missing
+ * (in-progress dossier creation).
  */
 export function buildProfileFromSenior(
   senior: SeniorLike,
   docs: FamilyDoc[] = emptyDraftDocs(),
   accesses: FamilyProfile["accesses"] = [],
+  opts?: { allowIncomplete?: boolean },
 ): FamilyProfile | null {
   const prenom = (senior.firstName || "").trim();
   const nom = (senior.lastName || "").trim();
-  if (!prenom || !nom) return null;
+  if ((!prenom || !nom) && !opts?.allowIncomplete) return null;
 
   const age = ageFromDob(senior.dateOfBirth);
   const place = [senior.city, senior.state].filter(Boolean).join(", ");
-  const meta = [age ? `${age} ans` : null, place || null].filter(Boolean).join(" · ") || "Dossier en cours";
+  const meta =
+    [age ? `${age} ans` : null, place || null].filter(Boolean).join(" · ") ||
+    (prenom || nom ? "Dossier en cours" : "Dossier en création");
 
   let budget = "À préciser";
   if (senior.budgetUnsure) budget = "Budget à confirmer";
@@ -477,10 +481,22 @@ export function buildProfileFromSenior(
     consentPartage: false,
     signatureNom: "",
     signatureDate: "",
-    draft: false,
+    draft: !(prenom && nom),
     docs,
     accesses,
   };
+}
+
+/** True when senior or dossier already holds in-progress creation data. */
+export function hasInProgressFamilyDossier(
+  senior: SeniorLike,
+  dossier?: { startedAt?: string | null; firstName?: string; lastName?: string } | null,
+): boolean {
+  if ((senior.firstName || "").trim() || (senior.lastName || "").trim()) return true;
+  if ((senior.city || "").trim() || (senior.address || "").trim()) return true;
+  if (dossier?.startedAt) return true;
+  if ((dossier?.firstName || "").trim() || (dossier?.lastName || "").trim()) return true;
+  return false;
 }
 
 export function createEmptyProfile(id: string): FamilyProfile {

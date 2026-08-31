@@ -11,9 +11,9 @@ export const fr = {
   "hp.nav.close": "Fermer",
 
   "hp.hero.pill": "Demande d'admission 100 % en ligne",
-  "hp.hero.title": "Fini les dossiers papier. Une demande, toutes les résidences.",
+  "hp.hero.title": "Envoyez votre demande d'admission en ligne, en quelques clics",
   "hp.hero.lead":
-    "Plus de formulaires papier à imprimer, à faxer ou à déposer sur place. Vous remplissez le dossier une seule fois sur HavenApply et vous l'envoyez en ligne à toutes les résidences que vous choisissez, d'un même clic.",
+    "Le dossier se remplit en quelques minutes, puis nous vous recommandons les résidences qui correspondent vraiment aux besoins de votre proche, à votre budget et à votre secteur. Vous cochez celles que vous retenez, la demande part à toutes en même temps.",
   "hp.hero.ctaPrimary": "Déposer ma demande en ligne",
   "hp.hero.ctaSecondary": "Voir comment ça marche",
   "hp.hero.note": "Gratuit pour les familles. Aucun déplacement, aucun papier, aucun engagement.",

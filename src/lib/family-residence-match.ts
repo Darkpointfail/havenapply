@@ -164,7 +164,13 @@ export function residenceAutonomyBand(residence: Residence): { lo: number; hi: n
   const raw = (residence.categoryLabel || "").toLowerCase();
   const cats: number[] = [];
   for (const n of [1, 2, 3, 4]) {
-    if (raw.includes(`catégorie ${n}`) || raw.includes(`categorie ${n}`)) cats.push(n);
+    if (
+      raw.includes(`catégorie ${n}`) ||
+      raw.includes(`categorie ${n}`) ||
+      raw.includes(`category ${n}`)
+    ) {
+      cats.push(n);
+    }
   }
   // Fallback: parse facts
   if (cats.length === 0) {
@@ -190,7 +196,7 @@ export function residenceAutonomyBand(residence: Residence): { lo: number; hi: n
     lo = Math.min(lo, b[0]);
     hi = Math.max(hi, b[1]);
   }
-  return { lo, hi, labels: cats.map((c) => `catégorie ${c}`) };
+  return { lo, hi, labels: cats.map((c) => `category ${c}`) };
 }
 
 function residenceCapacity(residence: Residence): number {
@@ -310,7 +316,13 @@ function scoreCareAxis(
     } else if (hint.includes("semi") && band.labels.some((l) => l.includes("2") || l.includes("3"))) {
       score += 10;
       why.push(t("Semi-autonomy compatible with the RPA category"));
-    } else if ((hint.includes("autonome") || hint.includes("indépend")) && band.labels.includes("catégorie 1")) {
+    } else if (
+      (hint.includes("autonome") ||
+        hint.includes("indépend") ||
+        hint.includes("autonomous") ||
+        hint.includes("independ")) &&
+      band.labels.some((l) => l.includes("category 1") || l.includes("catégorie 1"))
+    ) {
       score += 12;
       why.push(t("Autonomous profile compatible"));
     }

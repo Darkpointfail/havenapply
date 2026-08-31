@@ -44,6 +44,18 @@ import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-por
 import { useT } from "@/lib/i18n/locale";
 import "./family-space.css";
 
+const APP_STATUS_EN: Record<string, string> = {
+  "Demande reçue": "Application received",
+  "Dossier vérifié": "File verified",
+  "Visite planifiée": "Visit scheduled",
+  "Liste d'attente": "Waitlist",
+  "Décision attendue": "Awaiting decision",
+};
+
+function appStatusLabel(status: string) {
+  return APP_STATUS_EN[status] || status;
+}
+
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   weight: ["600"],
@@ -1186,7 +1198,7 @@ function Accueil({
                         : "green"
                   }
                 >
-                  {t(app.status)}
+                  {t(appStatusLabel(app.status))}
                 </StatusPill>
                 <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
                 <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
@@ -1197,7 +1209,7 @@ function Accueil({
                     {app.publicRef}
                   </p>
                 ) : null}
-                <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">{app.update}</p>
+                <p className="mt-3 text-[14px] text-[var(--fs-ink-body)]">{t(app.update)}</p>
               </button>
             ))}
           </div>
@@ -1312,8 +1324,8 @@ function Depot({
       price: residence.price,
       avail: residence.availability,
     },
-    { type: "2½", price: "2 850 $/mois", avail: t("Full") },
-    { type: "1½", price: "2 200 $/mois", avail: t("2 available") },
+    { type: "2½", price: "$2,850/month", avail: t("Full") },
+    { type: "1½", price: "$2,200/month", avail: t("2 available") },
   ];
 
   return (
@@ -1347,10 +1359,10 @@ function Depot({
                   }}
                 >
                   <div>
-                    <p className="font-semibold">{o.type}</p>
-                    <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{o.avail}</p>
+                    <p className="font-semibold">{t(o.type)}</p>
+                    <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{t(o.avail)}</p>
                   </div>
-                  <p className="fs-serif text-[18px]">{o.price}</p>
+                  <p className="fs-serif text-[18px]">{t(o.price)}</p>
                 </button>
               );
             })}
@@ -1563,17 +1575,7 @@ function Demandes({
                   ) : null}
                 </div>
                 <StatusPill tone={app.status === "Liste d'attente" ? "neutral" : "green"}>
-                  {t(
-                    (
-                      {
-                        "Demande reçue": "Application received",
-                        "Dossier vérifié": "File verified",
-                        "Visite planifiée": "Visit scheduled",
-                        "Liste d'attente": "Waitlist",
-                        "Décision attendue": "Awaiting decision",
-                      } as Record<string, string>
-                    )[app.status] || app.status,
-                  )}
+                  {t(appStatusLabel(app.status))}
                 </StatusPill>
               </div>
 
@@ -1620,7 +1622,7 @@ function Demandes({
                         : "#0A6F63",
                 }}
               >
-                {app.update}
+                {t(app.update)}
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">

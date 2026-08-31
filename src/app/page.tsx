@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { HomePageView } from "@/components/marketing/HomePageView";
 
 export const metadata: Metadata = {
-  title: "HavenApply — Envoyez votre demande d'admission en ligne",
+  title: "HavenApply — Submit your admission application online",
   description:
-    "Le dossier se remplit en quelques minutes, puis nous vous recommandons les résidences qui correspondent vraiment aux besoins de votre proche, à votre budget et à votre secteur. Vous cochez celles que vous retenez, la demande part à toutes en même temps.",
+    "Complete the file in a few minutes, then we recommend residences that truly match your loved one's needs, your budget, and your area. Select the ones you want; the application goes to all of them at once.",
 };
 
 export default function HomePage() {

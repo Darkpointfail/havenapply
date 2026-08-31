@@ -50,6 +50,10 @@ const CATALOG_LABEL_EN: Record<string, string> = {
 };
 
 function catalogLabel(t: (key: string, vars?: Record<string, string | number>) => string, value: string) {
+  const capacity = value.match(/^Capacity\s+(\d+)$/i) || value.match(/^Capacité\s+(\d+)$/i);
+  if (capacity) return t("Capacity {count}", { count: capacity[1] });
+  const registry = value.match(/^(\d+)\s+in registry$/i) || value.match(/^(\d+)\s+au registre$/i);
+  if (registry) return t("{count} in registry", { count: registry[1] });
   return t(CATALOG_LABEL_EN[value] ?? value);
 }
 
@@ -58,11 +62,35 @@ function factValue(
   label: string,
   value: string,
 ) {
-  if (label === "Capacité") {
-    const m = value.match(/^(\d+)\s*personnes$/i);
+  if (label === "Capacity" || label === "Capacité") {
+    const m = value.match(/^(\d+)\s*(people|personnes)$/i);
     if (m) return t("{count} people", { count: m[1] });
   }
-  return value;
+  return t(value);
+}
+
+function describeResidence(
+  r: Residence,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
+  const cityOnly = r.city.split(",")[0]?.trim() || r.city;
+  const region = r.city.includes(",")
+    ? r.city.slice(r.city.indexOf(",") + 1).trim()
+    : "";
+  const category = catalogLabel(t, r.categoryLabel || "category not specified");
+  const capacityPart = r.units
+    ? t(" Declared capacity of {count} people.", { count: r.units })
+    : "";
+  return t(
+    "{name} is a private residence for seniors in {city} ({region}), {category}.{capacityPart} Source: Québec public RPA registry (extracted 2025-12-31).",
+    {
+      name: r.name,
+      city: cityOnly,
+      region,
+      category,
+      capacityPart,
+    },
+  );
 }
 
 function PhotoBlock({
@@ -377,14 +405,14 @@ export function ResidencesBrowse({
                             </span>
                           </span>
                         ) : null}
-                        <Badge tone={r.badgeTone}>{r.badge}</Badge>
+                        <Badge tone={r.badgeTone}>{t(r.badge)}</Badge>
                       </div>
                     </div>
 
                     <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
                       {match
                         ? `${match.headline} — ${match.summary}`
-                        : r.description}
+                        : describeResidence(r, t)}
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -400,7 +428,7 @@ export function ResidencesBrowse({
                               color: "var(--fs-ink-muted)",
                             }}
                           >
-                            {s}
+                            {catalogLabel(t, s)}
                           </span>
                         ))}
                     </div>
@@ -568,7 +596,7 @@ export function ResidenceFiche({
                       borderColor: "transparent",
                     }}
                   >
-                    {w}
+                    {t(w)}
                   </span>
                 ))}
                 {match.consider.slice(0, 2).map((c) => (
@@ -581,7 +609,7 @@ export function ResidenceFiche({
                       borderColor: "transparent",
                     }}
                   >
-                    {c}
+                    {t(c)}
                   </span>
                 ))}
               </div>
@@ -637,10 +665,10 @@ export function ResidenceFiche({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-[820px]">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={residence.badgeTone}>{residence.badge}</Badge>
+                <Badge tone={residence.badgeTone}>{t(residence.badge)}</Badge>
                 {residence.categoryLabel ? (
                   <span className="text-[13px] text-[var(--fs-ink-muted)]">
-                    {residence.categoryLabel}
+                    {catalogLabel(t, residence.categoryLabel)}
                   </span>
                 ) : null}
               </div>
@@ -653,7 +681,7 @@ export function ResidenceFiche({
                 {residence.phone ? ` · ${residence.phone}` : ""}
               </p>
               <p className="mt-4 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                {residence.description}
+                {describeResidence(residence, t)}
               </p>
               <p className="mt-3 text-[14px] text-[var(--fs-ink-muted)]">
                 {residence.location.address}
@@ -703,8 +731,8 @@ export function ResidenceFiche({
                       style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
                     >
                       <span className="font-semibold">{catalogLabel(t, u.type)}</span>
-                      <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
-                      <span>{u.price}</span>
+                      <span className="text-[var(--fs-ink-muted)]">{t(u.area)}</span>
+                      <span>{t(u.price)}</span>
                       <span
                         className="font-semibold"
                         style={{
@@ -714,7 +742,7 @@ export function ResidenceFiche({
                               : "var(--fs-success)",
                         }}
                       >
-                        {u.availability}
+                        {catalogLabel(t, u.availability)}
                       </span>
                     </div>
                   ))}
@@ -730,8 +758,8 @@ export function ResidenceFiche({
                       className="flex items-start justify-between gap-3 rounded-[10px] border border-[var(--fs-border-faint)] px-3.5 py-2.5"
                     >
                       <div>
-                        <p className="text-[14px] font-medium">{c.label}</p>
-                        <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{c.value}</p>
+                        <p className="text-[14px] font-medium">{t(c.label)}</p>
+                        <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{t(c.value)}</p>
                       </div>
                       <span
                         className="shrink-0 text-[12.5px] font-semibold"
@@ -745,7 +773,7 @@ export function ResidenceFiche({
               </div>
 
               <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
-                {residence.waitNote}
+                {t(residence.waitNote)}
               </p>
             </div>
 

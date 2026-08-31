@@ -732,7 +732,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
     depositedOn: "22 août 2026",
     status: "Visite planifiée",
     progress: 2,
-    update: "Visite planifiée le 3 septembre à 14 h.",
+    update: "Visit scheduled for September 3 at 2:00 p.m.",
     updateTone: "green",
     visit: {
       dateLabel: "3 septembre 2026",
@@ -749,7 +749,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
     depositedOn: "20 août 2026",
     status: "Liste d'attente",
     progress: 1,
-    update: "Placé en liste d'attente — rang communiqué par la résidence.",
+    update: "Placed on the waitlist — rank shared by the residence.",
     updateTone: "neutral",
   },
   {
@@ -761,7 +761,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
     depositedOn: "24 août 2026",
     status: "Dossier vérifié",
     progress: 1,
-    update: "Dossier vérifié. Décision attendue sous peu.",
+    update: "File verified. Decision expected shortly.",
     updateTone: "green",
   },
 ];

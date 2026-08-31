@@ -2139,7 +2139,6 @@ export const frMessages: Record<string, string> = {
   "Read the collection notice": "Lire l'avis de collecte",
 
   // ——— Family residences browse ———
-  Residences: "Résidences",
   "Browse Quebec's registry of RPAs ({count} active residences, extracted {date}) and submit a request straight from your loved one's file.":
     "Parcourez le registre des RPA du Québec ({count} résidences actives, extraction {date}) et déposez une demande depuis le dossier de votre proche.",
   "Complete the file to get personalized recommendations":
@@ -2162,7 +2161,6 @@ export const frMessages: Record<string, string> = {
   "Sorted alphabetically": "Triées alphabétiquement",
   units: "unités",
   "Score {score}": "Score {score}",
-  Apply: "Appliquer",
   "See why": "Voir pourquoi",
   "No residences match these criteria": "Aucune résidence pour ces critères",
   "Try a wider region or remove a service filter.":
@@ -2181,7 +2179,6 @@ export const frMessages: Record<string, string> = {
   "Unit types": "Types d'unités",
   Area: "Superficie",
   Price: "Prix",
-  Availability: "Disponibilité",
   "Care and autonomy": "Soins et autonomie",
   "Ready to apply?": "Prêt à postuler ?",
   "Submit your loved one’s file in a few clicks. The residence receives a structured application, without redundant forms.":
@@ -2306,6 +2303,77 @@ export const frMessages: Record<string, string> = {
   Cancel: "Annuler",
   Save: "Enregistrer",
   "Edit name or title": "Corriger prénom ou poste",
+
+  // ——— Community profile editor ———
+  "Loading profile…": "Chargement du profil…",
+  "Back to console": "Retour à la console",
+  "Changes saved": "Enregistré",
+  "Establishment page": "Page de l'établissement",
+  "Your residence": "Votre résidence",
+  "New applications": "Nouvelles demandes",
+  "Open or close intake. Files already received stay active.":
+    "Ouvrez ou fermez l'intake. Les dossiers déjà reçus restent actifs.",
+  "Applications open": "Demandes ouvertes",
+  "Applications closed": "Demandes fermées",
+  "Families can submit new files.": "Les familles peuvent déposer de nouveaux dossiers.",
+  "Families see that intake is currently closed.":
+    "Les familles voient que l'intake est fermé.",
+  Photos: "Photos",
+  "Show the facade, common areas, and rooms. The first photo is the cover.":
+    "Montrez la façade, les espaces communs et les chambres. La première photo est la couverture.",
+  "Cover · {name}": "Couverture · {name}",
+  "No cover photo": "Aucune photo de couverture",
+  "Photo {number}": "Photo {number}",
+  Cover: "Couverture",
+  "Remove photo": "Retirer la photo",
+  Remove: "Retirer",
+  "Paste an image URL…": "Collez une URL d'image…",
+  "Add photo": "Ajouter une photo",
+  Presentation: "Présentation",
+  "Short text families read first.": "Court texte lu en premier par les familles.",
+  Description: "Description",
+  "Contact and location": "Coordonnées et emplacement",
+  "Establishment name": "Nom de l'établissement",
+  Address: "Adresse",
+  City: "Ville",
+  Province: "Province",
+  "Postal code": "Code postal",
+  "Rooms and pricing": "Chambres et tarifs",
+  "Indicative monthly rates visible on your listing.":
+    "Tarifs mensuels indicatifs visibles sur votre fiche.",
+  "No room types yet. Add your first rate card.":
+    "Aucun type de chambre pour l'instant. Ajoutez votre première grille.",
+  "Room type": "Type de chambre",
+  "Studio, 1½, memory suite…": "Studio, 1½, suite mémoire…",
+  "Starting at": "À partir de",
+  "On request": "Sur demande",
+  "/ month": "/ mois",
+  "Monthly price (CAD)": "Prix mensuel (CAD)",
+  "Available units": "Unités disponibles",
+  "Add room type": "Ajouter un type de chambre",
+  "Remove this type": "Retirer ce type",
+  Notes: "Notes",
+  "Meals included, 2nd person fee, etc.": "Repas inclus, frais 2e personne, etc.",
+  "Care levels": "Niveaux de soins",
+  "What you offer to families.": "Ce que vous offrez aux familles.",
+  "Independent living": "Vie autonome",
+  "Assisted daily living": "Assistance à la vie quotidienne",
+  "Memory care support": "Soins de mémoire",
+  "Nursing care": "Soins infirmiers",
+  "Respite / short-term stay": "Hébergement temporaire / répite",
+  Rehabilitation: "Réadaptation",
+  "Amenities and services": "Services et commodités",
+  "One line per item, shown on your listing.":
+    "Une ligne par élément, affiché sur votre fiche.",
+  "Admission criteria": "Critères d'admission",
+  "Basic rules used when reviewing files.":
+    "Règles de base utilisées lors de l'évaluation des dossiers.",
+  "Private pay": "Paiement privé",
+  "Government assistance / RAMQ": "Aide gouvernementale / RAMQ",
+  "Pets allowed": "Animaux acceptés",
+  "Tobacco policy": "Politique tabac",
+  "Minimum age": "Âge minimum",
+  "Save changes": "Enregistrer les modifications",
 };
 
 export function translate(locale: Locale, key: string): string {

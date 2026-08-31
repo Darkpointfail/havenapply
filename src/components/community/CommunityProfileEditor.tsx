@@ -6,24 +6,32 @@ import { useState } from "react";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import type { CommunityProfile } from "@/lib/community-portal";
 import { cn } from "@/lib/utils";
+import { useLocale, useT, type Locale } from "@/lib/i18n/locale";
 import "./etablissement-profile.css";
 
+// Stored as-is in CommunityProfile.careTypes (French values are already
+// persisted across seed data and matching logic in community-match.ts).
+// Only the on-screen label is translated; `value` stays stable.
 const CARE_OPTIONS = [
-  "Vie autonome",
-  "Assistance à la vie quotidienne",
-  "Soins de mémoire",
-  "Soins infirmiers",
-  "Hébergement temporaire / répite",
-  "Réadaptation",
+  { value: "Vie autonome", label: "Independent living" },
+  { value: "Assistance à la vie quotidienne", label: "Assisted daily living" },
+  { value: "Soins de mémoire", label: "Memory care support" },
+  { value: "Soins infirmiers", label: "Nursing care" },
+  { value: "Hébergement temporaire / répite", label: "Respite / short-term stay" },
+  { value: "Réadaptation", label: "Rehabilitation" },
 ] as const;
 
 function normalizeCare(s: string) {
   return s.trim().toLowerCase();
 }
 
-function formatCad(amount: number | null | undefined) {
-  if (amount == null || Number.isNaN(amount)) return "Sur demande";
-  return new Intl.NumberFormat("fr-CA", {
+function formatCad(
+  amount: number | null | undefined,
+  locale: Locale,
+  onRequestLabel: string,
+) {
+  if (amount == null || Number.isNaN(amount)) return onRequestLabel;
+  return new Intl.NumberFormat(locale === "en" ? "en-CA" : "fr-CA", {
     style: "currency",
     currency: "CAD",
     maximumFractionDigits: 0,
@@ -59,6 +67,8 @@ function Section({
 }
 
 export function CommunityProfileEditor() {
+  const t = useT();
+  const { locale } = useLocale();
   const { ready, workspace, can, updateProfile } = useCommunityPortal();
   const [draft, setDraft] = useState<CommunityProfile | null>(null);
   const [syncedKey, setSyncedKey] = useState<string | null>(null);
@@ -92,7 +102,7 @@ export function CommunityProfileEditor() {
   if (!ready || !workspace || !draft) {
     return (
       <div className="ep">
-        <div className="ep-loading">Chargement du profil…</div>
+        <div className="ep-loading">{t("Loading profile…")}</div>
       </div>
     );
   }
@@ -106,12 +116,12 @@ export function CommunityProfileEditor() {
   const patch = (partial: Partial<CommunityProfile>) =>
     setDraft((prev) => (prev ? { ...prev, ...partial } : prev));
 
-  const toggleCare = (label: string) => {
-    const exists = draft.careTypes.some((c) => normalizeCare(c) === normalizeCare(label));
+  const toggleCare = (value: string) => {
+    const exists = draft.careTypes.some((c) => normalizeCare(c) === normalizeCare(value));
     patch({
       careTypes: exists
-        ? draft.careTypes.filter((c) => normalizeCare(c) !== normalizeCare(label))
-        : [...draft.careTypes, label],
+        ? draft.careTypes.filter((c) => normalizeCare(c) !== normalizeCare(value))
+        : [...draft.careTypes, value],
     });
   };
 
@@ -147,12 +157,12 @@ export function CommunityProfileEditor() {
       <header className="ep-top">
         <div className="ep-top-inner">
           <Link href="/community/dashboard" className="ep-back">
-            ← Retour à la console
+            ← {t("Back to console")}
           </Link>
           {editable ? (
             <div className="ep-top-actions">
               <button type="button" className="ep-save" onClick={save}>
-                {saved ? "Enregistré" : "Enregistrer"}
+                {saved ? t("Changes saved") : t("Save")}
               </button>
             </div>
           ) : null}
@@ -161,17 +171,18 @@ export function CommunityProfileEditor() {
 
       <main className="ep-main">
         <header className="ep-intro">
-          <p className="ep-eyebrow">Page de l&apos;établissement</p>
-          <h1>{draft.name || "Votre résidence"}</h1>
+          <p className="ep-eyebrow">{t("Establishment page")}</p>
+          <h1>{draft.name || t("Your residence")}</h1>
           <p>
-            Ces renseignements apparaissent sur votre fiche publique. Les familles les voient
-            avant de déposer une demande.
+            {t(
+              "This information appears on your public listing. Families see it before submitting a request.",
+            )}
           </p>
         </header>
 
         <Section
-          title="Nouvelles demandes"
-          hint="Ouvrez ou fermez l'intake. Les dossiers déjà reçus restent actifs."
+          title={t("New applications")}
+          hint={t("Open or close intake. Files already received stay active.")}
         >
           <div className="ep-card">
             <button
@@ -189,13 +200,13 @@ export function CommunityProfileEditor() {
               <span className="ep-row-copy">
                 <strong>
                   {draft.acceptingApplications
-                    ? "Demandes ouvertes"
-                    : "Demandes fermées"}
+                    ? t("Applications open")
+                    : t("Applications closed")}
                 </strong>
                 <span>
                   {draft.acceptingApplications
-                    ? "Les familles peuvent envoyer de nouveaux dossiers."
-                    : "Les familles voient que l'intake est fermé."}
+                    ? t("Families can submit new files.")
+                    : t("Families see that intake is currently closed.")}
                 </span>
               </span>
               <Switch on={draft.acceptingApplications} />
@@ -204,22 +215,22 @@ export function CommunityProfileEditor() {
         </Section>
 
         <Section
-          title="Photos"
-          hint="Montrez la façade, les espaces communs et les chambres. La première photo est la couverture."
+          title={t("Photos")}
+          hint={t("Show the facade, common areas, and rooms. The first photo is the cover.")}
         >
           <div className="ep-card" style={{ padding: 0, overflow: "hidden" }}>
             <div className="ep-cover">
               {cover ? (
                 <Image
                   src={cover}
-                  alt={`Couverture · ${draft.name}`}
+                  alt={t("Cover · {name}", { name: draft.name })}
                   fill
                   className="object-cover"
                   sizes="(max-width: 880px) 100vw, 880px"
                   unoptimized={!cover.startsWith("http")}
                 />
               ) : (
-                <div className="ep-cover-empty">Aucune photo de couverture</div>
+                <div className="ep-cover-empty">{t("No cover photo")}</div>
               )}
             </div>
 
@@ -229,29 +240,29 @@ export function CommunityProfileEditor() {
                   <div key={`${src}-${index}`} className="ep-thumb">
                     <Image
                       src={src}
-                      alt={`Photo ${index + 1}`}
+                      alt={t("Photo {number}", { number: index + 1 })}
                       fill
                       className="object-cover"
                       sizes="160px"
                       unoptimized={!src.startsWith("http")}
                     />
                     {index === 0 ? (
-                      <span className="ep-thumb-badge">Couverture</span>
+                      <span className="ep-thumb-badge">{t("Cover")}</span>
                     ) : null}
                     {can("editProfile") ? (
                       <div className="ep-thumb-actions">
                         {index !== 0 ? (
                           <button type="button" onClick={() => setCover(index)}>
-                            Couverture
+                            {t("Cover")}
                           </button>
                         ) : null}
                         <button
                           type="button"
                           className="danger"
                           onClick={() => removePhoto(index)}
-                          aria-label="Retirer la photo"
+                          aria-label={t("Remove photo")}
                         >
-                          Retirer
+                          {t("Remove")}
                         </button>
                       </div>
                     ) : null}
@@ -266,7 +277,7 @@ export function CommunityProfileEditor() {
                   className="ep-input"
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="Coller l'URL d'une image…"
+                  placeholder={t("Paste an image URL…")}
                 />
                 <button
                   type="button"
@@ -275,33 +286,35 @@ export function CommunityProfileEditor() {
                   disabled={!photoUrl.trim()}
                   style={{ marginTop: 0, opacity: photoUrl.trim() ? 1 : 0.55 }}
                 >
-                  Ajouter une photo
+                  {t("Add photo")}
                 </button>
               </div>
             ) : null}
           </div>
         </Section>
 
-        <Section title="Présentation" hint="Court texte lu en premier par les familles.">
+        <Section title={t("Presentation")} hint={t("Short text families read first.")}>
           <div className="ep-card ep-stack">
             <label>
-              <span className="ep-label">Description</span>
+              <span className="ep-label">{t("Description")}</span>
               <textarea
                 className="ep-textarea"
                 rows={4}
                 value={draft.description}
                 disabled={!can("editProfile")}
                 onChange={(e) => patch({ description: e.target.value })}
-                placeholder="Décrivez l'ambiance, les soins et le type de résidents accueillis…"
+                placeholder={t(
+                  "Describe the atmosphere, care, and type of residents you welcome…",
+                )}
               />
             </label>
           </div>
         </Section>
 
-        <Section title="Coordonnées et emplacement">
+        <Section title={t("Contact and location")}>
           <div className="ep-card ep-stack">
             <label>
-              <span className="ep-label">Nom de l&apos;établissement</span>
+              <span className="ep-label">{t("Establishment name")}</span>
               <input
                 className="ep-input"
                 value={draft.name}
@@ -311,7 +324,7 @@ export function CommunityProfileEditor() {
             </label>
             <div className="ep-grid-2">
               <label className="ep-span-2">
-                <span className="ep-label">Adresse</span>
+                <span className="ep-label">{t("Address")}</span>
                 <input
                   className="ep-input"
                   value={draft.address}
@@ -320,7 +333,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label>
-                <span className="ep-label">Ville</span>
+                <span className="ep-label">{t("City")}</span>
                 <input
                   className="ep-input"
                   value={draft.city}
@@ -330,7 +343,7 @@ export function CommunityProfileEditor() {
               </label>
               <div className="ep-grid-2" style={{ gap: 10 }}>
                 <label>
-                  <span className="ep-label">Province</span>
+                  <span className="ep-label">{t("Province")}</span>
                   <input
                     className="ep-input"
                     value={draft.state}
@@ -339,7 +352,7 @@ export function CommunityProfileEditor() {
                   />
                 </label>
                 <label>
-                  <span className="ep-label">Code postal</span>
+                  <span className="ep-label">{t("Postal code")}</span>
                   <input
                     className="ep-input"
                     value={draft.zip}
@@ -349,7 +362,7 @@ export function CommunityProfileEditor() {
                 </label>
               </div>
               <label>
-                <span className="ep-label">Téléphone</span>
+                <span className="ep-label">{t("Phone")}</span>
                 <input
                   className="ep-input"
                   value={draft.phone}
@@ -358,7 +371,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label>
-                <span className="ep-label">Courriel des admissions</span>
+                <span className="ep-label">{t("Admissions email")}</span>
                 <input
                   className="ep-input"
                   value={draft.email}
@@ -371,13 +384,13 @@ export function CommunityProfileEditor() {
         </Section>
 
         <Section
-          title="Chambres et tarifs"
-          hint="Tarifs mensuels indicatifs visibles sur votre fiche."
+          title={t("Rooms and pricing")}
+          hint={t("Indicative monthly rates visible on your listing.")}
         >
           <div>
             {draft.roomTypes.length === 0 ? (
               <div className="ep-card" style={{ textAlign: "center", color: "var(--ep-ink-faint)" }}>
-                Aucun type de chambre. Ajoutez votre première grille tarifaire.
+                {t("No room types yet. Add your first rate card.")}
               </div>
             ) : null}
 
@@ -388,7 +401,7 @@ export function CommunityProfileEditor() {
                   style={{ alignItems: "start", marginBottom: 12 }}
                 >
                   <label>
-                    <span className="ep-label">Type de chambre</span>
+                    <span className="ep-label">{t("Room type")}</span>
                     <input
                       className={cn("ep-input")}
                       value={room.name}
@@ -398,20 +411,20 @@ export function CommunityProfileEditor() {
                         roomTypes[index] = { ...room, name: e.target.value };
                         patch({ roomTypes });
                       }}
-                      placeholder="Studio, 1½, suite mémoire…"
+                      placeholder={t("Studio, 1½, memory suite…")}
                     />
                   </label>
                   <div className="ep-room-price">
-                    <p className="label">À partir de</p>
+                    <p className="label">{t("Starting at")}</p>
                     <p className="value">
-                      {formatCad(room.price)}
-                      <span> / mois</span>
+                      {formatCad(room.price, locale, t("On request"))}
+                      <span> {t("/ month")}</span>
                     </p>
                   </div>
                 </div>
                 <div className="ep-grid-2">
                   <label>
-                    <span className="ep-label">Prix mensuel (CAD)</span>
+                    <span className="ep-label">{t("Monthly price (CAD)")}</span>
                     <input
                       type="number"
                       className="ep-input"
@@ -428,7 +441,7 @@ export function CommunityProfileEditor() {
                     />
                   </label>
                   <label>
-                    <span className="ep-label">Unités disponibles</span>
+                    <span className="ep-label">{t("Available units")}</span>
                     <input
                       type="number"
                       className="ep-input"
@@ -446,7 +459,7 @@ export function CommunityProfileEditor() {
                   </label>
                 </div>
                 <label style={{ display: "block", marginTop: 12 }}>
-                  <span className="ep-label">Notes</span>
+                  <span className="ep-label">{t("Notes")}</span>
                   <input
                     className="ep-input"
                     value={room.notes}
@@ -456,7 +469,7 @@ export function CommunityProfileEditor() {
                       roomTypes[index] = { ...room, notes: e.target.value };
                       patch({ roomTypes });
                     }}
-                    placeholder="Repas inclus, frais 2e personne, etc."
+                    placeholder={t("Meals included, 2nd person fee, etc.")}
                   />
                 </label>
                 {can("editPricing") ? (
@@ -469,7 +482,7 @@ export function CommunityProfileEditor() {
                       })
                     }
                   >
-                    Retirer ce type
+                    {t("Remove this type")}
                   </button>
                 ) : null}
               </div>
@@ -493,28 +506,28 @@ export function CommunityProfileEditor() {
                   })
                 }
               >
-                Ajouter un type de chambre
+                {t("Add room type")}
               </button>
             ) : null}
           </div>
         </Section>
 
-        <Section title="Niveaux de soins" hint="Ce que vous offrez aux familles.">
+        <Section title={t("Care levels")} hint={t("What you offer to families.")}>
           <div className="ep-card">
             <div className="ep-care-list">
               {CARE_OPTIONS.map((opt) => {
                 const checked = draft.careTypes.some(
-                  (c) => normalizeCare(c) === normalizeCare(opt),
+                  (c) => normalizeCare(c) === normalizeCare(opt.value),
                 );
                 return (
-                  <label key={opt} className="ep-care-item">
+                  <label key={opt.value} className="ep-care-item">
                     <input
                       type="checkbox"
                       checked={checked}
                       disabled={!can("editProfile")}
-                      onChange={() => toggleCare(opt)}
+                      onChange={() => toggleCare(opt.value)}
                     />
-                    {opt}
+                    {t(opt.label)}
                   </label>
                 );
               })}
@@ -523,8 +536,8 @@ export function CommunityProfileEditor() {
         </Section>
 
         <Section
-          title="Services et commodités"
-          hint="Une ligne par élément, affiché sur votre fiche."
+          title={t("Amenities and services")}
+          hint={t("One line per item, shown on your listing.")}
         >
           <div className="ep-card">
             <textarea
@@ -540,21 +553,21 @@ export function CommunityProfileEditor() {
                     .filter(Boolean),
                 })
               }
-              placeholder={"Jardin intérieur\nAnimaux acceptés\nSalle à manger\nTransport"}
+              placeholder={t("Indoor garden\nPets welcome\nDining room\nTransportation")}
             />
           </div>
         </Section>
 
         <Section
-          title="Critères d'admission"
-          hint="Règles de base utilisées lors de l'évaluation des dossiers."
+          title={t("Admission criteria")}
+          hint={t("Basic rules used when reviewing files.")}
         >
           <div className="ep-card">
             {(
               [
-                ["medicaid", "Aide gouvernementale / RAMQ"],
-                ["privatePay", "Paiement privé"],
-                ["pets", "Animaux acceptés"],
+                ["medicaid", t("Government assistance / RAMQ")],
+                ["privatePay", t("Private pay")],
+                ["pets", t("Pets allowed")],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -579,7 +592,7 @@ export function CommunityProfileEditor() {
 
             <div className="ep-grid-2" style={{ marginTop: 8 }}>
               <label>
-                <span className="ep-label">Politique sur le tabac</span>
+                <span className="ep-label">{t("Tobacco policy")}</span>
                 <input
                   className="ep-input"
                   value={flags.smoking}
@@ -590,7 +603,7 @@ export function CommunityProfileEditor() {
                 />
               </label>
               <label>
-                <span className="ep-label">Âge minimum</span>
+                <span className="ep-label">{t("Minimum age")}</span>
                 <input
                   type="number"
                   className="ep-input"
@@ -608,7 +621,7 @@ export function CommunityProfileEditor() {
               </label>
             </div>
             <label style={{ display: "block", marginTop: 14 }}>
-              <span className="ep-label">Notes</span>
+              <span className="ep-label">{t("Notes")}</span>
               <textarea
                 className="ep-textarea"
                 rows={3}
@@ -625,7 +638,7 @@ export function CommunityProfileEditor() {
         {editable ? (
           <div className="ep-sticky-save">
             <button type="button" className="ep-save" onClick={save}>
-              {saved ? "Enregistré" : "Enregistrer les modifications"}
+              {saved ? t("Changes saved") : t("Save changes")}
             </button>
           </div>
         ) : null}

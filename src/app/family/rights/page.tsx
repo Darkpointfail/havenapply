@@ -1,1 +1,3 @@
-export { default } from "@/app/family/droits/page";
+"use client";
+
+export { default } from "../droits/page";

@@ -6,31 +6,29 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useTheme } from "@/lib/theme";
-import { useT } from "@/lib/i18n/locale";
 
 const sections: { label: string; href?: string; soon?: boolean }[] = [
-  { label: "Profile", href: "/family/senior-profile" },
-  { label: "Family members", href: "/family/family-members" },
+  { label: "Mon profil", href: "/family/profile" },
+  { label: "Membres de la famille", href: "/family/family-members" },
   { label: "Notifications", href: "/family/notifications" },
-  { label: "Privacy & security", href: "/family/privacy" },
-  { label: "Billing", soon: true },
-  { label: "Connected accounts", soon: true },
-  { label: "Language", soon: true },
-  { label: "Accessibility", soon: true },
+  { label: "Confidentialité et données", href: "/family/privacy" },
+  { label: "Facturation", soon: true },
+  { label: "Comptes connectés", soon: true },
+  { label: "Langue", soon: true },
+  { label: "Accessibilité", soon: true },
 ];
 
 function SettingsInner() {
-  const t = useT();
   const { theme, toggle } = useTheme();
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-10">
       <PageHeader
-        title={t("Settings")}
-        description="Control privacy, security, and how Haven works for your family."
+        title="Paramètres"
+        description="Contrôlez la confidentialité, la sécurité et le fonctionnement de HavenApply pour votre famille."
         breadcrumbs={[
-          { label: "Family", href: "/family/dashboard" },
-          { label: "Settings" },
+          { label: "Accueil", href: "/family/dashboard" },
+          { label: "Paramètres" },
         ]}
       />
 
@@ -40,31 +38,35 @@ function SettingsInner() {
             <Link
               key={s.label}
               href={s.href}
-              className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-bg-soft"
+              className="flex min-h-[52px] w-full items-center justify-between px-5 py-4 text-left transition hover:bg-bg-soft"
             >
               <span className="font-medium">{s.label}</span>
-              <span className="text-ink-faint">→</span>
+              <span className="text-ink-faint" aria-hidden>
+                →
+              </span>
             </Link>
           ) : (
             <div
               key={s.label}
-              className="flex w-full items-center justify-between px-5 py-4 text-left opacity-60"
+              className="flex min-h-[52px] w-full items-center justify-between px-5 py-4 text-left opacity-60"
               aria-disabled="true"
             >
               <span className="font-medium">{s.label}</span>
-              <span className="text-xs text-ink-faint">Coming later</span>
+              <span className="text-xs text-ink-faint">Bientôt</span>
             </div>
           ),
         )}
       </Card>
 
-      <Card className="mt-4 flex items-center justify-between p-5">
+      <Card className="mt-4 flex items-center justify-between gap-4 p-5">
         <div>
-          <p className="font-medium">Appearance</p>
-          <p className="text-sm text-ink-muted">Currently {theme} mode</p>
+          <p className="font-medium">Apparence</p>
+          <p className="text-sm text-ink-muted">
+            Mode actuel : {theme === "dark" ? "sombre" : "clair"}
+          </p>
         </div>
         <Button size="sm" variant="secondary" onClick={toggle}>
-          Toggle {theme === "dark" ? "light" : "dark"}
+          Passer en mode {theme === "dark" ? "clair" : "sombre"}
         </Button>
       </Card>
     </div>
@@ -72,8 +74,7 @@ function SettingsInner() {
 }
 
 export default function SettingsPage() {
-
-  const t = useT();  return (
+  return (
     <RequireAuth role="family">
       <SettingsInner />
     </RequireAuth>

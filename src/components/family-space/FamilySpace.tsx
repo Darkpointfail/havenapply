@@ -572,7 +572,7 @@ export function FamilySpace() {
         description: REQUIRED_DOCS.find((d) => d.id === docId)?.detail || "",
       }).then((ok) => {
         if (!ok) {
-          window.alert(saveError || "Le fichier n'a pas pu être téléversé.");
+          window.alert(saveError || t("The file could not be uploaded."));
         }
       });
     };
@@ -608,7 +608,9 @@ export function FamilySpace() {
     if (!draft) return;
     const saved = submitApplication(draft);
     if (!saved) {
-      window.alert("Une demande est déjà active pour cette résidence. Consultez Mes demandes.");
+      window.alert(
+        t("An application is already active for this residence. See My requests."),
+      );
       setView("demandes");
       return;
     }
@@ -653,7 +655,7 @@ export function FamilySpace() {
   };
 
   const withdrawApp = (id: string) => {
-    if (!window.confirm("Retirer cette demande ? Cette action est irréversible.")) return;
+    if (!window.confirm(t("Withdraw this application? This cannot be undone."))) return;
     withdrawApplication(id);
   };
 
@@ -761,7 +763,7 @@ export function FamilySpace() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[12px] text-[#9AABA4]">Téléphone</span>
+                      <span className="mb-1 block text-[12px] text-[#9AABA4]">{t("Phone")}</span>
                       <input
                         className="fs-account-input"
                         value={editPhone}
@@ -772,7 +774,7 @@ export function FamilySpace() {
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[12px] text-[#9AABA4]">
-                        Lien avec le proche
+                        {t("Relationship with the loved one")}
                       </span>
                       <select
                         className="fs-account-input"
@@ -782,7 +784,7 @@ export function FamilySpace() {
                         {["Fille", "Fils", "Conjoint", "Conjointe", "Autre proche", "Moi-même"].map(
                           (opt) => (
                             <option key={opt} value={opt}>
-                              {opt}
+                              {t(opt)}
                             </option>
                           ),
                         )}
@@ -794,7 +796,7 @@ export function FamilySpace() {
                         className="fs-account-menu-item flex-1 !py-2 text-center text-white/85"
                         onClick={() => setAccountEditing(false)}
                       >
-                        Annuler
+                        {t("Cancel")}
                       </button>
                       <button
                         type="button"
@@ -802,7 +804,7 @@ export function FamilySpace() {
                         style={{ background: "var(--fs-green)" }}
                         onClick={saveAccountEdit}
                       >
-                        Enregistrer
+                        {t("Save")}
                       </button>
                     </div>
                   </div>
@@ -822,7 +824,9 @@ export function FamilySpace() {
                       ) : null}
                       {data.senior.relationship ? (
                         <p className="mt-1 text-[12px] text-[#9AABA4]">
-                          Contact · {data.senior.relationship}
+                          {t("Contact · {relationship}", {
+                            relationship: t(data.senior.relationship),
+                          })}
                         </p>
                       ) : null}
                     </div>
@@ -832,7 +836,7 @@ export function FamilySpace() {
                       className="fs-account-menu-item"
                       onClick={startAccountEdit}
                     >
-                      Mon profil
+                      {t("My profile")}
                     </button>
                     <button
                       type="button"
@@ -843,7 +847,7 @@ export function FamilySpace() {
                         router.push("/family/settings");
                       }}
                     >
-                      Paramètres
+                      {t("Settings")}
                     </button>
                     <button
                       type="button"
@@ -854,7 +858,7 @@ export function FamilySpace() {
                         router.push("/family/privacy");
                       }}
                     >
-                      Confidentialité et données
+                      {t("Privacy and data")}
                     </button>
                     <button
                       type="button"
@@ -862,7 +866,7 @@ export function FamilySpace() {
                       className="fs-account-menu-item"
                       onClick={handleSignOut}
                     >
-                      Se déconnecter
+                      {t("Sign out")}
                     </button>
                   </>
                 )}
@@ -1261,6 +1265,7 @@ function Depot({
   onBack: () => void;
   onSend: () => void;
 }) {
+  const t = useT();
   const missing = docs.filter((d) => d.status === "en attente");
   const options = [
     {
@@ -1268,25 +1273,27 @@ function Depot({
       price: residence.price,
       avail: residence.availability,
     },
-    { type: "2½", price: "2 850 $/mois", avail: "Complet" },
-    { type: "1½", price: "2 200 $/mois", avail: "2 libres" },
+    { type: "2½", price: "2 850 $/mois", avail: t("Full") },
+    { type: "1½", price: "2 200 $/mois", avail: t("2 available") },
   ];
 
   return (
     <div className="mx-auto max-w-3xl">
       <button type="button" className="fs-btn-ghost" onClick={onBack}>
-        ← Retour à la résidence
+        ← {t("Back to the residence")}
       </button>
       <div className="fs-card mt-4 p-7">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="fs-serif text-[28px]">Dépôt d&apos;une demande</h1>
-          <p className="text-[14px] text-[var(--fs-ink-muted)]">Étape {step} sur 3</p>
+          <h1 className="fs-serif text-[28px]">{t("Submit an application")}</h1>
+          <p className="text-[14px] text-[var(--fs-ink-muted)]">
+            {t("Step {step} of 3", { step })}
+          </p>
         </div>
         <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">{residence.name}</p>
 
         {step === 1 && (
           <div className="mt-6 space-y-3">
-            <h2 className="fs-serif text-[20px]">Choix de l&apos;unité</h2>
+            <h2 className="fs-serif text-[20px]">{t("Choose a unit")}</h2>
             {options.map((o) => {
               const on = selectedUnit === o.type;
               return (
@@ -1313,9 +1320,11 @@ function Depot({
 
         {step === 2 && (
           <div className="mt-6">
-            <h2 className="fs-serif text-[20px]">Vérification du dossier</h2>
+            <h2 className="fs-serif text-[20px]">{t("Review the file")}</h2>
             <p className="mt-2 text-[14.5px] text-[var(--fs-ink-body)]">
-              Les renseignements et pièces suivants seront transmis à {residence.name}.
+              {t("The following information and documents will be sent to {name}.", {
+                name: residence.name,
+              })}
             </p>
             <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
               {docs.map((d) => (
@@ -1328,7 +1337,7 @@ function Depot({
                       fontSize: 13.5,
                     }}
                   >
-                    {d.status === "reçu" ? "Reçu" : "En attente"}
+                    {d.status === "reçu" ? t("Received") : t("Pending")}
                   </span>
                 </li>
               ))}
@@ -1338,8 +1347,10 @@ function Depot({
                 className="mt-4 rounded-[10px] px-4 py-3 text-[14px]"
                 style={{ background: "var(--fs-terra-bg)", color: "var(--fs-terra)" }}
               >
-                Attention : {missing.length} pièce{missing.length > 1 ? "s" : ""} manquante
-                {missing.length > 1 ? "s" : ""}. La résidence pourra quand même ouvrir le dossier.
+                {t(
+                  "Note: {count} document(s) still missing. The residence can still open the file.",
+                  { count: missing.length },
+                )}
               </p>
             ) : null}
           </div>
@@ -1347,18 +1358,18 @@ function Depot({
 
         {step === 3 && (
           <div className="mt-6 space-y-4">
-            <h2 className="fs-serif text-[20px]">Confirmation d&apos;envoi</h2>
+            <h2 className="fs-serif text-[20px]">{t("Confirm and send")}</h2>
             <dl className="space-y-2 text-[14.5px]">
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--fs-ink-muted)]">Résidence</dt>
+                <dt className="text-[var(--fs-ink-muted)]">{t("Residence")}</dt>
                 <dd className="font-medium">{residence.name}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--fs-ink-muted)]">Unité</dt>
+                <dt className="text-[var(--fs-ink-muted)]">{t("Unit")}</dt>
                 <dd className="font-medium">{selectedUnit}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-[var(--fs-ink-muted)]">Emménagement souhaité</dt>
+                <dt className="text-[var(--fs-ink-muted)]">{t("Desired move-in")}</dt>
                 <dd className="font-medium">{moveLabel}</dd>
               </div>
             </dl>
@@ -1370,8 +1381,10 @@ function Depot({
                 onChange={(e) => setConsent(e.target.checked)}
               />
               <span>
-                Je consens au partage du dossier de {seniorName} avec cette résidence, y
-                compris les pièces jointes.
+                {t(
+                  "I consent to sharing {name}'s file with this residence, including attached documents.",
+                  { name: seniorName },
+                )}
               </span>
             </label>
           </div>
@@ -1384,7 +1397,7 @@ function Depot({
             disabled={step === 1}
             onClick={() => setStep(step - 1)}
           >
-            Précédent
+            {t("Previous")}
           </button>
           {step < 3 ? (
             <button
@@ -1393,7 +1406,7 @@ function Depot({
               disabled={step === 1 && !selectedUnit}
               onClick={() => setStep(step + 1)}
             >
-              Suivant
+              {t("Next")}
             </button>
           ) : (
             <button
@@ -1402,7 +1415,7 @@ function Depot({
               disabled={!consent || !selectedUnit}
               onClick={onSend}
             >
-              Envoyer la demande
+              {t("Send the application")}
             </button>
           )}
         </div>
@@ -1424,7 +1437,13 @@ function Demandes({
   onViewDossier: () => void;
   onSearch: () => void;
 }) {
-  const segments = ["Demande reçue", "Dossier vérifié", "Visite", "Décision"];
+  const t = useT();
+  const segments = [
+    t("Application received"),
+    t("File verified"),
+    t("Visit"),
+    t("Decision"),
+  ];
   const visits = applications.filter(
     (app) => app.visit || app.status === "Visite planifiée",
   );
@@ -1439,21 +1458,24 @@ function Demandes({
       <div className="fs-card p-6 md:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
-            <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">Mes demandes</h1>
+            <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">
+              {t("My requests")}
+            </h1>
             <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-              Suivez l&apos;évolution de chaque demande envoyée pour votre proche, et retrouvez
-              ici les visites déjà planifiées avec les résidences.
+              {t(
+                "Track every application sent for your loved one, and find visits already scheduled with residences here.",
+              )}
             </p>
           </div>
           <button type="button" className="fs-btn fs-btn-primary" onClick={onSearch}>
-            Nouvelle demande
+            {t("New application")}
           </button>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {[
-            ["Demandes actives", String(byStatus.active)],
-            ["Visites planifiées", String(byStatus.visits)],
-            ["Listes d'attente", String(byStatus.waiting)],
+            [t("Active applications"), String(byStatus.active)],
+            [t("Scheduled visits"), String(byStatus.visits)],
+            [t("Waitlists"), String(byStatus.waiting)],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -1471,18 +1493,19 @@ function Demandes({
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
-          <h2 className="fs-serif text-[22px]">Évolution des demandes</h2>
+          <h2 className="fs-serif text-[22px]">{t("Application progress")}</h2>
         </div>
 
         {applications.length === 0 ? (
           <div className="fs-card p-8 text-center">
-            <h3 className="fs-serif text-[22px]">Aucune demande pour le moment</h3>
+            <h3 className="fs-serif text-[22px]">{t("No applications yet")}</h3>
             <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--fs-ink-body)]">
-              Quand vous enverrez un dossier à une résidence, son statut et ses prochaines
-              étapes s&apos;afficheront ici.
+              {t(
+                "When you send a file to a residence, its status and next steps will appear here.",
+              )}
             </p>
             <button type="button" className="fs-btn fs-btn-primary mt-6" onClick={onSearch}>
-              Chercher une résidence
+              {t("Search for a residence")}
             </button>
           </div>
         ) : (
@@ -1492,16 +1515,26 @@ function Demandes({
                 <div>
                   <h3 className="fs-serif text-[22px]">{app.residenceName}</h3>
                   <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                    {app.city} · {app.unit} · déposée le {app.depositedOn}
+                    {app.city} · {app.unit} · {t("submitted on")} {app.depositedOn}
                   </p>
                   {app.publicRef ? (
                     <p className="mt-1.5 font-mono text-[13px] tracking-wide text-[var(--fs-ink-muted)]">
-                      Réf. {app.publicRef}
+                      {t("Ref.")} {app.publicRef}
                     </p>
                   ) : null}
                 </div>
                 <StatusPill tone={app.status === "Liste d'attente" ? "neutral" : "green"}>
-                  {app.status}
+                  {t(
+                    (
+                      {
+                        "Demande reçue": "Application received",
+                        "Dossier vérifié": "File verified",
+                        "Visite planifiée": "Visit scheduled",
+                        "Liste d'attente": "Waitlist",
+                        "Décision attendue": "Awaiting decision",
+                      } as Record<string, string>
+                    )[app.status] || app.status,
+                  )}
                 </StatusPill>
               </div>
 
@@ -1553,10 +1586,10 @@ function Demandes({
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <button type="button" className="fs-btn fs-btn-outline" onClick={onWrite}>
-                  Écrire à la résidence
+                  {t("Message the residence")}
                 </button>
                 <button type="button" className="fs-btn fs-btn-outline" onClick={onViewDossier}>
-                  Voir le dossier transmis
+                  {t("View the file sent")}
                 </button>
                 <button
                   type="button"
@@ -1564,7 +1597,7 @@ function Demandes({
                   style={{ color: "var(--fs-terra)" }}
                   onClick={() => onWithdraw(app.id)}
                 >
-                  Retirer la demande
+                  {t("Withdraw application")}
                 </button>
               </div>
             </article>
@@ -1573,25 +1606,26 @@ function Demandes({
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="fs-serif text-[22px]">Planning des visites</h2>
+        <h2 className="fs-serif text-[22px]">{t("Visit schedule")}</h2>
         {visits.length === 0 ? (
           <div className="fs-card p-6">
             <p className="text-[15px] text-[var(--fs-ink-body)]">
-              Aucune visite n&apos;est encore organisée. Dès qu&apos;une résidence propose un
-              créneau, il apparaîtra dans ce planning.
+              {t(
+                "No visits scheduled yet. As soon as a residence proposes a time slot, it will appear here.",
+              )}
             </p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {visits.map((app) => {
               const visit = app.visit ?? {
-                dateLabel: "Date à confirmer",
+                dateLabel: t("Date to confirm"),
                 timeLabel: "",
                 place: `${app.residenceName} · ${app.city}`,
               };
               const [dayToken, ...monthParts] = visit.dateLabel.split(" ");
               const day = /^\d+$/.test(dayToken) ? dayToken : "—";
-              const month = monthParts[0] || "Visite";
+              const month = monthParts[0] || t("Visit");
               return (
                 <article key={`visit-${app.id}`} className="fs-card p-5">
                   <div className="flex gap-4">
@@ -1619,14 +1653,14 @@ function Demandes({
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button type="button" className="fs-btn fs-btn-outline" onClick={onWrite}>
-                          Contacter la résidence
+                          {t("Contact the residence")}
                         </button>
                         <button
                           type="button"
                           className="fs-btn fs-btn-outline"
                           onClick={onViewDossier}
                         >
-                          Préparer le dossier
+                          {t("Prepare the file")}
                         </button>
                       </div>
                     </div>
@@ -1652,29 +1686,38 @@ function Assistance({
   setInput: (v: string) => void;
   onSend: () => void;
 }) {
+  const t = useT();
   const faqs = [
     {
-      q: "RPA ou CHSLD : quelle différence ?",
-      a: "Une RPA offre de l'hébergement avec services. Un CHSLD accueille des personnes qui ont besoin de soins plus importants au quotidien.",
+      q: t("RPA or CHSLD: what’s the difference?"),
+      a: t(
+        "An RPA offers housing with services. A CHSLD welcomes people who need more substantial daily care.",
+      ),
     },
     {
-      q: "Combien de demandes simultanées ?",
-      a: "Autant que nécessaire. Un même dossier peut être déposé auprès de plusieurs résidences sans le remplir à nouveau.",
+      q: t("How many applications at once?"),
+      a: t(
+        "As many as you need. The same file can be submitted to several residences without filling it out again.",
+      ),
     },
     {
-      q: "Crédit d'impôt pour maintien à domicile",
-      a: "Certaines dépenses liées au maintien à domicile ou à la résidence peuvent ouvrir droit à un crédit. Vérifiez auprès de Revenu Québec.",
+      q: t("Home-support tax credit"),
+      a: t(
+        "Some expenses related to staying at home or living in a residence may qualify for a credit. Check with Revenu Québec.",
+      ),
     },
     {
-      q: "Comment préparer une visite ?",
-      a: "Prévoyez la liste de médicaments, vos questions sur les soins, et un moment pour voir une unité type et les espaces communs.",
+      q: t("How do I prepare for a visit?"),
+      a: t(
+        "Bring the medication list, your questions about care, and time to see a sample unit and common areas.",
+      ),
     },
   ];
 
   return (
     <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <div className="fs-card flex min-h-[480px] flex-col p-5">
-        <h2 className="fs-serif text-[22px]">Assistance</h2>
+        <h2 className="fs-serif text-[22px]">{t("Assistance")}</h2>
         <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
           {chat.map((m, i) => (
             <div
@@ -1705,7 +1748,7 @@ function Assistance({
         <div className="mt-4 flex gap-2">
           <input
             className="fs-input"
-            placeholder="Poser une question…"
+            placeholder={t("Ask a question…")}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -1713,14 +1756,14 @@ function Assistance({
             }}
           />
           <button type="button" className="fs-btn fs-btn-primary" onClick={onSend}>
-            Envoyer
+            {t("Send")}
           </button>
         </div>
       </div>
 
       <div className="flex flex-col gap-5">
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Questions fréquentes</h3>
+          <h3 className="fs-serif text-[19px]">{t("Frequently asked questions")}</h3>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
             {faqs.map((item) => (
               <li key={item.q}>
@@ -1736,21 +1779,24 @@ function Assistance({
           </ul>
         </div>
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Parler à une personne</h3>
+          <h3 className="fs-serif text-[19px]">{t("Talk to someone")}</h3>
           <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-            Un conseiller peut vous accompagner par téléphone du lundi au vendredi, de 8 h à
-            18 h.
+            {t(
+              "An advisor can help you by phone Monday to Friday, 8 a.m. to 6 p.m.",
+            )}
           </p>
           <button
             type="button"
             className="fs-btn fs-btn-primary mt-4 w-full"
             onClick={() =>
               window.alert(
-                "Votre demande d'appel a été notée. Un conseiller vous rejoindra durant les heures d'ouverture.",
+                t(
+                  "Your call request has been noted. An advisor will reach you during opening hours.",
+                ),
               )
             }
           >
-            Demander un appel
+            {t("Request a call")}
           </button>
         </div>
       </div>

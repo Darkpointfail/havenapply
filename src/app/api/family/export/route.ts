@@ -7,7 +7,7 @@ export async function GET() {
   if (!auth.ok) return jsonError(auth.error, auth.status);
 
   const payload = await exportFamilyData(auth.user.id);
-  if (!payload) return jsonError("Aucune donnée à exporter.", 404);
+  if (!payload) return jsonError("No data to export.", 404);
 
   await recordRightsOperation(auth.user.id, "access_view", "Consultation via export");
 

@@ -756,7 +756,7 @@ export async function uploadDocument(input: {
     contentType: input.mimeType,
     upsert: false,
   });
-  if (upErr) return { error: "Échec du téléversement.", status: 500 as const };
+  if (upErr) return { error: "Upload failed.", status: 500 as const };
 
   const categoryMap: Record<string, string> = {
     identification: "id",

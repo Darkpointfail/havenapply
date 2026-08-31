@@ -11,7 +11,7 @@ export async function PATCH(request: Request) {
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
 
   const seniorId = body.seniorId != null ? String(body.seniorId) : null;

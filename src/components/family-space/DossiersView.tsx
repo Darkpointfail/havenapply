@@ -284,12 +284,28 @@ function OverviewMode({
   const docsReceived = progress.docsReceived;
   const docsTotal = progress.docsTotal;
   const meta = [
-    [t("Autonomy level"), profile.draft || !profile.autonomie ? t("To be determined") : profile.autonomie],
+    [
+      t("Autonomy level"),
+      profile.draft ||
+      !profile.autonomie ||
+      profile.autonomie === "À préciser" ||
+      profile.autonomie === "To be determined"
+        ? t("To be determined")
+        : t(profile.autonomie),
+    ],
     [
       t("Autonomy score"),
       profile.autonomyScore != null ? `${profile.autonomyScore}/10` : t("To be determined"),
     ],
-    [t("Desired services"), profile.draft || !profile.services ? t("To be determined") : profile.services],
+    [
+      t("Desired services"),
+      profile.draft ||
+      !profile.services ||
+      profile.services === "À préciser" ||
+      profile.services === "To be determined"
+        ? t("To be determined")
+        : t(profile.services),
+    ],
     [
       t("Search"),
       [
@@ -299,8 +315,24 @@ function OverviewMode({
         .filter(Boolean)
         .join(" · ") || t("To be determined"),
     ],
-    [t("Monthly budget"), profile.draft || !profile.budget ? t("To be determined") : profile.budget],
-    [t("Desired move-in"), profile.draft || !profile.move ? t("To be determined") : profile.move],
+    [
+      t("Monthly budget"),
+      profile.draft ||
+      !profile.budget ||
+      profile.budget === "À préciser" ||
+      profile.budget === "To be determined"
+        ? t("To be determined")
+        : t(profile.budget),
+    ],
+    [
+      t("Desired move-in"),
+      profile.draft ||
+      !profile.move ||
+      profile.move === "À préciser" ||
+      profile.move === "To be determined"
+        ? t("To be determined")
+        : t(profile.move),
+    ],
   ];
 
   return (
@@ -358,7 +390,9 @@ function OverviewMode({
             <div className="min-w-0 flex-1">
               <h2 className="fs-serif text-[28px] leading-tight">{profileDisplayName(profile)}</h2>
               <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                {profile.draft ? t("File in progress") : `${profile.rel} · ${profile.meta}`}
+                {profile.draft
+                  ? t("File in progress")
+                  : `${t(profile.rel || "Family")} · ${t(profile.meta)}`}
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {meta.map(([l, v]) => (
@@ -1200,7 +1234,11 @@ function EditionStepFields({
         <Field label={t("Autonomy level (label)")}>
           <input
             className="fs-input"
-            value={profile.autonomie === "À préciser" ? "" : profile.autonomie}
+            value={
+              profile.autonomie === "À préciser" || profile.autonomie === "To be determined"
+                ? ""
+                : profile.autonomie
+            }
             onChange={(e) => onPatchActive({ autonomie: e.target.value })}
           />
         </Field>

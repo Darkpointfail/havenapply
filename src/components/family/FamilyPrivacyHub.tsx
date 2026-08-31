@@ -491,7 +491,7 @@ export default function FamilyPrivacyHub() {
             >
               <div style={{ flex: "1 1 240px" }}>
                 <h3 style={h3Style}>{t("Family profile retention")}</h3>
-                <p style={pStyle}>{PROFILE_RETENTION_PURPOSE_TEXT}</p>
+                <p style={pStyle}>{t(PROFILE_RETENTION_PURPOSE_TEXT)}</p>
                 <p style={{ ...metaStyle, marginTop: 10 }}>
                   {t("Status:")}{" "}
                   <strong>{retentionGranted ? t("Active") : t("Withdrawn")}</strong>
@@ -603,7 +603,7 @@ export default function FamilyPrivacyHub() {
               <p style={metaStyle}>
                 {t("Consent date: {value}", {
                   value: a.sharedAt
-                    ? new Date(a.sharedAt).toLocaleString("fr-CA")
+                    ? new Date(a.sharedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")
                     : t("Not specified"),
                 })}
               </p>
@@ -867,7 +867,7 @@ export default function FamilyPrivacyHub() {
                     <strong>{t(OPS_LABEL[l.operation] || l.operation)}</strong>
                     <span style={{ color: "#5c6f66" }}>
                       {" · "}
-                      {new Date(l.recordedAt).toLocaleString("fr-CA")}
+                      {new Date(l.recordedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}
                     </span>
                     {l.detail ? (
                       <div style={{ marginTop: 4, color: "#3d5249" }}>{l.detail}</div>

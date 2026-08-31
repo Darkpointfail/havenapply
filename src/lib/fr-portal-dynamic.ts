@@ -138,22 +138,22 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
         ? "Sainte-Foy"
         : "Québec";
 
-  let update = "Demande reçue par la résidence.";
+  let update = "Application received by the residence.";
   let updateTone: UiApp["updateTone"] = "green";
   if (status === "waitlisted") {
     update = app.waitingPosition
-      ? `Placé en liste d'attente — rang ${app.waitingPosition}.`
-      : "Placé en liste d'attente — rang communiqué par la résidence.";
+      ? `Placed on the waitlist — rank ${app.waitingPosition}.`
+      : "Placed on the waitlist — rank shared by the residence.";
     updateTone = "neutral";
   } else if (status === "tour_requested" || app.upcomingAppointment) {
     update = app.upcomingAppointment
-      ? `Visite planifiée : ${app.upcomingAppointment}.`
-      : "Visite proposée par la résidence.";
+      ? `Visit scheduled: ${app.upcomingAppointment}.`
+      : "Visit proposed by the residence.";
   } else if (status === "under_review" || status === "more_info") {
     update =
       app.requestedDocuments?.length > 0
-        ? `Pièces demandées : ${app.requestedDocuments.slice(0, 2).join(", ")}.`
-        : "Dossier vérifié. Décision attendue sous peu.";
+        ? `Documents requested: ${app.requestedDocuments.slice(0, 2).join(", ")}.`
+        : "File verified. Decision expected shortly.";
   } else if (app.communityDecision?.note) {
     update = app.communityDecision.note;
   }
@@ -161,7 +161,7 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
   const unit =
     app.specificAnswers?.unite ||
     app.specificAnswers?.unit ||
-    "Unité à confirmer";
+    "Unit to confirm";
 
   return {
     id: app.id,
@@ -175,11 +175,7 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
     depositedOn:
       app.submittedDateLabel ||
       (app.submittedAt
-        ? new Date(app.submittedAt).toLocaleDateString("fr-CA", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
+        ? new Date(app.submittedAt).toLocaleDateString("en-CA")
         : "—"),
     status: frStatus,
     progress: progressForStatus(status),
@@ -188,7 +184,7 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
     visit:
       frStatus === "Visite planifiée" || status === "tour_requested" || app.upcomingAppointment
         ? {
-            dateLabel: app.upcomingAppointment || "Date à confirmer",
+            dateLabel: app.upcomingAppointment || "Date to confirm",
             timeLabel: "",
             place: app.residenceName,
           }
@@ -216,7 +212,7 @@ export function buildSubmitDraft(input: {
     ...draft,
     residenceId: catalogId,
     residenceName: input.residenceName || residence.name,
-    desiredMoveIn: "Dès que possible",
+    desiredMoveIn: "As soon as possible",
     consentShare: true,
     consentAccurate: true,
     signatureName: input.userName,
@@ -255,26 +251,22 @@ export function communityAppToDemande(app: CommunityApplication): Demande {
     publicRef: app.publicRef || null,
     nom: app.seniorName,
     age: app.seniorAge || 0,
-    unite: app.careType || "Unité à confirmer",
+    unite: app.careType || "Unit to confirm",
     statut: STATUS_TO_DEMANDE[status] ?? "Nouvelle",
     piecesManquantes,
     recueLe: app.submittedAt
-      ? new Date(app.submittedAt).toLocaleDateString("fr-CA", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
+      ? new Date(app.submittedAt).toLocaleDateString("en-CA")
       : "—",
     dateNaissance: app.dossier?.dateOfBirth || "—",
     adresse: app.dossier?.currentAddress || "—",
-    autonomie: app.careNeeds?.[0] || "À évaluer",
-    services: (app.careNeeds || []).slice(0, 3).join(", ") || "À préciser",
-    budget: app.paymentMethod || "À confirmer",
-    provenance: app.referralSource || "Famille",
+    autonomie: app.careNeeds?.[0] || "To assess",
+    services: (app.careNeeds || []).slice(0, 3).join(", ") || "To be determined",
+    budget: app.paymentMethod || "To confirm",
+    provenance: app.referralSource || "Family",
     contact: app.family?.name || "—",
-    contactLien: app.family?.relationship || "Proche",
-    emmenagement: app.moveInRequested || "Dès que possible",
-    resumeIa: app.executiveSummary || app.summary || "Dossier reçu via HavenApply.",
+    contactLien: app.family?.relationship || "Loved one",
+    emmenagement: app.moveInRequested || "As soon as possible",
+    resumeIa: app.executiveSummary || app.summary || "File received via HavenApply.",
     noteInterne: app.internalNotes?.[0]?.body,
   };
 }
@@ -286,7 +278,7 @@ export function communityAppsToWaitlist(apps: CommunityApplication[]): WaitlistE
       id: a.id,
       nom: a.seniorName,
       age: a.seniorAge || 0,
-      unite: a.careType || "Unité à confirmer",
+      unite: a.careType || "Unit to confirm",
       joursAttente: Math.max(
         1,
         Math.round(

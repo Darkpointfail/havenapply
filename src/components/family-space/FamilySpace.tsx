@@ -1123,7 +1123,7 @@ function Accueil({
           ) : null}
           {saveStatus === "error" && saveError ? (
             <p className="mt-3 text-[13px] text-[#b4533a]" role="alert">
-              {saveError}
+              {t(saveError)}
             </p>
           ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
@@ -1202,7 +1202,7 @@ function Accueil({
                 </StatusPill>
                 <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
                 <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-                  {app.city} · {app.unit}
+                  {app.city} · {t(app.unit)}
                 </p>
                 {app.publicRef ? (
                   <p className="mt-2 font-mono text-[12.5px] tracking-wide text-[var(--fs-ink-muted)]">
@@ -1230,16 +1230,18 @@ function Accueil({
                     t("Visit").toUpperCase()}
                 </span>
                 <span className="fs-serif text-[22px] leading-none px-1">
-                  {nextVisit.visit?.dateLabel || t("Upcoming")}
+                  {nextVisit.visit?.dateLabel
+                    ? t(nextVisit.visit.dateLabel)
+                    : t("Upcoming")}
                 </span>
                 <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
-                  {nextVisit.visit?.timeLabel || "-"}
+                  {nextVisit.visit?.timeLabel ? t(nextVisit.visit.timeLabel) : "-"}
                 </span>
               </div>
               <div className="min-w-0">
                 <p className="font-semibold">{nextVisit.residenceName}</p>
                 <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                  {nextVisit.unit} · {nextVisit.city}
+                  {t(nextVisit.unit)} · {nextVisit.city}
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
@@ -1566,7 +1568,7 @@ function Demandes({
                 <div>
                   <h3 className="fs-serif text-[22px]">{app.residenceName}</h3>
                   <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                    {app.city} · {app.unit} · {t("submitted on")} {app.depositedOn}
+                    {app.city} · {t(app.unit)} · {t("submitted on")} {t(app.depositedOn)}
                   </p>
                   {app.publicRef ? (
                     <p className="mt-1.5 font-mono text-[13px] tracking-wide text-[var(--fs-ink-muted)]">

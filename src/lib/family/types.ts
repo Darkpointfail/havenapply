@@ -9,7 +9,7 @@ import type { SavedFavorite } from "@/lib/saved-communities";
 
 export const PROFILE_RETENTION_CONSENT_VERSION = "2026-08-loi25-v1";
 export const PROFILE_RETENTION_PURPOSE_TEXT =
-  "Je consens à ce que HavenApply crée et conserve mon profil familial et le dossier de la personne aînée afin de m'aider dans ma recherche de résidence. Ce consentement n'autorise pas la transmission du dossier à une résidence.";
+  "I consent to HavenApply creating and retaining my family profile and the senior's file to help me in my residence search. This consent does not authorize transmitting the file to a residence.";
 
 export type ConsentPurpose = "profile_retention" | "dossier_transmission";
 

@@ -262,7 +262,7 @@ function AccountMenu() {
         </span>
         <span className="min-w-0 flex-1 text-[13px] leading-snug text-[#C5D2CD]">
           <span className="block truncate font-medium text-white">{displayName}</span>
-          <span className="block truncate text-[12px] text-[#8E9B96]">{displayRole}</span>
+          <span className="block truncate text-[12px] text-[#8E9B96]">{t(displayRole)}</span>
         </span>
         <span className="text-[11px] text-[#8E9B96]" aria-hidden>
           ▾
@@ -321,7 +321,7 @@ function AccountMenu() {
             <div className="p-1.5">
               <div className="border-b border-white/10 px-3 py-2.5">
                 <p className="truncate text-[13.5px] font-semibold text-white">{displayName}</p>
-                <p className="truncate text-[12px] text-[#8E9B96]">{displayRole}</p>
+                <p className="truncate text-[12px] text-[#8E9B96]">{t(displayRole)}</p>
                 {user?.email ? (
                   <p className="mt-1 truncate text-[12px] text-[#8E9B96]">{user.email}</p>
                 ) : null}

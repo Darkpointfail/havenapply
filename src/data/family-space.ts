@@ -216,9 +216,9 @@ export const SENIOR = {
   age: 84,
   city: "Sillery, Québec",
   dossierCreated: "12 août 2026",
-  autonomie: "Semi-autonome",
-  services: "Repas, médicaments, aide légère",
-  budget: "3 400 $ / mois",
+  autonomie: "Semi-autonomous",
+  services: "Meals, medication, light assistance",
+  budget: "3 400 $/month",
   emmenagement: "Octobre 2026",
 };
 
@@ -305,18 +305,18 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     sourcesRevenus: "",
     garantFinancier: "",
     modePaiement: "",
-    meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
-    autonomie: "Semi-autonome",
+    meta: "84 yrs · Sillery, Québec · file created August 12, 2026",
+    autonomie: "Semi-autonomous",
     autonomyScore: 5,
-    services: "Repas, médicaments, aide légère",
+    services: "Meals, medication, light assistance",
     mobilite: "",
     aideRepas: "",
     aideHygiene: "",
     aideMedication: "",
     allergies: "",
     regimeAlimentaire: "",
-    budget: "3 400 $ / mois",
-    move: "Octobre 2026",
+    budget: "3 400 $/month",
+    move: "October 2026",
     searchSector: "Sillery",
     searchRadiusKm: 25,
     searchBudgetMax: 3400,
@@ -402,13 +402,13 @@ function ageFromDob(dob?: string): number | null {
 
 function urgencyToMoveLabel(urgency?: string): string {
   const u = (urgency || "").toLowerCase();
-  if (!u) return "À préciser";
-  if (u.includes("immediate") || u.includes("urgent")) return "Dès que possible";
-  if (u.includes("1_3") || u.includes("3_month")) return "Sous 3 mois";
-  if (u.includes("3_6") || u.includes("6_month")) return "Sous 6 mois";
-  if (u.includes("6_12") || u.includes("year")) return "Sous 12 mois";
-  if (u.includes("exploring") || u.includes("research")) return "En exploration";
-  return "À préciser";
+  if (!u) return "To be determined";
+  if (u.includes("immediate") || u.includes("urgent")) return "As soon as possible";
+  if (u.includes("1_3") || u.includes("3_month")) return "Within 3 months";
+  if (u.includes("3_6") || u.includes("6_month")) return "Within 6 months";
+  if (u.includes("6_12") || u.includes("year")) return "Within 12 months";
+  if (u.includes("exploring") || u.includes("research")) return "Exploring";
+  return "To be determined";
 }
 
 /**
@@ -433,16 +433,16 @@ export function buildProfileFromSenior(
   const age = ageFromDob(senior.dateOfBirth);
   const place = [senior.city, senior.state].filter(Boolean).join(", ");
   const meta =
-    [age ? `${age} ans` : null, place || null].filter(Boolean).join(" · ") ||
-    (prenom || nom ? "Dossier en cours" : "Dossier en création");
+    [age ? `${age} yrs` : null, place || null].filter(Boolean).join(" · ") ||
+    (prenom || nom ? "File in progress" : "File being created");
 
-  let budget = "À préciser";
-  if (senior.budgetUnsure) budget = "Budget à confirmer";
+  let budget = "To be determined";
+  if (senior.budgetUnsure) budget = "Budget to confirm";
   else if (senior.budgetMax?.trim()) {
     const n = Number(String(senior.budgetMax).replace(/\s/g, ""));
     budget = Number.isFinite(n) && n > 0
-      ? `${n.toLocaleString("fr-CA")} $ / mois`
-      : `${senior.budgetMax} $ / mois`;
+      ? `${n.toLocaleString("en-CA")} $/month`
+      : `${senior.budgetMax} $/month`;
   }
 
   return {
@@ -496,9 +496,9 @@ export function buildProfileFromSenior(
     garantFinancier: "",
     modePaiement: "",
     meta,
-    autonomie: "À préciser",
+    autonomie: "To be determined",
     autonomyScore: null,
-    services: "À préciser",
+    services: "To be determined",
     mobilite: "",
     aideRepas: "",
     aideHygiene: "",
@@ -583,18 +583,18 @@ export function createEmptyProfile(
     sourcesRevenus: "",
     garantFinancier: "",
     modePaiement: "",
-    meta: "Dossier en création",
-    autonomie: "À préciser",
+    meta: "File being created",
+    autonomie: "To be determined",
     autonomyScore: null,
-    services: "À préciser",
+    services: "To be determined",
     mobilite: "",
     aideRepas: "",
     aideHygiene: "",
     aideMedication: "",
     allergies: "",
     regimeAlimentaire: "",
-    budget: "À préciser",
-    move: "À préciser",
+    budget: "To be determined",
+    move: "To be determined",
     searchSector: "",
     searchRadiusKm: null,
     searchBudgetMax: null,
@@ -783,7 +783,7 @@ export const TODOS = [
   { label: "Ajouter le bilan médical", owner: "Sophie", tone: "terra" as const },
   { label: "Ajouter la preuve de revenus", owner: "Sophie", tone: "terra" as const },
   { label: "Confirmer la visite du 3 septembre", owner: "Sophie", tone: "green" as const },
-  { label: "Relire le dossier transmis à Villa Sainte-Anne", owner: "Famille", tone: "neutral" as const },
+  { label: "Review the file sent to Villa Sainte-Anne", owner: "Family", tone: "neutral" as const },
 ];
 
 export type FamilyNextStep = {
@@ -876,7 +876,7 @@ export function docsProgress(docs: FamilyDoc[]) {
 
 function hasProfileText(v: string | null | undefined) {
   const t = (v || "").trim();
-  return Boolean(t) && t !== "À préciser";
+  return Boolean(t) && t !== "À préciser" && t !== "To be determined";
 }
 
 export type FamilyDossierSectionProgress = {
@@ -968,7 +968,7 @@ export function computeFamilyDossierCompleteness(
       label: "Enter budget or income",
       complete:
         hasProfileText(profile.revenusMensuels) ||
-        (hasProfileText(profile.budget) && profile.budget !== "Budget à confirmer") ||
+        (hasProfileText(profile.budget) && profile.budget !== "Budget à confirmer" && profile.budget !== "Budget to confirm") ||
         (profile.searchBudgetMax != null && profile.searchBudgetMax > 0),
       weight: 10,
     },

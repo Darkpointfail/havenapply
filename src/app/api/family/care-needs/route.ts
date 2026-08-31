@@ -10,9 +10,9 @@ export async function PATCH(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
-  if (!body.careNeeds) return jsonError("Données de besoins manquantes.", 400);
+  if (!body.careNeeds) return jsonError("Care needs data is missing.", 400);
 
   const bundle = await patchCareNeeds(auth.user.id, body.seniorId ?? null, body.careNeeds);
   if (!bundle) return jsonError("Impossible d'enregistrer les besoins.", 404);

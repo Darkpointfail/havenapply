@@ -410,18 +410,18 @@ function scoreBudgetAxis(
     const over = (amount - max) / max;
     return {
       score: Math.max(8, Math.round(52 - Math.min(40, over * 55))),
-      consider: t("Indicative rate {amount} $ > budget {max} ${suffix}", { amount: amount.toLocaleString("fr-CA"), max: max.toLocaleString("fr-CA"), suffix }),
+      consider: t("Indicative rate {amount} $ > budget {max} ${suffix}", { amount: amount.toLocaleString("en-CA"), max: max.toLocaleString("en-CA"), suffix }),
     };
   }
   if (amount <= max * 0.9) {
     return {
       score: 92,
-      why: t("Within budget (~{amount} $){suffix}", { amount: amount.toLocaleString("fr-CA"), suffix }),
+      why: t("Within budget (~{amount} $){suffix}", { amount: amount.toLocaleString("en-CA"), suffix }),
     };
   }
   return {
     score: 74,
-    why: t("Close to max budget (~{amount} $){suffix}", { amount: amount.toLocaleString("fr-CA"), suffix }),
+    why: t("Close to max budget (~{amount} $){suffix}", { amount: amount.toLocaleString("en-CA"), suffix }),
   };
 }
 

@@ -15,7 +15,7 @@ import {
   getMatchReadiness,
   type FamilyCareProfile,
 } from "@/lib/family-residence-match";
-import { useT } from "@/lib/i18n/locale";
+import { useLocale, useT } from "@/lib/i18n/locale";
 
 const PAGE_SIZE = 24;
 
@@ -240,6 +240,7 @@ export function ResidencesBrowse({
   onCompleteDossier?: () => void;
 }) {
   const t = useT();
+  const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState("");
   const [unitTypes, setUnitTypes] = useState<string[]>([]);
@@ -286,7 +287,7 @@ export function ResidencesBrowse({
           {t(
             "Browse Quebec's registry of RPAs ({count} active residences, extracted {date}) and submit a request straight from your loved one's file.",
             {
-              count: RPA_SOURCE.count.toLocaleString("fr-CA"),
+              count: RPA_SOURCE.count.toLocaleString(locale === "en" ? "en-CA" : "fr-CA"),
               date: RPA_SOURCE.extractedOn,
             },
           )}
@@ -392,10 +393,10 @@ export function ResidencesBrowse({
         <div className="min-w-0 flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[14.5px] text-[var(--fs-ink-muted)]">
-              {filtered.length.toLocaleString("fr-CA")}{" "}
+              {filtered.length.toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}{" "}
               {filtered.length > 1 ? t("residences found") : t("residence found")}
               {shown.length < filtered.length
-                ? ` · ${t("showing")} ${shown.length.toLocaleString("fr-CA")}`
+                ? ` · ${t("showing")} ${shown.length.toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}`
                 : ""}
             </p>
             <p className="text-[14px] font-medium text-[var(--fs-ink)]">

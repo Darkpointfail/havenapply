@@ -10,7 +10,7 @@ export async function PUT(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
   if (!Array.isArray(body.applications)) {
     return jsonError("Liste de demandes manquante.", 400);

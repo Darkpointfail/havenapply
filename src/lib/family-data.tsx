@@ -1315,7 +1315,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const loadDemo = useCallback(() => {
     // Demo profiles removed — never invent user data.
-    setSaveError("Les données de démonstration ne sont plus disponibles.");
+    setSaveError("Demo data is no longer available.");
   }, []);
   const resetData = useCallback(() => {
     setData(emptyFamilyData());

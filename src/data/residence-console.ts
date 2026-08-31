@@ -61,7 +61,7 @@ export const RESIDENCE = {
     "A welcoming facility in the heart of Sainte-Foy, offering adapted units, personalized care, and an enriching community life for seniors seeking safety and comfort.",
   staff: {
     name: "Claudine Mercier",
-    role: "Directrice adjointe",
+    role: "Assistant director",
     initials: "CM",
   },
 };

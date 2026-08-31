@@ -12,30 +12,133 @@ import {
 
 const PAGE_SIZE = 24;
 
-function PhotoBlock({
+/** Web Mercator tile indices for OSM raster tiles. */
+function osmTileXY(lat: number, lng: number, zoom: number) {
+  const n = 2 ** zoom;
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
+  );
+  return { x, y, n };
+}
+
+/** Fractional position of the pin inside its tile (0–1). */
+function osmTileFraction(lat: number, lng: number, zoom: number) {
+  const n = 2 ** zoom;
+  const x = ((lng + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const y =
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  return { fx: x - Math.floor(x), fy: y - Math.floor(y) };
+}
+
+/** Legal visual: OSM raster tiles + pin — not a scraped facade photo. */
+function ResidenceVisual({
+  residence,
   className = "",
   height,
-  label,
 }: {
+  residence: Residence;
   className?: string;
   height?: number | string;
-  label?: string;
 }) {
+  const { lat, lng } = residence.location;
+  const hasPin = typeof lat === "number" && typeof lng === "number";
+
+  if (hasPin) {
+    const zoom = 16;
+    const { x, y } = osmTileXY(lat, lng, zoom);
+    const { fx, fy } = osmTileFraction(lat, lng, zoom);
+    // 2×2 mosaic centered on the pin tile
+    const tiles = [
+      [x - 1, y - 1],
+      [x, y - 1],
+      [x - 1, y],
+      [x, y],
+    ] as const;
+    const pinLeft = ((1 + fx) / 2) * 100;
+    const pinTop = ((1 + fy) / 2) * 100;
+    const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+
+    return (
+      <div
+        className={`relative overflow-hidden bg-[#e6eee9] ${className}`}
+        style={{ height, minHeight: height ?? 160 }}
+      >
+        <div
+          className="absolute inset-0 grid grid-cols-2 grid-rows-2"
+          aria-hidden
+        >
+          {tiles.map(([tx, ty]) => (
+            // eslint-disable-next-line @next/next/no-img-element -- OSM raster tiles
+            <img
+              key={`${tx}-${ty}`}
+              src={`https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          ))}
+        </div>
+        <div
+          className="pointer-events-none absolute z-[1]"
+          style={{
+            left: `${pinLeft}%`,
+            top: `${pinTop}%`,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <div
+            className="h-7 w-7 rounded-full border-[3px] border-white shadow-md"
+            style={{ background: "var(--fs-green, #0F6B5C)" }}
+          />
+          <div
+            className="mx-auto -mt-1 h-0 w-0 border-x-[6px] border-t-[8px] border-x-transparent"
+            style={{ borderTopColor: "var(--fs-green, #0F6B5C)" }}
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/55 to-transparent px-3 pb-2.5 pt-10">
+          <p className="text-[12px] font-medium text-white">Emplacement sur la carte</p>
+          <p className="text-[11px] text-white/90">
+            ©{" "}
+            <a
+              className="pointer-events-auto underline"
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+            >
+              OpenStreetMap
+            </a>
+            {" · "}
+            <a className="pointer-events-auto underline" href={osmLink} target="_blank" rel="noreferrer">
+              Agrandir
+            </a>
+            {" — pas une photo de l'établissement"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`relative flex items-end overflow-hidden ${className}`}
+      className={`relative flex flex-col justify-end overflow-hidden ${className}`}
       style={{
         height,
         minHeight: height ?? 160,
-        background: "repeating-linear-gradient(135deg, #E2F3EF 0 12px, #F7FAF9 12px 24px)",
+        background:
+          "linear-gradient(160deg, #D7EBE6 0%, #F3F7F6 45%, #E8F1EE 100%), repeating-linear-gradient(135deg, transparent 0 14px, rgba(255,255,255,0.35) 14px 28px)",
         border: "1px solid var(--fs-border)",
       }}
     >
-      {label ? (
-        <span className="m-3 rounded-[6px] bg-white/90 px-2 py-1 text-[12.5px] font-medium text-[var(--fs-ink-muted)]">
-          {label}
-        </span>
-      ) : null}
+      <div className="m-3 max-w-[90%] rounded-[8px] bg-white/92 px-3 py-2 shadow-sm">
+        <p className="text-[12px] font-semibold text-[var(--fs-ink)]">Photo à venir</p>
+        <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--fs-ink-muted)]">
+          Emplacement : {residence.city}
+        </p>
+      </div>
     </div>
   );
 }
@@ -105,11 +208,13 @@ function residenceRegion(r: Residence): string {
 export function ResidencesBrowse({
   onOpen,
   onApply,
+  initialQuery = "",
 }: {
   onOpen: (id: string, focus?: "match" | "full") => void;
   onApply: (id: string) => void;
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [region, setRegion] = useState("");
   const [unitTypes, setUnitTypes] = useState<string[]>([]);
   const [services, setServices] = useState<string[]>([]);
@@ -245,7 +350,11 @@ export function ResidencesBrowse({
                   key={r.id}
                   className="fs-card grid overflow-hidden sm:grid-cols-[300px_1fr]"
                 >
-                  <PhotoBlock height={220} className="min-h-[200px] border-0 sm:min-h-full" />
+                  <ResidenceVisual
+                    residence={r}
+                    height={220}
+                    className="min-h-[200px] border-0 sm:min-h-full"
+                  />
                   <div className="p-5 sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -367,7 +476,7 @@ export function ResidenceFiche({
       </button>
 
       <div className="fs-card overflow-hidden">
-        <PhotoBlock height={320} className="border-0" />
+        <ResidenceVisual residence={residence} height={320} className="border-0" />
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-[780px]">

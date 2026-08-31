@@ -25,6 +25,9 @@ export type RpaResidenceRow = {
   security: string | null;
   entente108: boolean;
   sourceDate: string | null;
+  /** Optional WGS84 pin for legal map embed (OpenStreetMap). */
+  lat?: number | null;
+  lng?: number | null;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -201,6 +204,12 @@ function mapRow(row: RpaResidenceRow): Residence {
       address: addressLine,
       travel: row.mrc ? `MRC ${row.mrc}` : row.region,
       transit: row.security || "Sécurité déclarée au registre",
+      ...(typeof row.lat === "number" &&
+      typeof row.lng === "number" &&
+      Number.isFinite(row.lat) &&
+      Number.isFinite(row.lng)
+        ? { lat: row.lat, lng: row.lng }
+        : {}),
     },
     documents: [
       { name: "Pièce d'identité", inDossier: false },

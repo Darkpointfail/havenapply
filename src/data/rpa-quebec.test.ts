@@ -18,6 +18,13 @@ describe("RPA Québec catalog", () => {
     expect(sample.unitRows.length).toBeGreaterThan(0);
   });
 
+  it("attaches a legal map pin for La Résidence la Cathédrale (Amos)", () => {
+    const cathedrale = RESIDENCES.find((r) => r.id === "rpa-1428");
+    expect(cathedrale?.name).toMatch(/Cathédrale/i);
+    expect(cathedrale?.location.lat).toBeCloseTo(48.5713, 3);
+    expect(cathedrale?.location.lng).toBeCloseTo(-78.1209, 3);
+  });
+
   it("filters by city query and declared services", () => {
     const montreal = filterResidences({ query: "Montréal", limit: 20 });
     expect(montreal.length).toBeGreaterThan(0);

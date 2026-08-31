@@ -106,7 +106,14 @@ export type Residence = {
     availabilityTone: "green" | "terra";
   }[];
   care: { label: string; value: string; offered: boolean }[];
-  location: { address: string; travel: string; transit: string };
+  location: {
+    address: string;
+    travel: string;
+    transit: string;
+    /** Optional map pin — show embedded OSM/Google map, never scraped facade photos. */
+    lat?: number;
+    lng?: number;
+  };
   documents: { name: string; inDossier: boolean }[];
   waitNote: string;
   photoLabels: string[];

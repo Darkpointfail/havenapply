@@ -49,6 +49,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname === "/internal/sign-in";
   const isCommunityPending = pathname === "/community/pending";
   const isSiteAccess = pathname === "/site-access";
+  const isPreviewSurface = pathname.startsWith("/preview/");
   const isPublicAuth =
     pathname === "/sign-in" ||
     pathname === "/get-started" ||
@@ -60,7 +61,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/verify");
 
   // Marketing homepage and full-bleed product UIs own their chrome.
-  if (isSiteAccess || isPublicHome) {
+  if (isSiteAccess || isPublicHome || isPreviewSurface) {
     return <main className="flex-1">{children}</main>;
   }
 

@@ -19,7 +19,7 @@ import {
   maskSensitiveText,
 } from "@/lib/privacy-security";
 import { collectionPath, privacyPath } from "@/content/legal";
-import { useLocale } from "@/lib/i18n/locale";
+import { useLocale, useT } from "@/lib/i18n/locale";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -46,28 +46,28 @@ type SectionId =
   | "droits";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "apercu", label: "Vue d'ensemble" },
-  { id: "consentements", label: "Consentements" },
-  { id: "preferences", label: "Préférences" },
-  { id: "securite", label: "Sécurité" },
-  { id: "historique", label: "Historique des accès" },
-  { id: "droits", label: "Mes droits (Loi 25)" },
+  { id: "apercu", label: "Overview" },
+  { id: "consentements", label: "Consents" },
+  { id: "preferences", label: "Preferences" },
+  { id: "securite", label: "Security" },
+  { id: "historique", label: "Access history" },
+  { id: "droits", label: "My rights (Québec Law 25)" },
 ];
 
-const OPS_FR: Record<string, string> = {
-  access_view: "Consultation",
+const OPS_LABEL: Record<string, string> = {
+  access_view: "View",
   export: "Export",
-  rectify: "Rectification",
-  consent_revoke: "Retrait de consentement",
-  deletion_request: "Demande de suppression",
-  deletion_executed: "Suppression effectuée",
-  view_sensitive: "Consultation sensible",
-  download: "Téléchargement",
-  delete: "Suppression",
-  share: "Partage",
-  revoke_share: "Retrait d'accès",
-  password_change: "Changement de mot de passe",
-  session_revoke: "Révocation de session",
+  rectify: "Correction",
+  consent_revoke: "Consent withdrawal",
+  deletion_request: "Deletion request",
+  deletion_executed: "Deletion completed",
+  view_sensitive: "Sensitive data viewed",
+  download: "Download",
+  delete: "Deletion",
+  share: "Share",
+  revoke_share: "Access revoked",
+  password_change: "Password change",
+  session_revoke: "Session revoked",
 };
 
 function scrollToSection(id: SectionId) {
@@ -81,6 +81,7 @@ function scrollToSection(id: SectionId) {
 export default function FamilyPrivacyHub() {
   const router = useRouter();
   const { locale } = useLocale();
+  const t = useT();
   const { user, signOut } = useAuth();
   const {
     ready: familyReady,
@@ -152,14 +153,14 @@ export default function FamilyPrivacyHub() {
       .filter((a) => a.status !== "withdrawn")
       .map((a) => ({
         id: `app-${a.id}`,
-        communityName: a.residenceName || "Résidence",
-        resourceLabel: "Dossier d'admission transmis",
+        communityName: a.residenceName || t("Residence"),
+        resourceLabel: t("Admission file submitted"),
         sharedAt: a.submittedAt,
-        authorizedBy: user?.name || "Vous",
+        authorizedBy: user?.name || t("You"),
         active: a.status !== "withdrawn",
         statusLabel: a.status,
       }));
-  }, [data.applications, user?.name]);
+  }, [data.applications, user?.name, t]);
 
   const [retentionGranted, setRetentionGranted] = useState(true);
 
@@ -175,11 +176,11 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(false);
     setBusy(false);
     if (!ok) {
-      setError(saveError || "Impossible de retirer le consentement.");
+      setError(saveError || t("Unable to withdraw consent."));
       return;
     }
     setRetentionGranted(false);
-    setMessage("Consentement de conservation du profil retiré pour l'avenir.");
+    setMessage(t("Profile retention consent withdrawn for the future."));
     void refreshLogs();
   };
 
@@ -190,16 +191,16 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(true);
     setBusy(false);
     if (!ok) {
-      setError(saveError || "Impossible d'enregistrer le consentement.");
+      setError(saveError || t("Unable to save consent."));
       return;
     }
     setRetentionGranted(true);
-    setMessage("Consentement de conservation du profil enregistré.");
+    setMessage(t("Profile retention consent saved."));
     void refreshLogs();
   };
 
   const expectedPhrase =
-    deleteScope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
+    deleteScope === "account" ? t("DELETE MY ACCOUNT") : t("DELETE THE FILE");
 
   const onExecuteDelete = async () => {
     if (confirmPhrase !== expectedPhrase) return;
@@ -235,7 +236,7 @@ export default function FamilyPrivacyHub() {
         className={`${publicSans.variable} ${sourceSerif.variable} flex min-h-[40vh] items-center justify-center text-sm text-[#5c6f66]`}
         style={{ fontFamily: "var(--font-public-sans), system-ui, sans-serif" }}
       >
-        Chargement de la confidentialité…
+        {t("Loading privacy settings…")}
       </div>
     );
   }
@@ -272,7 +273,7 @@ export default function FamilyPrivacyHub() {
             flexWrap: "wrap",
           }}
         >
-          <nav aria-label="Fil d'Ariane">
+          <nav aria-label={t("Breadcrumb")}>
             <ol
               style={{
                 display: "flex",
@@ -288,7 +289,7 @@ export default function FamilyPrivacyHub() {
             >
               <li>
                 <Link href="/family/dashboard" style={{ color: "#0A6F63", textDecoration: "none" }}>
-                  Accueil
+                  {t("Home")}
                 </Link>
               </li>
               <li aria-hidden style={{ opacity: 0.5 }}>
@@ -296,7 +297,7 @@ export default function FamilyPrivacyHub() {
               </li>
               <li>
                 <Link href="/family/settings" style={{ color: "#0A6F63", textDecoration: "none" }}>
-                  Paramètres
+                  {t("Settings")}
                 </Link>
               </li>
               <li aria-hidden style={{ opacity: 0.5 }}>
@@ -304,7 +305,7 @@ export default function FamilyPrivacyHub() {
               </li>
               <li>
                 <span aria-current="page" style={{ fontWeight: 600, color: "#14201c" }}>
-                  Confidentialité et données
+                  {t("Privacy and data")}
                 </span>
               </li>
             </ol>
@@ -313,7 +314,7 @@ export default function FamilyPrivacyHub() {
             href="/family/dashboard"
             style={{ fontSize: 14, color: "#0A6F63", textDecoration: "none", minHeight: 44, display: "inline-flex", alignItems: "center" }}
           >
-            Retour à l&apos;espace famille
+            {t("Back to family space")}
           </Link>
         </div>
       </header>
@@ -330,7 +331,7 @@ export default function FamilyPrivacyHub() {
               fontWeight: 600,
             }}
           >
-            Paramètres
+            {t("Settings")}
           </p>
           <h1
             style={{
@@ -341,18 +342,17 @@ export default function FamilyPrivacyHub() {
               lineHeight: 1.15,
             }}
           >
-            Confidentialité et données
+            {t("Privacy and data")}
           </h1>
           <p style={{ margin: "12px 0 0", fontSize: 15.5, lineHeight: 1.6, color: "#3d5249", maxWidth: 640 }}>
-            Comprenez l&apos;utilisation de vos renseignements, gérez vos consentements et
-            exercez vos droits.
+            {t("Understand how your information is used, manage your consents, and exercise your rights.")}
           </p>
         </header>
 
         <CollectionNotice variant="profile" />
 
         <nav
-          aria-label="Sections confidentialité"
+          aria-label={t("Privacy sections")}
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -390,7 +390,7 @@ export default function FamilyPrivacyHub() {
                   cursor: "pointer",
                 }}
               >
-                {s.label}
+                {t(s.label)}
               </button>
             );
           })}
@@ -412,14 +412,15 @@ export default function FamilyPrivacyHub() {
           </div>
         )}
 
-        {/* Vue d'ensemble */}
+        {/* Overview */}
         <section id="apercu" aria-labelledby="apercu-title" style={{ scrollMarginTop: 120 }}>
           <h2 id="apercu-title" style={h2Style}>
-            Vue d&apos;ensemble
+            {t("Overview")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 16 }}>
-            Gérez séparément le partage avec les résidences et l&apos;exercice de vos droits
-            prévus par la Loi 25 sur la protection des renseignements personnels au Québec.
+            {t(
+              "Manage residence data sharing separately from exercising your rights under Québec's Law 25 on the protection of personal information.",
+            )}
           </p>
           <div
             style={{
@@ -429,10 +430,9 @@ export default function FamilyPrivacyHub() {
             }}
           >
             <article style={cardStyle}>
-              <h3 style={h3Style}>Gérer les consentements</h3>
+              <h3 style={h3Style}>{t("Manage consents")}</h3>
               <p style={pStyle}>
-                Voyez quelles résidences ont reçu des renseignements et retirez les accès
-                futurs.
+                {t("See which residences have received information and withdraw future access.")}
               </p>
               <button
                 type="button"
@@ -442,14 +442,13 @@ export default function FamilyPrivacyHub() {
                   scrollToSection("consentements");
                 }}
               >
-                Voir les consentements
+                {t("View consents")}
               </button>
             </article>
             <article style={cardStyle}>
-              <h3 style={h3Style}>Exercer vos droits</h3>
+              <h3 style={h3Style}>{t("Exercise your rights")}</h3>
               <p style={pStyle}>
-                Accédez à vos données, demandez une correction ou présentez une demande de
-                suppression.
+                {t("Access your data, request a correction, or submit a deletion request.")}
               </p>
               <button
                 type="button"
@@ -459,24 +458,25 @@ export default function FamilyPrivacyHub() {
                   scrollToSection("droits");
                 }}
               >
-                Mes droits (Loi 25)
+                {t("My rights (Québec Law 25)")}
               </button>
             </article>
           </div>
         </section>
 
-        {/* Consentements */}
+        {/* Consents */}
         <section
           id="consentements"
           aria-labelledby="consentements-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="consentements-title" style={h2Style}>
-            Consentements
+            {t("Consents")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 14 }}>
-            Le retrait d&apos;un accès futur ne peut pas rappeler les copies déjà
-            téléchargées légalement par une résidence.
+            {t(
+              "Withdrawing future access cannot recall copies a residence has already legally downloaded.",
+            )}
           </p>
 
           <article style={{ ...cardStyle, marginBottom: 14 }}>
@@ -490,12 +490,12 @@ export default function FamilyPrivacyHub() {
               }}
             >
               <div style={{ flex: "1 1 240px" }}>
-                <h3 style={h3Style}>Conservation du profil familial</h3>
+                <h3 style={h3Style}>{t("Family profile retention")}</h3>
                 <p style={pStyle}>{PROFILE_RETENTION_PURPOSE_TEXT}</p>
                 <p style={{ ...metaStyle, marginTop: 10 }}>
-                  Statut :{" "}
-                  <strong>{retentionGranted ? "Actif" : "Retiré"}</strong>
-                  {user?.name ? ` · Donné par ${user.name}` : null}
+                  {t("Status:")}{" "}
+                  <strong>{retentionGranted ? t("Active") : t("Withdrawn")}</strong>
+                  {user?.name ? ` · ${t("Given by {name}", { name: user.name })}` : null}
                 </p>
               </div>
               {retentionGranted ? (
@@ -505,7 +505,7 @@ export default function FamilyPrivacyHub() {
                   disabled={busy}
                   onClick={() => void onRevokeRetention()}
                 >
-                  Retirer pour l&apos;avenir
+                  {t("Withdraw for the future")}
                 </button>
               ) : (
                 <button
@@ -514,12 +514,12 @@ export default function FamilyPrivacyHub() {
                   disabled={busy}
                   onClick={() => void onGrantRetention()}
                 >
-                  Donner mon consentement
+                  {t("Give my consent")}
                 </button>
               )}
             </div>
             {saveStatus === "saving" ? (
-              <p style={{ ...metaStyle, marginTop: 10 }}>Enregistrement…</p>
+              <p style={{ ...metaStyle, marginTop: 10 }}>{t("Saving…")}</p>
             ) : null}
           </article>
 
@@ -539,19 +539,21 @@ export default function FamilyPrivacyHub() {
                     <StatusPill active={c.active} />
                   </div>
                   <p style={{ ...pStyle, marginTop: 8 }}>
-                    Renseignements autorisés : {c.resourceLabel}
+                    {t("Information authorized: {value}", { value: c.resourceLabel })}
                   </p>
                   <p style={metaStyle}>
-                    Date du consentement : {formatPrivacyTime(c.sharedAt)}
+                    {t("Consent date: {value}", { value: formatPrivacyTime(c.sharedAt) })}
                   </p>
                   <p style={metaStyle}>
-                    Personne ayant donné le consentement : {c.authorizedBy} (
-                    {maskSensitiveText(c.authorizedByEmail)})
+                    {t("Consent given by: {name} ({email})", {
+                      name: c.authorizedBy,
+                      email: maskSensitiveText(c.authorizedByEmail),
+                    })}
                   </p>
                   {c.revokedAt ? (
                     <p style={metaStyle}>
-                      Retiré le {formatPrivacyTime(c.revokedAt)}
-                      {c.revokedBy ? ` par ${c.revokedBy}` : ""}
+                      {t("Withdrawn on {date}", { date: formatPrivacyTime(c.revokedAt) })}
+                      {c.revokedBy ? ` ${t("by {name}", { name: c.revokedBy })}` : ""}
                     </p>
                   ) : null}
                 </div>
@@ -563,14 +565,17 @@ export default function FamilyPrivacyHub() {
                       onClick={() => {
                         if (
                           confirm(
-                            `Retirer les accès futurs de ${c.communityName} à « ${c.resourceLabel} » ? Les copies déjà téléchargées ne peuvent pas être rappelées.`,
+                            t(
+                              'Withdraw {community}\'s future access to "{resource}"? Copies already downloaded cannot be recalled.',
+                              { community: c.communityName, resource: c.resourceLabel },
+                            ),
                           )
                         ) {
                           revokeConsent(c.id);
                         }
                       }}
                     >
-                      Retirer les accès futurs
+                      {t("Withdraw future access")}
                     </button>
                   ) : (
                     <button
@@ -578,7 +583,7 @@ export default function FamilyPrivacyHub() {
                       style={btnOutline}
                       onClick={() => restoreConsent(c.id)}
                     >
-                      Rétablir l&apos;accès
+                      {t("Restore access")}
                     </button>
                   )}
                 </div>

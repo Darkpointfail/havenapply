@@ -2189,6 +2189,86 @@ export const frMessages: Record<string, string> = {
   "Apply to this residence": "Appliquer à cette résidence",
   "Call {phone}": "Appeler {phone}",
   "Apply · score {score}": "Appliquer · score {score}",
+
+  // ——— FamilySpace demandes / dépôt / assistance ———
+  "Contact profile": "Profil contact",
+  "This information is linked to your family account as the primary contact.":
+    "Ces renseignements sont associés à votre compte famille comme contact principal.",
+  Settings: "Paramètres",
+  "Privacy and data": "Confidentialité et données",
+  "An application is already active for this residence. See My requests.":
+    "Une demande est déjà active pour cette résidence. Consultez Mes demandes.",
+  "Withdraw this application? This cannot be undone.":
+    "Retirer cette demande ? Cette action est irréversible.",
+  Full: "Complet",
+  "2 available": "2 libres",
+  "Back to the residence": "Retour à la résidence",
+  "Step {step} of 3": "Étape {step} sur 3",
+  "Choose a unit": "Choix de l'unité",
+  "Review the file": "Vérification du dossier",
+  "The following information and documents will be sent to {name}.":
+    "Les renseignements et pièces suivants seront transmis à {name}.",
+  Received: "Reçu",
+  Pending: "En attente",
+  "Note: {count} document(s) still missing. The residence can still open the file.":
+    "Attention : {count} pièce(s) manquante(s). La résidence pourra quand même ouvrir le dossier.",
+  "Confirm and send": "Confirmation d'envoi",
+  Unit: "Unité",
+  "Desired move-in": "Emménagement souhaité",
+  "I consent to sharing {name}'s file with this residence, including attached documents.":
+    "Je consens au partage du dossier de {name} avec cette résidence, y compris les pièces jointes.",
+  Previous: "Précédent",
+  Next: "Suivant",
+  "Send the application": "Envoyer la demande",
+  "Application received": "Demande reçue",
+  "File verified": "Dossier vérifié",
+  Visit: "Visite",
+  Decision: "Décision",
+  "Track every application sent for your loved one, and find visits already scheduled with residences here.":
+    "Suivez l'évolution de chaque demande envoyée pour votre proche, et retrouvez ici les visites déjà planifiées avec les résidences.",
+  "New application": "Nouvelle demande",
+  "Active applications": "Demandes actives",
+  "Scheduled visits": "Visites planifiées",
+  Waitlists: "Listes d'attente",
+  "Application progress": "Évolution des demandes",
+  "No applications yet": "Aucune demande pour le moment",
+  "When you send a file to a residence, its status and next steps will appear here.":
+    "Quand vous enverrez un dossier à une résidence, son statut et ses prochaines étapes s'afficheront ici.",
+  "submitted on": "déposée le",
+  "Ref.": "Réf.",
+  Waitlist: "Liste d'attente",
+  "Visit scheduled": "Visite planifiée",
+  "Awaiting decision": "Décision attendue",
+  "Message the residence": "Écrire à la résidence",
+  "View the file sent": "Voir le dossier transmis",
+  "Withdraw application": "Retirer la demande",
+  "Visit schedule": "Planning des visites",
+  "No visits scheduled yet. As soon as a residence proposes a time slot, it will appear here.":
+    "Aucune visite n'est encore organisée. Dès qu'une résidence propose un créneau, il apparaîtra dans ce planning.",
+  "Date to confirm": "Date à confirmer",
+  "Contact the residence": "Contacter la résidence",
+  "Prepare the file": "Préparer le dossier",
+  "RPA or CHSLD: what’s the difference?": "RPA ou CHSLD : quelle différence ?",
+  "An RPA offers housing with services. A CHSLD welcomes people who need more substantial daily care.":
+    "Une RPA offre de l'hébergement avec services. Un CHSLD accueille des personnes qui ont besoin de soins plus importants au quotidien.",
+  "How many applications at once?": "Combien de demandes simultanées ?",
+  "As many as you need. The same file can be submitted to several residences without filling it out again.":
+    "Autant que nécessaire. Un même dossier peut être déposé auprès de plusieurs résidences sans le remplir à nouveau.",
+  "Home-support tax credit": "Crédit d'impôt pour maintien à domicile",
+  "Some expenses related to staying at home or living in a residence may qualify for a credit. Check with Revenu Québec.":
+    "Certaines dépenses liées au maintien à domicile ou à la résidence peuvent ouvrir droit à un crédit. Vérifiez auprès de Revenu Québec.",
+  "How do I prepare for a visit?": "Comment préparer une visite ?",
+  "Bring the medication list, your questions about care, and time to see a sample unit and common areas.":
+    "Prévoyez la liste de médicaments, vos questions sur les soins, et un moment pour voir une unité type et les espaces communs.",
+  "Ask a question…": "Poser une question…",
+  Send: "Envoyer",
+  "Frequently asked questions": "Questions fréquentes",
+  "Talk to someone": "Parler à une personne",
+  "An advisor can help you by phone Monday to Friday, 8 a.m. to 6 p.m.":
+    "Un conseiller peut vous accompagner par téléphone du lundi au vendredi, de 8 h à 18 h.",
+  "Your call request has been noted. An advisor will reach you during opening hours.":
+    "Votre demande d'appel a été notée. Un conseiller vous rejoindra durant les heures d'ouverture.",
+  "Request a call": "Demander un appel",
 };
 
 export function translate(locale: Locale, key: string): string {

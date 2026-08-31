@@ -203,10 +203,10 @@ export function ResidencesBrowse({
     if (!readiness) {
       return [...list].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     }
-    const scored = list.map((r) => ({ r, score: computeMatch(profile, r).score }));
+    const scored = list.map((r) => ({ r, score: computeMatch(profile, r, t).score }));
     scored.sort((a, b) => b.score - a.score);
     return scored.map((s) => s.r);
-  }, [query, region, services, unitTypes, profile, readiness]);
+  }, [query, region, services, unitTypes, profile, readiness, t]);
 
   const shown = filtered.slice(0, visible);
 
@@ -236,7 +236,7 @@ export function ResidencesBrowse({
             {missing.length > 0 ? (
               <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-[var(--fs-ink-muted)]">
                 {missing.map((m) => (
-                  <li key={m}>{m}</li>
+                  <li key={m}>{t(m)}</li>
                 ))}
               </ul>
             ) : null}
@@ -337,7 +337,7 @@ export function ResidencesBrowse({
 
           <div className="space-y-4">
             {shown.map((r) => {
-              const match = readiness ? computeMatch(profile, r) : null;
+              const match = readiness ? computeMatch(profile, r, t) : null;
               const scoreColor =
                 match && (match.tone === "strong" || match.tone === "good")
                   ? "var(--fs-success)"
@@ -474,7 +474,7 @@ export function ResidenceFiche({
   const profile = careProfile ?? EMPTY_CARE_PROFILE;
   const readiness = matchReady ?? getMatchReadiness(profile).ready;
   const missing = matchMissing ?? getMatchReadiness(profile).missing;
-  const match = readiness ? computeMatch(profile, residence) : null;
+  const match = readiness ? computeMatch(profile, residence, t) : null;
   const scoreColor =
     match && (match.tone === "strong" || match.tone === "good")
       ? "var(--fs-success)"

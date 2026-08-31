@@ -352,6 +352,7 @@ export const SERVICES_INCLUS = [
 
 export type VisitSlot = {
   day: number;
+  /** 24-hour "HH:MM"; formatted locale-aware for display. */
   time: string;
   name: string;
   unit: string;
@@ -359,12 +360,12 @@ export type VisitSlot = {
 };
 
 export const VISITS: VisitSlot[] = [
-  { day: 0, time: "9 h 30", name: "Roland Bouchard", unit: "2½", kind: "visite" },
-  { day: 0, time: "14 h 00", name: "Famille Lévesque", unit: "Suivi", kind: "suivi" },
-  { day: 1, time: "10 h 30", name: "Jeanne D'Arc Trudel", unit: "3½ soins", kind: "visite" },
-  { day: 2, time: "11 h 00", name: "Thérèse Fournier", unit: "3½", kind: "visite" },
-  { day: 2, time: "15 h 30", name: "Armand Pelletier", unit: "Suivi", kind: "suivi" },
-  { day: 3, time: "9 h 00", name: "Paul-Émile Simard", unit: "3½ services", kind: "visite" },
+  { day: 0, time: "09:30", name: "Roland Bouchard", unit: "2½", kind: "visite" },
+  { day: 0, time: "14:00", name: "Famille Lévesque", unit: "", kind: "suivi" },
+  { day: 1, time: "10:30", name: "Jeanne D'Arc Trudel", unit: "3½ soins", kind: "visite" },
+  { day: 2, time: "11:00", name: "Thérèse Fournier", unit: "3½", kind: "visite" },
+  { day: 2, time: "15:30", name: "Armand Pelletier", unit: "", kind: "suivi" },
+  { day: 3, time: "09:00", name: "Paul-Émile Simard", unit: "3½ services", kind: "visite" },
 ];
 
 export const PROGRESS_STEPS = [

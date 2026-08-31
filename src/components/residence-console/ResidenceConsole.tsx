@@ -46,7 +46,7 @@ export type ConsoleView =
 type FilterId = "All" | "New" | "Missing documents" | "Visit scheduled";
 
 const NAV: { id: ConsoleView; label: string; badge?: boolean }[] = [
-  { id: "demandes", label: "Applications", badge: true },
+  { id: "demandes", label: "Requests", badge: true },
   { id: "documents", label: "Documents and follow-ups" },
   { id: "visites", label: "Visits" },
   { id: "attente", label: "Waitlist" },
@@ -774,9 +774,9 @@ function DemandesView({
                 : t("Complete")}
             </p>
             <p className="text-[14px] text-[var(--rc-ink-muted)]">{d.recueLe}</p>
-            <p className="text-right text-[14px] font-semibold text-[var(--rc-green)]">
-              {t("View")}
-            </p>
+           <p className="text-right text-[14px] font-semibold text-[var(--rc-green)]">
+             {t("View file")}
+           </p>
           </div>
         ))}
       </div>
@@ -1568,7 +1568,7 @@ function EtablissementView() {
               className="text-[13px] font-semibold"
               style={{ color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)" }}
             >
-              {accepting ? t("Open") : t("Closed")}
+              {accepting ? t("Applications open") : t("Applications closed")}
             </span>
             <span
               className="relative h-7 w-12 shrink-0 rounded-full transition"

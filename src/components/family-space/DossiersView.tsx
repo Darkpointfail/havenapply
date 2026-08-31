@@ -732,7 +732,7 @@ function ClairePanel({
                   : { background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }
               }
             >
-              {t(m.body)}
+              {m.body}
             </div>
           </div>
         ))}
@@ -757,7 +757,7 @@ function ClairePanel({
               onClick={() => onSuggest(s)}
               className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)] disabled:opacity-50"
             >
-              {t(s)}
+              {s}
             </button>
           ))}
         </div>
@@ -1167,12 +1167,12 @@ function EditionStepFields({
                   autonomyScore: n,
                   autonomie:
                     n <= 3
-                      ? `${n}/10 — peu autonome`
+                      ? `${n}/10 — limited autonomy`
                       : n <= 6
-                        ? `${n}/10 — semi-autonome`
+                        ? `${n}/10 — semi-autonomous`
                         : n <= 8
-                          ? `${n}/10 — assez autonome`
-                          : `${n}/10 — très autonome`,
+                          ? `${n}/10 — fairly autonomous`
+                          : `${n}/10 — highly autonomous`,
                 });
               }}
               aria-label={t("Autonomy score from 1 to 10")}
@@ -1189,7 +1189,7 @@ function EditionStepFields({
               onClick={() =>
                 onPatchActive({
                   autonomyScore: 5,
-                  autonomie: "5/10 — semi-autonome",
+                  autonomie: "5/10 — semi-autonomous",
                 })
               }
             >

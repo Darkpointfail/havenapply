@@ -86,7 +86,7 @@ export function CommunityProfileEditor() {
       medicaid: false,
       privatePay: true,
       pets: false,
-      smoking: "Non-fumeur",
+      smoking: "Non-smoking",
       minAge: 65,
       notes: "",
     };

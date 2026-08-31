@@ -14,13 +14,13 @@ export const PRIVACY_POLICY_EFFECTIVE_DATE_EN = "August 29, 2026";
 
 export const COLLECTION_NOTICE_ACCOUNT_EN = {
   version: COLLECTION_NOTICE_ACCOUNT_VERSION,
-  title: "Collection notice — account creation",
+  title: "Collection notice: account creation",
   body: `HavenApply (Québec) collects your first name, last name, email address and, where applicable, your phone number to create and secure your family account, authenticate you, and send you service-related information. Creating an account alone does not transmit these details to a private seniors' residence.`,
 };
 
 export const COLLECTION_NOTICE_PROFILE_EN = {
   version: COLLECTION_NOTICE_PROFILE_VERSION,
-  title: "Collection notice — family file",
+  title: "Collection notice: family file",
   body: `We collect information about the applicant and the senior (identity, contact details, housing situation, needs, preferences, documents) only to build and retain your private seniors' residence search file. Creating the file does not authorize transmission to a residence: a separate consent will be required later, if applicable.`,
 };
 
@@ -28,7 +28,7 @@ export const PRIVACY_POLICY_EN = {
   version: PRIVACY_POLICY_VERSION,
   effectiveDate: PRIVACY_POLICY_EFFECTIVE_DATE_EN,
   title: "Privacy policy",
-  subtitle: "HavenApply — protection of personal information (Québec)",
+  subtitle: "HavenApply: protection of personal information (Québec)",
   legalDraftBanner:
     "Product draft (version " +
     PRIVACY_POLICY_VERSION +
@@ -85,7 +85,7 @@ export const PRIVACY_POLICY_EN = {
       title: "5. Retention",
       paragraphs: [
         "We keep your information while your account is active and the file is needed for the purposes above, then for the minimum period required for legal or security obligations.",
-        "Target periods (to confirm legally): active account and file — for the relationship; after a deletion request or prolonged inactivity — anonymization or deletion within a reasonable time once processed; security logs — limited to detection and investigation needs.",
+        "Target periods (to confirm legally): active account and file: for the relationship; after a deletion request or prolonged inactivity: anonymization or deletion within a reasonable time once processed; security logs: limited to detection and investigation needs.",
         "You can request deletion of your profile or account from the family space. The request is recorded and processed; some elements may be kept in a limited way if the law requires it.",
       ],
     },

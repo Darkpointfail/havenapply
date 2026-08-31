@@ -235,7 +235,7 @@ export function StepResident({
       <StepIntro
         eyebrow="Steps 1–2 of 15"
         title="Administrative information"
-        subtitle="Identity, contacts, and legal decision-makers — once for every residence."
+        subtitle="Identity, contacts, and legal decision-makers: once for every residence."
       />
 
       <div className="space-y-8">

@@ -329,7 +329,7 @@ export function ResidencesBrowse({
 
                     <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
                       {match
-                        ? `${match.headline} — ${match.summary}`
+                        ? `${match.headline} : ${match.summary}`
                         : r.description}
                     </p>
 

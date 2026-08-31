@@ -277,7 +277,7 @@ export function PatientTransferWorkspace({ transferId }: { transferId: string })
           </div>
           <Field
             label={t("Reason details")}
-            hint={t("Explain why the resident needs this transfer — shared with the receiving center.")}
+            hint={t("Explain why the resident needs this transfer: shared with the receiving center.")}
           >
             <textarea
               className={cn(inputClass, "min-h-[88px]")}

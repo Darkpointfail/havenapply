@@ -552,9 +552,9 @@ export function buildAgreementPreviewHtml(
   <h2>Resident</h2>
   <p>${app.seniorName}, age ${app.seniorAge}</p>
   <h2>Primary family contact</h2>
-  <p>${app.family?.name || "—"} · ${app.family?.email || "—"} · ${app.family?.phone || "—"}</p>
+  <p>${app.family?.name || "-"} · ${app.family?.email || "-"} · ${app.family?.phone || "-"}</p>
   <h2>Suite & rate</h2>
-  <p>${work.roomType || "—"} · Monthly rate: ${work.monthlyRate ? `$${work.monthlyRate}` : "TBD"}</p>
+  <p>${work.roomType || "-"} · Monthly rate: ${work.monthlyRate ? `$${work.monthlyRate}` : "TBD"}</p>
   <h2>Anticipated move-in</h2>
   <p>${work.moveInDate || "Flexible / to be confirmed"}</p>
   <h2>Additional clauses</h2>
@@ -562,7 +562,7 @@ export function buildAgreementPreviewHtml(
   <h2>Notes</h2>
   <p>${work.notes || "None"}</p>
   <h2>Signers</h2>
-  <p>${work.signers.join(", ") || "—"}</p>
+  <p>${work.signers.join(", ") || "-"}</p>
   <p class="meta">Generated in HavenApply for admissions transition.</p>
   </body></html>`;
 }

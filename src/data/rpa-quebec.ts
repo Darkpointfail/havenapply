@@ -87,7 +87,7 @@ function unitSummary(row: RpaResidenceRow): {
   if ((row.apartments ?? 0) > 0) {
     rows.push({
       type: "Logement",
-      area: "—",
+      area: "-",
       price: "Sur demande",
       availability: `${row.apartments} au registre`,
       availabilityTone: "green",
@@ -96,7 +96,7 @@ function unitSummary(row: RpaResidenceRow): {
   if ((row.roomsSingle ?? 0) > 0) {
     rows.push({
       type: "Chambre simple",
-      area: "—",
+      area: "-",
       price: "Sur demande",
       availability: `${row.roomsSingle} au registre`,
       availabilityTone: "green",
@@ -105,7 +105,7 @@ function unitSummary(row: RpaResidenceRow): {
   if ((row.roomsDouble ?? 0) > 0) {
     rows.push({
       type: "Chambre double",
-      area: "—",
+      area: "-",
       price: "Sur demande",
       availability: `${row.roomsDouble} au registre`,
       availabilityTone: "green",
@@ -114,7 +114,7 @@ function unitSummary(row: RpaResidenceRow): {
   if (rows.length === 0) {
     rows.push({
       type: "Unité locative",
-      area: "—",
+      area: "-",
       price: "Sur demande",
       availability: "À confirmer",
       availabilityTone: "terra",
@@ -236,7 +236,7 @@ function mapRow(row: RpaResidenceRow): Residence {
     price: "Sur demande",
     response: row.phone ? `tél. ${row.phone}` : "coordonnées au registre",
     responseLabel: row.phone ? "Coordonnées au registre" : "À confirmer",
-    area: "—",
+    area: "-",
     availability: certified ? "Inscription ouverte" : "À vérifier",
     availabilityTone: certified ? "green" : "terra",
     services: row.services.length > 0 ? row.services : ["À confirmer"],
@@ -306,7 +306,7 @@ export const RPA_REGIONS = Array.from(new Set(rows.map((r) => r.region))).sort((
 );
 
 export const RPA_SOURCE = {
-  label: (catalog as { source?: string }).source ?? "Registre des RPA — Québec",
+  label: (catalog as { source?: string }).source ?? "Registre des RPA : Québec",
   extractedOn: (catalog as { extractedOn?: string }).extractedOn ?? "2025-12-31",
   count: rows.length,
 };

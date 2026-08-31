@@ -241,7 +241,7 @@ export function buildTransferFromApplication(
 
   const allergies =
     (d?.allergies || [])
-      .map((a) => `${a.substance}${a.reaction ? ` — ${a.reaction}` : ""}`)
+      .map((a) => `${a.substance}${a.reaction ? ` : ${a.reaction}` : ""}`)
       .join("\n") || (insights?.allergies || []).join("\n");
 
   const mobilityAdls = [

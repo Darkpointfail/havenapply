@@ -142,8 +142,8 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
   let updateTone: UiApp["updateTone"] = "green";
   if (status === "waitlisted") {
     update = app.waitingPosition
-      ? `Placé en liste d'attente — rang ${app.waitingPosition}.`
-      : "Placé en liste d'attente — rang communiqué par la résidence.";
+      ? `Placé en liste d'attente : rang ${app.waitingPosition}.`
+      : "Placé en liste d'attente : rang communiqué par la résidence.";
     updateTone = "neutral";
   } else if (status === "tour_requested" || app.upcomingAppointment) {
     update = app.upcomingAppointment
@@ -177,7 +177,7 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
             month: "long",
             year: "numeric",
           })
-        : "—"),
+        : "-"),
     status: frStatus,
     progress: progressForStatus(status),
     update,
@@ -222,7 +222,7 @@ export function buildSubmitDraft(input: {
   };
 }
 
-/* ——— Community console adapters ——— */
+/* Community console adapters */
 
 const STATUS_TO_DEMANDE: Partial<Record<ApplicationStatus, DemandeStatus>> = {
   submitted: "Nouvelle",
@@ -260,14 +260,14 @@ export function communityAppToDemande(app: CommunityApplication): Demande {
           month: "long",
           year: "numeric",
         })
-      : "—",
-    dateNaissance: app.dossier?.dateOfBirth || "—",
-    adresse: app.dossier?.currentAddress || "—",
+      : "-",
+    dateNaissance: app.dossier?.dateOfBirth || "-",
+    adresse: app.dossier?.currentAddress || "-",
     autonomie: app.careNeeds?.[0] || "À évaluer",
     services: (app.careNeeds || []).slice(0, 3).join(", ") || "À préciser",
     budget: app.paymentMethod || "À confirmer",
     provenance: app.referralSource || "Famille",
-    contact: app.family?.name || "—",
+    contact: app.family?.name || "-",
     contactLien: app.family?.relationship || "Proche",
     emmenagement: app.moveInRequested || "Dès que possible",
     resumeIa: app.executiveSummary || app.summary || "Dossier reçu via HavenApply.",

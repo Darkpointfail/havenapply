@@ -378,7 +378,7 @@ function OverviewMode({
           <p className="mt-4 text-[14px] text-[#C5D2CD]">
             {progress.next
               ? `Prochaine action : ${progress.next.charAt(0).toLowerCase()}${progress.next.slice(1)}.`
-              : "Dossier complet — renseignements et pièces à jour."}
+              : "Dossier complet : renseignements et pièces à jour."}
           </p>
         </div>
 
@@ -1110,18 +1110,18 @@ function EditionStepFields({
                   autonomyScore: n,
                   autonomie:
                     n <= 3
-                      ? `${n}/10 — peu autonome`
+                      ? `${n}/10 : peu autonome`
                       : n <= 6
-                        ? `${n}/10 — semi-autonome`
+                        ? `${n}/10 : semi-autonome`
                         : n <= 8
-                          ? `${n}/10 — assez autonome`
-                          : `${n}/10 — très autonome`,
+                          ? `${n}/10 : assez autonome`
+                          : `${n}/10 : très autonome`,
                 });
               }}
               aria-label="Score d'autonomie de 1 à 10"
             />
             <span className="fs-serif text-[28px] tabular-nums text-[var(--fs-green)]">
-              {profile.autonomyScore ?? "—"}
+              {profile.autonomyScore ?? "-"}
               <span className="text-[14px] text-[var(--fs-ink-muted)]"> /10</span>
             </span>
           </div>
@@ -1132,7 +1132,7 @@ function EditionStepFields({
               onClick={() =>
                 onPatchActive({
                   autonomyScore: 5,
-                  autonomie: "5/10 — semi-autonome",
+                  autonomie: "5/10 : semi-autonome",
                 })
               }
             >

@@ -56,7 +56,7 @@ function buildAcceptEmailDraft(input: {
   familyName: string;
   communityName: string;
 }) {
-  const subject = `Good news — ${input.seniorName}'s application was accepted at ${input.communityName}`;
+  const subject = `Good news: ${input.seniorName}'s application was accepted at ${input.communityName}`;
   const body = `Dear ${input.familyName},
 
 We're pleased to let you know that ${input.seniorName}'s application to ${input.communityName} has been accepted.

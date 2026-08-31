@@ -96,7 +96,7 @@ export function NewPatientTransferPage() {
               value={applicationId}
               onChange={(e) => setApplicationId(e.target.value)}
             >
-              <option value="">{t("Start blank — enter details manually")}</option>
+              <option value="">{t("Start blank: enter details manually")}</option>
               {candidates.map((app) => (
                 <option key={app.id} value={app.id}>
                   {app.seniorName}

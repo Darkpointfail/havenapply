@@ -154,7 +154,7 @@ export default function ProfessionalDashboardPage() {
                     <div>
                       <Badge tone={statusTone(p.status)}>{PATIENT_STATUS_LABEL[p.status]}</Badge>
                     </div>
-                    <p className="text-sm text-ink-secondary">{p.primaryCommunity || "—"}</p>
+                    <p className="text-sm text-ink-secondary">{p.primaryCommunity || "-"}</p>
                     <p className="text-sm text-ink-muted">{p.nextAction}</p>
                     <p className="text-xs text-ink-faint">{formatRelative(p.updatedAt)}</p>
                   </Link>

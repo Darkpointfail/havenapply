@@ -603,7 +603,7 @@ export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPa
     account: bundle.account,
     seniors: bundle.seniors.map((s) => ({
       ...s,
-      profile: { ...s.profile, photoDataUrl: s.profile.photoDataUrl ? "[photo omise dans l'export JSON — téléchargez le document séparément si besoin]" : "" },
+      profile: { ...s.profile, photoDataUrl: s.profile.photoDataUrl ? "[photo omise dans l'export JSON : téléchargez le document séparément si besoin]" : "" },
     })),
     documents: bundle.documents,
     applications: bundle.applications,
@@ -612,7 +612,7 @@ export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPa
     rightsLog,
     notes: [
       "Les fichiers binaires ne sont pas inclus dans cet export. Utilisez le téléchargement de chaque document depuis l'espace famille.",
-      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+      "Ce fichier contient des renseignements personnels : conservez-le de façon sécurisée.",
     ],
   };
 }

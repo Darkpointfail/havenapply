@@ -60,7 +60,7 @@ export default async function ResidenceProfilePage({
               estimated: true,
               included: ["Medicare / Medicaid certified care"],
               extras: [],
-              notes: "Price N/A — request a quote from the facility.",
+              notes: "Price N/A: request a quote from the facility.",
             },
           ],
         };

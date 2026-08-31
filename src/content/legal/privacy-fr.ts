@@ -12,14 +12,14 @@ export const COLLECTION_NOTICE_PROFILE_VERSION = "2026-08-29-profile-v1";
 /** Court avis à l'inscription (compte) */
 export const COLLECTION_NOTICE_ACCOUNT = {
   version: COLLECTION_NOTICE_ACCOUNT_VERSION,
-  title: "Avis de collecte — création de compte",
+  title: "Avis de collecte : création de compte",
   body: `HavenApply (Québec) collecte votre prénom, nom, adresse courriel et, le cas échéant, votre numéro de téléphone pour créer et sécuriser votre compte famille, vous authentifier et vous communiquer des informations liées au service. Ces renseignements ne sont pas transmis à une résidence privée pour aînés du seul fait de la création du compte.`,
 };
 
 /** Court avis avant / pendant la création du dossier */
 export const COLLECTION_NOTICE_PROFILE = {
   version: COLLECTION_NOTICE_PROFILE_VERSION,
-  title: "Avis de collecte — dossier familial",
+  title: "Avis de collecte : dossier familial",
   body: `Nous collectons les renseignements du demandeur et de la personne aînée (identité, coordonnées, situation de logement, besoins, préférences, documents) uniquement pour constituer et conserver votre dossier de recherche de résidence privée pour aînés. La création du dossier n'autorise pas sa transmission à une résidence : un consentement distinct sera exigé plus tard, le cas échéant.`,
 };
 
@@ -34,7 +34,7 @@ export const PRIVACY_POLICY = {
   version: PRIVACY_POLICY_VERSION,
   effectiveDate: PRIVACY_POLICY_EFFECTIVE_DATE,
   title: "Politique de confidentialité",
-  subtitle: "HavenApply — protection des renseignements personnels (Québec)",
+  subtitle: "HavenApply : protection des renseignements personnels (Québec)",
   legalDraftBanner:
     "Brouillon produit (version " +
     PRIVACY_POLICY_VERSION +
@@ -91,7 +91,7 @@ export const PRIVACY_POLICY = {
       title: "5. Conservation",
       paragraphs: [
         "Nous conservons vos renseignements aussi longtemps que votre compte est actif et que le dossier est nécessaire aux finalités ci-dessus, puis pour la durée minimale requise pour répondre à nos obligations légales ou de sécurité.",
-        "Durées cibles (à confirmer juridiquement) : compte et dossier actifs — durée de la relation ; après demande de suppression ou inactivité prolongée — anonymisation ou suppression dans un délai raisonnable une fois la demande traitée ; journaux de sécurité — durée limitée au besoin de détection et d'enquête.",
+        "Durées cibles (à confirmer juridiquement) : compte et dossier actifs : durée de la relation ; après demande de suppression ou inactivité prolongée : anonymisation ou suppression dans un délai raisonnable une fois la demande traitée ; journaux de sécurité : durée limitée au besoin de détection et d'enquête.",
         "Vous pouvez demander la suppression de votre profil ou de votre compte depuis l'espace famille. La demande est enregistrée et traitée ; certains éléments peuvent être conservés de façon limitée si la loi l'exige.",
       ],
     },

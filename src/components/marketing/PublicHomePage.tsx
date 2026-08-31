@@ -46,7 +46,7 @@ const FAQ = [
   },
   {
     q: "Faut-il connaître le niveau de soins requis ?",
-    a: "Non. L'accompagnatrice pose des questions concrètes sur le quotidien — déplacements, repas, médicaments, mémoire — et en déduit le profil de soins à inscrire au dossier.",
+    a: "Non. L'accompagnatrice pose des questions concrètes sur le quotidien : déplacements, repas, médicaments, mémoire. Elle en déduit le profil de soins à inscrire au dossier.",
   },
   {
     q: "Et si nous avons déjà une évaluation du CLSC ?",
@@ -545,7 +545,7 @@ export function PublicHomePage() {
               ].map((line) => (
                 <li key={line} className="flex gap-3 text-[16.5px] leading-relaxed text-white/88">
                   <span style={{ color: "var(--hp-green-light)" }} aria-hidden>
-                    —
+                    :
                   </span>
                   <span className="hp-pretty">{line}</span>
                 </li>
@@ -591,20 +591,21 @@ export function PublicHomePage() {
             className="hp-serif text-center text-[29px] font-normal leading-[1.35] text-[var(--hp-ink)]"
             style={{ fontWeight: 400, textWrap: "pretty" }}
           >
-            « On nous a donné deux semaines pour trouver une place. J&apos;ai rempli le dossier un
-            soir depuis la chambre d&apos;hôpital, je l&apos;ai envoyé en ligne à six résidences le
-            lendemain. Trois ont répondu dans la semaine. »
+            « Après la perte d&apos;autonomie de ma mère, nous avons dû la placer en centre de
+            longue durée. J&apos;ai pu compléter son dossier en ligne, puis l&apos;envoyer à
+            l&apos;établissement recommandé ou postuler ailleurs, sans refaire les démarches à
+            chaque fois. »
           </blockquote>
           <div className="mt-8 flex items-center justify-center gap-3">
             <span
               className="flex h-[46px] w-[46px] items-center justify-center rounded-full text-[14px] font-semibold"
               style={{ background: "var(--hp-green-tint)", color: "var(--hp-green-deep)" }}
             >
-              SL
+              MH
             </span>
             <div>
-              <p className="text-[15px] font-semibold text-[var(--hp-ink)]">Sophie Lévesque</p>
-              <p className="hp-muted">Fille de Marguerite, 84 ans — Québec</p>
+              <p className="text-[15px] font-semibold text-[var(--hp-ink)]">Marie-Hélène</p>
+              <p className="hp-muted">45 ans, Montréal</p>
             </div>
           </div>
         </div>

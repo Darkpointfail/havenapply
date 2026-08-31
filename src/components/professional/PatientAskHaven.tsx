@@ -43,7 +43,7 @@ function answerFor(prompt: string, patient: Patient): string {
   const q = prompt.toLowerCase();
 
   if (q.includes("summarize this dossier") || q.includes("clinical summary")) {
-    return `${name} (${patient.age}) is currently at ${patient.hospital}${patient.unit ? `, ${patient.unit}` : ""}. Care needs: ${patient.care.requiredCareLevel || "not set"} · Mobility: ${patient.care.mobility || "—"} · Memory: ${patient.care.memory || "—"}. Primary diagnosis: ${patient.care.diagnosis || "not recorded"}. Insurance: ${patient.care.insurance || "—"}. Next action: ${patient.nextAction}.`;
+    return `${name} (${patient.age}) is currently at ${patient.hospital}${patient.unit ? `, ${patient.unit}` : ""}. Care needs: ${patient.care.requiredCareLevel || "not set"} · Mobility: ${patient.care.mobility || "-"} · Memory: ${patient.care.memory || "-"}. Primary diagnosis: ${patient.care.diagnosis || "not recorded"}. Insurance: ${patient.care.insurance || "-"}. Next action: ${patient.nextAction}.`;
   }
   if (q.includes("missing") || q.includes("still need") || q.includes("documents")) {
     const parts = [
@@ -67,7 +67,7 @@ function answerFor(prompt: string, patient: Patient): string {
     return `Family summary for ${name}: We are coordinating senior living placement from ${patient.hospital}. Current focus: ${patient.nextAction}. Please help us collect any outstanding documents and confirm preferred communities in ${patient.care.preferredRegion || "your area"}.`;
   }
   if (q.includes("community summary") || q.includes("résidence") || q.includes("residence")) {
-    return `Community packet summary, ${name}, ${patient.age}. Diagnosis: ${patient.care.diagnosis || "—"}. Care level: ${patient.care.requiredCareLevel || "—"}. Mobility: ${patient.care.mobility || "—"}. Memory: ${patient.care.memory || "—"}. Fall risk: ${patient.care.fallRisk || "—"}. Payer: ${patient.care.insurance || "—"}. Documents on file: ${patient.documents.length}.`;
+    return `Community packet summary, ${name}, ${patient.age}. Diagnosis: ${patient.care.diagnosis || "-"}. Care level: ${patient.care.requiredCareLevel || "-"}. Mobility: ${patient.care.mobility || "-"}. Memory: ${patient.care.memory || "-"}. Fall risk: ${patient.care.fallRisk || "-"}. Payer: ${patient.care.insurance || "-"}. Documents on file: ${patient.documents.length}.`;
   }
   if (q.includes("medication")) {
     return `Hi, to complete ${name}'s admission packet, could you please send the current medication list (name, dose, frequency)? You can reply here or upload it in HavenApply. Thank you.`;

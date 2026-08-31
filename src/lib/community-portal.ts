@@ -1411,7 +1411,7 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
         indication: "Hypertension",
       },
     ],
-    allergies: [{ substance: "None known", reaction: "—" }],
+    allergies: [{ substance: "None known", reaction: "-" }],
     previousFacilities: [],
   };
 

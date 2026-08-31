@@ -151,7 +151,7 @@ export function StepSubmit({
           <p className="max-w-sm text-sm text-amber">
             {!value.validatedAt
               ? t("Validate the dossier on the previous step before sending.")
-              : t("You can still send — adding missing items improves response speed.")}
+              : t("You can still send: adding missing items improves response speed.")}
           </p>
         ) : (
           <p className="flex items-center gap-2 text-sm font-medium text-teal-deep">
@@ -238,7 +238,7 @@ export function StepSubmit({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-ink-muted">
             {value.selectedCommunityIds.length
-              ? t("{count} selected — same dossier, one click", {
+              ? t("{count} selected: same dossier, one click", {
                   count: String(value.selectedCommunityIds.length),
                 })
               : t("Select one or more communities")}
@@ -306,7 +306,7 @@ export function StepSubmit({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-ink-muted">
-                      {app.lastUpdatedLabel || app.submittedDateLabel || "—"}
+                      {app.lastUpdatedLabel || app.submittedDateLabel || "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link

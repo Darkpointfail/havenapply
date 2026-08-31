@@ -248,7 +248,7 @@ export default function AddPatientPage() {
                 Location: {currentLocation || `${organization.name} · ${unit}`}
               </p>
               <p className="text-ink-muted">
-                Family: {familyContact || emergencyContact} · Care level: {careLevel || "—"}
+                Family: {familyContact || emergencyContact} · Care level: {careLevel || "-"}
               </p>
               <p className="rounded-xl bg-brand-soft/60 px-3 py-2 text-brand-strong">
                 {t("The patient will open as Building profile until the checklist is complete. When")}

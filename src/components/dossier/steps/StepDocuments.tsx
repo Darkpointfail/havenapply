@@ -45,7 +45,7 @@ export function StepDocuments() {
           category: detected.vault,
           description:
             detected.confidence === "low"
-              ? "Auto-sorted to Other — you can change this later"
+              ? "Auto-sorted to Other: you can change this later"
               : `Auto-detected: ${detected.label}`,
           size: formatFileSize(file.size),
           sizeBytes: file.size,
@@ -56,7 +56,7 @@ export function StepDocuments() {
         if (id) await putDocBlob(id, file);
         setLastDetect(
           detected.confidence === "low"
-            ? t("Added as Other — review the category if needed")
+            ? t("Added as Other: review the category if needed")
             : t("Sorted into {category}", { category: t(detected.label) }),
         );
       }

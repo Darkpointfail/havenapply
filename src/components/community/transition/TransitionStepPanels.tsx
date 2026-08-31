@@ -422,7 +422,7 @@ function PaymentPanel({
         </div>
         <div>
           <p className="text-xs text-ink-faint">Due</p>
-          <p className="font-semibold">{draft.dueDate || "—"}</p>
+          <p className="font-semibold">{draft.dueDate || "-"}</p>
         </div>
       </div>
 
@@ -1010,10 +1010,10 @@ function MoveInPanel({
           </span>
         </p>
         <p className="mt-1">
-          <span className="text-ink-faint">Unit:</span> {draft.unit || "—"}
+          <span className="text-ink-faint">Unit:</span> {draft.unit || "-"}
         </p>
         <p className="mt-1">
-          <span className="text-ink-faint">Host:</span> {draft.hostStaff || "—"}
+          <span className="text-ink-faint">Host:</span> {draft.hostStaff || "-"}
         </p>
       </div>
 

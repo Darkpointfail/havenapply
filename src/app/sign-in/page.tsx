@@ -94,7 +94,7 @@ function SignInForm() {
     >
       <header className="si-header">
         <div className="si-header-inner">
-          <Link href="/" className="si-brand" aria-label="HavenApply — accueil">
+          <Link href="/" className="si-brand" aria-label="HavenApply : accueil">
             <Image
               src="/brand/favicon-48-v6.png"
               alt=""

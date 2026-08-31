@@ -351,20 +351,20 @@ export function ResidencesBrowse({
                         ))}
                     </div>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         className="fs-btn fs-btn-primary"
-                        onClick={() => onApply(r.id)}
+                        onClick={() => onOpen(r.id, "full")}
                       >
-                        Appliquer
+                        Voir la fiche
                       </button>
                       <button
                         type="button"
                         className="fs-btn fs-btn-outline"
-                        onClick={() => onOpen(r.id, "match")}
+                        onClick={() => onApply(r.id)}
                       >
-                        Voir pourquoi
+                        Appliquer
                       </button>
                     </div>
                   </div>

@@ -71,6 +71,11 @@ export type FamilyProfile = {
   modePaiement: string;
   meta: string;
   autonomie: string;
+  /**
+   * Physical autonomy on a 1–10 scale (1 = not autonomous, 10 = fully autonomous).
+   * Null when not yet set.
+   */
+  autonomyScore: number | null;
   services: string;
   /** Soins */
   mobilite: string;
@@ -81,6 +86,17 @@ export type FamilyProfile = {
   regimeAlimentaire: string;
   budget: string;
   move: string;
+  /** What the family is searching for (distinct from care needs). */
+  searchSector: string;
+  searchRadiusKm: number | null;
+  searchBudgetMax: number | null;
+  searchSize: "any" | "small" | "medium" | "large";
+  searchMinRating: number | null;
+  priorityCare: number;
+  priorityGeo: number;
+  priorityBudget: number;
+  prioritySize: number;
+  priorityRating: number;
   /** Signature */
   consentPartage: boolean;
   signatureNom: string;
@@ -159,6 +175,9 @@ export type Residence = {
   hasNursingStaff?: boolean;
   categoryLabel?: string;
   phone?: string | null;
+  /** Google Places rating 1–5 when available; omitted from score when null. */
+  googleRating?: number | null;
+  googleRatingCount?: number | null;
 };
 
 /** @deprecated Demo contact — do not use in production UI. Prefer authenticated useAuth().user. */
@@ -266,6 +285,7 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     modePaiement: "",
     meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
     autonomie: "Semi-autonome",
+    autonomyScore: 5,
     services: "Repas, médicaments, aide légère",
     mobilite: "",
     aideRepas: "",
@@ -275,6 +295,16 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     regimeAlimentaire: "",
     budget: "3 400 $ / mois",
     move: "Octobre 2026",
+    searchSector: "Sillery",
+    searchRadiusKm: 25,
+    searchBudgetMax: 3400,
+    searchSize: "any",
+    searchMinRating: null,
+    priorityCare: 5,
+    priorityGeo: 4,
+    priorityBudget: 3,
+    prioritySize: 2,
+    priorityRating: 2,
     consentPartage: false,
     signatureNom: "",
     signatureDate: "",
@@ -333,6 +363,7 @@ type SeniorLike = {
   urgency?: string;
   photoDataUrl?: string;
   createdAt?: string | null;
+  searchZones?: { id?: string; query?: string; radiusMiles?: number }[];
 };
 
 function ageFromDob(dob?: string): number | null {
@@ -418,6 +449,7 @@ export function buildProfileFromSenior(
     modePaiement: "",
     meta,
     autonomie: "À préciser",
+    autonomyScore: null,
     services: "À préciser",
     mobilite: "",
     aideRepas: "",
@@ -427,6 +459,21 @@ export function buildProfileFromSenior(
     regimeAlimentaire: "",
     budget,
     move: urgencyToMoveLabel(senior.urgency),
+    searchSector: (senior.searchZones?.[0]?.query || "").trim() || (senior.city || "").trim(),
+    searchRadiusKm: senior.searchZones?.[0]?.radiusMiles
+      ? Math.round(Number(senior.searchZones[0].radiusMiles) * 1.609)
+      : null,
+    searchBudgetMax: (() => {
+      const n = Number(String(senior.budgetMax || "").replace(/\s/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    })(),
+    searchSize: "any",
+    searchMinRating: null,
+    priorityCare: 5,
+    priorityGeo: 4,
+    priorityBudget: 3,
+    prioritySize: 2,
+    priorityRating: 2,
     consentPartage: false,
     signatureNom: "",
     signatureDate: "",
@@ -472,6 +519,7 @@ export function createEmptyProfile(id: string): FamilyProfile {
     modePaiement: "",
     meta: "Dossier en création",
     autonomie: "À préciser",
+    autonomyScore: null,
     services: "À préciser",
     mobilite: "",
     aideRepas: "",
@@ -481,6 +529,16 @@ export function createEmptyProfile(id: string): FamilyProfile {
     regimeAlimentaire: "",
     budget: "À préciser",
     move: "À préciser",
+    searchSector: "",
+    searchRadiusKm: null,
+    searchBudgetMax: null,
+    searchSize: "any",
+    searchMinRating: null,
+    priorityCare: 5,
+    priorityGeo: 4,
+    priorityBudget: 3,
+    prioritySize: 2,
+    priorityRating: 2,
     consentPartage: false,
     signatureNom: "",
     signatureDate: "",
@@ -507,6 +565,8 @@ export function familyPatchToSenior(
   city: string;
   state: string;
   zip: string;
+  budgetMax: string;
+  searchZones: { id: string; query: string; radiusMiles: number }[];
 }> {
   const out: ReturnType<typeof familyPatchToSenior> = {};
   if (patch.prenom !== undefined) out.firstName = patch.prenom;
@@ -519,6 +579,22 @@ export function familyPatchToSenior(
   if (patch.ville !== undefined) out.city = patch.ville;
   if (patch.province !== undefined) out.state = patch.province;
   if (patch.codePostal !== undefined) out.zip = patch.codePostal;
+  if (patch.searchBudgetMax !== undefined) {
+    out.budgetMax =
+      patch.searchBudgetMax != null && patch.searchBudgetMax > 0
+        ? String(patch.searchBudgetMax)
+        : "";
+  }
+  if (patch.searchSector !== undefined || patch.searchRadiusKm !== undefined) {
+    const km = patch.searchRadiusKm;
+    out.searchZones = [
+      {
+        id: "z1",
+        query: patch.searchSector ?? "",
+        radiusMiles: km != null && km > 0 ? Math.round(km / 1.609) : 25,
+      },
+    ];
+  }
   return out;
 }
 
@@ -592,6 +668,7 @@ export const PROFILE_STEPS = [
   "Assurances",
   "Finances",
   "Soins",
+  "Recherche",
   "Signature",
 ] as const;
 

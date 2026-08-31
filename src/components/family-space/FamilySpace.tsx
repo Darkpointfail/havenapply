@@ -336,11 +336,28 @@ export function FamilySpace() {
         budget: activeProfile?.budget,
         budgetMax: data.senior.budgetMax,
         autonomie: activeProfile?.autonomie,
+        autonomyScore: activeProfile?.autonomyScore,
         aideHygiene: activeProfile?.aideHygiene,
         aideMedication: activeProfile?.aideMedication,
         mobilite: activeProfile?.mobilite,
         services: activeProfile?.services,
         searchZones: data.senior.searchZones,
+        searchCriteria: activeProfile
+          ? {
+              sector: activeProfile.searchSector,
+              radiusKm: activeProfile.searchRadiusKm ?? Number.POSITIVE_INFINITY,
+              budgetMax: activeProfile.searchBudgetMax,
+              size: activeProfile.searchSize,
+              minGoogleRating: activeProfile.searchMinRating,
+              priorities: {
+                care: activeProfile.priorityCare,
+                geo: activeProfile.priorityGeo,
+                budget: activeProfile.priorityBudget,
+                size: activeProfile.prioritySize,
+                rating: activeProfile.priorityRating,
+              },
+            }
+          : null,
         draft: activeProfile?.draft,
       }),
     [activeProfile, data.senior],

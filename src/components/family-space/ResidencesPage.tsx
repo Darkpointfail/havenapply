@@ -440,6 +440,40 @@ export function ResidenceFiche({
             <p className="mt-3 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
               {match.summary}
             </p>
+            {match.axes.filter((a) => a.score != null && a.weight > 0).length > 0 ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {match.axes
+                  .filter((a) => a.score != null && a.weight > 0)
+                  .map((a) => (
+                    <div
+                      key={a.id}
+                      className="rounded-[10px] border border-[var(--fs-border-faint)] bg-white/70 px-3 py-2"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
+                          {a.label}
+                        </span>
+                        <span className="text-[13px] font-semibold tabular-nums">
+                          {a.score}
+                          <span className="font-normal text-[var(--fs-ink-muted)]">
+                            {" "}
+                            · {Math.round(a.weight * 100)}%
+                          </span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${a.score}%`,
+                            background: scoreColor,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : null}
             <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
               {match.why.slice(0, 3).map((w) => (
                 <span

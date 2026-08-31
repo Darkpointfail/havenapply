@@ -241,7 +241,17 @@ function OverviewMode({
   const progress = docsProgress(profile.docs);
   const meta = [
     ["Niveau d'autonomie", profile.draft || !profile.autonomie ? "À préciser" : profile.autonomie],
+    [
+      "Score autonomie",
+      profile.autonomyScore != null ? `${profile.autonomyScore}/10` : "À préciser",
+    ],
     ["Services souhaités", profile.draft || !profile.services ? "À préciser" : profile.services],
+    [
+      "Recherche",
+      [profile.searchSector, profile.searchBudgetMax ? `max ${profile.searchBudgetMax} $` : null]
+        .filter(Boolean)
+        .join(" · ") || "À préciser",
+    ],
     ["Budget mensuel", profile.draft || !profile.budget ? "À préciser" : profile.budget],
     ["Emménagement souhaité", profile.draft || !profile.move ? "À préciser" : profile.move],
   ];
@@ -949,7 +959,57 @@ function EditionStepFields({
   if (step === 5) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Niveau d'autonomie">
+        <div className="sm:col-span-2 lg:col-span-3 rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] p-4">
+          <p className="fs-label mb-2">Autonomie physique (1 à 10)</p>
+          <p className="mb-3 text-[13.5px] text-[var(--fs-ink-muted)]">
+            1 = pas du tout autonome · 10 = 100 % autonome. Ce score guide le matching avec les
+            catégories RPA.
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              className="w-full max-w-md accent-[var(--fs-green)]"
+              value={profile.autonomyScore ?? 5}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                onPatchActive({
+                  autonomyScore: n,
+                  autonomie:
+                    n <= 3
+                      ? `${n}/10 — peu autonome`
+                      : n <= 6
+                        ? `${n}/10 — semi-autonome`
+                        : n <= 8
+                          ? `${n}/10 — assez autonome`
+                          : `${n}/10 — très autonome`,
+                });
+              }}
+              aria-label="Score d'autonomie de 1 à 10"
+            />
+            <span className="fs-serif text-[28px] tabular-nums text-[var(--fs-green)]">
+              {profile.autonomyScore ?? "—"}
+              <span className="text-[14px] text-[var(--fs-ink-muted)]"> /10</span>
+            </span>
+          </div>
+          {!profile.autonomyScore ? (
+            <button
+              type="button"
+              className="fs-btn fs-btn-outline mt-3"
+              onClick={() =>
+                onPatchActive({
+                  autonomyScore: 5,
+                  autonomie: "5/10 — semi-autonome",
+                })
+              }
+            >
+              Définir à 5/10 pour commencer
+            </button>
+          ) : null}
+        </div>
+        <Field label="Niveau d'autonomie (libellé)">
           <input
             className="fs-input"
             value={profile.autonomie === "À préciser" ? "" : profile.autonomie}
@@ -998,6 +1058,155 @@ function EditionStepFields({
             onChange={(e) => onPatchActive({ regimeAlimentaire: e.target.value })}
           />
         </Field>
+      </div>
+    );
+  }
+
+  if (step === 6) {
+    const Priority = ({
+      label,
+      value,
+      onChange,
+    }: {
+      label: string;
+      value: number;
+      onChange: (n: number) => void;
+    }) => (
+      <div>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <p className="text-[13px] text-[var(--fs-ink-muted)]">{label}</p>
+          <span className="text-[13px] font-semibold tabular-nums">{value}/5</span>
+        </div>
+        <input
+          type="range"
+          min={1}
+          max={5}
+          step={1}
+          className="w-full accent-[var(--fs-green)]"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          aria-label={label}
+        />
+      </div>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="fs-serif text-[20px]">Ce que vous recherchez</p>
+          <p className="mt-1 max-w-[640px] text-[14.5px] text-[var(--fs-ink-body)]">
+            Distinct du profil de soins : ces critères orientent le score de correspondance
+            (secteur, budget, taille) et la pondération des priorités.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Secteur / ville recherchée">
+            <input
+              className="fs-input"
+              value={profile.searchSector}
+              onChange={(e) => onPatchActive({ searchSector: e.target.value })}
+              placeholder="Ex. Sillery, Lévis, Montréal…"
+            />
+          </Field>
+          <Field label="Rayon max (km)">
+            <input
+              className="fs-input"
+              type="number"
+              min={5}
+              max={200}
+              value={profile.searchRadiusKm ?? ""}
+              onChange={(e) =>
+                onPatchActive({
+                  searchRadiusKm: e.target.value ? Number(e.target.value) : null,
+                })
+              }
+              placeholder="25"
+            />
+          </Field>
+          <Field label="Budget mensuel max ($)">
+            <input
+              className="fs-input"
+              type="number"
+              min={500}
+              step={100}
+              value={profile.searchBudgetMax ?? ""}
+              onChange={(e) =>
+                onPatchActive({
+                  searchBudgetMax: e.target.value ? Number(e.target.value) : null,
+                })
+              }
+              placeholder="3500"
+            />
+          </Field>
+          <Field label="Taille d'établissement">
+            <select
+              className="fs-input"
+              value={profile.searchSize}
+              onChange={(e) =>
+                onPatchActive({
+                  searchSize: e.target.value as FamilyProfile["searchSize"],
+                })
+              }
+            >
+              <option value="any">Indifférent</option>
+              <option value="small">Petite (&lt; 40 unités)</option>
+              <option value="medium">Moyenne (40–99)</option>
+              <option value="large">Grande (100+)</option>
+            </select>
+          </Field>
+          <Field label="Note Google minimale (si dispo)">
+            <select
+              className="fs-input"
+              value={profile.searchMinRating ?? ""}
+              onChange={(e) =>
+                onPatchActive({
+                  searchMinRating: e.target.value ? Number(e.target.value) : null,
+                })
+              }
+            >
+              <option value="">Sans minimum</option>
+              <option value="3">3,0+</option>
+              <option value="3.5">3,5+</option>
+              <option value="4">4,0+</option>
+              <option value="4.5">4,5+</option>
+            </select>
+          </Field>
+        </div>
+
+        <div className="rounded-[12px] border border-[var(--fs-border)] p-4">
+          <p className="fs-label mb-1">Pondération des priorités</p>
+          <p className="mb-4 text-[13.5px] text-[var(--fs-ink-muted)]">
+            1 = peu important · 5 = très important. Les axes sans donnée (ex. note Google, tarif)
+            sont ignorés automatiquement.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Priority
+              label="Soins & autonomie"
+              value={profile.priorityCare}
+              onChange={(n) => onPatchActive({ priorityCare: n })}
+            />
+            <Priority
+              label="Secteur géographique"
+              value={profile.priorityGeo}
+              onChange={(n) => onPatchActive({ priorityGeo: n })}
+            />
+            <Priority
+              label="Budget"
+              value={profile.priorityBudget}
+              onChange={(n) => onPatchActive({ priorityBudget: n })}
+            />
+            <Priority
+              label="Taille"
+              value={profile.prioritySize}
+              onChange={(n) => onPatchActive({ prioritySize: n })}
+            />
+            <Priority
+              label="Note Google"
+              value={profile.priorityRating}
+              onChange={(n) => onPatchActive({ priorityRating: n })}
+            />
+          </div>
+        </div>
       </div>
     );
   }

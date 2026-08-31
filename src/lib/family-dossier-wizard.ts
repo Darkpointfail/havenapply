@@ -20,7 +20,18 @@ export type FamilyWizardPatch = {
   codePostal?: string;
   photo?: string | null;
   autonomie?: string;
+  autonomyScore?: number | null;
   services?: string;
+  searchSector?: string;
+  searchRadiusKm?: number | null;
+  searchBudgetMax?: number | null;
+  searchSize?: "any" | "small" | "medium" | "large";
+  searchMinRating?: number | null;
+  priorityCare?: number;
+  priorityGeo?: number;
+  priorityBudget?: number;
+  prioritySize?: number;
+  priorityRating?: number;
   contactPrincipalNom?: string;
   contactPrincipalLien?: string;
   contactPrincipalTel?: string;
@@ -111,6 +122,17 @@ const EMPTY_WIZARD_FIELDS: {
   aideMedication: string;
   allergies: string;
   regimeAlimentaire: string;
+  autonomyScore: number | null;
+  searchSector: string;
+  searchRadiusKm: number | null;
+  searchBudgetMax: number | null;
+  searchSize: "any" | "small" | "medium" | "large";
+  searchMinRating: number | null;
+  priorityCare: number;
+  priorityGeo: number;
+  priorityBudget: number;
+  prioritySize: number;
+  priorityRating: number;
   consentPartage: boolean;
   signatureNom: string;
   signatureDate: string;
@@ -142,6 +164,17 @@ const EMPTY_WIZARD_FIELDS: {
   aideMedication: "",
   allergies: "",
   regimeAlimentaire: "",
+  autonomyScore: null,
+  searchSector: "",
+  searchRadiusKm: null,
+  searchBudgetMax: null,
+  searchSize: "any",
+  searchMinRating: null,
+  priorityCare: 5,
+  priorityGeo: 4,
+  priorityBudget: 3,
+  prioritySize: 2,
+  priorityRating: 2,
   consentPartage: false,
   signatureNom: "",
   signatureDate: "",
@@ -166,6 +199,31 @@ export function wizardFieldsFromDossier(d: ResidentDossier): FamilyWizardFields 
     d.advanceDirectives.length > 0
       ? d.advanceDirectives.join(", ")
       : fromYesNoUnsure(d.hasHealthcareProxy);
+
+  const autonomyScore = (() => {
+    const m = String(d.autonomyLevel || "").match(/^(\d{1,2})\s*\/\s*10/);
+    if (m) {
+      const n = Number(m[1]);
+      return n >= 1 && n <= 10 ? n : null;
+    }
+    return null;
+  })();
+
+  const matchMeta = (() => {
+    const raw = d.specialPreferencesNotes || "";
+    const m = raw.match(/matchWeights:(\{[^}]+\})/);
+    if (!m) return null;
+    try {
+      return JSON.parse(m[1]!) as Record<string, number | string | null>;
+    } catch {
+      return null;
+    }
+  })();
+
+  const sizePref = (d.specialPreferences || []).find((p) => p.startsWith("size:"));
+  const size = (sizePref?.replace("size:", "") || "any") as FamilyWizardFields["searchSize"];
+
+  const budgetN = Number(String(d.budgetMax || d.maxMonthlyBudget || "").replace(/\s/g, ""));
 
   return {
     contactPrincipalNom: ec?.name || "",
@@ -200,6 +258,19 @@ export function wizardFieldsFromDossier(d: ResidentDossier): FamilyWizardFields 
       d.specialCareNeeds.match(/^Aide à la médication:\s*(.*)$/m)?.[1]?.trim() || "",
     allergies: d.allergies || "",
     regimeAlimentaire: d.dietaryRequirements || (d.nutrition || []).join(", "),
+    autonomyScore,
+    searchSector: d.preferredCities || "",
+    searchRadiusKm:
+      d.maxDistanceMiles > 0 ? Math.round(d.maxDistanceMiles * 1.609) : null,
+    searchBudgetMax: Number.isFinite(budgetN) && budgetN > 0 ? budgetN : null,
+    searchSize: ["any", "small", "medium", "large"].includes(size) ? size : "any",
+    searchMinRating:
+      typeof matchMeta?.minRating === "number" ? matchMeta.minRating : null,
+    priorityCare: Number(matchMeta?.care) || 5,
+    priorityGeo: Number(matchMeta?.geo) || 4,
+    priorityBudget: Number(matchMeta?.budget) || 3,
+    prioritySize: Number(matchMeta?.size) || 2,
+    priorityRating: Number(matchMeta?.rating) || 2,
     consentPartage: Boolean(d.acknowledgementSigned),
     signatureNom: d.signatureName || "",
     signatureDate: d.signatureDate || "",
@@ -226,6 +297,74 @@ export function applyFamilyPatchToDossier(
   if (patch.codePostal !== undefined) next.zip = patch.codePostal;
   if (patch.photo !== undefined) next.photoDataUrl = patch.photo || "";
   if (patch.autonomie !== undefined) next.autonomyLevel = patch.autonomie;
+  if (patch.autonomyScore !== undefined) {
+    if (patch.autonomyScore != null && patch.autonomyScore >= 1 && patch.autonomyScore <= 10) {
+      const label =
+        patch.autonomyScore <= 3
+          ? "peu autonome"
+          : patch.autonomyScore <= 6
+            ? "semi-autonome"
+            : patch.autonomyScore <= 8
+              ? "assez autonome"
+              : "très autonome";
+      next.autonomyLevel = `${patch.autonomyScore}/10 — ${label}`;
+    }
+  }
+
+  if (patch.searchSector !== undefined) next.preferredCities = patch.searchSector;
+  if (patch.searchRadiusKm !== undefined) {
+    next.maxDistanceMiles =
+      patch.searchRadiusKm != null && patch.searchRadiusKm > 0
+        ? Math.round(patch.searchRadiusKm / 1.609)
+        : 0;
+  }
+  if (patch.searchBudgetMax !== undefined) {
+    const v =
+      patch.searchBudgetMax != null && patch.searchBudgetMax > 0
+        ? String(patch.searchBudgetMax)
+        : "";
+    next.budgetMax = v;
+    next.maxMonthlyBudget = v;
+  }
+  if (patch.searchSize !== undefined) {
+    const others = (next.specialPreferences || []).filter((p) => !p.startsWith("size:"));
+    next.specialPreferences =
+      patch.searchSize && patch.searchSize !== "any"
+        ? [...others, `size:${patch.searchSize}`]
+        : others;
+  }
+  if (
+    patch.priorityCare !== undefined ||
+    patch.priorityGeo !== undefined ||
+    patch.priorityBudget !== undefined ||
+    patch.prioritySize !== undefined ||
+    patch.priorityRating !== undefined ||
+    patch.searchMinRating !== undefined
+  ) {
+    const prev = (() => {
+      const m = (next.specialPreferencesNotes || "").match(/matchWeights:(\{[^}]+\})/);
+      if (!m) return {} as Record<string, number | null>;
+      try {
+        return JSON.parse(m[1]!) as Record<string, number | null>;
+      } catch {
+        return {} as Record<string, number | null>;
+      }
+    })();
+    const payload = {
+      care: patch.priorityCare ?? prev.care ?? 5,
+      geo: patch.priorityGeo ?? prev.geo ?? 4,
+      budget: patch.priorityBudget ?? prev.budget ?? 3,
+      size: patch.prioritySize ?? prev.size ?? 2,
+      rating: patch.priorityRating ?? prev.rating ?? 2,
+      minRating: patch.searchMinRating !== undefined ? patch.searchMinRating : prev.minRating ?? null,
+    };
+    const cleaned = (next.specialPreferencesNotes || "")
+      .replace(/matchWeights:\{[^}]+\}/g, "")
+      .trim();
+    next.specialPreferencesNotes = [cleaned, `matchWeights:${JSON.stringify(payload)}`]
+      .filter(Boolean)
+      .join("\n");
+  }
 
   if (
     patch.contactPrincipalNom !== undefined ||

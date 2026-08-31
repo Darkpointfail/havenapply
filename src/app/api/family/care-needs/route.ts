@@ -15,6 +15,6 @@ export async function PATCH(request: Request) {
   if (!body.careNeeds) return jsonError("Care needs data is missing.", 400);
 
   const bundle = await patchCareNeeds(auth.user.id, body.seniorId ?? null, body.careNeeds);
-  if (!bundle) return jsonError("Impossible d'enregistrer les besoins.", 404);
+  if (!bundle) return jsonError("Unable to save care needs.", 404);
   return jsonOk({ bundle });
 }

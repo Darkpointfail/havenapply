@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     scope,
     reason: body.reason,
   });
-  if (!bundle) return jsonError("Impossible d'enregistrer la demande.", 404);
+  if (!bundle) return jsonError("Unable to save the request.", 404);
   await recordRightsOperation(auth.user.id, "deletion_request", `Portée ${scope}`);
   return jsonOk({ bundle, executed: false });
 }

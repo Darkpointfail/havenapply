@@ -13,10 +13,10 @@ export async function PUT(request: Request) {
     return jsonError("Invalid request.", 400);
   }
   if (!Array.isArray(body.applications)) {
-    return jsonError("Liste de demandes manquante.", 400);
+    return jsonError("Applications list is missing.", 400);
   }
 
   const bundle = await persistApplications(auth.user.id, body.applications);
-  if (!bundle) return jsonError("Compte introuvable.", 404);
+  if (!bundle) return jsonError("Account not found.", 404);
   return jsonOk({ bundle });
 }

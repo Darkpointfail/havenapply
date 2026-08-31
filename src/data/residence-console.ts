@@ -83,7 +83,7 @@ export const DEMANDES: Demande[] = [
     provenance: "Family — online application",
     contact: "Sophie Lévesque",
     contactLien: "fille",
-    emmenagement: "Octobre 2026",
+    emmenagement: "October 2026",
     resumeIa:
       "Advanced file: 4 of 6 documents received. Missing proof of income and protection mandate. Profile fits 3½ with services. A follow-up was already sent on August 27.",
     noteInterne:
@@ -105,7 +105,7 @@ export const DEMANDES: Demande[] = [
     provenance: "Family — online application",
     contact: "Michel Bouchard",
     contactLien: "fils",
-    emmenagement: "Septembre 2026",
+    emmenagement: "September 2026",
     resumeIa:
       "Complete file. Visit scheduled for September 2 at 10:30 a.m. Autonomous profile, 2½ unit available.",
   },
@@ -165,7 +165,7 @@ export const DEMANDES: Demande[] = [
     provenance: "Family — online application",
     contact: "Anne Grondin",
     contactLien: "fille",
-    emmenagement: "Septembre 2026",
+    emmenagement: "September 2026",
     resumeIa: "Application accepted. Complete file. Ready for waitlist placement or transition.",
   },
   {

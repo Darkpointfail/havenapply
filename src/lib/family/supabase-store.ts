@@ -288,7 +288,7 @@ export async function loadOrCreateSupabaseFamily(user: {
     .single();
 
   if (error || !created) {
-    throw new Error(error?.message || "Impossible de créer le compte famille.");
+    throw new Error(error?.message || "Unable to create the family account.");
   }
 
   await client.from("family_members").insert({
@@ -744,9 +744,9 @@ export async function uploadDocument(input: {
 }) {
   const client = await sb();
   const { data: fam } = await client.from("families").select("*").eq("owner_id", input.ownerId).is("deleted_at", null).maybeSingle();
-  if (!fam) return { error: "Compte introuvable.", status: 404 as const };
+  if (!fam) return { error: "Account not found.", status: 404 as const };
   const senior = await ensureSenior(client, fam.id, input.ownerId, input.seniorId ?? null);
-  if (!senior) return { error: "Profil introuvable.", status: 404 as const };
+  if (!senior) return { error: "Profile not found.", status: 404 as const };
 
   const docId = newOpaqueId("doc").replace("doc_", "");
   // Use uuid-like path; storage bucket senior-documents
@@ -800,7 +800,7 @@ export async function uploadDocument(input: {
     .select("*")
     .single();
 
-  if (error || !docRow) return { error: "Impossible d'enregistrer le document.", status: 500 as const };
+  if (error || !docRow) return { error: "Unable to save the document.", status: 500 as const };
 
   const bundle = await loadOrCreateSupabaseFamily({
     id: input.ownerId,
@@ -840,7 +840,7 @@ export async function replaceDocumentFile(input: {
 }) {
   const removed = await removeDocument(input.ownerId, input.docId);
   if (!removed || "error" in (removed as object)) {
-    return { error: "Document introuvable.", status: 404 as const };
+    return { error: "Document not found.", status: 404 as const };
   }
   // Need category from old — simplified: re-upload as other if unknown
   return uploadDocument({

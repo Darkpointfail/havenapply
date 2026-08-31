@@ -199,15 +199,18 @@ function ApplicationsListInner() {
                   </div>
                   <div className="flex items-center gap-2">
                     {!isHistory && !isTransition && (a.documentRequest || a.infoRequest) && (
-                      <Badge tone="warn">Needs info</Badge>
+                      <Badge tone="warn">{t("Needs info")}</Badge>
                     )}
                     {tProgress ? (
                       <Badge tone={tProgress.complete ? "success" : "brand"}>
-                        Transition {tProgress.done}/{tProgress.total}
+                        {t("Transition {done}/{total}", {
+                          done: tProgress.done,
+                          total: tProgress.total,
+                        })}
                       </Badge>
                     ) : (
                       <Badge tone={isHistory ? outcomeTone(a.status) : statusTone(a.status)}>
-                        {isHistory ? outcomeLabel(a.status) : statusLabel(a.status)}
+                        {t(isHistory ? outcomeLabel(a.status) : statusLabel(a.status))}
                       </Badge>
                     )}
                   </div>

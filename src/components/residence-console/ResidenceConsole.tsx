@@ -11,6 +11,7 @@ import {
   communityAppsToWaitlist,
 } from "@/lib/fr-portal-dynamic";
 import { useLocale, useT, type Locale } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 import {
   DASHBOARD_FUNNEL,
   DEMANDES,
@@ -756,7 +757,7 @@ function DemandesView({
                 </p>
               ) : null}
             </div>
-            <p className="text-[14.5px]">{d.unite}</p>
+            <p className="text-[14.5px]">{catalogLabel(t, d.unite)}</p>
             <div>
               <StatusPill status={d.statut} />
             </div>
@@ -887,8 +888,8 @@ function DossierView({
           ) : null}
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
             {[
-              [t("Desired unit"), t(demande.unite)],
-              [t("Desired move-in"), t(demande.emmenagement)],
+              [t("Desired unit"), catalogLabel(t, demande.unite)],
+              [t("Desired move-in"), catalogLabel(t, demande.emmenagement)],
               [
                 t("Contact person"),
                 `${demande.contact} (${relationLabel(t, demande.contactLien)})`,
@@ -1299,7 +1300,7 @@ function VisitesView() {
                     </p>
                     <p className="mt-0.5 text-[14.5px] font-semibold">{s.name}</p>
                     <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
-                      {s.kind === "suivi" ? t("Follow-up") : s.unit}
+                      {s.kind === "suivi" ? t("Follow-up") : catalogLabel(t, s.unit)}
                     </p>
                   </div>
                 ))}

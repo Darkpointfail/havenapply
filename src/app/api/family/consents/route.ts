@@ -20,10 +20,10 @@ export async function POST(request: Request) {
     );
   }
   if (typeof body.granted !== "boolean") {
-    return jsonError("Indiquez si vous acceptez ou retirez le consentement.", 400);
+    return jsonError("Indicate whether you accept or withdraw consent.", 400);
   }
 
   const bundle = await grantProfileConsent(auth.user.id, body.granted);
-  if (!bundle) return jsonError("Impossible d'enregistrer le consentement.", 404);
+  if (!bundle) return jsonError("Unable to save consent.", 404);
   return jsonOk({ bundle });
 }

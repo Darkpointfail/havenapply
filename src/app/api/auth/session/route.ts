@@ -24,11 +24,11 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as Body;
   } catch {
-    return NextResponse.json({ ok: false, error: "Requête invalide." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
 
   if (!body.user?.id || !body.user?.email || body.user.role !== "family") {
-    return NextResponse.json({ ok: false, error: "Session famille invalide." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid family session." }, { status: 400 });
   }
 
   const token = mintFamilySessionToken(body.user);

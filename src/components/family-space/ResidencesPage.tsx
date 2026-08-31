@@ -16,86 +16,9 @@ import {
   type FamilyCareProfile,
 } from "@/lib/family-residence-match";
 import { useLocale, useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 
 const PAGE_SIZE = 24;
-
-/** Domain catalog values stay French; display via English keys + t(). */
-const CATALOG_LABEL_EN: Record<string, string> = {
-  Logement: "Apartment",
-  "Chambre simple": "Private room (single)",
-  "Chambre double": "Double room",
-  "Unité locative": "Rental unit",
-  "Rental unit": "Rental unit",
-  Repas: "Meals",
-  "Soins infirmiers": "Nursing care",
-  "Aide au bain": "Bathing assistance",
-  "Aide à la mobilité": "Mobility assistance",
-  "Aide à l'alimentation": "Meal assistance",
-  "Administration des médicaments": "Medication administration",
-  "Distribution des médicaments": "Medication distribution",
-  "Assistance aux soins": "Care assistance",
-  "Clientèle à risque d'errance": "Residents at risk of wandering",
-  "Entretien des vêtements": "Laundry",
-  "Entretien ménager": "Housekeeping",
-  Habillage: "Dressing assistance",
-  Loisirs: "Activities",
-  "Soins d'hygiène": "Hygiene care",
-  "Rampe d'accès": "Access ramp",
-  Gicleurs: "Sprinklers",
-  "Avertisseurs de fumée": "Smoke detectors",
-  "Alarme incendie": "Fire alarm",
-  "Système d'appel à l'aide mobile": "Mobile call-for-help system",
-  "Système d'appel à l'aide fixe": "Fixed call-for-help system",
-  "Système d'appel à l'aide combiné fixe et mobile":
-    "Combined fixed and mobile call-for-help system",
-  Génératrice: "Generator",
-  "Dispositif de sécurité immeuble": "Building security device",
-  "Avertisseurs de monoxyde": "Carbon monoxide detectors",
-  Aucun: "None",
-  Certifiée: "Certified",
-  "Certifiée en processus de renouvellement": "Certified — renewal in progress",
-  "Certifiée en renouvellement": "Certified — renewal",
-  "Certifiée en attente de renouvellement": "Certified — awaiting renewal",
-  "Attestation temporaire": "Temporary attestation",
-  "Attestation temporaire échue": "Expired temporary attestation",
-  "Résidence à but lucratif": "For-profit residence",
-  "Organisme à but non lucratif (OBNL ou OSBL)": "Non-profit organization (NPO)",
-  "Habitation à loyer modique (HLM)": "Low-rent housing (HLM)",
-  "Coopérative d'habitation": "Housing cooperative",
-  "Communauté religieuse": "Religious community",
-  Capacité: "Capacity",
-  "Unités RPA": "RPA units",
-  "Résidents déclarés": "Declared residents",
-  Certification: "Certification",
-  "Catégories RPA": "RPA categories",
-  Étages: "Floors",
-  Ascenseurs: "Elevators",
-  Ouverture: "Opened",
-  Téléphone: "Phone",
-  MRC: "MRC",
-  Exploitant: "Operator",
-  Regroupement: "Group",
-  "Profil d'âge": "Age profile",
-  Sécurité: "Safety features",
-  "Appel à l'aide": "Call for help",
-  "Infirmières (sem.)": "Nurses (weekday)",
-  "Préposés (jour sem.)": "Aides (weekday day)",
-};
-
-function catalogLabel(t: (key: string, vars?: Record<string, string | number>) => string, value: string) {
-  const capacity = value.match(/^Capacity\s+(\d+)$/i) || value.match(/^Capacité\s+(\d+)$/i);
-  if (capacity) return t("Capacity {count}", { count: capacity[1] });
-  const registry = value.match(/^(\d+)\s+in registry$/i) || value.match(/^(\d+)\s+au registre$/i);
-  if (registry) return t("{count} in registry", { count: registry[1] });
-  if (value.includes(" | ") || value.includes(" · ")) {
-    const sep = value.includes(" | ") ? " | " : " · ";
-    return value
-      .split(sep)
-      .map((part) => t(CATALOG_LABEL_EN[part.trim()] ?? part.trim()))
-      .join(sep);
-  }
-  return t(CATALOG_LABEL_EN[value] ?? value);
-}
 
 function factValue(
   t: (key: string, vars?: Record<string, string | number>) => string,
@@ -446,7 +369,7 @@ export function ResidencesBrowse({
                             </span>
                           </span>
                         ) : null}
-                        <Badge tone={r.badgeTone}>{t(r.badge)}</Badge>
+                        <Badge tone={r.badgeTone}>{catalogLabel(t, r.badge)}</Badge>
                       </div>
                     </div>
 
@@ -706,7 +629,7 @@ export function ResidenceFiche({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-[820px]">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={residence.badgeTone}>{t(residence.badge)}</Badge>
+                <Badge tone={residence.badgeTone}>{catalogLabel(t, residence.badge)}</Badge>
                 {residence.categoryLabel ? (
                   <span className="text-[13px] text-[var(--fs-ink-muted)]">
                     {catalogLabel(t, residence.categoryLabel)}

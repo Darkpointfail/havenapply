@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const expires = form.get("expires") ? String(form.get("expires")) : null;
 
   if (!(file instanceof File)) {
-    return jsonError("Fichier manquant.", 400);
+    return jsonError("File is missing.", 400);
   }
 
   const mimeType = file.type || "application/octet-stream";
@@ -55,11 +55,11 @@ export async function DELETE(request: Request) {
 
   const url = new URL(request.url);
   const docId = url.searchParams.get("id");
-  if (!docId) return jsonError("Identifiant manquant.", 400);
+  if (!docId) return jsonError("Identifier is missing.", 400);
 
   const result = await removeDocument(auth.user.id, docId);
-  if (!result) return jsonError("Compte introuvable.", 404);
-  if ("error" in result) return jsonError("Document introuvable.", 404);
+  if (!result) return jsonError("Account not found.", 404);
+  if ("error" in result) return jsonError("Document not found.", 404);
   return jsonOk({ bundle: result });
 }
 
@@ -70,8 +70,8 @@ export async function PUT(request: Request) {
   const form = await request.formData();
   const file = form.get("file");
   const docId = String(form.get("id") || "");
-  if (!docId) return jsonError("Identifiant manquant.", 400);
-  if (!(file instanceof File)) return jsonError("Fichier manquant.", 400);
+  if (!docId) return jsonError("Identifier is missing.", 400);
+  if (!(file instanceof File)) return jsonError("File is missing.", 400);
 
   const mimeType = file.type || "application/octet-stream";
   const sizeBytes = file.size;

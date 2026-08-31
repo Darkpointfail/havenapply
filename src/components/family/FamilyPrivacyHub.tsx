@@ -214,10 +214,10 @@ export default function FamilyPrivacyHub() {
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      setError(result.error ? t(result.error) : t("Unable to complete deletion."));
       return;
     }
-    setMessage(result.message);
+    setMessage(result.message ? t(result.message) : null);
     setConfirmPhrase("");
     setShowDeleteConfirm(false);
     if (deleteScope === "account") {

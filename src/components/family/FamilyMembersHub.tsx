@@ -126,7 +126,7 @@ export function FamilyMembersHub() {
       message: inviteMessage,
     });
     if (!res.ok) {
-      setInviteError(res.error || "Could not send invitation.");
+      setInviteError(res.error ? t(res.error) : t("Could not send invitation."));
       return;
     }
     setInviteSuccess(
@@ -217,7 +217,7 @@ export function FamilyMembersHub() {
                     size="sm"
                     onClick={() => {
                       const res = acceptInvitation(inv.token);
-                      if (!res.ok) alert(res.error);
+                      if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                     }}
                   >
                     Accept
@@ -348,7 +348,7 @@ export function FamilyMembersHub() {
                             m.id,
                             e.target.value as Exclude<FamilyRole, "owner">,
                           );
-                          if (!res.ok) alert(res.error);
+                          if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                         }}
                         aria-label={`Change role for ${m.name}`}
                       >
@@ -366,7 +366,7 @@ export function FamilyMembersHub() {
                         onClick={() => {
                           if (confirm(`Remove access for ${m.name}?`)) {
                             const res = removeMember(m.id);
-                            if (!res.ok) alert(res.error);
+                            if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                           }
                         }}
                       >

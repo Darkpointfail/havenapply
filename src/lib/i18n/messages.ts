@@ -3132,6 +3132,31 @@ export const frMessages: Record<string, string> = {
   "Visit scheduled: {when}.": "Visite planifiée : {when}.",
   "Documents requested: {docs}.": "Pièces demandées : {docs}.",
 
+  // API / store error keys (EN source)
+  "Indicate whether you accept or withdraw consent.":
+    "Indiquez si vous acceptez ou retirez le consentement.",
+  "Unable to save care needs.": "Impossible d'enregistrer les besoins.",
+  "Applications list is missing.": "Liste de demandes manquante.",
+  "Unable to save the request.": "Impossible d'enregistrer la demande.",
+  "Unable to save the profile.": "Impossible d'enregistrer le profil.",
+  "Unable to load your file.": "Impossible de charger votre dossier.",
+  "Invalid family session.": "Session famille invalide.",
+  "File is missing.": "Fichier manquant.",
+  "Identifier is missing.": "Identifiant manquant.",
+  "Account not found.": "Compte introuvable.",
+  "Document not found.": "Document introuvable.",
+  "Profile not found.": "Profil introuvable.",
+  "Unable to create the family account.": "Impossible de créer le compte famille.",
+  "Unable to save the document.": "Impossible d'enregistrer le document.",
+  "Unable to save availability.": "Impossible d'enregistrer la disponibilité.",
+  "Could not send invitation.": "Impossible d'envoyer l'invitation.",
+  "Needs info": "Infos requises",
+  "Transition {done}/{total}": "Transition {done}/{total}",
+  "2 1/2": "2½",
+  "3 1/2": "3½",
+  "3 1/2 with care": "3½ soins",
+  "3 1/2 with services": "3½ services",
+
   // Authz + validation errors
   "Session expired. Please sign in again.": "Session expirée. Veuillez vous reconnecter.",
   "Access reserved for family accounts.": "Accès réservé aux comptes famille.",

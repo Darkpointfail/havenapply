@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: Params) {
   const file = await readDocumentFile(auth.user.id, id);
   if (!file) {
     // Do not reveal whether the id exists for another user.
-    return jsonError("Document introuvable.", 404);
+    return jsonError("Document not found.", 404);
   }
 
   return new Response(new Uint8Array(file.bytes), {

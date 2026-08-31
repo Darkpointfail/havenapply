@@ -32,6 +32,6 @@ export async function PATCH(request: Request) {
   };
 
   const bundle = await patchApplicant(auth.user.id, patch);
-  if (!bundle) return jsonError("Compte introuvable.", 404);
+  if (!bundle) return jsonError("Account not found.", 404);
   return jsonOk({ bundle });
 }

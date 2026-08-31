@@ -28,6 +28,6 @@ export async function PATCH(request: Request) {
   const bundle = await patchSenior(auth.user.id, seniorId, data, {
     stepIndex: onboardingStep,
   });
-  if (!bundle) return jsonError("Impossible d'enregistrer le profil.", 404);
+  if (!bundle) return jsonError("Unable to save the profile.", 404);
   return jsonOk({ bundle });
 }

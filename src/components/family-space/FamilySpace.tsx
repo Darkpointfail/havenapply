@@ -42,6 +42,7 @@ import {
 } from "@/lib/family-wizard-draft";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 import "./family-space.css";
 
 const APP_STATUS_EN: Record<string, string> = {
@@ -1202,7 +1203,7 @@ function Accueil({
                 </StatusPill>
                 <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
                 <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-                  {app.city} · {t(app.unit)}
+                  {app.city} · {catalogLabel(t, app.unit)}
                 </p>
                 {app.publicRef ? (
                   <p className="mt-2 font-mono text-[12.5px] tracking-wide text-[var(--fs-ink-muted)]">
@@ -1361,8 +1362,8 @@ function Depot({
                   }}
                 >
                   <div>
-                    <p className="font-semibold">{t(o.type)}</p>
-                    <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{t(o.avail)}</p>
+                    <p className="font-semibold">{catalogLabel(t, o.type)}</p>
+                    <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{catalogLabel(t, o.avail)}</p>
                   </div>
                   <p className="fs-serif text-[18px]">{t(o.price)}</p>
                 </button>
@@ -1419,7 +1420,7 @@ function Depot({
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--fs-ink-muted)]">{t("Unit")}</dt>
-                <dd className="font-medium">{selectedUnit}</dd>
+                <dd className="font-medium">{catalogLabel(t, selectedUnit)}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--fs-ink-muted)]">{t("Desired move-in")}</dt>
@@ -1568,7 +1569,7 @@ function Demandes({
                 <div>
                   <h3 className="fs-serif text-[22px]">{app.residenceName}</h3>
                   <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
-                    {app.city} · {t(app.unit)} · {t("submitted on")} {t(app.depositedOn)}
+                    {app.city} · {catalogLabel(t, app.unit)} · {t("submitted on")} {t(app.depositedOn)}
                   </p>
                   {app.publicRef ? (
                     <p className="mt-1.5 font-mono text-[13px] tracking-wide text-[var(--fs-ink-muted)]">

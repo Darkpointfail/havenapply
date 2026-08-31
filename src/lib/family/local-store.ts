@@ -388,7 +388,7 @@ export async function addDocument(input: {
   const senior = input.seniorId
     ? store.seniors.find((s) => s.id === input.seniorId)
     : store.seniors[0];
-  if (!senior) return { error: "Profil introuvable.", status: 404 };
+  if (!senior) return { error: "Profile not found.", status: 404 };
 
   const ts = nowIso();
   const id = newOpaqueId("doc");
@@ -493,11 +493,11 @@ export async function replaceDocument(input: {
   bytes: Buffer;
 }): Promise<{ bundle: FamilyBundle; document: VaultDocument } | { error: string; status: number }> {
   const store = await readStore(input.ownerId);
-  if (!store) return { error: "Compte introuvable.", status: 404 };
+  if (!store) return { error: "Account not found.", status: 404 };
   const doc = store.documents.find((d) => d.id === input.docId);
-  if (!doc) return { error: "Document introuvable.", status: 404 };
+  if (!doc) return { error: "Document not found.", status: 404 };
   const senior = store.seniors[0];
-  if (!senior) return { error: "Profil introuvable.", status: 404 };
+  if (!senior) return { error: "Profile not found.", status: 404 };
 
   const version = doc.versions + 1;
   const abs = docStoragePath(store.account.id, senior.id, doc.id, version);

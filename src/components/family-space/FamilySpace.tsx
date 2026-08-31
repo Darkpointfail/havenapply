@@ -519,14 +519,14 @@ export function FamilySpace() {
             <img
               src="/brand/favicon-48-v6.png"
               alt=""
-              width={34}
-              height={34}
+              width={40}
+              height={40}
               className="fs-brand-mark"
             />
             <span className="fs-brand-name">HavenApply</span>
           </a>
 
-          <nav className="fs-nav-scroll fs-header-nav min-w-0 flex-1" aria-label="Navigation principale">
+          <nav className="fs-nav-scroll fs-header-nav" aria-label="Navigation principale">
             {NAV.map((item) => {
               const active =
                 view === item.id ||
@@ -545,7 +545,7 @@ export function FamilySpace() {
             })}
           </nav>
 
-          <div ref={accountRef} className="fs-header-account relative ml-auto shrink-0">
+          <div ref={accountRef} className="fs-header-account relative shrink-0">
             <button
               type="button"
               className="fs-account-trigger"
@@ -557,10 +557,10 @@ export function FamilySpace() {
               }}
             >
               <span className="hidden min-w-0 text-left sm:block">
-                <span className="block truncate text-[13.5px] font-semibold leading-tight text-white">
+                <span className="block truncate text-[15px] font-semibold leading-tight text-white">
                   {displayUser.fullName}
                 </span>
-                <span className="mt-0.5 block truncate text-[12px] leading-tight text-[#9AABA4]">
+                <span className="mt-0.5 block truncate text-[12.5px] leading-tight text-[#9AABA4]">
                   {headerDossierCaption}
                 </span>
               </span>

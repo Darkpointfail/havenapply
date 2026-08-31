@@ -1,155 +1,126 @@
 export const fr = {
-  "home.nav.families": "Pour les familles",
-  "home.nav.residences": "Pour les résidences",
-  "home.nav.contact": "Contact",
-  "home.nav.professionals": "Professionnels",
-  "home.nav.how": "Comment ça marche",
-  "home.nav.security": "Sécurité",
-  "home.nav.signIn": "Se connecter",
-  "home.nav.start": "Commencer ma demande",
-  "home.nav.getStarted": "Commencer",
-  "home.nav.menu": "Menu",
-  "home.nav.close": "Fermer",
-  "home.lang.fr": "FR",
-  "home.lang.en": "EN",
-  "home.lang.label": "Langue",
+  "hp.nav.how": "Comment ça marche",
+  "hp.nav.companion": "L'accompagnement",
+  "hp.nav.residences": "Pour les résidences",
+  "hp.nav.faq": "Questions",
+  "hp.nav.mySpace": "Mon espace",
+  "hp.nav.signOut": "Se déconnecter",
+  "hp.nav.signIn": "Se connecter",
+  "hp.nav.start": "Commencer",
+  "hp.nav.menu": "Menu",
+  "hp.nav.close": "Fermer",
 
-  "home.hero.eyebrow": "Résidences privées pour aînés · Québec",
-  "home.hero.title":
-    "Une seule demande, envoyée aux résidences qui conviennent vraiment.",
-  "home.hero.lead":
-    "Vous décrivez la situation une fois. HavenApply la présente aux résidences adaptées : sans recommencer le même dossier à chaque fois.",
-  "home.hero.ctaPrimary": "Commencer ma demande",
-  "home.hero.ctaSecondary": "Voir comment ça marche",
-  "home.hero.note":
-    "Gratuit pour les familles · environ 20 minutes · vous pouvez vous arrêter et reprendre",
+  "hp.hero.pill": "Demande d'admission 100 % en ligne",
+  "hp.hero.title": "Fini les dossiers papier. Une demande, toutes les résidences.",
+  "hp.hero.lead":
+    "Plus de formulaires papier à imprimer, à faxer ou à déposer sur place. Vous remplissez le dossier une seule fois sur HavenApply et vous l'envoyez en ligne à toutes les résidences que vous choisissez, d'un même clic.",
+  "hp.hero.ctaPrimary": "Déposer ma demande en ligne",
+  "hp.hero.ctaSecondary": "Voir comment ça marche",
+  "hp.hero.note": "Gratuit pour les familles. Aucun déplacement, aucun papier, aucun engagement.",
+  "hp.hero.photoAlt": "Une fille adulte et sa mère âgée, assises ensemble à la maison",
 
-  "home.audience.title": "Vous êtes ici pour…",
-  "home.audience.family.badge": "Famille",
-  "home.audience.family.title": "Trouver une résidence pour un proche",
-  "home.audience.family.body":
-    "Créez une demande claire, partagez-la seulement avec les résidences que vous choisissez, et suivez les réponses au même endroit.",
-  "home.audience.family.cta": "Commencer ma demande",
-  "home.audience.residence.badge": "Résidence",
-  "home.audience.residence.title": "Recevoir des demandes mieux préparées",
-  "home.audience.residence.body":
-    "Recevez des dossiers complets, répondez plus vite, et gardez le contact humain au centre de l’admission.",
-  "home.audience.residence.cta": "Demander une démonstration",
-  "home.audience.pro.badge": "Professionnel",
-  "home.audience.pro.title": "Accompagner une transition de soins",
-  "home.audience.pro.body":
-    "Travailleurs sociaux, planificateurs de congé et équipes de soins : préparez un dossier et suivez les échanges avec la famille.",
-  "home.audience.pro.cta": "Voir l’espace professionnel",
+  "hp.proof.aria": "HavenApply en chiffres",
+  "hp.proof.lead": "Utilisé par les familles et les résidences du Québec",
+  "hp.proof.residences": "résidences référencées au registre des RPA",
+  "hp.proof.sendValue": "1 envoi",
+  "hp.proof.send": "en ligne au lieu de dix formulaires papier",
+  "hp.proof.daysValue": "11 jours",
+  "hp.proof.days": "de délai moyen jusqu'à une réponse",
 
-  "home.steps.title": "Trois étapes, sans recommencer",
-  "home.steps.1.title": "Décrivez la situation",
-  "home.steps.1.body":
-    "Besoins, rythme de vie, documents déjà en main. Vous avancez à votre rythme, même si le dossier n’est pas encore complet.",
-  "home.steps.2.title": "Choisissez où envoyer",
-  "home.steps.2.body":
-    "Vous décidez quelles résidences reçoivent la demande. Rien n’est partagé sans votre accord explicite.",
-  "home.steps.3.title": "Suivez les réponses",
-  "home.steps.3.body":
-    "Messages, documents manquants et prochaines étapes restent visibles : pour vous et pour les proches que vous invitez.",
+  "hp.steps.title": "Une démarche simple pour vous, un dossier complet pour votre proche",
+  "hp.steps.lead":
+    "Depuis votre salon, votre téléphone ou la chambre d'hôpital. Vous répondez à des questions simples, nous nous occupons de transmettre le dossier.",
+  "hp.steps.1.title": "Créez son profil une fois, utilisez-le pour plusieurs résidences",
+  "hp.steps.1.body":
+    "Une conversation avec notre accompagnatrice remplace le formulaire. Elle pose les questions, vous répondez avec vos mots.",
+  "hp.steps.2.title": "Choisissez les résidences et envoyez vos demandes en ligne",
+  "hp.steps.2.body":
+    "Vous comparez prix, services et disponibilités réelles, puis vous cochez les résidences retenues. Le dossier part en ligne à toutes en même temps, avec les pièces jointes.",
+  "hp.steps.3.title": "Suivez toutes les demandes de votre proche au même endroit",
+  "hp.steps.3.body":
+    "Accusé de réception, position sur la liste d'attente, pièces manquantes, décision. Chaque réponse arrive dans votre espace, sans un seul appel.",
 
-  "home.friction.title": "Ce que vous ne referez plus",
-  "home.friction.1": "Remplir le même formulaire pour chaque résidence",
-  "home.friction.2": "Renvoyer les mêmes documents par courriel, encore et encore",
-  "home.friction.3": "Perdre le fil des appels, des réponses et des pièces manquantes",
-  "home.friction.4": "Deviner si une résidence a vraiment reçu le dossier",
-  "home.friction.5": "Porter seul tout le poids administratif de la recherche",
-  "home.tracking.title": "Un suivi clair, au même endroit",
-  "home.tracking.disclaimer": "Interface d’exemple, sans données réelles.",
-  "home.tracking.status.review": "En revue",
-  "home.tracking.status.docs": "Documents demandés",
-  "home.tracking.status.visit": "Visite proposée",
-  "home.tracking.r1": "Résidence du Parc",
-  "home.tracking.r2": "Maison des Érables",
-  "home.tracking.r3": "Les Jardins du Fleuve",
+  "hp.claire.pill": "Accompagnement par intelligence artificielle",
+  "hp.claire.title": "Vous n'avez pas besoin de tout comprendre pour commencer",
+  "hp.claire.lead":
+    "Claire vous guide par une simple discussion. Elle explique chaque question, remplit les champs à votre place et vous dit ce qui manque. Vous pouvez vous arrêter et reprendre quand vous voulez.",
+  "hp.claire.b1": "Elle traduit le vocabulaire médical et administratif",
+  "hp.claire.b2": "Elle repère les oublis avant que la résidence les refuse",
+  "hp.claire.b3": "Elle suggère des résidences adaptées au budget et aux soins requis",
+  "hp.claire.cta": "Créer mon dossier avec Claire",
+  "hp.claire.status": "Accompagnatrice HavenApply · chat en direct",
+  "hp.claire.typing": "Claire écrit…",
+  "hp.claire.hello":
+    "Bonjour. Parlons de votre proche. Vit-elle encore à la maison en ce moment ?",
+  "hp.claire.s1": "Elle est à l'hôpital",
+  "hp.claire.s2": "Elle marche avec une canne",
+  "hp.claire.s3": "Fauteuil roulant",
+  "hp.claire.placeholder": "Répondre à Claire…",
+  "hp.claire.aria": "Message à Claire",
+  "hp.claire.send": "Envoyer",
+  "hp.claire.link": "Créer mon dossier avec Claire →",
 
-  "home.benefits.title": "Ce que HavenApply change",
-  "home.benefits.families.title": "Pour les familles",
-  "home.benefits.families.1":
-    "Une demande unique, envoyée seulement aux résidences que vous choisissez",
-  "home.benefits.families.2":
-    "Un coffre de documents partagé avec consentement, pas en pièce jointe éparpillée",
-  "home.benefits.families.3":
-    "La possibilité d’inviter un frère, une sœur ou un proche sans partager un mot de passe",
-  "home.benefits.residences.title": "Pour les résidences",
-  "home.benefits.residences.1":
-    "Des demandes plus complètes dès le premier contact",
-  "home.benefits.residences.2":
-    "Moins de relances pour les mêmes pièces manquantes",
-  "home.benefits.residences.3":
-    "Un canal clair pour répondre à la famille et aux professionnels",
-  "home.benefits.ctaFamily": "Commencer ma demande",
-  "home.benefits.ctaResidence": "Demander une démonstration",
+  "hp.saves.title": "Ce que l'envoi en ligne vous épargne",
+  "hp.saves.1.bold": "Imprimer, faxer, déposer sur place.",
+  "hp.saves.1.rest": " Le dossier est rempli une fois et transmis en ligne à chaque résidence.",
+  "hp.saves.2.bold": "Appeler pour savoir où ça en est.",
+  "hp.saves.2.rest": " Chaque changement de statut vous est notifié.",
+  "hp.saves.3.bold": "Perdre des documents.",
+  "hp.saves.3.rest":
+    " Évaluations, procurations, preuves de revenus : tout est conservé au même endroit.",
+  "hp.saves.4.bold": "Deviner les prix.",
+  "hp.saves.4.rest": " Les coûts affichés sont ceux transmis par les résidences elles-mêmes.",
+  "hp.saves.photoAlt":
+    "Suivi des demandes d'admission en ligne depuis la maison, sans paperasse",
 
-  "home.privacy.title": "Vos informations restent sous votre contrôle",
-  "home.privacy.1": "Vous choisissez quelles résidences reçoivent la demande",
-  "home.privacy.2": "Les documents médicaux ne partent qu’avec votre consentement",
-  "home.privacy.3": "Vous pouvez retirer un accès futur depuis votre espace",
-  "home.privacy.4": "Les échanges restent traçables pour les personnes autorisées",
-  "home.privacy.link": "En savoir plus sur la sécurité",
-  "home.privacy.proofTitle": "Emplacements de preuve : à remplir",
-  "home.privacy.proof.1": "Politique de confidentialité et avis de collecte publiés (brouillon à valider légalement)",
-  "home.privacy.proof.2": "Hébergement des données : région et fournisseur à confirmer",
-  "home.privacy.proof.3": "Résidences partenaires : liste vérifiée à publier",
-  "home.privacy.proof.4": "Témoignages : uniquement après autorisation écrite",
+  "hp.quote.body":
+    "« On nous a donné deux semaines pour trouver une place. J'ai rempli le dossier un soir depuis la chambre d'hôpital, je l'ai envoyé en ligne à six résidences le lendemain. Trois ont répondu dans la semaine. »",
+  "hp.quote.name": "Sophie Lévesque",
+  "hp.quote.meta": "Fille de Marguerite, 84 ans, Québec",
 
-  "home.concerns.title": "Des préoccupations légitimes",
-  "home.concerns.1.q": "Est-ce que ça remplace le contact humain ?",
-  "home.concerns.1.a":
-    "Non. HavenApply organise le dossier et le suivi. Les conversations importantes avec les résidences restent humaines.",
-  "home.concerns.2.q": "Est-ce que la plateforme choisit à ma place ?",
-  "home.concerns.2.a":
-    "Non. Vous décidez où envoyer la demande. Aucune résidence n’est imposée.",
-  "home.concerns.3.q": "Est-ce que mes informations sont diffusées partout ?",
-  "home.concerns.3.a":
-    "Non. Chaque envoi est volontaire. Rien n’est partagé « en masse » sans votre accord.",
-  "home.concerns.4.q": "Est-ce que ça remplace les systèmes des résidences ?",
-  "home.concerns.4.a":
-    "Non. HavenApply facilite l’entrée en contact et le dossier. Les résidences gardent leurs outils et leurs processus.",
+  "hp.res.eyebrow": "Vous gérez une résidence",
+  "hp.res.title": "Recevez des dossiers complets, pas des appels",
+  "hp.res.body":
+    "La console résidence rassemble les demandes, les documents et la liste d'attente. Chaque dossier arrive vérifié et classé par niveau d'urgence.",
+  "hp.res.cta": "Voir la console résidence",
+  "hp.res.t1.title": "Dossiers unifiés",
+  "hp.res.t1.body": "Chaque demande arrive complète, avec les pièces et le profil de soins.",
+  "hp.res.t2.title": "Liste d'attente",
+  "hp.res.t2.body": "Classement automatique par urgence, puis par ancienneté.",
+  "hp.res.t3.title": "Documents",
+  "hp.res.t3.body": "Relances cadrées et suivi des pièces manquantes au même endroit.",
+  "hp.res.t4.title": "Disponibilités",
+  "hp.res.t4.body": "Unités libres et délais affichés tels que transmis par votre équipe.",
 
-  "home.faq.title": "Questions fréquentes",
-  "home.faq.1.q": "Puis-je envoyer ma demande à plusieurs résidences ?",
-  "home.faq.1.a":
-    "Oui. Vous préparez la situation une fois, puis vous choisissez les résidences qui la reçoivent.",
-  "home.faq.2.q": "Dois-je avoir tous les documents avant de commencer ?",
-  "home.faq.2.a":
-    "Non. Commencez avec ce que vous avez. Vous pourrez ajouter des pièces plus tard et reprendre où vous vous êtes arrêté.",
-  "home.faq.3.q": "Puis-je inviter d’autres membres de la famille ?",
-  "home.faq.3.a":
-    "Oui. Chaque personne se connecte avec son propre compte. Vous n’avez pas à partager un mot de passe.",
-  "home.faq.4.q": "Un professionnel de la santé peut-il m’aider ?",
-  "home.faq.4.a":
-    "Oui. Un travailleur social ou un planificateur de congé peut préparer un dossier avec vous, selon les permissions que vous accordez.",
-  "home.faq.5.q": "Comment mes renseignements médicaux sont-ils protégés ?",
-  "home.faq.5.a":
-    "Vous contrôlez le partage. Les documents sensibles ne sont transmis qu’après votre consentement pour chaque demande.",
+  "hp.faq.title": "Questions fréquentes",
+  "hp.faq.1.q": "Est-ce que le service est payant pour les familles ?",
+  "hp.faq.1.a":
+    "Non. La création du dossier, l'accompagnement et l'envoi des demandes sont gratuits. Ce sont les résidences qui financent la plateforme.",
+  "hp.faq.2.q": "Qui voit les renseignements médicaux de mon proche ?",
+  "hp.faq.2.a":
+    "Uniquement les résidences auxquelles vous choisissez d'envoyer le dossier, et seulement à partir du moment où vous appuyez sur « envoyer ». Vous pouvez retirer une demande en tout temps.",
+  "hp.faq.3.q": "Faut-il connaître le niveau de soins requis ?",
+  "hp.faq.3.a":
+    "Non. L'accompagnatrice pose des questions concrètes sur le quotidien : déplacements, repas, médicaments, mémoire. Elle en déduit le profil de soins à inscrire au dossier.",
+  "hp.faq.4.q": "Et si nous avons déjà une évaluation du CLSC ?",
+  "hp.faq.4.a":
+    "Vous la déposez telle quelle. Les renseignements qu'elle contient sont repris dans le dossier et transmis aux résidences avec le reste.",
+  "hp.faq.5.q": "Peut-on faire une demande pour plusieurs résidences en même temps ?",
+  "hp.faq.5.a":
+    "Oui, c'est l'usage habituel. Vous sélectionnez autant de résidences que vous le souhaitez et suivez chaque réponse séparément.",
 
-  "home.closing.title": "Commencez quand vous êtes prêt. Arrêtez quand vous en avez besoin.",
-  "home.closing.ctaPrimary": "Commencer ma demande",
-  "home.closing.ctaSecondary": "Parler à l’équipe",
+  "hp.cta.title": "Prêt à commencer les démarches pour votre proche ?",
+  "hp.cta.lead":
+    "Créer un compte prend deux minutes. Vous pouvez tout arrêter et reprendre plus tard, et rien n'est transmis aux résidences sans votre accord.",
+  "hp.cta.button": "Déposer ma demande en ligne",
 
-  "home.footer.tagline":
-    "Une demande claire pour les résidences privées pour aînés au Québec.",
-  "home.footer.families": "Familles",
-  "home.footer.families.start": "Commencer une demande",
-  "home.footer.families.how": "Comment ça marche",
-  "home.footer.families.find": "Trouver une résidence",
-  "home.footer.orgs": "Organisations",
-  "home.footer.orgs.residences": "Pour les résidences",
-  "home.footer.orgs.pros": "Pour les professionnels",
-  "home.footer.orgs.demo": "Demander une démonstration",
-  "home.footer.brand": "HavenApply",
-  "home.footer.brand.security": "Sécurité",
-  "home.footer.brand.contact": "Contact",
-  "home.footer.brand.signIn": "Se connecter",
-  "home.footer.legal.privacy": "Confidentialité",
-  "home.footer.legal.terms": "Conditions",
-  "home.footer.legal.a11y": "Accessibilité",
-  "home.footer.copyright": "© {year} HavenApply",
+  "hp.footer.tagline": "Plateforme d'admissions en résidence",
+  "hp.footer.how": "Comment ça marche",
+  "hp.footer.residences": "Pour les résidences",
+  "hp.footer.faq": "Questions",
+  "hp.footer.privacy": "Confidentialité",
+  "hp.footer.collection": "Avis de collecte",
+  "hp.footer.terms": "Conditions",
 } as const;
 
 export type MessageKey = keyof typeof fr;

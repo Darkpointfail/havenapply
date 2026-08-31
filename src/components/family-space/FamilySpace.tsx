@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { ResidencesBrowse, ResidenceFiche } from "@/components/family-space/ResidencesPage";
 import { DossiersView } from "@/components/family-space/DossiersView";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   askAssistant,
   assistantOpener,
@@ -40,6 +41,7 @@ import {
   saveFamilyWizardDraft,
 } from "@/lib/family-wizard-draft";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
+import { useT } from "@/lib/i18n/locale";
 import "./family-space.css";
 
 const sourceSerif = Source_Serif_4({
@@ -56,12 +58,12 @@ const publicSans = Public_Sans({
   display: "swap",
 });
 
-const NAV: { id: FamilyView; label: string }[] = [
-  { id: "accueil", label: "Accueil" },
-  { id: "residences", label: "Résidences" },
-  { id: "dossier", label: "Dossiers" },
-  { id: "demandes", label: "Mes demandes" },
-  { id: "assistance", label: "Assistance" },
+const NAV: { id: FamilyView; labelKey: string }[] = [
+  { id: "accueil", labelKey: "Home" },
+  { id: "residences", labelKey: "Residences" },
+  { id: "dossier", labelKey: "Files" },
+  { id: "demandes", labelKey: "My requests" },
+  { id: "assistance", labelKey: "Assistance" },
 ];
 
 function StatusPill({
@@ -87,6 +89,7 @@ function StatusPill({
 export function FamilySpace() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useT();
   const { user, updateProfile, signOut } = useAuth();
   const {
     data,
@@ -650,7 +653,7 @@ export function FamilySpace() {
     <div className={`fs ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="fs-header sticky top-0 z-40 text-white">
         <div className="fs-header-inner">
-          <a href="/family/dashboard" className="fs-brand" aria-label="HavenApply — accueil">
+          <a href="/family/dashboard" className="fs-brand" aria-label={t("HavenApply home")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/favicon-48-v6.png"
@@ -662,7 +665,7 @@ export function FamilySpace() {
             <span className="fs-brand-name">HavenApply</span>
           </a>
 
-          <nav className="fs-nav-scroll fs-header-nav" aria-label="Navigation principale">
+          <nav className="fs-nav-scroll fs-header-nav" aria-label={t("Navigation menu")}>
             {NAV.map((item) => {
               const active =
                 view === item.id ||
@@ -675,12 +678,17 @@ export function FamilySpace() {
                   className={`fs-nav-item shrink-0 ${active ? "fs-nav-item-active" : ""}`}
                   aria-current={active ? "page" : undefined}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </button>
               );
             })}
           </nav>
 
+          <div className="fs-header-tools flex shrink-0 items-center gap-2">
+            <LanguageSwitcher
+              compact
+              className="!border-white/20 !bg-white/10 !text-white [&_button]:!text-white/75 [&_button[aria-pressed=true]]:!bg-white/20 [&_button[aria-pressed=true]]:!text-white"
+            />
           <div ref={accountRef} className="fs-header-account relative shrink-0">
             <button
               type="button"
@@ -851,6 +859,7 @@ export function FamilySpace() {
                 )}
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </header>

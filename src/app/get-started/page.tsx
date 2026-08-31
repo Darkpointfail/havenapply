@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { CollectionNotice } from "@/components/legal/CollectionNotice";
 import { collectionPath, getSignupTermsLabel, privacyPath, termsPath } from "@/content/legal";
-import { useLocale } from "@/lib/i18n/locale";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useId, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { AuthAlert } from "@/components/auth/AuthForm";
 import { RedirectIfAuthenticated } from "@/components/auth/RequireAuth";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useAuth } from "@/lib/auth";
 import type { SignupRole } from "@/lib/auth-store";
+import { useLocale, useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import "./get-started.css";
 
@@ -124,6 +125,7 @@ function ChipGroup({
 function GetStartedInner() {
   const { signUp, ready } = useAuth();
   const { locale } = useLocale();
+  const t = useT();
   const termsLabel = getSignupTermsLabel(locale);
   const router = useRouter();
   const params = useSearchParams();
@@ -207,12 +209,22 @@ function GetStartedInner() {
       <header className="gs-header">
         <div className="gs-header-inner">
           <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
-          <p className="gs-header-cta text-[14px] text-white/75">
-            <span className="gs-header-cta-lead">Vous avez déjà un compte ? </span>
-            <Link href="/sign-in" className="font-semibold no-underline" style={{ color: "var(--gs-green-light)" }}>
-              Se connecter
-            </Link>
-          </p>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher
+              compact
+              className="!border-white/20 !bg-white/10 !text-white [&_button]:!text-white/75 [&_button[aria-pressed=true]]:!bg-white/20 [&_button[aria-pressed=true]]:!text-white"
+            />
+            <p className="gs-header-cta text-[14px] text-white/75">
+              <span className="gs-header-cta-lead">{t("Already have an account?")} </span>
+              <Link
+                href="/sign-in"
+                className="font-semibold no-underline"
+                style={{ color: "var(--gs-green-light)" }}
+              >
+                {t("Log in")}
+              </Link>
+            </p>
+          </div>
         </div>
       </header>
 

@@ -1052,7 +1052,7 @@ export default function FamilyPrivacyHub() {
                 </fieldset>
 
                 <label style={{ display: "block", marginTop: 12 }}>
-                  <span style={metaStyle}>Motif (optionnel)</span>
+                  <span style={metaStyle}>{t("Reason (optional)")}</span>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
@@ -1063,7 +1063,8 @@ export default function FamilyPrivacyHub() {
                 </label>
                 <label style={{ display: "block", marginTop: 12 }}>
                   <span style={metaStyle}>
-                    Tapez <strong>{expectedPhrase}</strong> pour confirmer
+                    {t("Please type the following phrase to confirm:")}{" "}
+                    <strong>{expectedPhrase}</strong>
                   </span>
                   <input
                     value={confirmPhrase}
@@ -1080,7 +1081,7 @@ export default function FamilyPrivacyHub() {
                     disabled={busy || confirmPhrase !== expectedPhrase}
                     onClick={() => void onExecuteDelete()}
                   >
-                    {busy ? "Traitement…" : "Envoyer la demande de suppression"}
+                    {busy ? t("Processing…") : t("Send deletion request")}
                   </button>
                   <button
                     type="button"

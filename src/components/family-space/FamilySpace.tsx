@@ -1647,7 +1647,7 @@ function Demandes({
                       ) : null}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <StatusPill tone="green">Visite planifiée</StatusPill>
+                      <StatusPill tone="green">{t("Visit scheduled")}</StatusPill>
                       <p className="fs-serif mt-3 text-[18px] leading-snug">{app.residenceName}</p>
                       <p className="mt-1 text-[14px] text-[var(--fs-ink-muted)]">
                         {visit.place || `${app.city} · ${app.unit}`}

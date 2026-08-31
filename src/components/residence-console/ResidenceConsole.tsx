@@ -10,7 +10,7 @@ import {
   communityAppToDemande,
   communityAppsToWaitlist,
 } from "@/lib/fr-portal-dynamic";
-import { useLocale, useT } from "@/lib/i18n/locale";
+import { useLocale, useT, type Locale } from "@/lib/i18n/locale";
 import {
   DASHBOARD_FUNNEL,
   DEMANDES,
@@ -63,7 +63,7 @@ const DEMANDE_STATUS_EN: Record<DemandeStatus, string> = {
   "Liste d'attente": "Waitlist",
 };
 
-function todayLabel(locale: string) {
+function todayLabel(locale: Locale) {
   const raw = new Date().toLocaleDateString(locale === "en" ? "en-CA" : "fr-CA", {
     weekday: "long",
     day: "numeric",
@@ -79,6 +79,24 @@ function initialsFrom(name: string) {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
+
+/** Contact relationship terms found in the mock data; falls back to the raw value. */
+const RELATION_EN: Record<string, string> = {
+  fille: "Daughter",
+  fils: "Son",
+};
+
+function relationLabel(t: (key: string) => string, lien: string) {
+  const key = RELATION_EN[lien];
+  return key ? t(key) : lien;
+}
+
+/** Urgency levels are French enum values kept for data compatibility; map to English for display. */
+const URGENCE_EN: Record<UrgenceLevel, string> = {
+  Urgente: "Urgent",
+  Élevée: "High",
+  Standard: "Standard",
+};
 
 function StatusPill({ status }: { status: DemandeStatus }) {
   const t = useT();
@@ -450,7 +468,7 @@ export function ResidenceConsole() {
 
   const titles: Record<ConsoleView, { title: string; subtitle: string }> = {
     demandes: {
-      title: t("Applications"),
+      title: t("Requests"),
       subtitle: t("Admissions queue · files sent by families"),
     },
     documents: {
@@ -548,7 +566,7 @@ export function ResidenceConsole() {
 
         <div className="mt-auto border-t border-white/10 px-5 py-5">
           <p className="rc-label" style={{ color: "#8E9B96" }}>
-            Établissement
+            {t("Residence")}
           </p>
           <p className="mt-1.5 text-[14px] font-medium leading-snug text-white">
             {user?.organization?.trim() || RESIDENCE.name}
@@ -697,7 +715,9 @@ function DemandesView({
             })}
           </div>
           <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
-            {filtered.length} demande{filtered.length > 1 ? "s" : ""}
+            {t(filtered.length === 1 ? "{count} application" : "{count} applications", {
+              count: filtered.length,
+            })}
           </p>
         </div>
 
@@ -705,11 +725,11 @@ function DemandesView({
           className="rc-table-head rc-label"
           style={{ gridTemplateColumns: "2.1fr 1.3fr 1.2fr 1fr 1.1fr 0.7fr" }}
         >
-          <span>Futur résident</span>
-          <span>Unité souhaitée</span>
-          <span>Statut</span>
-          <span>Dossier</span>
-          <span>Reçue le</span>
+          <span>{t("Future resident")}</span>
+          <span>{t("Desired unit")}</span>
+          <span>{t("Status")}</span>
+          <span>{t("File")}</span>
+          <span>{t("Received on")}</span>
           <span />
         </div>
 
@@ -728,7 +748,7 @@ function DemandesView({
             <div>
               <p className="text-[15.5px] font-semibold text-[var(--rc-ink)]">{d.nom}</p>
               <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
-                {d.age} ans · {d.contact}, {d.contactLien}
+                {t("{age} yrs", { age: d.age })} · {d.contact}, {relationLabel(t, d.contactLien)}
               </p>
               {d.publicRef ? (
                 <p className="mt-1 font-mono text-[12px] tracking-wide text-[var(--rc-ink-faint)]">
@@ -748,12 +768,14 @@ function DemandesView({
               }}
             >
               {d.piecesManquantes > 0
-                ? `${d.piecesManquantes} pièce${d.piecesManquantes > 1 ? "s" : ""} manquante${d.piecesManquantes > 1 ? "s" : ""}`
-                : "Complet"}
+                ? t(d.piecesManquantes === 1 ? "{count} missing document" : "{count} missing documents", {
+                    count: d.piecesManquantes,
+                  })
+                : t("Complete")}
             </p>
             <p className="text-[14px] text-[var(--rc-ink-muted)]">{d.recueLe}</p>
             <p className="text-right text-[14px] font-semibold text-[var(--rc-green)]">
-              Ouvrir
+              {t("View")}
             </p>
           </div>
         ))}
@@ -789,6 +811,7 @@ function DossierView({
   photoUrl: string | null;
   onPhoto: (f: File | null) => void;
 }) {
+  const t = useT();
   const docs = docsForDemande(demande.piecesManquantes);
   const received = docs.filter((d) => d.received).length;
   const step = progressIndexForStatus(demande.statut);
@@ -800,7 +823,7 @@ function DossierView({
         onClick={onBack}
         className="w-fit text-[14px] font-semibold text-[var(--rc-green)] hover:text-[var(--rc-green-deep)]"
       >
-        ← Retour aux demandes
+        {t("← Back to applications")}
       </button>
 
       {placed ? (
@@ -812,7 +835,9 @@ function DossierView({
             color: "var(--rc-green-deep)",
           }}
         >
-          Placé en liste d&apos;attente · urgence {placed.toLowerCase()}
+          {t("Placed on the waitlist · {urgency} urgency", {
+            urgency: t(URGENCE_EN[placed]).toLowerCase(),
+          })}
         </div>
       ) : null}
 
@@ -829,7 +854,7 @@ function DossierView({
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-3 text-center">
                   <span className="text-[12px] text-[var(--rc-ink-faint)]">
-                    Déposer une photo
+                    {t("Upload a photo")}
                   </span>
                 </div>
               )}
@@ -842,7 +867,7 @@ function DossierView({
             />
           </label>
           <p className="mt-2 max-w-[132px] text-[12px] text-[var(--rc-ink-faint)]">
-            Photo transmise par la famille
+            {t("Photo submitted by the family")}
           </p>
         </div>
 
@@ -852,21 +877,25 @@ function DossierView({
             <StatusPill status={demande.statut} />
           </div>
           <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
-            {demande.age} ans · demande transmise par {demande.contact}, {demande.contactLien}
+            {t("{age} yrs", { age: demande.age })} · {t("application submitted by")}{" "}
+            {demande.contact}, {relationLabel(t, demande.contactLien)}
           </p>
           {demande.publicRef ? (
             <p className="mt-2 font-mono text-[13.5px] tracking-wide text-[var(--rc-ink-muted)]">
-              Réf. {demande.publicRef}
+              {t("Ref. {ref}", { ref: demande.publicRef })}
             </p>
           ) : null}
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
             {[
-              ["Unité souhaitée", demande.unite],
-              ["Emménagement souhaité", demande.emmenagement],
-              ["Personne-ressource", `${demande.contact} (${demande.contactLien})`],
-              ["Reçue le", demande.recueLe],
+              [t("Desired unit"), demande.unite],
+              [t("Desired move-in"), demande.emmenagement],
+              [
+                t("Contact person"),
+                `${demande.contact} (${relationLabel(t, demande.contactLien)})`,
+              ],
+              [t("Received on"), demande.recueLe],
               ...(demande.publicRef
-                ? ([["Référence Haven", demande.publicRef]] as [string, string][])
+                ? ([[t("Haven reference"), demande.publicRef]] as [string, string][])
                 : []),
             ].map(([label, value]) => (
               <div key={label}>
@@ -886,21 +915,22 @@ function DossierView({
                 onClick={() => setAccepting(true)}
                 disabled={!!placed || demande.statut === "Liste d'attente"}
               >
-                Accepter la demande
+                {t("Accept the application")}
               </button>
               <button type="button" className="rc-btn rc-btn-outline w-full">
-                Planifier une visite
+                {t("Schedule a visit")}
               </button>
               <button type="button" className="rc-btn rc-btn-outline w-full">
-                Exporter le dossier
+                {t("Export the file")}
               </button>
             </>
           ) : (
             <div className="rounded-[10px] border border-[var(--rc-border)] bg-[var(--rc-subtle)] p-4">
-              <p className="rc-serif text-[19px]">Niveau d&apos;urgence</p>
+              <p className="rc-serif text-[19px]">{t("Urgency level")}</p>
               <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-                Le dossier accepté est classé automatiquement dans la liste d&apos;attente selon
-                ce niveau.
+                {t(
+                  "The accepted file is automatically ranked on the waitlist according to this level.",
+                )}
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 <button
@@ -908,28 +938,28 @@ function DossierView({
                   className="rc-btn rc-btn-terra w-full"
                   onClick={() => onAccept("Urgente")}
                 >
-                  Urgente
+                  {t(URGENCE_EN.Urgente)}
                 </button>
                 <button
                   type="button"
                   className="rc-btn rc-btn-primary w-full"
                   onClick={() => onAccept("Élevée")}
                 >
-                  Élevée
+                  {t(URGENCE_EN["Élevée"])}
                 </button>
                 <button
                   type="button"
                   className="rc-btn rc-btn-ghost w-full"
                   onClick={() => onAccept("Standard")}
                 >
-                  Standard
+                  {t(URGENCE_EN.Standard)}
                 </button>
                 <button
                   type="button"
                   className="rc-btn rc-btn-outline w-full"
                   onClick={() => setAccepting(false)}
                 >
-                  Annuler
+                  {t("Cancel")}
                 </button>
               </div>
             </div>
@@ -940,15 +970,15 @@ function DossierView({
       <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
         <div className="flex flex-col gap-5">
           <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">Renseignements du futur résident</h3>
+            <h3 className="rc-serif text-[19px]">{t("Future resident information")}</h3>
             <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
               {[
-                ["Date de naissance", demande.dateNaissance],
-                ["Adresse actuelle", demande.adresse],
-                ["Niveau d'autonomie déclaré", demande.autonomie],
-                ["Services requis", demande.services],
-                ["Budget mensuel indiqué", demande.budget],
-                ["Provenance de la demande", demande.provenance],
+                [t("Date of birth"), demande.dateNaissance],
+                [t("Current address"), demande.adresse],
+                [t("Declared autonomy level"), demande.autonomie],
+                [t("Services required"), demande.services],
+                [t("Stated monthly budget"), demande.budget],
+                [t("Application source"), demande.provenance],
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="rc-label">{label}</p>
@@ -961,13 +991,16 @@ function DossierView({
           <div className="rc-card p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="rc-serif text-[19px]">Documents</h3>
+                <h3 className="rc-serif text-[19px]">{t("Documents")}</h3>
                 <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
-                  {received} pièces reçues sur {REQUIRED_DOCS.length}
+                  {t("{received} of {total} documents received", {
+                    received,
+                    total: REQUIRED_DOCS.length,
+                  })}
                 </p>
               </div>
               <button type="button" className="rc-btn rc-btn-outline">
-                Relancer la famille
+                {t("Follow up with the family")}
               </button>
             </div>
             <ul className="mt-5 divide-y divide-[var(--rc-border-faint)]">
@@ -980,7 +1013,7 @@ function DossierView({
                         background: doc.received ? "var(--rc-green)" : "var(--rc-terra)",
                       }}
                     />
-                    <span className="text-[14.5px] font-medium">{doc.name}</span>
+                    <span className="text-[14.5px] font-medium">{t(doc.name)}</span>
                   </div>
                   <span
                     className="text-[13px] font-semibold"
@@ -988,7 +1021,7 @@ function DossierView({
                       color: doc.received ? "var(--rc-green)" : "var(--rc-terra)",
                     }}
                   >
-                    {doc.received ? "Reçu" : "En attente"}
+                    {doc.received ? t("Received") : t("Pending")}
                   </span>
                 </li>
               ))}
@@ -996,7 +1029,7 @@ function DossierView({
           </div>
 
           <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">Messages avec la famille</h3>
+            <h3 className="rc-serif text-[19px]">{t("Messages with the family")}</h3>
             <div className="mt-5 space-y-4">
               {messages.map((m) => (
                 <div
@@ -1030,7 +1063,7 @@ function DossierView({
             <div className="mt-5 flex gap-2">
               <input
                 className="rc-input flex-1"
-                placeholder="Écrire un message sécurisé…"
+                placeholder={t("Write a secure message…")}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => {
@@ -1038,7 +1071,7 @@ function DossierView({
                 }}
               />
               <button type="button" className="rc-btn rc-btn-primary" onClick={onSend}>
-                Envoyer
+                {t("Send")}
               </button>
             </div>
           </div>
@@ -1046,7 +1079,7 @@ function DossierView({
 
         <div className="flex flex-col gap-5">
           <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">Avancement</h3>
+            <h3 className="rc-serif text-[19px]">{t("Progress")}</h3>
             <ol className="relative mt-5 space-y-0">
               {PROGRESS_STEPS.map((label, i) => {
                 const done = i <= step;
@@ -1070,7 +1103,7 @@ function DossierView({
                       className="text-[14.5px] font-medium"
                       style={{ color: done ? "var(--rc-ink)" : "var(--rc-ink-faint)" }}
                     >
-                      {label}
+                      {t(label)}
                     </p>
                   </li>
                 );
@@ -1079,21 +1112,21 @@ function DossierView({
           </div>
 
           <div className="rc-card bg-[var(--rc-subtle)] p-6">
-            <h3 className="rc-serif text-[19px]">Assistance</h3>
-            <p className="rc-label mt-4">Résumé du dossier</p>
+            <h3 className="rc-serif text-[19px]">{t("Assistance")}</h3>
+            <p className="rc-label mt-4">{t("File summary")}</p>
             <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
               {demande.resumeIa}
             </p>
             <button type="button" className="rc-btn rc-btn-outline mt-4 w-full bg-white">
-              Vérifier la conformité du dossier
+              {t("Check file compliance")}
             </button>
           </div>
 
           <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">Notes internes</h3>
+            <h3 className="rc-serif text-[19px]">{t("Internal notes")}</h3>
             <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
               {demande.noteInterne ||
-                "Aucune note interne pour le moment.\nAjoutée par C. Mercier · 25 août"}
+                t("No internal notes yet.\nAdded by C. Mercier · August 25")}
             </p>
           </div>
         </div>
@@ -1103,6 +1136,7 @@ function DossierView({
 }
 
 function DocumentsView({ demandes }: { demandes: Demande[] }) {
+  const t = useT();
   const rows = demandes
     .filter((d) => d.piecesManquantes > 0)
     .flatMap((d) => {
@@ -1120,19 +1154,19 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
     <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
       <div className="rc-card overflow-hidden">
         <div className="border-b border-[var(--rc-border)] px-5 py-4">
-          <h3 className="rc-serif text-[19px]">Pièces en attente</h3>
+          <h3 className="rc-serif text-[19px]">{t("Documents pending")}</h3>
           <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
-            12 pièces manquantes sur 9 dossiers actifs
+            {t("12 missing documents across 9 active files")}
           </p>
         </div>
         <div
           className="rc-table-head rc-label"
           style={{ gridTemplateColumns: "1.4fr 1.5fr 1fr 1fr" }}
         >
-          <span>Dossier</span>
-          <span>Pièce demandée</span>
-          <span>Demandée le</span>
-          <span>Relances</span>
+          <span>{t("File")}</span>
+          <span>{t("Document requested")}</span>
+          <span>{t("Requested on")}</span>
+          <span>{t("Follow-ups")}</span>
         </div>
         {rows.map((r) => (
           <div
@@ -1141,7 +1175,7 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
             style={{ gridTemplateColumns: "1.4fr 1.5fr 1fr 1fr", cursor: "default" }}
           >
             <p className="text-[14.5px] font-semibold">{r.dossier}</p>
-            <p className="text-[14px]">{r.piece}</p>
+            <p className="text-[14px]">{t(r.piece)}</p>
             <p className="text-[14px] text-[var(--rc-ink-muted)]">{r.date}</p>
             <p
               className="text-[14px] font-semibold"
@@ -1155,17 +1189,18 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
 
       <div className="flex flex-col gap-5">
         <div className="rc-card p-6">
-          <h3 className="rc-serif text-[19px]">Relances automatisées</h3>
+          <h3 className="rc-serif text-[19px]">{t("Automated follow-ups")}</h3>
           <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-            Les familles reçoivent des rappels sécurisés selon la cadence définie par
-            l&apos;établissement, sans intervention manuelle.
+            {t(
+              "Families receive secure reminders on a schedule set by the facility, with no manual work.",
+            )}
           </p>
           <dl className="mt-5 divide-y divide-[var(--rc-border-faint)]">
             {[
-              ["Premier rappel", "3 jours après la demande"],
-              ["Rappels suivants", "tous les 5 jours"],
-              ["Arrêt après", "4 rappels sans réponse"],
-              ["Avis à l'équipe", "après 10 jours d'inactivité"],
+              [t("First reminder"), t("3 days after the request")],
+              [t("Following reminders"), t("every 5 days")],
+              [t("Stops after"), t("4 reminders with no response")],
+              [t("Team alert"), t("after 10 days of inactivity")],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-4 py-3">
                 <dt className="text-[13.5px] text-[var(--rc-ink-muted)]">{k}</dt>
@@ -1176,7 +1211,7 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
         </div>
 
         <div className="rc-card p-6">
-          <h3 className="rc-serif text-[19px]">Pièces exigées par l&apos;établissement</h3>
+          <h3 className="rc-serif text-[19px]">{t("Documents required by the facility")}</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {REQUIRED_DOCS.map((doc) => (
               <span
@@ -1188,7 +1223,7 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
                   borderColor: "var(--rc-border)",
                 }}
               >
-                {doc}
+                {t(doc)}
               </span>
             ))}
           </div>
@@ -1198,30 +1233,40 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
   );
 }
 
+function formatVisitTime(time: string, locale: Locale) {
+  const [h, m] = time.split(":").map(Number);
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString(locale === "en" ? "en-CA" : "fr-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function VisitesView() {
+  const t = useT();
+  const { locale } = useLocale();
   const days = [
-    { label: "Lundi 31", idx: 0 },
-    { label: "Mardi 1", idx: 1 },
-    { label: "Mercredi 2", idx: 2 },
-    { label: "Jeudi 3", idx: 3 },
-    { label: "Vendredi 4", idx: 4 },
+    { day: "Monday", date: 31, idx: 0 },
+    { day: "Tuesday", date: 1, idx: 1 },
+    { day: "Wednesday", date: 2, idx: 2 },
+    { day: "Thursday", date: 3, idx: 3 },
+    { day: "Friday", date: 4, idx: 4 },
   ];
 
   return (
     <div className="flex flex-col gap-5">
       <div className="rc-card flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div>
-          <p className="rc-serif text-[19px]">Semaine du 31 août au 4 septembre</p>
+          <p className="rc-serif text-[19px]">{t("Week of August 31 to September 4")}</p>
           <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
-            6 visites planifiées · 2 créneaux libres
+            {t("6 visits scheduled · 2 open slots")}
           </p>
         </div>
         <div className="flex gap-2">
           <button type="button" className="rc-btn rc-btn-outline">
-            Semaine précédente
+            {t("Previous week")}
           </button>
           <button type="button" className="rc-btn rc-btn-outline">
-            Semaine suivante
+            {t("Next week")}
           </button>
         </div>
       </div>
@@ -1231,10 +1276,12 @@ function VisitesView() {
           const slots = VISITS.filter((v) => v.day === day.idx);
           return (
             <div
-              key={day.label}
+              key={day.day}
               className="rc-card flex min-h-[330px] flex-col p-3"
             >
-              <p className="rc-label mb-3 px-1">{day.label}</p>
+              <p className="rc-label mb-3 px-1">
+                {t(day.day)} {day.date}
+              </p>
               <div className="flex flex-1 flex-col gap-2.5">
                 {slots.map((s) => (
                   <div
@@ -1246,9 +1293,13 @@ function VisitesView() {
                       }`,
                     }}
                   >
-                    <p className="text-[13px] text-[var(--rc-ink-muted)]">{s.time}</p>
+                    <p className="text-[13px] text-[var(--rc-ink-muted)]">
+                      {formatVisitTime(s.time, locale)}
+                    </p>
                     <p className="mt-0.5 text-[14.5px] font-semibold">{s.name}</p>
-                    <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">{s.unit}</p>
+                    <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
+                      {s.kind === "suivi" ? t("Follow-up") : s.unit}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1269,6 +1320,7 @@ function AttenteView({
   setWaitlist: React.Dispatch<React.SetStateAction<WaitlistEntry[]>>;
   onRemove?: (id: string) => void;
 }) {
+  const t = useT();
   const urgentCount = waitlist.filter((w) => w.urgence === "Urgente").length;
 
   const updateUrgence = (id: string, urgence: UrgenceLevel) => {
@@ -1287,10 +1339,11 @@ function AttenteView({
       <div className="rc-card overflow-hidden">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
           <div>
-            <h3 className="rc-serif text-[19px]">Liste d&apos;attente</h3>
+            <h3 className="rc-serif text-[19px]">{t("Waitlist")}</h3>
             <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
-              {waitlist.length} personnes en attente, classées par niveau d&apos;urgence puis par
-              ancienneté
+              {t("{count} people waiting, ranked by urgency level then by seniority", {
+                count: waitlist.length,
+              })}
             </p>
           </div>
           {urgentCount > 0 ? (
@@ -1298,7 +1351,9 @@ function AttenteView({
               className="rc-pill shrink-0"
               style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}
             >
-              {urgentCount} cas urgent{urgentCount > 1 ? "s" : ""}
+              {t(urgentCount === 1 ? "{count} urgent case" : "{count} urgent cases", {
+                count: urgentCount,
+              })}
             </span>
           ) : null}
         </div>
@@ -1307,12 +1362,12 @@ function AttenteView({
           className="rc-table-head rc-label"
           style={{ gridTemplateColumns: "0.4fr 1.5fr 1.2fr 1fr 1.2fr 0.8fr 0.6fr" }}
         >
-          <span>Rang</span>
-          <span>Futur résident</span>
-          <span>Unité souhaitée</span>
-          <span>En attente</span>
-          <span>Urgence</span>
-          <span>Dossier</span>
+          <span>{t("Rank")}</span>
+          <span>{t("Future resident")}</span>
+          <span>{t("Desired unit")}</span>
+          <span>{t("Waiting")}</span>
+          <span>{t("Urgency")}</span>
+          <span>{t("File")}</span>
           <span />
         </div>
 
@@ -1328,10 +1383,14 @@ function AttenteView({
             <p className="rc-serif text-[18px] text-[var(--rc-green)]">{i + 1}</p>
             <div>
               <p className="text-[14.5px] font-semibold">{w.nom}</p>
-              <p className="text-[12.5px] text-[var(--rc-ink-muted)]">{w.age} ans</p>
+              <p className="text-[12.5px] text-[var(--rc-ink-muted)]">
+                {t("{age} yrs", { age: w.age })}
+              </p>
             </div>
             <p className="text-[14px]">{w.unite}</p>
-            <p className="text-[14px] text-[var(--rc-ink-muted)]">{w.joursAttente} j</p>
+            <p className="text-[14px] text-[var(--rc-ink-muted)]">
+              {w.joursAttente} {t("d")}
+            </p>
             <select
               className="rc-pill h-8 cursor-pointer border border-[var(--rc-border)] bg-[var(--rc-subtle)] px-2 text-[12.5px] font-semibold outline-none"
               value={w.urgence}
@@ -1345,29 +1404,29 @@ function AttenteView({
                       : "var(--rc-ink-muted)",
               }}
             >
-              <option value="Urgente">Urgente</option>
-              <option value="Élevée">Élevée</option>
-              <option value="Standard">Standard</option>
+              <option value="Urgente">{t(URGENCE_EN.Urgente)}</option>
+              <option value="Élevée">{t(URGENCE_EN["Élevée"])}</option>
+              <option value="Standard">{t(URGENCE_EN.Standard)}</option>
             </select>
             <p
               className="text-[13.5px] font-medium"
               style={{ color: w.dossierComplet ? "var(--rc-green)" : "var(--rc-terra)" }}
             >
-              {w.dossierComplet ? "Complet" : "Incomplet"}
+              {w.dossierComplet ? t("Complete") : t("Incomplete")}
             </p>
             <button
               type="button"
               className="text-right text-[13.5px] font-semibold text-[var(--rc-terra)]"
               onClick={() => remove(w.id)}
             >
-              Retirer
+              {t("Remove")}
             </button>
           </div>
         ))}
       </div>
 
       <div className="rc-card p-6">
-        <h3 className="rc-serif text-[19px]">Disponibilités par type d&apos;unité</h3>
+        <h3 className="rc-serif text-[19px]">{t("Availability by unit type")}</h3>
         <ul className="mt-5 divide-y divide-[var(--rc-border-faint)]">
           {UNIT_AVAILABILITY.map((u) => (
             <li key={u.type} className="flex items-baseline justify-between gap-4 py-3.5">
@@ -1390,19 +1449,24 @@ function AttenteView({
 }
 
 function TableauView() {
+  const t = useT();
   const max = Math.max(...WEEKLY_DEMANDES);
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-4 gap-5">
-        <StatCard label="Demandes reçues (90 j)" value={142} context="Toutes provenances" />
-        <StatCard label="Taux de conversion" value="24 %" context="Admissions confirmées" />
-        <StatCard label="Délai première réponse" value="6 h" context="Moyenne équipe" />
-        <StatCard label="Taux d'occupation" value="94 %" context="Unités louées" />
+        <StatCard
+          label={t("Applications received (90 days)")}
+          value={142}
+          context={t("All sources")}
+        />
+        <StatCard label={t("Conversion rate")} value="24 %" context={t("Confirmed admissions")} />
+        <StatCard label={t("First response time")} value="6 h" context={t("Team average")} />
+        <StatCard label={t("Occupancy rate")} value="94 %" context={t("Units leased")} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="rc-card p-6">
-          <h3 className="rc-serif text-[19px]">Demandes reçues par semaine</h3>
+          <h3 className="rc-serif text-[19px]">{t("Applications received per week")}</h3>
           <div className="mt-8 flex h-[190px] items-end gap-2">
             {WEEKLY_DEMANDES.map((v, i) => {
               const h = Math.round((v / max) * 160);
@@ -1417,7 +1481,10 @@ function TableauView() {
                       background: last ? "var(--rc-green)" : "#C2DBD4",
                     }}
                   />
-                  <span className="text-[11px] text-[var(--rc-ink-faint)]">S{24 + i}</span>
+                  <span className="text-[11px] text-[var(--rc-ink-faint)]">
+                    {t("W")}
+                    {24 + i}
+                  </span>
                 </div>
               );
             })}
@@ -1425,12 +1492,12 @@ function TableauView() {
         </div>
 
         <div className="rc-card p-6">
-          <h3 className="rc-serif text-[19px]">Parcours des demandes</h3>
+          <h3 className="rc-serif text-[19px]">{t("Application funnel")}</h3>
           <ul className="mt-6 space-y-4">
             {DASHBOARD_FUNNEL.map((f) => (
               <li key={f.label}>
                 <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                  <span className="text-[14px] font-medium">{f.label}</span>
+                  <span className="text-[14px] font-medium">{t(f.label)}</span>
                   <span className="text-[14px] font-semibold tabular-nums">{f.value}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--rc-subtle)]">
@@ -1443,8 +1510,9 @@ function TableauView() {
             ))}
           </ul>
           <p className="mt-5 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-            Sur 142 demandes reçues, 24 % aboutissent à une admission confirmée. Le goulot
-            principal se situe entre dossiers complétés et visites réalisées.
+            {t(
+              "Out of 142 applications received, 24% result in a confirmed admission. The main bottleneck is between completed files and completed visits.",
+            )}
           </p>
         </div>
       </div>
@@ -1453,6 +1521,7 @@ function TableauView() {
 }
 
 function EtablissementView() {
+  const t = useT();
   const { workspace, updateProfile, can } = useCommunityPortal();
   const profile = workspace?.profile;
   const accepting = profile?.acceptingApplications !== false;
@@ -1484,12 +1553,12 @@ function EtablissementView() {
         >
           <div>
             <p className="text-[14px] font-medium text-[var(--rc-ink)]">
-              Nouvelles demandes
+              {t("New applications")}
             </p>
             <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
               {accepting
-                ? "Les familles peuvent envoyer de nouveaux dossiers. Cliquez pour fermer."
-                : "L'intake est fermé. Les dossiers déjà reçus restent actifs. Cliquez pour rouvrir."}
+                ? t("Families can submit new files. Click to close.")
+                : t("Intake is closed. Files already received remain active. Click to reopen.")}
             </p>
           </div>
           <span className="flex items-center gap-3">
@@ -1497,7 +1566,7 @@ function EtablissementView() {
               className="text-[13px] font-semibold"
               style={{ color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)" }}
             >
-              {accepting ? "Ouvertes" : "Fermées"}
+              {accepting ? t("Open") : t("Closed")}
             </span>
             <span
               className="relative h-7 w-12 shrink-0 rounded-full transition"
@@ -1517,10 +1586,10 @@ function EtablissementView() {
       <div className="rc-card overflow-hidden">
         <div className="flex items-center justify-between gap-4 border-b border-[var(--rc-border)] px-5 py-4">
           <p className="text-[14px] font-medium text-[var(--rc-ink-muted)]">
-            Aperçu de la page vue par les familles
+            {t("Preview of the page seen by families")}
           </p>
           <a href="/community/profile" className="rc-btn rc-btn-outline">
-            Modifier la page
+            {t("Edit the page")}
           </a>
         </div>
 
@@ -1535,7 +1604,7 @@ function EtablissementView() {
             className="rounded-[7px] border border-[var(--rc-border)] bg-white px-3 py-1.5 text-[12px] text-[var(--rc-ink-muted)]"
             style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
           >
-            photo de la résidence — façade
+            {t("residence photo — front view")}
           </span>
         </div>
 
@@ -1550,11 +1619,11 @@ function EtablissementView() {
                 color: accepting ? "var(--rc-green-deep)" : "var(--rc-ink-muted)",
               }}
             >
-              {accepting ? "Demandes ouvertes" : "Demandes fermées"}
+              {accepting ? t("Applications open") : t("Applications closed")}
             </span>
           </div>
           <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
-            {city} · {RESIDENCE.units} unités · {RESIDENCE.type}
+            {city} · {RESIDENCE.units} {t("units")} · {t(RESIDENCE.type)}
           </p>
           <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-[var(--rc-ink-muted)]">
             {description}
@@ -1566,10 +1635,10 @@ function EtablissementView() {
                 className="rc-table-head rc-label"
                 style={{ gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr" }}
               >
-                <span>Type</span>
-                <span>Superficie</span>
-                <span>Prix indicatif</span>
-                <span>Disponibilité</span>
+                <span>{t("Type")}</span>
+                <span>{t("Size")}</span>
+                <span>{t("Indicative price")}</span>
+                <span>{t("Availability")}</span>
               </div>
               {UNIT_PRICING.map((u) => (
                 <div
@@ -1590,7 +1659,7 @@ function EtablissementView() {
 
             <div className="flex flex-col gap-5">
               <div>
-                <p className="rc-label mb-3">Services inclus</p>
+                <p className="rc-label mb-3">{t("Services included")}</p>
                 <div className="flex flex-wrap gap-2">
                   {SERVICES_INCLUS.map((s) => (
                     <span
@@ -1602,7 +1671,7 @@ function EtablissementView() {
                         color: "var(--rc-ink)",
                       }}
                     >
-                      {s}
+                      {t(s)}
                     </span>
                   ))}
                 </div>
@@ -1613,11 +1682,11 @@ function EtablissementView() {
                 style={{ background: "var(--rc-black)" }}
               >
                 <p className="rc-label" style={{ color: "#8E9B96" }}>
-                  Depuis cette page
+                  {t("From this page")}
                 </p>
                 <p className="rc-serif mt-3 text-[38px] leading-none">38</p>
                 <p className="mt-2 text-[13.5px] text-[#C5D2CD]">
-                  demandes déposées au cours des 90 derniers jours
+                  {t("applications submitted over the last 90 days")}
                 </p>
               </div>
             </div>

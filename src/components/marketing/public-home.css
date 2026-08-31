@@ -210,10 +210,19 @@
   .hp-grid-3 {
     grid-template-columns: 1fr !important;
   }
-  .hp-proof {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 20px !important;
+  .hp-proof-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .hp-proof-item {
+    border-right: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--hp-border);
+  }
+  .hp-proof-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 }
 

@@ -8,6 +8,7 @@ import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { Logo } from "@/components/brand/Logo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { askAssistant, type AssistantTurn } from "@/data/assistant";
+import { RPA_SOURCE } from "@/data/rpa-quebec";
 import { collectionPath, privacyPath, termsPath } from "@/content/legal";
 import { useAuth, homeForUser } from "@/lib/auth";
 import { useLocale } from "@/lib/i18n/locale";
@@ -37,7 +38,7 @@ const NAV = [
 const FAQ = [
   {
     q: "Est-ce que le service est payant pour les familles ?",
-    a: "Non. La création du dossier, l'accompagnement et l'envoi des demandes sont gratuits. Ce sont les résidences partenaires qui financent la plateforme.",
+    a: "Non. La création du dossier, l'accompagnement et l'envoi des demandes sont gratuits. Ce sont les résidences qui financent la plateforme.",
   },
   {
     q: "Qui voit les renseignements médicaux de mon proche ?",
@@ -446,22 +447,44 @@ export function PublicHomePage() {
         </div>
       </section>
 
-      {/* 3. Proof band */}
-      <section className="border-b border-[var(--hp-border)] bg-white">
-        <div className="hp-wrap hp-proof flex flex-wrap items-center gap-11 py-7">
-          <p className="hp-muted max-w-[220px]">
+      {/* 3. Proof — figures */}
+      <section
+        aria-label="HavenApply en chiffres"
+        className="hp-proof-band border-y border-[var(--hp-border)]"
+        style={{ background: "var(--hp-wash)" }}
+      >
+        <div className="hp-wrap py-12 md:py-14">
+          <p className="hp-serif max-w-xl text-[22px] leading-snug text-[var(--hp-ink)] md:text-[24px]">
             Utilisé par les familles et les résidences du Québec
           </p>
-          {[
-            ["180+", "résidences partenaires"],
-            ["1 envoi", "en ligne au lieu de dix formulaires papier"],
-            ["11 jours", "de délai moyen jusqu'à une réponse"],
-          ].map(([n, label]) => (
-            <div key={n} className="flex items-baseline gap-2.5">
-              <span className="hp-serif text-[24px] leading-none text-[var(--hp-ink)]">{n}</span>
-              <span className="hp-muted">{label}</span>
-            </div>
-          ))}
+          <div className="hp-proof-grid mt-9 grid gap-8 sm:grid-cols-3 sm:gap-0">
+            {[
+              {
+                value: `${(Math.floor(RPA_SOURCE.count / 100) * 100).toLocaleString("fr-CA")}+`,
+                label: "résidences référencées au registre des RPA",
+              },
+              {
+                value: "1 envoi",
+                label: "en ligne au lieu de dix formulaires papier",
+              },
+              {
+                value: "11 jours",
+                label: "de délai moyen jusqu'à une réponse",
+              },
+            ].map((item, i) => (
+              <div
+                key={item.value}
+                className={`hp-proof-item flex flex-col gap-2 sm:px-8 ${
+                  i === 0 ? "sm:pl-0" : ""
+                } ${i < 2 ? "sm:border-r sm:border-[var(--hp-border)]" : "sm:pr-0"}`}
+              >
+                <p className="hp-serif text-[34px] leading-none tracking-tight text-[var(--hp-green-deep)] md:text-[40px]">
+                  {item.value}
+                </p>
+                <p className="hp-muted max-w-[220px] text-[14.5px] leading-snug">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

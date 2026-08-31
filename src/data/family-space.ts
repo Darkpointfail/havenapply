@@ -793,7 +793,8 @@ export function buildNextSteps(input: {
 
   const fieldNext = (input.fieldNext || "").trim();
   const fieldIsDocHint = /^ajouter\s/i.test(fieldNext);
-  if (fieldNext && !fieldIsDocHint) {
+  const fieldIsCreateHint = /créer un dossier/i.test(fieldNext);
+  if (fieldNext && !fieldIsDocHint && !(fieldIsCreateHint && !input.hasSeniorProfile)) {
     steps.push({
       label: fieldNext,
       owner,

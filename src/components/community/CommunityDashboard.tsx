@@ -81,6 +81,11 @@ function ApplicationCard({ app }: { app: CommunityApplication }) {
             <span className="mx-1.5">·</span>
             {formatPortalDate(app.submittedAt)}
           </p>
+          {app.publicRef ? (
+            <p className="mt-1 font-mono text-xs tracking-wide text-ink-faint">
+              {app.publicRef}
+            </p>
+          ) : null}
           <div className="mt-2.5 flex items-center gap-2">
             <div className="h-1.5 w-[120px] overflow-hidden rounded-full bg-bg-soft">
               <div

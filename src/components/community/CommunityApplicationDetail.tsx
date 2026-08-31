@@ -474,6 +474,12 @@ export function CommunityApplicationDetail() {
                     {app.moveInRequested
                       ? formatPortalDate(app.moveInRequested)
                       : t("Flexible")}
+                    {app.publicRef ? (
+                      <>
+                        <span className="mx-1.5">·</span>
+                        <span className="font-mono tracking-wide">{app.publicRef}</span>
+                      </>
+                    ) : null}
                   </p>
                 </div>
               </div>
@@ -1029,6 +1035,12 @@ export function CommunityApplicationDetail() {
                         : t("Flexible")}
                       <span className="mx-1.5">·</span>
                       {t("Submitted")} {formatPortalDate(app.submittedAt)}
+                      {app.publicRef ? (
+                        <>
+                          <span className="mx-1.5">·</span>
+                          <span className="font-mono tracking-wide">{app.publicRef}</span>
+                        </>
+                      ) : null}
                     </p>
                   </div>
                 </div>

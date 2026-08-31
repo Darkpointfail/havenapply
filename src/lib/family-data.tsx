@@ -63,6 +63,7 @@ import {
   publishFamilyApplication,
 } from "@/lib/admissions-bridge";
 import { isResidenceAcceptingApplications } from "@/lib/community-portal";
+import { ensureApplicationPublicRef, ensureDossierPublicRef, ensurePersonPublicRef } from "@/lib/public-refs";
 import {
   emptyResidentDossier,
   migrateResidentDossier,
@@ -104,6 +105,10 @@ export type FamilyData = {
   savedFavorites: SavedFavorite[];
   compareIds: string[];
   applications: FamilyApplication[];
+  /** Human-facing person ref (HA-P-…), stable per family account. */
+  personRef?: string | null;
+  /** Human-facing dossier ref (HA-D-…), stable per current admission dossier. */
+  dossierRef?: string | null;
 };
 
 const SECTION_DEFS: Omit<ProfileSection, "items" | "summary">[] = [
@@ -147,6 +152,8 @@ function emptyFamilyData(): FamilyData {
     savedFavorites: [],
     compareIds: [],
     applications: [],
+    personRef: null,
+    dossierRef: null,
   };
 }
 
@@ -226,12 +233,18 @@ function migrateFamilyData(raw: Partial<FamilyData> & { person?: ProfilePerson }
     applications: Array.isArray(raw.applications)
       ? raw.applications.map(migrateApplication)
       : [],
+    personRef: ensurePersonPublicRef(
+      (raw as Partial<FamilyData>).personRef ?? null,
+    ),
+    dossierRef: ensureDossierPublicRef(
+      (raw as Partial<FamilyData>).dossierRef ?? null,
+    ),
   };
 }
 
 function migrateApplication(raw: FamilyApplication): FamilyApplication {
   const status = normalizeApplicationStatus(String(raw.status || "draft"));
-  return {
+  const base = {
     ...raw,
     status,
     batchId: raw.batchId ?? null,
@@ -256,7 +269,14 @@ function migrateApplication(raw: FamilyApplication): FamilyApplication {
     contactRole: raw.contactRole || "Admissions",
     upcomingAppointment: raw.upcomingAppointment ?? null,
     lastUpdatedLabel: raw.lastUpdatedLabel || raw.submittedDateLabel || "",
+    personRef: raw.personRef ?? null,
+    dossierRef: raw.dossierRef ?? null,
   };
+  // Assign a stable public ref once the application has left draft.
+  if (status !== "draft" && status !== "ready") {
+    return ensureApplicationPublicRef(base);
+  }
+  return { ...base, publicRef: raw.publicRef ?? null };
 }
 
 function attachDocsToApp(
@@ -460,10 +480,38 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
   const [seniorId, setSeniorId] = useState<string | null>(null);
 
   const applyBundle = useCallback((bundle: FamilyBundle) => {
-    setData(bundleToFamilyData(bundle));
+    const mapped = bundleToFamilyData(bundle);
+    let cachedPersonRef: string | null = null;
+    let cachedDossierRef: string | null = null;
+    if (user?.email) {
+      try {
+        const raw = localStorage.getItem(storageKey(user.email));
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<FamilyData>;
+          cachedPersonRef = parsed.personRef ?? null;
+          cachedDossierRef = parsed.dossierRef ?? null;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    const next: FamilyData = {
+      ...mapped,
+      personRef: ensurePersonPublicRef(cachedPersonRef),
+      dossierRef: ensureDossierPublicRef(cachedDossierRef),
+      applications: (mapped.applications || []).map(migrateApplication),
+    };
+    setData(next);
     setServerProgress(bundle.progress.percent);
     setSeniorId(bundle.seniors[0]?.id ?? null);
-  }, []);
+    if (user?.email) {
+      try {
+        localStorage.setItem(storageKey(user.email), JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1091,7 +1139,11 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           return prev;
         }
 
-        const submitted = submitFamilyApplication(app);
+        const submitted = submitFamilyApplication({
+          ...app,
+          personRef: app.personRef || prev.personRef || null,
+          dossierRef: app.dossierRef || prev.dossierRef || null,
+        });
         publishToCommunity(prev, submitted);
         result = submitted;
 
@@ -1152,7 +1204,12 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
             continue;
           }
 
-          const submitted = submitFamilyApplication({ ...app, batchId });
+          const submitted = submitFamilyApplication({
+            ...app,
+            batchId,
+            personRef: app.personRef || prev.personRef || null,
+            dossierRef: app.dossierRef || prev.dossierRef || null,
+          });
           publishToCommunity({ ...working, applications, documents }, submitted);
           results.push(submitted);
           applications = applications.filter(

@@ -36,6 +36,8 @@ export type FamilyDataMapped = {
   savedFavorites: SavedFavorite[];
   compareIds: string[];
   applications: FamilyApplication[];
+  personRef?: string | null;
+  dossierRef?: string | null;
 };
 
 const SECTION_DEFS: { id: string; title: string }[] = [
@@ -79,6 +81,8 @@ export function emptyFamilyDataLocal(): FamilyDataMapped {
     savedFavorites: [],
     compareIds: [],
     applications: [],
+    personRef: null,
+    dossierRef: null,
   };
 }
 
@@ -113,5 +117,7 @@ export function bundleToFamilyData(bundle: FamilyBundle): FamilyDataMapped {
     savedFavorites: bundle.savedFavorites,
     compareIds: bundle.compareIds,
     applications: bundle.applications,
+    personRef: null,
+    dossierRef: null,
   };
 }

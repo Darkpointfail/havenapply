@@ -98,7 +98,8 @@ function ApplicationsListInner() {
       list = list.filter(
         (a) =>
           a.seniorName.toLowerCase().includes(query) ||
-          a.family.name.toLowerCase().includes(query),
+          a.family.name.toLowerCase().includes(query) ||
+          (a.publicRef || "").toLowerCase().includes(query),
       );
     }
     return list.sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated));
@@ -182,6 +183,11 @@ function ApplicationsListInner() {
                       {a.family.name} · {a.relationship}
                       {a.careType ? ` · ${a.careType}` : ""}
                     </p>
+                    {a.publicRef ? (
+                      <p className="mt-1 font-mono text-xs tracking-wide text-ink-faint">
+                        {a.publicRef}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs text-ink-faint">
                       Applied {formatPortalDate(a.submittedAt)}
                       <span className="mx-1.5">·</span>

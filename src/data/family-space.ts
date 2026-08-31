@@ -6,6 +6,11 @@
  * RESIDENCES is the Active RPA Québec registry catalog (see rpa-quebec.ts).
  */
 
+import {
+  ensureDossierPublicRef,
+  ensurePersonPublicRef,
+} from "@/lib/public-refs";
+
 export type FamilyView =
   | "accueil"
   | "residences"
@@ -33,6 +38,10 @@ export type FamilyDoc = {
 /** Un dossier d'admission (une personne accompagnée). */
 export type FamilyProfile = {
   id: string;
+  /** Human-facing person ref, e.g. HA-P-00217 */
+  personRef?: string | null;
+  /** Human-facing dossier ref, e.g. HA-D-2026-00482 */
+  dossierRef?: string | null;
   prenom: string;
   nom: string;
   /**
@@ -129,6 +138,10 @@ export type FamilyVisit = {
 
 export type FamilyApplication = {
   id: string;
+  /** Human-facing ref e.g. HA-A-2026-01903 */
+  publicRef?: string | null;
+  personRef?: string | null;
+  dossierRef?: string | null;
   residenceId: string;
   residenceName: string;
   city: string;
@@ -407,7 +420,11 @@ export function buildProfileFromSenior(
   senior: SeniorLike,
   docs: FamilyDoc[] = emptyDraftDocs(),
   accesses: FamilyProfile["accesses"] = [],
-  opts?: { allowIncomplete?: boolean },
+  opts?: {
+    allowIncomplete?: boolean;
+    personRef?: string | null;
+    dossierRef?: string | null;
+  },
 ): FamilyProfile | null {
   const prenom = (senior.firstName || "").trim();
   const nom = (senior.lastName || "").trim();
@@ -430,6 +447,8 @@ export function buildProfileFromSenior(
 
   return {
     id: "p-senior",
+    personRef: ensurePersonPublicRef(opts?.personRef),
+    dossierRef: ensureDossierPublicRef(opts?.dossierRef),
     prenom,
     nom,
     profileSubject: (() => {
@@ -524,9 +543,14 @@ export function hasInProgressFamilyDossier(
   return false;
 }
 
-export function createEmptyProfile(id: string): FamilyProfile {
+export function createEmptyProfile(
+  id: string,
+  opts?: { personRef?: string | null; dossierRef?: string | null },
+): FamilyProfile {
   return {
     id,
+    personRef: ensurePersonPublicRef(opts?.personRef),
+    dossierRef: ensureDossierPublicRef(opts?.dossierRef),
     prenom: "",
     nom: "",
     profileSubject: "",

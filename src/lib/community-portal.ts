@@ -246,6 +246,10 @@ export type ClientDossier = {
 export type CommunityApplication = {
   id: string;
   residenceId: string;
+  /** Human-facing business ref, e.g. HA-A-2026-01903 */
+  publicRef?: string | null;
+  personRef?: string | null;
+  dossierRef?: string | null;
   seniorName: string;
   seniorAge: number;
   /** Optional portrait shared from the family dossier */

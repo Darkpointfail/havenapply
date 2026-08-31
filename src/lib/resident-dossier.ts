@@ -439,6 +439,8 @@ export type ResidentDossier = {
   supplementalInsuranceCompany: string;
   supplementalPolicyId: string;
   supplementalGroupNumber: string;
+  /** Life insurance carrier (optional Québec family wizard field). */
+  lifeInsuranceCompany: string;
   ltcInsuranceCompany: string;
   ltcPolicyId: string;
   ltcGroupNumber: string;
@@ -601,6 +603,7 @@ export function emptyResidentDossier(): ResidentDossier {
     supplementalInsuranceCompany: "",
     supplementalPolicyId: "",
     supplementalGroupNumber: "",
+    lifeInsuranceCompany: "",
     ltcInsuranceCompany: "",
     ltcPolicyId: "",
     ltcGroupNumber: "",
@@ -654,6 +657,7 @@ export function migrateResidentDossier(raw?: Partial<ResidentDossier> | null): R
     validatedAt: raw.validatedAt ?? null,
     validatedBy: raw.validatedBy ?? "",
     autonomyLevel: raw.autonomyLevel ?? "",
+    lifeInsuranceCompany: raw.lifeInsuranceCompany ?? "",
     acknowledgementSigned: Boolean(raw.acknowledgementSigned),
   };
   // Map legacy 3-level ADL assist ids onto the 4-level scale

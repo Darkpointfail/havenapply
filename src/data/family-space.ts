@@ -44,11 +44,47 @@ export type FamilyProfile = {
   ville: string;
   province: string;
   codePostal: string;
+  /** Contacts */
+  contactPrincipalNom: string;
+  contactPrincipalLien: string;
+  contactPrincipalTel: string;
+  contactPrincipalCourriel: string;
+  contactSecondaireNom: string;
+  contactSecondaireLien: string;
+  contactSecondaireTel: string;
+  contactSecondaireCourriel: string;
+  /** Statut légal */
+  mandatProtection: string;
+  procuration: string;
+  curatelle: string;
+  directivesMedicales: string;
+  nomMandataire: string;
+  /** Assurances */
+  assuranceMaladie: string;
+  assurancePrivee: string;
+  numeroPolice: string;
+  assuranceVie: string;
+  /** Finances */
+  revenusMensuels: string;
+  sourcesRevenus: string;
+  garantFinancier: string;
+  modePaiement: string;
   meta: string;
   autonomie: string;
   services: string;
+  /** Soins */
+  mobilite: string;
+  aideRepas: string;
+  aideHygiene: string;
+  aideMedication: string;
+  allergies: string;
+  regimeAlimentaire: string;
   budget: string;
   move: string;
+  /** Signature */
+  consentPartage: boolean;
+  signatureNom: string;
+  signatureDate: string;
   draft: boolean;
   docs: FamilyDoc[];
   accesses: { residenceId: string; residenceName: string; city: string }[];
@@ -201,11 +237,41 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     ville: "Sillery",
     province: "Québec",
     codePostal: "G1S 1E1",
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
     autonomie: "Semi-autonome",
     services: "Repas, médicaments, aide légère",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget: "3 400 $ / mois",
     move: "Octobre 2026",
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: false,
     docs: cloneDocs(REQUIRED_DOCS),
     accesses: [
@@ -286,7 +352,7 @@ function urgencyToMoveLabel(urgency?: string): string {
 }
 
 /**
- * Build at most one FamilyProfile from a persisted senior.
+ * Build at most one FamilyProfile from a persisted senior (+ optional resident dossier).
  * Returns null when firstName or lastName is missing (empty / create-dossier state).
  */
 export function buildProfileFromSenior(
@@ -323,11 +389,41 @@ export function buildProfileFromSenior(
     ville: (senior.city || "").trim(),
     province: (senior.state || "").trim() || "Québec",
     codePostal: (senior.zip || "").trim(),
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta,
     autonomie: "À préciser",
     services: "À préciser",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget,
     move: urgencyToMoveLabel(senior.urgency),
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: false,
     docs,
     accesses,
@@ -347,11 +443,41 @@ export function createEmptyProfile(id: string): FamilyProfile {
     ville: "",
     province: "Québec",
     codePostal: "",
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta: "Dossier en création",
     autonomie: "À préciser",
     services: "À préciser",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget: "À préciser",
     move: "À préciser",
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: true,
     docs: emptyDraftDocs(),
     accesses: [],

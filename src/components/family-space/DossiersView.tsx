@@ -774,16 +774,66 @@ function EditionStepFields({
   if (step === 1) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {["Nom du contact principal", "Lien avec le demandeur", "Téléphone", "Courriel"].map((f) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue="" />
-          </Field>
-        ))}
-        {["Nom du contact secondaire", "Lien avec le demandeur", "Téléphone", "Courriel"].map((f) => (
-          <Field key={`sec-${f}`} label={f}>
-            <input className="fs-input" defaultValue="" />
-          </Field>
-        ))}
+        <Field label="Nom du contact principal">
+          <input
+            className="fs-input"
+            value={profile.contactPrincipalNom}
+            onChange={(e) => onPatchActive({ contactPrincipalNom: e.target.value })}
+          />
+        </Field>
+        <Field label="Lien avec le demandeur">
+          <input
+            className="fs-input"
+            value={profile.contactPrincipalLien}
+            onChange={(e) => onPatchActive({ contactPrincipalLien: e.target.value })}
+          />
+        </Field>
+        <Field label="Téléphone">
+          <input
+            className="fs-input"
+            value={profile.contactPrincipalTel}
+            onChange={(e) => onPatchActive({ contactPrincipalTel: e.target.value })}
+            autoComplete="tel"
+          />
+        </Field>
+        <Field label="Courriel">
+          <input
+            className="fs-input"
+            type="email"
+            value={profile.contactPrincipalCourriel}
+            onChange={(e) => onPatchActive({ contactPrincipalCourriel: e.target.value })}
+            autoComplete="email"
+          />
+        </Field>
+        <Field label="Nom du contact secondaire">
+          <input
+            className="fs-input"
+            value={profile.contactSecondaireNom}
+            onChange={(e) => onPatchActive({ contactSecondaireNom: e.target.value })}
+          />
+        </Field>
+        <Field label="Lien avec le demandeur">
+          <input
+            className="fs-input"
+            value={profile.contactSecondaireLien}
+            onChange={(e) => onPatchActive({ contactSecondaireLien: e.target.value })}
+          />
+        </Field>
+        <Field label="Téléphone">
+          <input
+            className="fs-input"
+            value={profile.contactSecondaireTel}
+            onChange={(e) => onPatchActive({ contactSecondaireTel: e.target.value })}
+          />
+        </Field>
+        <Field label="Courriel">
+          <input
+            className="fs-input"
+            type="email"
+            value={profile.contactSecondaireCourriel}
+            onChange={(e) => onPatchActive({ contactSecondaireCourriel: e.target.value })}
+          />
+        </Field>
       </div>
     );
   }
@@ -791,13 +841,36 @@ function EditionStepFields({
   if (step === 2) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {["Mandat de protection", "Procuration", "Curatelle", "Directives médicales anticipées", "Nom du mandataire"].map(
-          (f) => (
-            <Field key={f} label={f}>
-              <input className="fs-input" defaultValue="" />
-            </Field>
-          ),
-        )}
+        <YesNoField
+          label="Mandat de protection"
+          value={profile.mandatProtection}
+          onChange={(v) => onPatchActive({ mandatProtection: v })}
+        />
+        <YesNoField
+          label="Procuration"
+          value={profile.procuration}
+          onChange={(v) => onPatchActive({ procuration: v })}
+        />
+        <YesNoField
+          label="Curatelle"
+          value={profile.curatelle}
+          onChange={(v) => onPatchActive({ curatelle: v })}
+        />
+        <Field label="Directives médicales anticipées">
+          <input
+            className="fs-input"
+            value={profile.directivesMedicales}
+            onChange={(e) => onPatchActive({ directivesMedicales: e.target.value })}
+            placeholder="Oui / Non / détails"
+          />
+        </Field>
+        <Field label="Nom du mandataire">
+          <input
+            className="fs-input"
+            value={profile.nomMandataire}
+            onChange={(e) => onPatchActive({ nomMandataire: e.target.value })}
+          />
+        </Field>
       </div>
     );
   }
@@ -805,16 +878,34 @@ function EditionStepFields({
   if (step === 3) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          ["Assurance maladie", "RAMQ"],
-          ["Assurance privée", ""],
-          ["Numéro de police", ""],
-          ["Assurance vie", ""],
-        ].map(([f, v]) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue={v} />
-          </Field>
-        ))}
+        <Field label="Assurance maladie">
+          <input
+            className="fs-input"
+            value={profile.assuranceMaladie}
+            onChange={(e) => onPatchActive({ assuranceMaladie: e.target.value })}
+          />
+        </Field>
+        <Field label="Assurance privée">
+          <input
+            className="fs-input"
+            value={profile.assurancePrivee}
+            onChange={(e) => onPatchActive({ assurancePrivee: e.target.value })}
+          />
+        </Field>
+        <Field label="Numéro de police">
+          <input
+            className="fs-input"
+            value={profile.numeroPolice}
+            onChange={(e) => onPatchActive({ numeroPolice: e.target.value })}
+          />
+        </Field>
+        <Field label="Assurance vie">
+          <input
+            className="fs-input"
+            value={profile.assuranceVie}
+            onChange={(e) => onPatchActive({ assuranceVie: e.target.value })}
+          />
+        </Field>
       </div>
     );
   }
@@ -822,16 +913,35 @@ function EditionStepFields({
   if (step === 4) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Revenus mensuels", ""],
-          ["Sources de revenus", ""],
-          ["Garant financier", ""],
-          ["Mode de paiement", ""],
-        ].map(([f, v]) => (
-          <Field key={f} label={f}>
-            <input className="fs-input" defaultValue={v} />
-          </Field>
-        ))}
+        <Field label="Revenus mensuels">
+          <input
+            className="fs-input"
+            value={profile.revenusMensuels}
+            onChange={(e) => onPatchActive({ revenusMensuels: e.target.value })}
+          />
+        </Field>
+        <Field label="Sources de revenus">
+          <input
+            className="fs-input"
+            value={profile.sourcesRevenus}
+            onChange={(e) => onPatchActive({ sourcesRevenus: e.target.value })}
+          />
+        </Field>
+        <Field label="Garant financier">
+          <input
+            className="fs-input"
+            value={profile.garantFinancier}
+            onChange={(e) => onPatchActive({ garantFinancier: e.target.value })}
+          />
+        </Field>
+        <Field label="Mode de paiement">
+          <input
+            className="fs-input"
+            value={profile.modePaiement}
+            onChange={(e) => onPatchActive({ modePaiement: e.target.value })}
+            placeholder="Privé, assurance…"
+          />
+        </Field>
       </div>
     );
   }
@@ -842,17 +952,52 @@ function EditionStepFields({
         <Field label="Niveau d'autonomie">
           <input
             className="fs-input"
-            value={profile.draft ? "" : profile.autonomie}
+            value={profile.autonomie === "À préciser" ? "" : profile.autonomie}
             onChange={(e) => onPatchActive({ autonomie: e.target.value })}
           />
         </Field>
-        {["Mobilité", "Aide au repas", "Aide à l'hygiène", "Aide à la médication", "Allergies", "Régime alimentaire"].map(
-          (f) => (
-            <Field key={f} label={f}>
-              <input className="fs-input" defaultValue="" />
-            </Field>
-          ),
-        )}
+        <Field label="Mobilité">
+          <input
+            className="fs-input"
+            value={profile.mobilite}
+            onChange={(e) => onPatchActive({ mobilite: e.target.value })}
+          />
+        </Field>
+        <Field label="Aide au repas">
+          <input
+            className="fs-input"
+            value={profile.aideRepas}
+            onChange={(e) => onPatchActive({ aideRepas: e.target.value })}
+          />
+        </Field>
+        <Field label="Aide à l'hygiène">
+          <input
+            className="fs-input"
+            value={profile.aideHygiene}
+            onChange={(e) => onPatchActive({ aideHygiene: e.target.value })}
+          />
+        </Field>
+        <Field label="Aide à la médication">
+          <input
+            className="fs-input"
+            value={profile.aideMedication}
+            onChange={(e) => onPatchActive({ aideMedication: e.target.value })}
+          />
+        </Field>
+        <Field label="Allergies">
+          <input
+            className="fs-input"
+            value={profile.allergies}
+            onChange={(e) => onPatchActive({ allergies: e.target.value })}
+          />
+        </Field>
+        <Field label="Régime alimentaire">
+          <input
+            className="fs-input"
+            value={profile.regimeAlimentaire}
+            onChange={(e) => onPatchActive({ regimeAlimentaire: e.target.value })}
+          />
+        </Field>
       </div>
     );
   }
@@ -864,19 +1009,59 @@ function EditionStepFields({
         avant de signer.
       </p>
       <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4">
-        <input type="checkbox" className="mt-1" />
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={profile.consentPartage}
+          onChange={(e) => onPatchActive({ consentPartage: e.target.checked })}
+        />
         <span className="text-[14.5px]">
           Je consens au partage de ce dossier avec les résidences choisies.
         </span>
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Signature du demandeur ou du mandataire">
-          <input className="fs-input" placeholder="Nom complet" />
+          <input
+            className="fs-input"
+            placeholder="Nom complet"
+            value={profile.signatureNom}
+            onChange={(e) => onPatchActive({ signatureNom: e.target.value })}
+          />
         </Field>
         <Field label="Date">
-          <input className="fs-input" defaultValue="" />
+          <input
+            className="fs-input"
+            type="date"
+            value={profile.signatureDate}
+            onChange={(e) => onPatchActive({ signatureDate: e.target.value })}
+          />
         </Field>
       </div>
     </div>
+  );
+}
+
+function YesNoField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      <select
+        className="fs-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      >
+        <option value="">À préciser</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+      </select>
+    </Field>
   );
 }

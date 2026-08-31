@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:auth": "node scripts/test-auth.mjs",
     "test:family": "vitest run src/lib/family",
-    "cms:build": "node scripts/build-cms-nursing-homes.mjs"
+    "cms:build": "node scripts/build-cms-nursing-homes.mjs",
+    "rpa:build": "python3 scripts/build-rpa-quebec.py"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",

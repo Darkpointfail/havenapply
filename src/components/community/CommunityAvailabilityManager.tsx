@@ -172,7 +172,7 @@ export function CommunityAvailabilityManager() {
                 }
                 const res = upsertAvailability(draft);
                 if (res.ok) setDraft(null);
-                else alert(res.error);
+                else alert(t(res.error));
               }}
             >
               {t("Save")}

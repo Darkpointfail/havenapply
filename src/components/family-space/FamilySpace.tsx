@@ -587,7 +587,7 @@ export function FamilySpace() {
         description: REQUIRED_DOCS.find((d) => d.id === docId)?.detail || "",
       }).then((ok) => {
         if (!ok) {
-          window.alert(saveError || t("The file could not be uploaded."));
+          window.alert(saveError ? t(saveError) : t("The file could not be uploaded."));
         }
       });
     };

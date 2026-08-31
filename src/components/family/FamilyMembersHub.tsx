@@ -25,6 +25,7 @@ import {
   type FamilyRole,
 } from "@/lib/family-collaboration";
 import { useFamilyCollaboration } from "@/lib/family-collaboration-store";
+import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 type Tab = "members" | "permissions" | "tasks" | "comments" | "activity";
@@ -47,6 +48,7 @@ function roleTone(role: FamilyRole): "brand" | "success" | "neutral" | "warn" | 
 }
 
 export function FamilyMembersHub() {
+  const t = useT();
   const { user } = useAuth();
   const {
     ready,

@@ -171,10 +171,11 @@
 }
 
 .fs-header-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 16px;
-  height: 58px;
+  height: 76px;
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
@@ -184,43 +185,45 @@
 .fs-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
   color: #fff;
   flex-shrink: 0;
+  justify-self: start;
 }
 
 .fs-brand-mark {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
 .fs-brand-name {
   font-family: var(--fs-serif);
-  font-size: 19px;
+  font-size: 24px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 
 .fs-header-nav {
-  justify-content: flex-start;
-  gap: 2px;
+  justify-content: center;
+  justify-self: center;
+  gap: 4px;
   min-width: 0;
-  flex: 1;
+  flex: initial;
 }
 
 .fs-nav-item {
   position: relative;
-  min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 7px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: #b7c6c0;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: color 120ms ease, background-color 120ms ease;
@@ -242,6 +245,8 @@
 }
 
 .fs-header-account {
+  justify-self: end;
+  margin-left: 0;
   padding-left: 14px;
   border-left: 1px solid rgba(226, 243, 239, 0.12);
 }
@@ -383,12 +388,24 @@
     padding: 24px 20px 48px;
   }
   .fs-header-inner {
-    gap: 12px;
-    height: 62px;
+    gap: 10px;
+    height: 70px;
     padding: 0 16px;
   }
+  .fs-brand-name {
+    font-size: 21px;
+  }
+  .fs-brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+  .fs-nav-item {
+    font-size: 15px;
+    padding: 8px 12px;
+    min-height: 44px;
+  }
   .fs-header-nav {
-    justify-content: flex-start;
+    justify-content: center;
   }
   .fs-grid-main {
     grid-template-columns: 1fr !important;

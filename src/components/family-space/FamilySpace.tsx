@@ -222,6 +222,30 @@ export function FamilySpace() {
   }, [searchParams]);
 
   useEffect(() => {
+    const raw = (searchParams.get("view") || "").toLowerCase();
+    if (!raw || raw === "profil") return;
+    const map: Record<string, FamilyView> = {
+      accueil: "accueil",
+      residences: "residences",
+      residence: "residences",
+      fiche: "fiche",
+      dossier: "dossier",
+      dossiers: "dossier",
+      demandes: "demandes",
+      applications: "demandes",
+      assistance: "assistance",
+      messages: "assistance",
+    };
+    const next = map[raw];
+    if (!next) return;
+    setView(next);
+    if (next === "dossier") {
+      setMode("overview");
+      setClaireOpen(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chat, claireTyping, view, claireOpen]);
 

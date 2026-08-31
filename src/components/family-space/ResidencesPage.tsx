@@ -283,7 +283,6 @@ export function ResidencesBrowse({
 
           <div className="space-y-4">
             {shown.map((r) => {
-              const compared = compareIds.includes(r.id);
               const match = readiness ? computeMatch(profile, r) : null;
               const scoreColor =
                 match && (match.tone === "strong" || match.tone === "good")
@@ -366,22 +365,6 @@ export function ResidencesBrowse({
                         onClick={() => onOpen(r.id, "match")}
                       >
                         Voir pourquoi
-                      </button>
-                      <button
-                        type="button"
-                        className="fs-btn fs-btn-outline"
-                        style={
-                          compared
-                            ? {
-                                background: "var(--fs-green-tint)",
-                                color: "var(--fs-green)",
-                                borderColor: "transparent",
-                              }
-                            : undefined
-                        }
-                        onClick={() => toggleCompare(r.id)}
-                      >
-                        Comparer
                       </button>
                     </div>
                   </div>

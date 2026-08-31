@@ -919,7 +919,7 @@ export default function FamilyPrivacyHub() {
               <Link href="/family/dashboard?view=dossier" style={btnOutlineLink}>
                 Modifier le dossier
               </Link>
-              <Link href="/family/profile" style={btnOutlineLink}>
+              <Link href="/family/dashboard?view=dossier" style={btnOutlineLink}>
                 Ouvrir mon profil
               </Link>
             </div>

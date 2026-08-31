@@ -927,9 +927,9 @@ export function FamilySpace() {
             setSelectedUnit={setSelectedUnit}
             docs={activeProfile?.docs ?? liveDocs}
             seniorName={
-              activeProfile ? profileDisplayName(activeProfile) : "votre proche"
+              activeProfile ? profileDisplayName(activeProfile) : t("your loved one")
             }
-            moveLabel={activeProfile?.move || "À préciser"}
+            moveLabel={activeProfile?.move || t("To be determined")}
             consent={consent}
             setConsent={setConsent}
             onBack={() => openResidence(selectedRes.id)}
@@ -1375,7 +1375,7 @@ function Depot({
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--fs-ink-muted)]">{t("Desired move-in")}</dt>
-                <dd className="font-medium">{moveLabel}</dd>
+                <dd className="font-medium">{t(moveLabel)}</dd>
               </div>
             </dl>
             <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4 text-[14.5px]">

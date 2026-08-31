@@ -3131,6 +3131,27 @@ export const frMessages: Record<string, string> = {
   "Placed on the waitlist — rank {rank}.": "Placé en liste d'attente — rang {rank}.",
   "Visit scheduled: {when}.": "Visite planifiée : {when}.",
   "Documents requested: {docs}.": "Pièces demandées : {docs}.",
+
+  // Authz + validation errors
+  "Session expired. Please sign in again.": "Session expirée. Veuillez vous reconnecter.",
+  "Access reserved for family accounts.": "Accès réservé aux comptes famille.",
+  "Authentication unavailable.": "Authentification indisponible.",
+  "Invalid email address.": "Adresse courriel invalide.",
+  "Invalid phone number.": "Numéro de téléphone invalide.",
+  "First name is required.": "Le prénom est obligatoire.",
+  "Last name is required.": "Le nom est obligatoire.",
+  "Invalid senior email address.": "Adresse courriel de la personne aînée invalide.",
+  "Invalid senior phone number.": "Téléphone de la personne aînée invalide.",
+  "Invalid postal code.": "Code postal invalide.",
+  "Invalid date of birth.": "Date de naissance invalide.",
+  "Invalid minimum budget.": "Budget minimum invalide.",
+  "Invalid maximum budget.": "Budget maximum invalide.",
+  "Minimum budget cannot exceed maximum.": "Le budget minimum ne peut pas dépasser le maximum.",
+  "Filename is missing.": "Nom de fichier manquant.",
+  "File type not accepted. Use PDF, JPEG, PNG, or WebP.": "Type de fichier non accepté. Utilisez PDF, JPEG, PNG ou WebP.",
+  "Empty file.": "Fichier vide.",
+  "File exceeds the 10 MB size limit.": "Le fichier dépasse la taille maximale de 10 Mo.",
+  "Network error during upload.": "Erreur réseau lors du téléversement.",
 };
 
 export function translate(locale: Locale, key: string): string {

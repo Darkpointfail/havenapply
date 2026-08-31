@@ -179,7 +179,7 @@ export async function apiUploadDocument(input: {
         resolve({ ok: false, error: "Invalid server response." });
       }
     };
-    xhr.onerror = () => resolve({ ok: false, error: "Erreur réseau lors du téléversement." });
+    xhr.onerror = () => resolve({ ok: false, error: "Network error during upload." });
     xhr.send(form);
   });
 }

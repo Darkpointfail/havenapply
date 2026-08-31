@@ -176,7 +176,7 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(false);
     setBusy(false);
     if (!ok) {
-      setError(saveError || t("Unable to withdraw consent."));
+      setError(t(saveError) || t("Unable to withdraw consent."));
       return;
     }
     setRetentionGranted(false);
@@ -191,7 +191,7 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(true);
     setBusy(false);
     if (!ok) {
-      setError(saveError || t("Unable to save consent."));
+      setError(t(saveError) || t("Unable to save consent."));
       return;
     }
     setRetentionGranted(true);

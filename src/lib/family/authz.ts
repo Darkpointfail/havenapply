@@ -26,33 +26,33 @@ export async function requireFamilyUser(): Promise<AuthzResult> {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        return { ok: false, status: 401, error: "Session expirée. Veuillez vous reconnecter." };
+        return { ok: false, status: 401, error: "Session expired. Please sign in again." };
       }
       const sessionUser = sessionFromSupabaseUser(user);
       if (!sessionUser) {
-        return { ok: false, status: 403, error: "Accès réservé aux comptes famille." };
+        return { ok: false, status: 403, error: "Access reserved for family accounts." };
       }
       if (sessionUser.role !== "family") {
-        return { ok: false, status: 403, error: "Accès réservé aux comptes famille." };
+        return { ok: false, status: 403, error: "Access reserved for family accounts." };
       }
       return { ok: true, user: sessionUser };
     } catch {
-      return { ok: false, status: 401, error: "Session expirée. Veuillez vous reconnecter." };
+      return { ok: false, status: 401, error: "Session expired. Please sign in again." };
     }
   }
 
   if (!usesLocalFamilySession()) {
-    return { ok: false, status: 503, error: "Authentification indisponible." };
+    return { ok: false, status: 503, error: "Authentication unavailable." };
   }
 
   const jar = await cookies();
   const token = jar.get(FAMILY_SESSION_COOKIE)?.value;
   const payload = verifyFamilySessionToken(token);
   if (!payload) {
-    return { ok: false, status: 401, error: "Session expirée. Veuillez vous reconnecter." };
+    return { ok: false, status: 401, error: "Session expired. Please sign in again." };
   }
   if (payload.role !== "family") {
-    return { ok: false, status: 403, error: "Accès réservé aux comptes famille." };
+    return { ok: false, status: 403, error: "Access reserved for family accounts." };
   }
   return { ok: true, user: sessionUserFromPayload(payload) };
 }

@@ -18,6 +18,7 @@ import {
   createEmptyProfile,
   docsProgress,
   emptyDraftDocs,
+  familyPatchToSenior,
   mapRequiredDocsFromDocuments,
   profileDisplayName,
   type FamilyApplication,
@@ -353,16 +354,15 @@ export function FamilySpace() {
       if (!prev || prev.id !== activeProfileId) return prev;
       return { ...prev, ...patch };
     });
-    const seniorPatch: {
-      firstName?: string;
-      lastName?: string;
-      relationship?: string;
-      photoDataUrl?: string;
-    } = {};
-    if (patch.prenom !== undefined) seniorPatch.firstName = patch.prenom;
-    if (patch.nom !== undefined) seniorPatch.lastName = patch.nom;
-    if (patch.rel !== undefined) seniorPatch.relationship = patch.rel;
-    if (patch.photo !== undefined) seniorPatch.photoDataUrl = patch.photo || "";
+    const seniorPatch = familyPatchToSenior(patch);
+    // Avoid rejecting mid-typing postal codes (API validates CA format strictly).
+    if (
+      seniorPatch.zip != null &&
+      String(seniorPatch.zip).trim() &&
+      !/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(String(seniorPatch.zip).trim())
+    ) {
+      delete seniorPatch.zip;
+    }
     if (Object.keys(seniorPatch).length > 0) {
       updateSeniorDraft(seniorPatch);
     }

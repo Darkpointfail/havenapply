@@ -702,6 +702,7 @@ function EditionStepFields({
             className="fs-input"
             value={profile.prenom}
             onChange={(e) => onPatchActive({ prenom: e.target.value })}
+            autoComplete="given-name"
           />
         </Field>
         <Field label="Nom">
@@ -709,25 +710,62 @@ function EditionStepFields({
             className="fs-input"
             value={profile.nom}
             onChange={(e) => onPatchActive({ nom: e.target.value })}
+            autoComplete="family-name"
           />
         </Field>
         <Field label="Date de naissance">
-          <input className="fs-input" defaultValue="" placeholder="jj / mm / aaaa" />
+          <input
+            className="fs-input"
+            type="date"
+            value={profile.dateNaissance}
+            onChange={(e) => onPatchActive({ dateNaissance: e.target.value })}
+          />
         </Field>
         <Field label="Sexe">
-          <input className="fs-input" defaultValue="" />
+          <select
+            className="fs-input"
+            value={profile.sexe}
+            onChange={(e) => onPatchActive({ sexe: e.target.value })}
+            aria-label="Sexe"
+          >
+            <option value="">À préciser</option>
+            <option value="Femme">Femme</option>
+            <option value="Homme">Homme</option>
+            <option value="Autre">Autre</option>
+            <option value="Préfère ne pas dire">Préfère ne pas dire</option>
+          </select>
         </Field>
         <Field label="Adresse actuelle">
-          <input className="fs-input" defaultValue="" />
+          <input
+            className="fs-input"
+            value={profile.adresse}
+            onChange={(e) => onPatchActive({ adresse: e.target.value })}
+            autoComplete="street-address"
+          />
         </Field>
         <Field label="Ville">
-          <input className="fs-input" defaultValue="" />
+          <input
+            className="fs-input"
+            value={profile.ville}
+            onChange={(e) => onPatchActive({ ville: e.target.value })}
+            autoComplete="address-level2"
+          />
         </Field>
         <Field label="Province">
-          <input className="fs-input" defaultValue="Québec" />
+          <input
+            className="fs-input"
+            value={profile.province}
+            onChange={(e) => onPatchActive({ province: e.target.value })}
+            autoComplete="address-level1"
+          />
         </Field>
         <Field label="Code postal">
-          <input className="fs-input" defaultValue="" />
+          <input
+            className="fs-input"
+            value={profile.codePostal}
+            onChange={(e) => onPatchActive({ codePostal: e.target.value })}
+            autoComplete="postal-code"
+          />
         </Field>
       </div>
     );

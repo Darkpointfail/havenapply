@@ -37,6 +37,13 @@ export type FamilyProfile = {
   nom: string;
   rel: string;
   photo: string | null;
+  /** ISO date (yyyy-mm-dd) when known. */
+  dateNaissance: string;
+  sexe: string;
+  adresse: string;
+  ville: string;
+  province: string;
+  codePostal: string;
   meta: string;
   autonomie: string;
   services: string;
@@ -188,6 +195,12 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     nom: "Lévesque",
     rel: "Votre mère",
     photo: null,
+    dateNaissance: "1942-03-15",
+    sexe: "Femme",
+    adresse: "1200 chemin Saint-Louis",
+    ville: "Sillery",
+    province: "Québec",
+    codePostal: "G1S 1E1",
     meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
     autonomie: "Semi-autonome",
     services: "Repas, médicaments, aide légère",
@@ -239,7 +252,10 @@ type SeniorLike = {
   relationship?: string;
   city?: string;
   state?: string;
+  address?: string;
+  zip?: string;
   dateOfBirth?: string;
+  gender?: string;
   budgetMax?: string;
   budgetUnsure?: boolean;
   urgency?: string;
@@ -301,6 +317,12 @@ export function buildProfileFromSenior(
     nom,
     rel: (senior.relationship || "").trim() || "Proche",
     photo: senior.photoDataUrl || null,
+    dateNaissance: (senior.dateOfBirth || "").trim(),
+    sexe: (senior.gender || "").trim(),
+    adresse: (senior.address || "").trim(),
+    ville: (senior.city || "").trim(),
+    province: (senior.state || "").trim() || "Québec",
+    codePostal: (senior.zip || "").trim(),
     meta,
     autonomie: "À préciser",
     services: "À préciser",
@@ -319,6 +341,12 @@ export function createEmptyProfile(id: string): FamilyProfile {
     nom: "",
     rel: "Proche",
     photo: null,
+    dateNaissance: "",
+    sexe: "",
+    adresse: "",
+    ville: "",
+    province: "Québec",
+    codePostal: "",
     meta: "Dossier en création",
     autonomie: "À préciser",
     services: "À préciser",
@@ -328,6 +356,38 @@ export function createEmptyProfile(id: string): FamilyProfile {
     docs: emptyDraftDocs(),
     accesses: [],
   };
+}
+
+/**
+ * Map FamilyProfile UI patches onto SeniorProfile persistence fields.
+ * Only includes keys present on the patch (partial updates).
+ */
+export function familyPatchToSenior(
+  patch: Partial<FamilyProfile>,
+): Partial<{
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  photoDataUrl: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+}> {
+  const out: ReturnType<typeof familyPatchToSenior> = {};
+  if (patch.prenom !== undefined) out.firstName = patch.prenom;
+  if (patch.nom !== undefined) out.lastName = patch.nom;
+  if (patch.rel !== undefined) out.relationship = patch.rel;
+  if (patch.photo !== undefined) out.photoDataUrl = patch.photo || "";
+  if (patch.dateNaissance !== undefined) out.dateOfBirth = patch.dateNaissance;
+  if (patch.sexe !== undefined) out.gender = patch.sexe;
+  if (patch.adresse !== undefined) out.address = patch.adresse;
+  if (patch.ville !== undefined) out.city = patch.ville;
+  if (patch.province !== undefined) out.state = patch.province;
+  if (patch.codePostal !== undefined) out.zip = patch.codePostal;
+  return out;
 }
 
 export function profileDisplayName(p: FamilyProfile) {

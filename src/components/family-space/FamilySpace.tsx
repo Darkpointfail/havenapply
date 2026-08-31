@@ -1021,29 +1021,41 @@ function Accueil({
   onSearch: () => void;
   onOpenApp: () => void;
 }) {
+  const t = useT();
   const nextVisit = applications.find((a) => a.visit || a.status === "Visite planifiée");
   const displayPercent = hasDossier ? dossierCompleteness.percent : 0;
-  const nextAction = hasDossier
+  const rawNext = hasDossier
     ? dossierCompleteness.next
-    : "Créer un dossier (pour vous ou un proche)";
+    : "Create a file (for yourself or a loved one)";
+  const nextActionLabel = rawNext ? t(rawNext) : null;
+  const soften = (s: string) => `${s.charAt(0).toLowerCase()}${s.slice(1)}`;
   const intro = !hasDossier
-    ? "Créez un dossier — pour vous-même ou pour un proche — afin de déposer des demandes auprès des résidences partenaires."
+    ? t(
+        "Create a file: for yourself or a loved one, so you can apply to partner residences.",
+      )
     : dossierCompleteness.next
-      ? `Poursuivez votre dossier. Prochaine action : ${dossierCompleteness.next.charAt(0).toLowerCase()}${dossierCompleteness.next.slice(1)}.`
-      : "Votre dossier est à jour. Vous pouvez chercher une résidence ou suivre vos demandes en cours.";
+      ? t("Continue your file. Next action: {action}.", {
+          action: soften(t(dossierCompleteness.next)),
+        })
+      : t("Your file is up to date. You can search for a residence or follow your open applications.");
+
+  const dossierCta =
+    hasProfile || hasDossier ? t("Complete the file") : t("Create a file");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="fs-grid-main grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="fs-card p-7">
           <h1 className="fs-serif text-[34px] leading-tight">
-            {firstName.trim() ? `Bonjour ${firstName.trim()}` : "Bonjour"}
+            {firstName.trim()
+              ? t("Hello {name}", { name: firstName.trim() })
+              : t("Hello")}
           </h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
             {intro}
           </p>
           {saveStatus === "saving" ? (
-            <p className="mt-3 text-[13px] text-[var(--fs-ink-muted)]">Sauvegarde en cours…</p>
+            <p className="mt-3 text-[13px] text-[var(--fs-ink-muted)]">{t("Saving…")}</p>
           ) : null}
           {saveStatus === "error" && saveError ? (
             <p className="mt-3 text-[13px] text-[#b4533a]" role="alert">
@@ -1052,20 +1064,27 @@ function Accueil({
           ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="fs-btn fs-btn-primary" onClick={onOpenDossier}>
-              {hasProfile || hasDossier ? "Compléter le dossier" : "Créer un dossier"}
+              {dossierCta}
             </button>
             <button type="button" className="fs-btn fs-btn-outline" onClick={onSearch}>
-              Chercher une résidence
+              {t("Find a residence")}
             </button>
           </div>
         </div>
         <div className="fs-card p-6" style={{ background: "var(--fs-subtle)" }}>
-          <p className="fs-label">Dossier complété</p>
+          <p className="fs-label">{t("File progress")}</p>
           <p className="fs-serif mt-3 text-[42px] leading-none">{displayPercent} %</p>
           <p className="mt-2 text-[13.5px] text-[var(--fs-ink-muted)]">
             {hasDossier
-              ? `${dossierCompleteness.fieldsDone} sections sur ${dossierCompleteness.fieldsTotal} · ${dossierCompleteness.docsReceived} pièces sur ${dossierCompleteness.docsTotal}`
-              : `0 sections · 0 pièces sur ${dossierCompleteness.docsTotal}`}
+              ? t("{fieldsDone} of {fieldsTotal} sections · {docsReceived} of {docsTotal} documents", {
+                  fieldsDone: dossierCompleteness.fieldsDone,
+                  fieldsTotal: dossierCompleteness.fieldsTotal,
+                  docsReceived: dossierCompleteness.docsReceived,
+                  docsTotal: dossierCompleteness.docsTotal,
+                })
+              : t("0 sections · 0 of {docsTotal} documents", {
+                  docsTotal: dossierCompleteness.docsTotal,
+                })}
           </p>
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
             <div
@@ -1074,28 +1093,27 @@ function Accueil({
             />
           </div>
           <p className="mt-4 text-[14.5px] text-[var(--fs-ink-body)]">
-            Prochaine action :{" "}
-            {nextAction
-              ? `${nextAction.charAt(0).toLowerCase()}${nextAction.slice(1)}`
-              : "aucune"}
-            .
+            {t("Next action: {action}.", {
+              action: nextActionLabel ? soften(nextActionLabel) : t("none"),
+            })}
           </p>
         </div>
       </div>
 
       <div>
-        <h2 className="fs-serif text-[22px]">Vos demandes en cours</h2>
+        <h2 className="fs-serif text-[22px]">{t("Your open applications")}</h2>
         {applications.length === 0 ? (
           <div className="fs-card mt-4 p-8 text-center">
             <h3 className="fs-serif text-[20px]">
-              Pour pouvoir appliquer, merci de compléter votre dossier
+              {t("To apply, please complete your file first")}
             </h3>
             <p className="mx-auto mt-2 max-w-md text-[14.5px] text-[var(--fs-ink-body)]">
-              Une fois votre dossier prêt, vous pourrez déposer une demande auprès d&apos;une
-              résidence et suivre son avancement ici.
+              {t(
+                "Once your file is ready, you can apply to a residence and track progress here.",
+              )}
             </p>
             <button type="button" className="fs-btn fs-btn-primary mt-5" onClick={onOpenDossier}>
-              {hasProfile || hasDossier ? "Compléter le dossier" : "Créer un dossier"}
+              {dossierCta}
             </button>
           </div>
         ) : (
@@ -1116,7 +1134,7 @@ function Accueil({
                         : "green"
                   }
                 >
-                  {app.status}
+                  {t(app.status)}
                 </StatusPill>
                 <p className="fs-serif mt-3 text-[19px] leading-snug">{app.residenceName}</p>
                 <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
@@ -1131,7 +1149,7 @@ function Accueil({
 
       <div className="fs-grid-main grid gap-5 lg:grid-cols-2">
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Prochaine visite</h3>
+          <h3 className="fs-serif text-[19px]">{t("Next visit")}</h3>
           {nextVisit ? (
             <div className="mt-4 flex gap-4">
               <div
@@ -1139,13 +1157,14 @@ function Accueil({
                 style={{ background: "var(--fs-subtle)" }}
               >
                 <span className="fs-label">
-                  {(nextVisit.visit?.dateLabel || "Visite").split(" ")[0]?.toUpperCase() || "VISITE"}
+                  {(nextVisit.visit?.dateLabel || t("Visit")).split(" ")[0]?.toUpperCase() ||
+                    t("Visit").toUpperCase()}
                 </span>
                 <span className="fs-serif text-[22px] leading-none px-1">
-                  {nextVisit.visit?.dateLabel || "À venir"}
+                  {nextVisit.visit?.dateLabel || t("Upcoming")}
                 </span>
                 <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
-                  {nextVisit.visit?.timeLabel || "—"}
+                  {nextVisit.visit?.timeLabel || "-"}
                 </span>
               </div>
               <div className="min-w-0">
@@ -1155,38 +1174,43 @@ function Accueil({
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button type="button" className="fs-btn fs-btn-outline" onClick={onOpenApp}>
-                    Voir la demande
+                    {t("View application")}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="mt-4 rounded-[10px] px-4 py-5 text-[14.5px] text-[var(--fs-ink-muted)]" style={{ background: "var(--fs-subtle)" }}>
-              Aucune visite planifiée. Les rendez-vous confirmés par les résidences apparaîtront ici.
+            <div
+              className="mt-4 rounded-[10px] px-4 py-5 text-[14.5px] text-[var(--fs-ink-muted)]"
+              style={{ background: "var(--fs-subtle)" }}
+            >
+              {t(
+                "No visit scheduled. Confirmed appointments from residences will appear here.",
+              )}
             </div>
           )}
         </div>
 
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Prochaines étapes</h3>
+          <h3 className="fs-serif text-[19px]">{t("Next steps")}</h3>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
-            {nextSteps.map((t) => (
-              <li key={t.label} className="flex items-center justify-between gap-3 py-3">
+            {nextSteps.map((step) => (
+              <li key={step.label} className="flex items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-2.5">
                   <span
                     className="h-2.5 w-2.5 rounded-full"
                     style={{
                       background:
-                        t.tone === "terra"
+                        step.tone === "terra"
                           ? "var(--fs-terra)"
-                          : t.tone === "green"
+                          : step.tone === "green"
                             ? "var(--fs-green)"
                             : "var(--fs-border)",
                     }}
                   />
-                  <span className="text-[14.5px]">{t.label}</span>
+                  <span className="text-[14.5px]">{t(step.label)}</span>
                 </div>
-                <span className="text-[13px] text-[var(--fs-ink-muted)]">{t.owner}</span>
+                <span className="text-[13px] text-[var(--fs-ink-muted)]">{step.owner}</span>
               </li>
             ))}
           </ul>

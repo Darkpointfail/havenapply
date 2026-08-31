@@ -2402,6 +2402,16 @@ export const frMessages: Record<string, string> = {
   "collection notice": "avis de collecte",
   Active: "Actif",
   Withdrawn: "Retiré",
+
+  // ——— FamilySpace extras ———
+  "Hello. I can help with your file, your documents, or your applications. Ask your question.":
+    "Bonjour. Je peux vous aider avec votre dossier, vos documents ou vos demandes. Posez votre question.",
+  You: "Vous",
+  "{count} active files": "{count} dossiers actifs",
+  "File for {name}": "Dossier de {name}",
+  "No file": "Aucun dossier",
+  "Thank you. An advisor can clarify if needed — in the meantime, check missing documents in Files.":
+    "Merci. Un conseiller pourra préciser si besoin — en attendant, vérifiez les pièces manquantes dans Dossiers.",
 };
 
 export function translate(locale: Locale, key: string): string {

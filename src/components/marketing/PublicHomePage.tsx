@@ -6,8 +6,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { askAssistant, type AssistantTurn } from "@/data/assistant";
+import { collectionPath, privacyPath, termsPath } from "@/content/legal";
 import { useAuth, homeForUser } from "@/lib/auth";
+import { useLocale } from "@/lib/i18n/locale";
 import "./public-home.css";
 
 const sourceSerif = Source_Serif_4({
@@ -299,6 +302,7 @@ function ClaireHomeDemo() {
 export function PublicHomePage() {
   const router = useRouter();
   const { user, ready, signOut } = useAuth();
+  const { locale } = useLocale();
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -679,20 +683,33 @@ export function PublicHomePage() {
           <div className="flex flex-wrap items-center gap-3">
             <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
             <span className="text-[14px] text-white/55">
-              Plateforme d&apos;admissions en résidence
+              {locale === "en"
+                ? "Residence admissions platform"
+                : "Plateforme d'admissions en résidence"}
             </span>
+            <LanguageSwitcher compact className="!border-white/20 !bg-white/10 !text-white" />
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {[
-              { href: "#comment", label: "Comment ça marche" },
-              { href: "#residences", label: "Pour les résidences" },
-              { href: "#questions", label: "Questions" },
-              { href: "/confidentialite", label: "Confidentialité" },
-              { href: "/avis-de-collecte", label: "Avis de collecte" },
-              { href: "/conditions", label: "Conditions" },
-            ].map((l) => (
+            {(locale === "en"
+              ? [
+                  { href: "#comment", label: "How it works" },
+                  { href: "#residences", label: "For residences" },
+                  { href: "#questions", label: "FAQ" },
+                  { href: privacyPath("en"), label: "Privacy" },
+                  { href: collectionPath("en"), label: "Collection notice" },
+                  { href: termsPath("en"), label: "Terms" },
+                ]
+              : [
+                  { href: "#comment", label: "Comment ça marche" },
+                  { href: "#residences", label: "Pour les résidences" },
+                  { href: "#questions", label: "Questions" },
+                  { href: privacyPath("fr"), label: "Confidentialité" },
+                  { href: collectionPath("fr"), label: "Avis de collecte" },
+                  { href: termsPath("fr"), label: "Conditions" },
+                ]
+            ).map((l) => (
               <a
-                key={l.href}
+                key={l.href + l.label}
                 href={l.href}
                 className="text-[14.5px] text-white/70 no-underline transition-colors hover:text-white"
               >

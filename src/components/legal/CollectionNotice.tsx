@@ -1,18 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import {
   COLLECTION_NOTICE_ACCOUNT,
   COLLECTION_NOTICE_PROFILE,
 } from "@/content/legal/privacy-fr";
+import { getCollectionNotice, privacyPath } from "@/content/legal";
+import { useLocale } from "@/lib/i18n/locale";
 
 type Variant = "account" | "profile";
 
-const COPY: Record<Variant, typeof COLLECTION_NOTICE_ACCOUNT> = {
-  account: COLLECTION_NOTICE_ACCOUNT,
-  profile: COLLECTION_NOTICE_PROFILE,
-};
-
 /**
- * Avis de collecte court, visible avant/pendant la collecte (Loi 25).
+ * Short collection notice shown before/during collection (Law 25).
+ * Follows the active UI locale (FR/EN).
  */
 export function CollectionNotice({
   variant,
@@ -21,7 +21,11 @@ export function CollectionNotice({
   variant: Variant;
   className?: string;
 }) {
-  const notice = COPY[variant];
+  const { locale } = useLocale();
+  const notice = getCollectionNotice(locale, variant);
+  const privacyLabel =
+    locale === "en" ? "Privacy policy" : "Politique de confidentialité";
+
   return (
     <aside
       className={className}
@@ -56,14 +60,20 @@ export function CollectionNotice({
       >
         {notice.body}{" "}
         <Link
-          href="/confidentialite"
+          href={privacyPath(locale)}
           className="font-medium underline-offset-2 hover:underline"
           style={{ color: "#0A6F63" }}
         >
-          Politique de confidentialité
+          {privacyLabel}
         </Link>
-        <span style={{ color: "#5c6f66" }}> · version {notice.version}</span>
+        <span style={{ color: "#5c6f66" }}>
+          {" "}
+          · {locale === "en" ? "version" : "version"} {notice.version}
+        </span>
       </p>
     </aside>
   );
 }
+
+// Keep type exports reachable for tests / docs
+export type CollectionNoticeSource = typeof COLLECTION_NOTICE_ACCOUNT | typeof COLLECTION_NOTICE_PROFILE;

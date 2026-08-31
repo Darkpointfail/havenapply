@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { CollectionNotice } from "@/components/legal/CollectionNotice";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
 import {
@@ -11,7 +13,8 @@ import {
   apiFetchRightsLog,
   familyExportUrl,
 } from "@/lib/family/client-api";
-import { CollectionNotice } from "@/components/legal/CollectionNotice";
+import { collectionPath, privacyPath } from "@/content/legal";
+import { useLocale } from "@/lib/i18n/locale";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -29,21 +32,122 @@ const publicSans = Public_Sans({
 
 type LogRow = { id: string; operation: string; detail: string; recordedAt: string };
 
-const OP_LABEL: Record<string, string> = {
-  access_view: "Consultation",
-  export: "Export",
-  rectify: "Rectification",
-  consent_revoke: "Retrait de consentement",
-  deletion_request: "Demande de suppression",
-  deletion_executed: "Suppression effectuée",
-};
+const COPY = {
+  fr: {
+    eyebrow: "Espace famille",
+    title: "Vos droits (Loi 25)",
+    back: "Retour à l'accueil",
+    loading: "Chargement de vos droits…",
+    accessTitle: "1. Accéder à vos données",
+    accessBody:
+      "Téléchargez une copie JSON de votre compte, des profils, consentements, documents (métadonnées) et historique des droits. Les fichiers eux-mêmes se téléchargent depuis le dossier.",
+    connected: "Connecté·e",
+    completeness: "Complétude actuelle",
+    exportBtn: "Exporter mes données",
+    rectifyTitle: "2. Rectifier vos informations",
+    rectifyBody:
+      "Corrigez le profil contact et le dossier de la personne aînée directement dans l'espace famille. Les modifications sont enregistrées en base.",
+    editFile: "Modifier le dossier",
+    openProfile: "Ouvrir le profil",
+    revokeTitle: "3. Retirer le consentement de conservation",
+    revokeBody:
+      "Ce retrait vaut pour l'avenir. Il n'autorise jamais la transmission à une résidence (consentement distinct, non actif dans cette phase).",
+    revokeBtn: "Retirer mon consentement au profil",
+    saving: "Enregistrement…",
+    revokeOk: "Consentement de conservation du profil retiré pour l'avenir.",
+    revokeErr: "Impossible de retirer le consentement.",
+    deleteTitle: "4. Supprimer le dossier ou le compte",
+    deleteBodyPrefix: "La suppression est ",
+    deleteBodyStrong: "effective",
+    deleteBodySuffix:
+      " : fichiers effacés, renseignements du dossier anonymisés ou retirés. Cette action est irréversible.",
+    scope: "Portée",
+    scopeProfile: "Supprimer le dossier de la personne aînée (garder le compte)",
+    scopeAccount: "Supprimer toutes les données familiales de cet espace",
+    reason: "Motif (optionnel)",
+    typeConfirm: "Tapez",
+    toConfirm: "pour confirmer",
+    phraseProfile: "SUPPRIMER LE DOSSIER",
+    phraseAccount: "SUPPRIMER MON COMPTE",
+    deleting: "Suppression…",
+    deleteBtn: "Exécuter la suppression",
+    historyTitle: "Historique de vos opérations sensibles",
+    historyEmpty: "Aucune opération enregistrée pour le moment.",
+    seePrivacy: "Voir la",
+    privacy: "politique de confidentialité",
+    and: "et l'",
+    collection: "avis de collecte",
+    ops: {
+      access_view: "Consultation",
+      export: "Export",
+      rectify: "Rectification",
+      consent_revoke: "Retrait de consentement",
+      deletion_request: "Demande de suppression",
+      deletion_executed: "Suppression effectuée",
+    } as Record<string, string>,
+  },
+  en: {
+    eyebrow: "Family space",
+    title: "Your rights (Québec Law 25)",
+    back: "Back to home",
+    loading: "Loading your rights…",
+    accessTitle: "1. Access your data",
+    accessBody:
+      "Download a JSON copy of your account, profiles, consents, documents (metadata), and rights history. Binary files themselves are downloaded from the file.",
+    connected: "Signed in",
+    completeness: "Current completeness",
+    exportBtn: "Export my data",
+    rectifyTitle: "2. Correct your information",
+    rectifyBody:
+      "Update the contact profile and the senior's file directly in the family space. Changes are saved to the database.",
+    editFile: "Edit the file",
+    openProfile: "Open profile",
+    revokeTitle: "3. Withdraw retention consent",
+    revokeBody:
+      "This withdrawal applies going forward. It never authorizes transmission to a residence (separate consent, inactive in this phase).",
+    revokeBtn: "Withdraw my profile consent",
+    saving: "Saving…",
+    revokeOk: "Profile retention consent withdrawn for the future.",
+    revokeErr: "Unable to withdraw consent.",
+    deleteTitle: "4. Delete the file or account data",
+    deleteBodyPrefix: "Deletion is ",
+    deleteBodyStrong: "effective",
+    deleteBodySuffix:
+      ": files removed, file information anonymized or deleted. This action cannot be undone.",
+    scope: "Scope",
+    scopeProfile: "Delete the senior's file (keep the account)",
+    scopeAccount: "Delete all family data in this space",
+    reason: "Reason (optional)",
+    typeConfirm: "Type",
+    toConfirm: "to confirm",
+    phraseProfile: "DELETE THE FILE",
+    phraseAccount: "DELETE MY ACCOUNT",
+    deleting: "Deleting…",
+    deleteBtn: "Execute deletion",
+    historyTitle: "History of your sensitive operations",
+    historyEmpty: "No operations recorded yet.",
+    seePrivacy: "See the",
+    privacy: "privacy policy",
+    and: "and the",
+    collection: "collection notice",
+    ops: {
+      access_view: "Access",
+      export: "Export",
+      rectify: "Correction",
+      consent_revoke: "Consent withdrawal",
+      deletion_request: "Deletion request",
+      deletion_executed: "Deletion completed",
+    } as Record<string, string>,
+  },
+} as const;
 
 export default function FamilyRightsPage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = COPY[locale === "en" ? "en" : "fr"];
   const { user, signOut } = useAuth();
   const {
     ready,
-    data,
     completeness,
     saveStatus,
     saveError,
@@ -57,12 +161,6 @@ export default function FamilyRightsPage() {
   const [deleteScope, setDeleteScope] = useState<"profile" | "account">("profile");
   const [confirmPhrase, setConfirmPhrase] = useState("");
   const [reason, setReason] = useState("");
-
-  const hasConsent = Boolean(
-    // consent lives on server bundle; infer from completeness section if present via save cycle
-    data.senior.firstName || data.onboarding.lastSavedAt,
-  );
-  void hasConsent;
 
   const refreshLogs = useCallback(async () => {
     const result = await apiFetchRightsLog();
@@ -86,21 +184,26 @@ export default function FamilyRightsPage() {
     const ok = await recordProfileConsent(false);
     setBusy(false);
     if (!ok) {
-      setError(saveError || "Impossible de retirer le consentement.");
+      setError(saveError || t.revokeErr);
       return;
     }
-    setMessage("Consentement de conservation du profil retiré pour l'avenir.");
+    setMessage(t.revokeOk);
     void refreshLogs();
   };
 
+  const expectedPhrase = deleteScope === "account" ? t.phraseAccount : t.phraseProfile;
+
   const onExecuteDelete = async () => {
+    if (confirmPhrase !== expectedPhrase) return;
     setBusy(true);
     setError(null);
     setMessage(null);
+    const apiPhrase =
+      deleteScope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
     const result = await apiExecuteDeletion({
       scope: deleteScope,
       reason,
-      confirmPhrase,
+      confirmPhrase: apiPhrase,
     });
     setBusy(false);
     if (!result.ok) {
@@ -118,13 +221,10 @@ export default function FamilyRightsPage() {
     router.refresh();
   };
 
-  const expectedPhrase =
-    deleteScope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
-
   if (!ready) {
     return (
       <div className={`${publicSans.variable} ${sourceSerif.variable} p-8 text-sm text-[#5c6f66]`}>
-        Chargement de vos droits…
+        {t.loading}
       </div>
     );
   }
@@ -139,12 +239,7 @@ export default function FamilyRightsPage() {
         fontFamily: "var(--font-public-sans), system-ui, sans-serif",
       }}
     >
-      <header
-        style={{
-          borderBottom: "1px solid rgba(20,32,28,0.08)",
-          background: "rgba(255,255,255,0.8)",
-        }}
-      >
+      <header style={{ borderBottom: "1px solid rgba(20,32,28,0.08)", background: "rgba(255,255,255,0.8)" }}>
         <div
           style={{
             maxWidth: 800,
@@ -154,11 +249,21 @@ export default function FamilyRightsPage() {
             justifyContent: "space-between",
             gap: 12,
             alignItems: "center",
+            flexWrap: "wrap",
           }}
         >
           <div>
-            <p style={{ margin: 0, fontSize: 12, color: "#5c6f66", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
-              Espace famille
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                color: "#5c6f66",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                fontWeight: 600,
+              }}
+            >
+              {t.eyebrow}
             </p>
             <h1
               style={{
@@ -168,12 +273,15 @@ export default function FamilyRightsPage() {
                 fontWeight: 600,
               }}
             >
-              Vos droits (Loi 25)
+              {t.title}
             </h1>
           </div>
-          <Link href="/family/dashboard" style={{ fontSize: 14, color: "#0A6F63", textDecoration: "none" }}>
-            Retour à l&apos;accueil
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <LanguageSwitcher compact />
+            <Link href="/family/dashboard" style={{ fontSize: 14, color: "#0A6F63", textDecoration: "none" }}>
+              {t.back}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -181,58 +289,47 @@ export default function FamilyRightsPage() {
         <CollectionNotice variant="profile" />
 
         <section style={cardStyle}>
-          <h2 style={h2Style}>1. Accéder à vos données</h2>
-          <p style={pStyle}>
-            Téléchargez une copie JSON de votre compte, des profils, consentements, documents
-            (métadonnées) et historique des droits. Les fichiers eux-mêmes se téléchargent
-            depuis le dossier.
-          </p>
+          <h2 style={h2Style}>{t.accessTitle}</h2>
+          <p style={pStyle}>{t.accessBody}</p>
           <p style={{ ...pStyle, marginTop: 8 }}>
-            Connecté·e : <strong>{user?.email}</strong> · Complétude actuelle : {completeness} %
+            {t.connected}: <strong>{user?.email}</strong> · {t.completeness}: {completeness} %
           </p>
           <button type="button" style={btnPrimary} onClick={onExport}>
-            Exporter mes données
+            {t.exportBtn}
           </button>
         </section>
 
         <section style={cardStyle}>
-          <h2 style={h2Style}>2. Rectifier vos informations</h2>
-          <p style={pStyle}>
-            Corrigez le profil contact et le dossier de la personne aînée directement dans
-            l&apos;espace famille. Les modifications sont enregistrées en base.
-          </p>
+          <h2 style={h2Style}>{t.rectifyTitle}</h2>
+          <p style={pStyle}>{t.rectifyBody}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <Link href="/family/dashboard?view=dossier" style={btnOutlineLink}>
-              Modifier le dossier
+              {t.editFile}
             </Link>
             <Link href="/family/profile" style={btnOutlineLink}>
-              Ouvrir le profil
+              {t.openProfile}
             </Link>
           </div>
         </section>
 
         <section style={cardStyle}>
-          <h2 style={h2Style}>3. Retirer le consentement de conservation</h2>
-          <p style={pStyle}>
-            Ce retrait vaut pour l&apos;avenir. Il n&apos;autorise jamais la transmission à une
-            résidence (consentement distinct, non actif dans cette phase).
-          </p>
+          <h2 style={h2Style}>{t.revokeTitle}</h2>
+          <p style={pStyle}>{t.revokeBody}</p>
           <button type="button" style={btnOutline} disabled={busy} onClick={() => void onRevokeConsent()}>
-            Retirer mon consentement au profil
+            {t.revokeBtn}
           </button>
-          {saveStatus === "saving" ? (
-            <p style={{ ...pStyle, marginTop: 10 }}>Enregistrement…</p>
-          ) : null}
+          {saveStatus === "saving" ? <p style={{ ...pStyle, marginTop: 10 }}>{t.saving}</p> : null}
         </section>
 
         <section style={cardStyle}>
-          <h2 style={h2Style}>4. Supprimer le dossier ou le compte</h2>
+          <h2 style={h2Style}>{t.deleteTitle}</h2>
           <p style={pStyle}>
-            La suppression est <strong>effective</strong> : fichiers effacés, renseignements
-            du dossier anonymisés ou retirés. Cette action est irréversible.
+            {t.deleteBodyPrefix}
+            <strong>{t.deleteBodyStrong}</strong>
+            {t.deleteBodySuffix}
           </p>
           <fieldset style={{ border: "none", margin: "12px 0 0", padding: 0 }}>
-            <legend style={{ fontSize: 13, color: "#5c6f66", marginBottom: 8 }}>Portée</legend>
+            <legend style={{ fontSize: 13, color: "#5c6f66", marginBottom: 8 }}>{t.scope}</legend>
             <label style={radioLabel}>
               <input
                 type="radio"
@@ -240,7 +337,7 @@ export default function FamilyRightsPage() {
                 checked={deleteScope === "profile"}
                 onChange={() => setDeleteScope("profile")}
               />
-              Supprimer le dossier de la personne aînée (garder le compte)
+              {t.scopeProfile}
             </label>
             <label style={radioLabel}>
               <input
@@ -249,11 +346,11 @@ export default function FamilyRightsPage() {
                 checked={deleteScope === "account"}
                 onChange={() => setDeleteScope("account")}
               />
-              Supprimer toutes les données familiales de cet espace
+              {t.scopeAccount}
             </label>
           </fieldset>
           <label style={{ display: "block", marginTop: 12 }}>
-            <span style={{ fontSize: 13, color: "#5c6f66" }}>Motif (optionnel)</span>
+            <span style={{ fontSize: 13, color: "#5c6f66" }}>{t.reason}</span>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -264,7 +361,7 @@ export default function FamilyRightsPage() {
           </label>
           <label style={{ display: "block", marginTop: 12 }}>
             <span style={{ fontSize: 13, color: "#5c6f66" }}>
-              Tapez <strong>{expectedPhrase}</strong> pour confirmer
+              {t.typeConfirm} <strong>{expectedPhrase}</strong> {t.toConfirm}
             </span>
             <input
               value={confirmPhrase}
@@ -279,7 +376,7 @@ export default function FamilyRightsPage() {
             disabled={busy || confirmPhrase !== expectedPhrase}
             onClick={() => void onExecuteDelete()}
           >
-            {busy ? "Suppression…" : "Exécuter la suppression"}
+            {busy ? t.deleting : t.deleteBtn}
           </button>
         </section>
 
@@ -299,9 +396,9 @@ export default function FamilyRightsPage() {
         )}
 
         <section style={cardStyle}>
-          <h2 style={h2Style}>Historique de vos opérations sensibles</h2>
+          <h2 style={h2Style}>{t.historyTitle}</h2>
           {logs.length === 0 ? (
-            <p style={pStyle}>Aucune opération enregistrée pour le moment.</p>
+            <p style={pStyle}>{t.historyEmpty}</p>
           ) : (
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
               {logs.map((l) => (
@@ -314,10 +411,10 @@ export default function FamilyRightsPage() {
                     fontSize: 13.5,
                   }}
                 >
-                  <strong>{OP_LABEL[l.operation] || l.operation}</strong>
+                  <strong>{t.ops[l.operation] || l.operation}</strong>
                   <span style={{ color: "#5c6f66" }}>
                     {" · "}
-                    {new Date(l.recordedAt).toLocaleString("fr-CA")}
+                    {new Date(l.recordedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}
                   </span>
                   {l.detail ? <div style={{ marginTop: 4, color: "#3d5249" }}>{l.detail}</div> : null}
                 </li>
@@ -327,13 +424,13 @@ export default function FamilyRightsPage() {
         </section>
 
         <p style={{ fontSize: 13, color: "#5c6f66", lineHeight: 1.5 }}>
-          Voir la{" "}
-          <Link href="/confidentialite" style={{ color: "#0A6F63" }}>
-            politique de confidentialité
+          {t.seePrivacy}{" "}
+          <Link href={privacyPath(locale)} style={{ color: "#0A6F63" }}>
+            {t.privacy}
           </Link>{" "}
-          et l&apos;
-          <Link href="/avis-de-collecte" style={{ color: "#0A6F63" }}>
-            avis de collecte
+          {t.and}{" "}
+          <Link href={collectionPath(locale)} style={{ color: "#0A6F63" }}>
+            {t.collection}
           </Link>
           .
         </p>

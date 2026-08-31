@@ -887,8 +887,8 @@ function DossierView({
           ) : null}
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
             {[
-              [t("Desired unit"), demande.unite],
-              [t("Desired move-in"), demande.emmenagement],
+              [t("Desired unit"), t(demande.unite)],
+              [t("Desired move-in"), t(demande.emmenagement)],
               [
                 t("Contact person"),
                 `${demande.contact} (${relationLabel(t, demande.contactLien)})`,
@@ -975,10 +975,10 @@ function DossierView({
               {[
                 [t("Date of birth"), demande.dateNaissance],
                 [t("Current address"), demande.adresse],
-                [t("Declared autonomy level"), demande.autonomie],
-                [t("Services required"), demande.services],
+                [t("Declared autonomy level"), t(demande.autonomie)],
+                [t("Services required"), t(demande.services)],
                 [t("Stated monthly budget"), demande.budget],
-                [t("Application source"), demande.provenance],
+                [t("Application source"), t(demande.provenance)],
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="rc-label">{label}</p>
@@ -1115,7 +1115,7 @@ function DossierView({
             <h3 className="rc-serif text-[19px]">{t("Assistance")}</h3>
             <p className="rc-label mt-4">{t("File summary")}</p>
             <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-              {demande.resumeIa}
+              {t(demande.resumeIa)}
             </p>
             <button type="button" className="rc-btn rc-btn-outline mt-4 w-full bg-white">
               {t("Check file compliance")}

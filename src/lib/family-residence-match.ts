@@ -357,18 +357,50 @@ function scoreGeoAxis(
     return { score: 95, why: `Dans le secteur « ${sector} »` };
   }
 
-  // Soft match on region token
+  const sectorLc = sector.toLowerCase();
+  const cityLc = residence.city.toLowerCase();
   const region = residence.city.includes(",")
     ? residence.city.slice(residence.city.indexOf(",") + 1).trim().toLowerCase()
     : "";
-  if (region && sector.toLowerCase().includes(region.split(" ")[0] || "")) {
+
+  // Soft: sector contains city name or region name (or reverse)
+  const cityCore = cityLc.split(",")[0]?.trim() || "";
+  if (cityCore.length >= 3 && (sectorLc.includes(cityCore) || cityCore.includes(sectorLc))) {
+    return { score: 88, why: `Secteur proche de ${cityCore}` };
+  }
+  if (region && (sectorLc.includes(region) || region.includes(sectorLc.split(/[\s,]/)[0] || ""))) {
     return { score: 62, why: `Même région administrative (${region})` };
   }
 
   return {
-    score: 28,
+    score: 22,
     consider: `Hors du secteur recherché (« ${sector} »)`,
   };
+}
+
+/**
+ * Indicative monthly rent for matching only when the registry has no published tariff.
+ * Based on RPA category band, region and nursing — not a real quote.
+ */
+export function estimateMonthlyPrice(residence: Residence): {
+  amount: number;
+  estimated: boolean;
+} | null {
+  if (residence.priceAmount > 0) {
+    return { amount: residence.priceAmount, estimated: false };
+  }
+  const band = residenceAutonomyBand(residence);
+  const mid = (band.lo + band.hi) / 2;
+  // ~$2 200 (very autonomous) → ~$4 500 (high care)
+  let base = 4800 - mid * 260;
+  const hay = `${residence.city} ${residence.location.address}`.toLowerCase();
+  if (/montréal|montreal|laval|longueuil/.test(hay)) base *= 1.12;
+  else if (/québec|quebec|lévis|levis|gatineau/.test(hay)) base *= 1.05;
+  if (residence.hasNursingStaff) base += 280;
+  if (residence.units > 0 && residence.units < 40) base += 120;
+  if (residence.units >= 150) base -= 80;
+  const amount = Math.max(1800, Math.min(5500, Math.round(base / 50) * 50));
+  return { amount, estimated: true };
 }
 
 function scoreBudgetAxis(
@@ -382,19 +414,30 @@ function scoreBudgetAxis(
         ? profil.budgetMax
         : null;
   if (max == null || !Number.isFinite(max)) return { score: null };
-  if (!(residence.priceAmount > 0)) {
-    return { score: null, consider: "Tarif non publié — critère budget non scoré" };
-  }
-  if (residence.priceAmount > max) {
+
+  const priced = estimateMonthlyPrice(residence);
+  if (!priced) return { score: null };
+
+  const { amount, estimated } = priced;
+  const suffix = estimated ? " (estimation)" : "";
+
+  if (amount > max) {
+    const over = (amount - max) / max;
     return {
-      score: Math.max(10, 55 - Math.min(40, ((residence.priceAmount - max) / max) * 50)),
-      consider: "Tarif indicatif au-dessus du budget",
+      score: Math.max(8, Math.round(52 - Math.min(40, over * 55))),
+      consider: `Tarif indicatif ${amount.toLocaleString("fr-CA")} $ > budget ${max.toLocaleString("fr-CA")} $${suffix}`,
     };
   }
-  if (residence.priceAmount <= max * 0.9) {
-    return { score: 90, why: "Dans le budget indiqué" };
+  if (amount <= max * 0.9) {
+    return {
+      score: 92,
+      why: `Dans le budget (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+    };
   }
-  return { score: 75, why: "Proche du budget max" };
+  return {
+    score: 74,
+    why: `Proche du budget max (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+  };
 }
 
 function scoreSizeAxis(
@@ -445,7 +488,7 @@ function scoreRegistryAxis(residence: Residence): { score: number; why?: string 
 
 /**
  * Derive a care-matching profile from the family dossier / search criteria.
- * Empty or draft dossiers yield EMPTY_CARE_PROFILE (registry axis only).
+ * Partial dossiers still apply whatever fields are filled (including draft).
  */
 export function careProfileFromFamilyInputs(input?: {
   ville?: string | null;
@@ -461,7 +504,12 @@ export function careProfileFromFamilyInputs(input?: {
   searchCriteria?: Partial<FamilySearchCriteria> | null;
   draft?: boolean;
 } | null): FamilyCareProfile {
-  if (!input || input.draft) return { ...EMPTY_CARE_PROFILE, search: { ...EMPTY_SEARCH_CRITERIA, priorities: { ...DEFAULT_PRIORITIES } } };
+  if (!input) {
+    return {
+      ...EMPTY_CARE_PROFILE,
+      search: { ...EMPTY_SEARCH_CRITERIA, priorities: { ...DEFAULT_PRIORITIES } },
+    };
+  }
 
   const sc = input.searchCriteria;
   const zone =

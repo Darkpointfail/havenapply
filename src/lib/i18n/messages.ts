@@ -2189,6 +2189,7 @@ export const frMessages: Record<string, string> = {
   "Apply to this residence": "Appliquer à cette résidence",
   "Call {phone}": "Appeler {phone}",
   "Apply · score {score}": "Appliquer · score {score}",
+  Type: "Type",
 
   // ——— FamilySpace demandes / dépôt / assistance ———
   "Contact profile": "Profil contact",
@@ -2269,6 +2270,42 @@ export const frMessages: Record<string, string> = {
   "Your call request has been noted. An advisor will reach you during opening hours.":
     "Votre demande d'appel a été notée. Un conseiller vous rejoindra durant les heures d'ouverture.",
   "Request a call": "Demander un appel",
+
+  // ——— Residence console (chrome + demandes list) ———
+  Applications: "Demandes",
+  "Documents and follow-ups": "Documents et relances",
+  Visits: "Visites",
+  Dashboard: "Tableau de bord",
+  "Residence page": "Page de l'établissement",
+  "Residence console": "Console résidence",
+  New: "Nouvelle",
+  "Under review": "En évaluation",
+  "Missing documents": "Documents manquants",
+  Accepted: "Acceptée",
+  All: "Toutes",
+  "Search a file or applicant": "Rechercher un dossier ou un demandeur",
+  "Admissions queue · files sent by families":
+    "File d'admission · dossiers transmis par les familles",
+  "Missing documents and reminder cadence":
+    "Suivi des pièces manquantes et cadence de rappels",
+  "Visit and call schedule": "Agenda des visites et suivis téléphoniques",
+  "Ranked by urgency then seniority": "Classement par urgence puis par ancienneté",
+  "Admission indicators over 90 days": "Indicateurs d'admission sur 90 jours",
+  "Preview of the public profile families see":
+    "Aperçu de la fiche publique vue par les familles",
+  File: "Dossier",
+  "Prospective resident file": "Dossier du futur résident",
+  "Currently being processed": "En cours de traitement",
+  "Complete files": "Dossiers complets",
+  "Ready for a decision": "Prêts pour décision",
+  "Documents pending": "Pièces en attente",
+  "Average processing time": "Délai moyen de traitement",
+  d: "j",
+  "Over 90 days": "Sur 90 jours",
+  "Edit account": "Modifier le compte",
+  Cancel: "Annuler",
+  Save: "Enregistrer",
+  "Edit name or title": "Corriger prénom ou poste",
 };
 
 export function translate(locale: Locale, key: string): string {

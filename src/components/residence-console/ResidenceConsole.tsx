@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useAuth } from "@/lib/auth";
 import { useCommunityPortal } from "@/lib/community-portal-store";
 import {
   communityAppToDemande,
   communityAppsToWaitlist,
 } from "@/lib/fr-portal-dynamic";
+import { useLocale, useT } from "@/lib/i18n/locale";
 import {
   DASHBOARD_FUNNEL,
   DEMANDES,
@@ -41,19 +43,28 @@ export type ConsoleView =
   | "etablissement"
   | "dossier";
 
-type FilterId = "Toutes" | "Nouvelles" | "Documents manquants" | "Visite planifiée";
+type FilterId = "All" | "New" | "Missing documents" | "Visit scheduled";
 
 const NAV: { id: ConsoleView; label: string; badge?: boolean }[] = [
-  { id: "demandes", label: "Demandes", badge: true },
-  { id: "documents", label: "Documents et relances" },
-  { id: "visites", label: "Visites" },
-  { id: "attente", label: "Liste d'attente" },
-  { id: "tableau", label: "Tableau de bord" },
-  { id: "etablissement", label: "Page de l'établissement" },
+  { id: "demandes", label: "Applications", badge: true },
+  { id: "documents", label: "Documents and follow-ups" },
+  { id: "visites", label: "Visits" },
+  { id: "attente", label: "Waitlist" },
+  { id: "tableau", label: "Dashboard" },
+  { id: "etablissement", label: "Residence page" },
 ];
 
-function todayLabel() {
-  const raw = new Date().toLocaleDateString("fr-CA", {
+const DEMANDE_STATUS_EN: Record<DemandeStatus, string> = {
+  Nouvelle: "New",
+  "En évaluation": "Under review",
+  "Documents manquants": "Missing documents",
+  "Visite planifiée": "Visit scheduled",
+  Acceptée: "Accepted",
+  "Liste d'attente": "Waitlist",
+};
+
+function todayLabel(locale: string) {
+  const raw = new Date().toLocaleDateString(locale === "en" ? "en-CA" : "fr-CA", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -70,10 +81,11 @@ function initialsFrom(name: string) {
 }
 
 function StatusPill({ status }: { status: DemandeStatus }) {
+  const t = useT();
   const s = STATUS_STYLES[status];
   return (
     <span className="rc-pill" style={{ background: s.bg, color: s.color }}>
-      {status}
+      {t(DEMANDE_STATUS_EN[status] || status)}
     </span>
   );
 }
@@ -118,6 +130,8 @@ function ViewHeader({
   search?: string;
   onSearch?: (v: string) => void;
 }) {
+  const t = useT();
+  const { locale } = useLocale();
   return (
     <header className="flex h-[82px] shrink-0 items-center justify-between gap-6 border-b border-[var(--rc-border)] bg-[var(--rc-surface)] px-[34px]">
       <div className="min-w-0">
@@ -128,14 +142,15 @@ function ViewHeader({
         {onSearch ? (
           <input
             className="rc-input w-[330px]"
-            placeholder="Rechercher un dossier ou un demandeur"
+            placeholder={t("Search a file or applicant")}
             value={search}
             onChange={(e) => onSearch(e.target.value)}
           />
         ) : null}
+        <LanguageSwitcher compact />
         <span className="h-8 w-px bg-[var(--rc-border)]" aria-hidden />
         <p className="whitespace-nowrap text-[13.5px] font-medium text-[var(--rc-ink)]">
-          {todayLabel()}
+          {todayLabel(locale)}
         </p>
       </div>
     </header>
@@ -145,6 +160,7 @@ function ViewHeader({
 function AccountMenu() {
   const { user, signOut, updateProfile } = useAuth();
   const router = useRouter();
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -243,10 +259,10 @@ function AccountMenu() {
           {editing ? (
             <div className="space-y-3 p-3">
               <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8E9B96]">
-                Modifier le compte
+                {t("Edit account")}
               </p>
               <label className="block">
-                <span className="mb-1 block text-[12px] text-[#8E9B96]">Prénom</span>
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">{t("First name")}</span>
                 <input
                   className="rc-input"
                   value={firstName}
@@ -255,7 +271,7 @@ function AccountMenu() {
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-[12px] text-[#8E9B96]">Nom</span>
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">{t("Last name")}</span>
                 <input
                   className="rc-input"
                   value={lastName}
@@ -263,7 +279,7 @@ function AccountMenu() {
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-[12px] text-[#8E9B96]">Poste</span>
+                <span className="mb-1 block text-[12px] text-[#8E9B96]">{t("Job title")}</span>
                 <input
                   className="rc-input"
                   value={jobTitle}
@@ -276,10 +292,10 @@ function AccountMenu() {
                   className="rc-btn rc-btn-outline flex-1 border-white/15 text-white hover:bg-white/5"
                   onClick={() => setEditing(false)}
                 >
-                  Annuler
+                  {t("Cancel")}
                 </button>
                 <button type="button" className="rc-btn rc-btn-primary flex-1" onClick={saveEdit}>
-                  Enregistrer
+                  {t("Save")}
                 </button>
               </div>
             </div>
@@ -298,7 +314,7 @@ function AccountMenu() {
                 className="mt-1 flex w-full rounded-[7px] px-3 py-2.5 text-left text-[13.5px] text-[#C5D2CD] hover:bg-white/5 hover:text-white"
                 onClick={startEdit}
               >
-                Corriger prénom ou poste
+                {t("Edit name or title")}
               </button>
               <button
                 type="button"
@@ -306,7 +322,7 @@ function AccountMenu() {
                 className="flex w-full rounded-[7px] px-3 py-2.5 text-left text-[13.5px] text-[#E8B4A0] hover:bg-white/5"
                 onClick={handleSignOut}
               >
-                Se déconnecter
+                {t("Sign out")}
               </button>
             </div>
           )}
@@ -319,8 +335,9 @@ function AccountMenu() {
 export function ResidenceConsole() {
   const { user } = useAuth();
   const portal = useCommunityPortal();
+  const t = useT();
   const [view, setView] = useState<ConsoleView>("demandes");
-  const [filter, setFilter] = useState<FilterId>("Toutes");
+  const [filter, setFilter] = useState<FilterId>("All");
   const [selId, setSelId] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [placed, setPlaced] = useState<Record<string, UrgenceLevel>>({});
@@ -372,10 +389,10 @@ export function ResidenceConsole() {
 
   const filtered = useMemo(() => {
     let list = demandes;
-    if (filter === "Nouvelles") list = list.filter((d) => d.statut === "Nouvelle");
-    if (filter === "Documents manquants")
+    if (filter === "New") list = list.filter((d) => d.statut === "Nouvelle");
+    if (filter === "Missing documents")
       list = list.filter((d) => d.statut === "Documents manquants");
-    if (filter === "Visite planifiée") list = list.filter((d) => d.statut === "Visite planifiée");
+    if (filter === "Visit scheduled") list = list.filter((d) => d.statut === "Visite planifiée");
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter(
@@ -433,32 +450,32 @@ export function ResidenceConsole() {
 
   const titles: Record<ConsoleView, { title: string; subtitle: string }> = {
     demandes: {
-      title: "Demandes",
-      subtitle: "File d'admission · dossiers transmis par les familles",
+      title: t("Applications"),
+      subtitle: t("Admissions queue · files sent by families"),
     },
     documents: {
-      title: "Documents et relances",
-      subtitle: "Suivi des pièces manquantes et cadence de rappels",
+      title: t("Documents and follow-ups"),
+      subtitle: t("Missing documents and reminder cadence"),
     },
     visites: {
-      title: "Visites",
-      subtitle: "Agenda des visites et suivis téléphoniques",
+      title: t("Visits"),
+      subtitle: t("Visit and call schedule"),
     },
     attente: {
-      title: "Liste d'attente",
-      subtitle: "Classement par urgence puis par ancienneté",
+      title: t("Waitlist"),
+      subtitle: t("Ranked by urgency then seniority"),
     },
     tableau: {
-      title: "Tableau de bord",
-      subtitle: "Indicateurs d'admission sur 90 jours",
+      title: t("Dashboard"),
+      subtitle: t("Admission indicators over 90 days"),
     },
     etablissement: {
-      title: "Page de l'établissement",
-      subtitle: "Aperçu de la fiche publique vue par les familles",
+      title: t("Residence page"),
+      subtitle: t("Preview of the public profile families see"),
     },
     dossier: {
-      title: selected?.nom ?? "Dossier",
-      subtitle: "Dossier du futur résident",
+      title: selected?.nom ?? t("File"),
+      subtitle: t("Prospective resident file"),
     },
   };
 
@@ -480,7 +497,7 @@ export function ResidenceConsole() {
               className="mt-1.5 text-[12px] font-semibold uppercase tracking-[0.1em]"
               style={{ color: "#8E9B96" }}
             >
-              Console résidence
+              {t("Residence console")}
             </p>
           </div>
         </div>
@@ -515,7 +532,7 @@ export function ResidenceConsole() {
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{ background: "currentColor" }}
                 />
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1">{t(item.label)}</span>
                 {item.badge ? (
                   <span
                     className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white"
@@ -628,19 +645,32 @@ function DemandesView({
   setFilter: (f: FilterId) => void;
   onOpen: (id: string) => void;
 }) {
-  const filters: FilterId[] = ["Toutes", "Nouvelles", "Documents manquants", "Visite planifiée"];
+  const t = useT();
+  const filters: FilterId[] = ["All", "New", "Missing documents", "Visit scheduled"];
   return (
     <div className="flex flex-col gap-[22px]">
       <div className="grid grid-cols-4 gap-5">
-        <StatCard label="Demandes actives" value={18} context="En cours de traitement" />
-        <StatCard label="Dossiers complets" value={11} context="Prêts pour décision" />
         <StatCard
-          label="Documents manquants"
+          label={t("Active applications")}
+          value={18}
+          context={t("Currently being processed")}
+        />
+        <StatCard
+          label={t("Complete files")}
+          value={11}
+          context={t("Ready for a decision")}
+        />
+        <StatCard
+          label={t("Missing documents")}
           value={12}
-          context="Pièces en attente"
+          context={t("Documents pending")}
           alert
         />
-        <StatCard label="Délai moyen de traitement" value="9 j" context="Sur 90 jours" />
+        <StatCard
+          label={t("Average processing time")}
+          value={`9 ${t("d")}`}
+          context={t("Over 90 days")}
+        />
       </div>
 
       <div className="rc-card overflow-hidden">
@@ -661,7 +691,7 @@ function DemandesView({
                     cursor: "pointer",
                   }}
                 >
-                  {f}
+                  {t(f)}
                 </button>
               );
             })}

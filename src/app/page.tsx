@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { HomePageView } from "@/components/marketing/HomePageView";
 
 export const metadata: Metadata = {
-  title: "HavenApply — Une demande, toutes les résidences",
+  title: "HavenApply — Envoyez votre demande d'admission en ligne",
   description:
-    "Fini les dossiers papier. Remplissez une demande d'admission une seule fois et envoyez-la en ligne à toutes les résidences pour aînés que vous choisissez.",
+    "Le dossier se remplit en quelques minutes, puis nous vous recommandons les résidences qui correspondent vraiment aux besoins de votre proche, à votre budget et à votre secteur. Vous cochez celles que vous retenez, la demande part à toutes en même temps.",
 };
 
 export default function HomePage() {

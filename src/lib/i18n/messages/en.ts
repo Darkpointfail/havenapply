@@ -14,9 +14,9 @@ export const en: Messages = {
   "hp.nav.close": "Close",
 
   "hp.hero.pill": "100% online admission application",
-  "hp.hero.title": "No more paper files. One application, every residence.",
+  "hp.hero.title": "Send your admission application online, in a few clicks",
   "hp.hero.lead":
-    "No more paper forms to print, fax, or drop off in person. Complete the file once on HavenApply and send it online to every residence you choose, in a single click.",
+    "The file takes a few minutes to complete, then we recommend residences that truly match your loved one’s needs, your budget, and your area. You select the ones you want—the application goes to all of them at once.",
   "hp.hero.ctaPrimary": "Submit my application online",
   "hp.hero.ctaSecondary": "See how it works",
   "hp.hero.note": "Free for families. No travel, no paperwork, no commitment.",

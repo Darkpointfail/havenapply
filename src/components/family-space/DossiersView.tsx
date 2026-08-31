@@ -732,7 +732,7 @@ function ClairePanel({
                   : { background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }
               }
             >
-              {m.body}
+              {t(m.body)}
             </div>
           </div>
         ))}
@@ -757,7 +757,7 @@ function ClairePanel({
               onClick={() => onSuggest(s)}
               className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)] disabled:opacity-50"
             >
-              {s}
+              {t(s)}
             </button>
           ))}
         </div>

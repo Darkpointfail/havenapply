@@ -129,19 +129,24 @@ function SignInForm() {
             <li>
               <span className="si-dot" aria-hidden />
               <span>
-                Proches aidants : le dossier de votre proche et le suivi de vos demandes.
+                {t(
+                  "Caregivers: your loved one's file and application tracking.",
+                )}
               </span>
             </li>
             <li>
               <span className="si-dot" aria-hidden />
               <span>
-                Établissements : votre console d&apos;admission et votre liste d&apos;attente.
+                {t(
+                  "Facilities: your admissions console and waitlist.",
+                )}
               </span>
             </li>
           </ul>
           <p className="si-privacy">
-            Vos renseignements de santé sont hébergés au Québec et ne sont transmis qu&apos;aux
-            établissements auxquels vous déposez une demande.
+            {t(
+              "Your health information is hosted in Québec and is only shared with facilities you apply to.",
+            )}
           </p>
         </div>
 
@@ -158,7 +163,7 @@ function SignInForm() {
             <form onSubmit={onSubmit} className="si-fields">
               <div>
                 <label className="si-label" htmlFor="si-email">
-                  Courriel
+                  {t("Email")}
                 </label>
                 <input
                   id="si-email"
@@ -168,17 +173,17 @@ function SignInForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  placeholder="sophie.levesque@courriel.ca"
+                  placeholder="sophie.levesque@email.ca"
                 />
               </div>
 
               <div>
                 <div className="si-label-row">
                   <label className="si-label" htmlFor="si-password">
-                    Mot de passe
+                    {t("Password")}
                   </label>
                   <Link href="/forgot-password" className="si-forgot">
-                    Mot de passe oublié ?
+                    {t("Forgot password?")}
                   </Link>
                 </div>
                 <input
@@ -198,7 +203,7 @@ function SignInForm() {
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
-                <span>Rester connectée sur cet appareil</span>
+                <span>{t("Stay signed in on this device")}</span>
               </label>
 
               <button type="submit" className="si-submit" disabled={submitting}>
@@ -212,8 +217,9 @@ function SignInForm() {
                 <Link href="/get-started">{t("Create an account")}</Link>
               </p>
               <p className="si-card-foot-note">
-                Un établissement partenaire ? Utilisez le même formulaire : votre console
-                s&apos;ouvre automatiquement.
+                {t(
+                  "Partner facility? Use the same form: your console opens automatically.",
+                )}
               </p>
             </div>
           </div>

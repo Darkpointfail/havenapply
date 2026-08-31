@@ -373,13 +373,13 @@ export function ResidenceConsole() {
       id: "m1",
       from: "family",
       author: "Sophie Lévesque",
-      body: "Bonjour, nous avons envoyé le bilan médical ce matin. La preuve de revenus suivra d'ici demain.",
+      body: "Hello, we sent the medical assessment this morning. Proof of income will follow by tomorrow.",
     },
     {
       id: "m2",
       from: "residence",
       author: "Claudine Mercier",
-      body: "Merci Sophie. Dès réception des deux pièces, nous pourrons planifier la visite.",
+      body: "Thank you Sophie. Once we receive both documents, we can schedule the visit.",
     },
   ]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -1055,7 +1055,7 @@ function DossierView({
                           }
                     }
                   >
-                    {m.body}
+                    {t(m.body)}
                   </div>
                 </div>
               ))}
@@ -1431,14 +1431,14 @@ function AttenteView({
           {UNIT_AVAILABILITY.map((u) => (
             <li key={u.type} className="flex items-baseline justify-between gap-4 py-3.5">
               <div>
-                <p className="text-[15px] font-semibold">{u.type}</p>
-                <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">{u.waiting}</p>
+                <p className="text-[15px] font-semibold">{t(u.type)}</p>
+                <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">{t(u.waiting)}</p>
               </div>
               <p
                 className="text-[14px] font-semibold"
                 style={{ color: u.alert ? "var(--rc-terra)" : "var(--rc-ink)" }}
               >
-                {u.free}
+                {t(u.free)}
               </p>
             </li>
           ))}
@@ -1529,7 +1529,9 @@ function EtablissementView() {
     can("editAdmissions") || can("editProfile") || can("acceptDecline");
   const name = profile?.name || RESIDENCE.name;
   const city = profile?.city || RESIDENCE.city;
-  const description = profile?.description || RESIDENCE.description;
+  const description = profile?.description
+    ? profile.description
+    : t(RESIDENCE.description);
 
   const toggleAccepting = () => {
     if (!canToggle) return;
@@ -1649,10 +1651,10 @@ function EtablissementView() {
                     cursor: "default",
                   }}
                 >
-                  <p className="text-[14.5px] font-semibold">{u.type}</p>
-                  <p className="text-[14px] text-[var(--rc-ink-muted)]">{u.area}</p>
-                  <p className="text-[14px] font-medium">{u.price}</p>
-                  <p className="text-[14px]">{u.avail}</p>
+                  <p className="text-[14.5px] font-semibold">{t(u.type)}</p>
+                  <p className="text-[14px] text-[var(--rc-ink-muted)]">{t(u.area)}</p>
+                  <p className="text-[14px] font-medium">{t(u.price)}</p>
+                  <p className="text-[14px]">{t(u.avail)}</p>
                 </div>
               ))}
             </div>

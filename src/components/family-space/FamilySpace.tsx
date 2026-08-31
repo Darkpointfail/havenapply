@@ -634,18 +634,29 @@ export function FamilySpace() {
     window.setTimeout(() => chatInputRef.current?.focus(), 40);
     const m = message.toLowerCase();
     if (profileStep === 0) {
-      if (m.includes("moi-même") || m.includes("moi-meme") || m.includes("pour moi")) {
+      if (
+        m.includes("moi-même") ||
+        m.includes("moi-meme") ||
+        m.includes("pour moi") ||
+        m.includes("for myself") ||
+        m.includes("myself")
+      ) {
         patchActive({
           profileSubject: "self",
           rel: "Moi-même",
           prenom: activeProfile?.prenom || displayUser.firstName || "",
           nom: activeProfile?.nom || "",
         });
-      } else if (m.includes("proche") || m.includes("parent")) {
+      } else if (
+        m.includes("proche") ||
+        m.includes("parent") ||
+        m.includes("loved one") ||
+        m.includes("for a loved")
+      ) {
         patchActive({ profileSubject: "proche" });
       }
-      if (m.includes("hôpital") || m.includes("hopital")) {
-        patchActive({ meta: "Dossier urgent · hôpital" });
+      if (m.includes("hôpital") || m.includes("hopital") || m.includes("hospital")) {
+        patchActive({ meta: "Urgent file · hospital" });
       }
     }
   };
@@ -787,7 +798,18 @@ export function FamilySpace() {
                         {["Fille", "Fils", "Conjoint", "Conjointe", "Autre proche", "Moi-même"].map(
                           (opt) => (
                             <option key={opt} value={opt}>
-                              {t(opt)}
+                              {t(
+                                (
+                                  {
+                                    Fille: "Daughter",
+                                    Fils: "Son",
+                                    Conjoint: "Male spouse",
+                                    Conjointe: "Female spouse",
+                                    "Autre proche": "Another loved one",
+                                    "Moi-même": "Myself",
+                                  } as Record<string, string>
+                                )[opt] ?? opt,
+                              )}
                             </option>
                           ),
                         )}
@@ -828,7 +850,19 @@ export function FamilySpace() {
                       {data.senior.relationship ? (
                         <p className="mt-1 text-[12px] text-[#9AABA4]">
                           {t("Contact · {relationship}", {
-                            relationship: t(data.senior.relationship),
+                            relationship: t(
+                              (
+                                {
+                                  Fille: "Daughter",
+                                  Fils: "Son",
+                                  Conjoint: "Male spouse",
+                                  Conjointe: "Female spouse",
+                                  "Autre proche": "Another loved one",
+                                  "Moi-même": "Myself",
+                                  Famille: "Family",
+                                } as Record<string, string>
+                              )[data.senior.relationship] ?? data.senior.relationship,
+                            ),
                           })}
                         </p>
                       ) : null}

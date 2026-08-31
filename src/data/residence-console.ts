@@ -44,21 +44,21 @@ export type WaitlistEntry = {
 };
 
 export const REQUIRED_DOCS = [
-  "Pièce d'identité",
-  "Carte d'assurance maladie",
-  "Bilan médical",
-  "Liste de médicaments",
-  "Preuve de revenus",
-  "Mandat de protection",
+  "Proof of identity",
+  "Health insurance card",
+  "Medical assessment",
+  "Medication list",
+  "Proof of income",
+  "Protection mandate",
 ] as const;
 
 export const RESIDENCE = {
   name: "Résidence Les Jardins de Sainte-Foy",
   city: "Sainte-Foy, Québec",
   units: 112,
-  type: "Résidence privée pour aînés",
+  type: "Private residence for seniors",
   description:
-    "Établissement chaleureux au cœur de Sainte-Foy, offrant des unités adaptées, des soins personnalisés et une vie communautaire enrichissante pour les aînés en quête de sécurité et de confort.",
+    "A welcoming facility in the heart of Sainte-Foy, offering adapted units, personalized care, and an enriching community life for seniors seeking safety and comfort.",
   staff: {
     name: "Claudine Mercier",
     role: "Directrice adjointe",
@@ -321,33 +321,33 @@ export function docsForDemande(piecesManquantes: number) {
 export const WEEKLY_DEMANDES = [9, 11, 8, 14, 12, 10, 13, 15, 11, 16, 12, 11];
 
 export const DASHBOARD_FUNNEL = [
-  { label: "Reçues", value: 142, pct: 100, color: "#101815" },
-  { label: "Dossiers complétés", value: 96, pct: 68, color: "#0E9384" },
-  { label: "Visites réalisées", value: 61, pct: 43, color: "#0A6F63" },
-  { label: "Admissions confirmées", value: 34, pct: 24, color: "#A6572B" },
+  { label: "Received", value: 142, pct: 100, color: "#101815" },
+  { label: "Files completed", value: 96, pct: 68, color: "#0E9384" },
+  { label: "Visits completed", value: 61, pct: 43, color: "#0A6F63" },
+  { label: "Admissions confirmed", value: 34, pct: 24, color: "#A6572B" },
 ];
 
 export const UNIT_AVAILABILITY = [
-  { type: "1½", free: "2 libres", waiting: "3 en attente", alert: false },
-  { type: "2½", free: "1 libre", waiting: "4 en attente", alert: false },
-  { type: "3½ avec services", free: "complet", waiting: "5 en attente", alert: true },
-  { type: "3½ avec soins", free: "1 libre en octobre", waiting: "2 en attente", alert: false },
+  { type: "1½", free: "2 available", waiting: "3 waiting", alert: false },
+  { type: "2½", free: "1 available", waiting: "4 waiting", alert: false },
+  { type: "3½ with services", free: "full", waiting: "5 waiting", alert: true },
+  { type: "3½ with care", free: "1 available in October", waiting: "2 waiting", alert: false },
 ];
 
 export const UNIT_PRICING = [
-  { type: "1½", area: "320 pi²", price: "2 150 $", avail: "2 libres" },
-  { type: "2½", area: "480 pi²", price: "2 650 $", avail: "1 libre" },
-  { type: "3½ avec services", area: "620 pi²", price: "3 350 $", avail: "Complet" },
-  { type: "3½ avec soins", area: "640 pi²", price: "4 050 $", avail: "1 en oct." },
+  { type: "1½", area: "320 sq ft", price: "$2,150", avail: "2 available" },
+  { type: "2½", area: "480 sq ft", price: "$2,650", avail: "1 available" },
+  { type: "3½ with services", area: "620 sq ft", price: "$3,350", avail: "Full" },
+  { type: "3½ with care", area: "640 sq ft", price: "$4,050", avail: "1 in Oct." },
 ];
 
 export const SERVICES_INCLUS = [
-  "Repas quotidiens",
-  "Entretien ménager",
-  "Activités sociales",
-  "Infirmerie 24 h",
-  "Transport médical",
-  "Salon de coiffure",
+  "Daily meals",
+  "Housekeeping",
+  "Social activities",
+  "24h nursing station",
+  "Medical transport",
+  "Hair salon",
 ];
 
 export type VisitSlot = {
@@ -368,11 +368,11 @@ export const VISITS: VisitSlot[] = [
 ];
 
 export const PROGRESS_STEPS = [
-  "Demande reçue",
-  "Dossier ouvert et vérifié",
-  "Visite de la résidence",
-  "Décision d'admission",
-  "Export du dossier et intégration",
+  "Application received",
+  "File opened and verified",
+  "Residence visit",
+  "Admission decision",
+  "File export and integration",
 ] as const;
 
 export function progressIndexForStatus(status: DemandeStatus): number {

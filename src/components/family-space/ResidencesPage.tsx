@@ -19,6 +19,52 @@ import { useT } from "@/lib/i18n/locale";
 
 const PAGE_SIZE = 24;
 
+/** Domain catalog values stay French; display via English keys + t(). */
+const CATALOG_LABEL_EN: Record<string, string> = {
+  Logement: "Apartment",
+  "Chambre simple": "Private room (single)",
+  "Chambre double": "Double room",
+  Repas: "Meals",
+  "Soins infirmiers": "Nursing care",
+  "Aide au bain": "Bathing assistance",
+  "Aide à la mobilité": "Mobility assistance",
+  Loisirs: "Activities",
+  "Entretien ménager": "Housekeeping",
+  Capacité: "Capacity",
+  "Unités RPA": "RPA units",
+  "Résidents déclarés": "Declared residents",
+  Certification: "Certification",
+  "Catégories RPA": "RPA categories",
+  Étages: "Floors",
+  Ascenseurs: "Elevators",
+  Ouverture: "Opened",
+  Téléphone: "Phone",
+  MRC: "MRC",
+  Exploitant: "Operator",
+  Regroupement: "Group",
+  "Profil d'âge": "Age profile",
+  Sécurité: "Safety features",
+  "Appel à l'aide": "Call for help",
+  "Infirmières (sem.)": "Nurses (weekday)",
+  "Préposés (jour sem.)": "Aides (weekday day)",
+};
+
+function catalogLabel(t: (key: string, vars?: Record<string, string | number>) => string, value: string) {
+  return t(CATALOG_LABEL_EN[value] ?? value);
+}
+
+function factValue(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  label: string,
+  value: string,
+) {
+  if (label === "Capacité") {
+    const m = value.match(/^(\d+)\s*personnes$/i);
+    if (m) return t("{count} people", { count: m[1] });
+  }
+  return value;
+}
+
 function PhotoBlock({
   className = "",
   height,
@@ -76,6 +122,7 @@ function FilterPills({
   selected: string[];
   onToggle: (value: string) => void;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">{label}</p>
@@ -95,7 +142,7 @@ function FilterPills({
                 cursor: "pointer",
               }}
             >
-              {opt}
+              {catalogLabel(t, opt)}
             </button>
           );
         })}
@@ -624,10 +671,10 @@ export function ResidenceFiche({
                     className="rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-3"
                   >
                     <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
-                      {f.label}
+                      {catalogLabel(t, f.label)}
                     </p>
                     <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--fs-ink)]">
-                      {f.value}
+                      {factValue(t, f.label, f.value)}
                     </p>
                   </div>
                 ))}
@@ -655,7 +702,7 @@ export function ResidenceFiche({
                       className="grid gap-[18px] border-b border-[var(--fs-border-faint)] px-4 py-3 last:border-0"
                       style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
                     >
-                      <span className="font-semibold">{u.type}</span>
+                      <span className="font-semibold">{catalogLabel(t, u.type)}</span>
                       <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
                       <span>{u.price}</span>
                       <span
@@ -716,7 +763,7 @@ export function ResidenceFiche({
                         color: "var(--fs-ink)",
                       }}
                     >
-                      {s}
+                      {catalogLabel(t, s)}
                     </span>
                   ))}
                 </div>

@@ -123,6 +123,14 @@ export function ResidencesBrowse({
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const profile = careProfile ?? EMPTY_CARE_PROFILE;
+  const criteriaBits = [
+    profile.search.sector ? `Secteur : ${profile.search.sector}` : null,
+    profile.search.budgetMax
+      ? `Budget max : ${profile.search.budgetMax.toLocaleString("fr-CA")} $`
+      : null,
+    profile.search.size !== "any" ? `Taille : ${profile.search.size}` : null,
+    profile.autonomyScore != null ? `Autonomie : ${profile.autonomyScore}/10` : null,
+  ].filter(Boolean) as string[];
 
   const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
@@ -167,6 +175,34 @@ export function ResidencesBrowse({
           résidences actives, extraction {RPA_SOURCE.extractedOn}) et déposez une demande depuis le
           dossier de votre proche.
         </p>
+        {criteriaBits.length > 0 ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] px-3.5 py-2.5">
+            <span className="text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
+              Critères actifs
+            </span>
+            {criteriaBits.map((b) => (
+              <span
+                key={b}
+                className="fs-pill"
+                style={{
+                  background: "var(--fs-green-tint)",
+                  color: "var(--fs-green)",
+                  borderColor: "transparent",
+                }}
+              >
+                {b}
+              </span>
+            ))}
+            <span className="text-[12.5px] text-[var(--fs-ink-muted)]">
+              Les scores se recalculent avec votre dossier · tarifs estimés si non publiés
+            </span>
+          </div>
+        ) : (
+          <p className="mt-3 text-[13.5px] text-[var(--fs-ink-muted)]">
+            Complétez l’étape Recherche du dossier (secteur, budget, priorités) pour affiner les
+            scores.
+          </p>
+        )}
       </div>
 
       <div className="fs-grid-search grid gap-6 lg:grid-cols-[290px_1fr]">

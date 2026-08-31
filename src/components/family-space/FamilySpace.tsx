@@ -270,19 +270,41 @@ export function FamilySpace() {
         ...fromSenior,
         ...fromDossier,
         autonomie: data.residentDossier.autonomyLevel?.trim() || fromSenior.autonomie,
+        autonomyScore:
+          fromDossier.autonomyScore ??
+          fromSenior.autonomyScore ??
+          null,
       };
       if (localDraft && localDraft.id === hydrated.id) {
-        return [
-          {
-            ...hydrated,
-            ...localDraft,
-            prenom: localDraft.prenom || hydrated.prenom,
-            nom: localDraft.nom || hydrated.nom,
-            docs: liveDocs.length ? liveDocs : localDraft.docs,
-            accesses: accessesFromApps.length ? accessesFromApps : localDraft.accesses,
-            draft: localDraft.draft && !(data.senior.firstName && data.senior.lastName),
-          },
-        ];
+        const merged: FamilyProfile = {
+          ...hydrated,
+          ...localDraft,
+          prenom: localDraft.prenom || hydrated.prenom,
+          nom: localDraft.nom || hydrated.nom,
+          docs: liveDocs.length ? liveDocs : localDraft.docs,
+          accesses: accessesFromApps.length ? accessesFromApps : localDraft.accesses,
+          draft: localDraft.draft && !(data.senior.firstName && data.senior.lastName),
+          // Don't let empty draft defaults wipe search / autonomy filled from dossier
+          searchSector: localDraft.searchSector?.trim() || hydrated.searchSector,
+          searchRadiusKm: localDraft.searchRadiusKm ?? hydrated.searchRadiusKm,
+          searchBudgetMax: localDraft.searchBudgetMax ?? hydrated.searchBudgetMax,
+          searchSize:
+            localDraft.searchSize && localDraft.searchSize !== "any"
+              ? localDraft.searchSize
+              : hydrated.searchSize || "any",
+          searchMinRating: localDraft.searchMinRating ?? hydrated.searchMinRating,
+          priorityCare: localDraft.priorityCare ?? hydrated.priorityCare,
+          priorityGeo: localDraft.priorityGeo ?? hydrated.priorityGeo,
+          priorityBudget: localDraft.priorityBudget ?? hydrated.priorityBudget,
+          prioritySize: localDraft.prioritySize ?? hydrated.prioritySize,
+          priorityRating: localDraft.priorityRating ?? hydrated.priorityRating,
+          autonomyScore: localDraft.autonomyScore ?? hydrated.autonomyScore,
+          autonomie:
+            localDraft.autonomie && localDraft.autonomie !== "À préciser"
+              ? localDraft.autonomie
+              : hydrated.autonomie,
+        };
+        return [merged];
       }
       return [hydrated];
     }

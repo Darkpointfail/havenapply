@@ -773,7 +773,7 @@ function DemandesView({
                   })
                 : t("Complete")}
             </p>
-            <p className="text-[14px] text-[var(--rc-ink-muted)]">{d.recueLe}</p>
+            <p className="text-[14px] text-[var(--rc-ink-muted)]">{t(d.recueLe)}</p>
            <p className="text-right text-[14px] font-semibold text-[var(--rc-green)]">
              {t("View file")}
            </p>
@@ -893,7 +893,7 @@ function DossierView({
                 t("Contact person"),
                 `${demande.contact} (${relationLabel(t, demande.contactLien)})`,
               ],
-              [t("Received on"), demande.recueLe],
+              [t("Received on"), t(demande.recueLe)],
               ...(demande.publicRef
                 ? ([[t("Haven reference"), demande.publicRef]] as [string, string][])
                 : []),
@@ -973,11 +973,11 @@ function DossierView({
             <h3 className="rc-serif text-[19px]">{t("Future resident information")}</h3>
             <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
               {[
-                [t("Date of birth"), demande.dateNaissance],
+                [t("Date of birth"), t(demande.dateNaissance)],
                 [t("Current address"), demande.adresse],
                 [t("Declared autonomy level"), t(demande.autonomie)],
                 [t("Services required"), t(demande.services)],
-                [t("Stated monthly budget"), demande.budget],
+                [t("Stated monthly budget"), t(demande.budget)],
                 [t("Application source"), t(demande.provenance)],
               ].map(([label, value]) => (
                 <div key={label}>
@@ -1125,8 +1125,9 @@ function DossierView({
           <div className="rc-card p-6">
             <h3 className="rc-serif text-[19px]">{t("Internal notes")}</h3>
             <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-              {demande.noteInterne ||
-                t("No internal notes yet.\nAdded by C. Mercier · August 25")}
+              {demande.noteInterne
+                ? t(demande.noteInterne)
+                : t("No internal notes yet.\nAdded by C. Mercier · August 25")}
             </p>
           </div>
         </div>

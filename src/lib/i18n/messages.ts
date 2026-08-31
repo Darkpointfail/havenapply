@@ -3072,6 +3072,32 @@ export const frMessages: Record<string, string> = {
   "Already on the waitlist. Complete file. High urgency.": "Déjà en liste d'attente. Dossier complet. Urgence élevée.",
   "Complete file under clinical review. No missing documents.": "Dossier complet en évaluation clinique. Aucune pièce manquante.",
   "New application received on August 27. One missing document (protection mandate). Prioritize opening the file.": "Nouvelle demande reçue le 27 août. Une pièce manquante (mandat de protection). Prioriser l'ouverture du dossier.",
+
+  // Console seed dates/budgets
+  "August 26, 2026": "26 août 2026",
+  "August 22, 2026": "22 août 2026",
+  "August 20, 2026": "20 août 2026",
+  "August 19, 2026": "19 août 2026",
+  "August 14, 2026": "14 août 2026",
+  "August 8, 2026": "8 août 2026",
+  "August 16, 2026": "16 août 2026",
+  "August 27, 2026": "27 août 2026",
+  "March 12, 1942": "12 mars 1942",
+  "July 3, 1947": "3 juillet 1947",
+  "January 18, 1935": "18 janvier 1935",
+  "November 9, 1938": "9 novembre 1938",
+  "May 22, 1944": "22 mai 1944",
+  "September 30, 1937": "30 septembre 1937",
+  "April 4, 1941": "4 avril 1941",
+  "December 15, 1935": "15 décembre 1935",
+  "3 200 $/month": "3 200 $ / mois",
+  "2 600 $/month": "2 600 $ / mois",
+  "4 100 $/month": "4 100 $ / mois",
+  "2 100 $/month": "2 100 $ / mois",
+  "3 400 $/month": "3 400 $ / mois",
+  "2 900 $/month": "2 900 $ / mois",
+  "3 000 $/month": "3 000 $ / mois",
+  "3 500 $/month": "3 500 $ / mois",
 };
 
 export function translate(locale: Locale, key: string): string {

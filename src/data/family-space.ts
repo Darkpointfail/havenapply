@@ -212,38 +212,38 @@ export const SENIOR = {
 export const REQUIRED_DOCS: FamilyDoc[] = [
   {
     id: "id",
-    name: "Pièce d'identité",
-    detail: "Carte d'assurance maladie ou permis",
+    name: "Identity document",
+    detail: "Health insurance card or driver's licence",
     status: "reçu",
   },
   {
     id: "ramq",
-    name: "Carte d'assurance maladie",
-    detail: "Recto et verso",
+    name: "Health insurance card",
+    detail: "Front and back",
     status: "reçu",
   },
   {
     id: "bilan",
-    name: "Bilan médical",
-    detail: "Médecin traitant ou CLSC",
+    name: "Medical report",
+    detail: "Family doctor or CLSC",
     status: "en attente",
   },
   {
     id: "meds",
-    name: "Liste de médicaments",
-    detail: "Ordonnance à jour",
+    name: "Medication list",
+    detail: "Up-to-date prescription",
     status: "reçu",
   },
   {
     id: "revenus",
-    name: "Preuve de revenus",
-    detail: "Avis de cotisation ou relevé",
+    name: "Proof of income",
+    detail: "Notice of assessment or statement",
     status: "en attente",
   },
   {
     id: "mandat",
-    name: "Mandat de protection",
-    detail: "Ou procuration le cas échéant",
+    name: "Protection mandate",
+    detail: "Or power of attorney if applicable",
     status: "reçu",
   },
 ];
@@ -768,7 +768,7 @@ export type FamilyNextStep = {
   tone: "terra" | "green" | "neutral";
 };
 
-/** Derive « Prochaines étapes » from real dossier / docs / applications gaps. */
+/** Derive next steps from real dossier / docs / applications gaps. */
 export function buildNextSteps(input: {
   hasSeniorProfile: boolean;
   docs: FamilyDoc[];
@@ -778,22 +778,22 @@ export function buildNextSteps(input: {
   /** Prefer field/section gaps (from computeFamilyDossierCompleteness) over docs-only next. */
   fieldNext?: string | null;
 }): FamilyNextStep[] {
-  const owner = (input.ownerLabel || "").trim() || "Vous";
+  const owner = (input.ownerLabel || "").trim() || "You";
   const steps: FamilyNextStep[] = [];
 
   if (!input.hasSeniorProfile) {
     steps.push({
       label: input.forSelf
-        ? "Créer votre dossier d'admission"
-        : "Créer le dossier de votre proche",
+        ? "Create your admission file"
+        : "Create your loved one's file",
       owner,
       tone: "terra",
     });
   }
 
   const fieldNext = (input.fieldNext || "").trim();
-  const fieldIsDocHint = /^ajouter\s/i.test(fieldNext);
-  const fieldIsCreateHint = /créer un dossier/i.test(fieldNext);
+  const fieldIsDocHint = /^add\s/i.test(fieldNext);
+  const fieldIsCreateHint = /create (your |an? |the )?.*(file|dossier)/i.test(fieldNext);
   if (fieldNext && !fieldIsDocHint && !(fieldIsCreateHint && !input.hasSeniorProfile)) {
     steps.push({
       label: fieldNext,
@@ -804,7 +804,7 @@ export function buildNextSteps(input: {
 
   for (const doc of input.docs.filter((d) => d.status === "en attente").slice(0, 3)) {
     steps.push({
-      label: `Ajouter ${doc.name.charAt(0).toLowerCase()}${doc.name.slice(1)}`,
+      label: `Add ${doc.name.charAt(0).toLowerCase()}${doc.name.slice(1)}`,
       owner,
       tone: "terra",
     });
@@ -812,7 +812,7 @@ export function buildNextSteps(input: {
 
   if (input.hasSeniorProfile && input.applicationsCount === 0) {
     steps.push({
-      label: "Déposer une première demande",
+      label: "Submit a first application",
       owner,
       tone: "neutral",
     });
@@ -820,7 +820,7 @@ export function buildNextSteps(input: {
 
   if (steps.length === 0) {
     steps.push({
-      label: "Aucune action urgente pour le moment",
+      label: "No urgent action for now",
       owner: "HavenApply",
       tone: "green",
     });
@@ -888,7 +888,7 @@ export function computeFamilyDossierCompleteness(
       fieldsTotal: 9,
       docsReceived: 0,
       docsTotal: emptyDocs.length,
-      next: "Créer un dossier (pour vous ou un proche)",
+      next: "Create a file (for yourself or a loved one)",
       sections: [],
     };
   }
@@ -896,7 +896,7 @@ export function computeFamilyDossierCompleteness(
   const sections: FamilyDossierSectionProgress[] = [
     {
       id: "who",
-      label: "Indiquer pour qui est le dossier",
+      label: "Say who the file is for",
       complete:
         profile.profileSubject === "self" ||
         (profile.profileSubject === "proche" && hasProfileText(profile.rel)),
@@ -904,7 +904,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "identity",
-      label: "Compléter l'identité (nom et ville)",
+      label: "Complete identity (name and city)",
       complete:
         hasProfileText(profile.prenom) &&
         hasProfileText(profile.nom) &&
@@ -913,7 +913,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "contacts",
-      label: "Ajouter un contact principal",
+      label: "Add a primary contact",
       complete:
         hasProfileText(profile.contactPrincipalNom) &&
         hasProfileText(profile.contactPrincipalTel),
@@ -921,7 +921,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "legal",
-      label: "Préciser le statut légal",
+      label: "Specify legal status",
       complete:
         hasProfileText(profile.mandatProtection) ||
         hasProfileText(profile.procuration) ||
@@ -930,7 +930,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "insurance",
-      label: "Renseigner les assurances",
+      label: "Enter insurance details",
       complete:
         (hasProfileText(profile.assuranceMaladie) &&
           hasProfileText(profile.prenom) &&
@@ -941,7 +941,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "finances",
-      label: "Indiquer le budget ou les revenus",
+      label: "Enter budget or income",
       complete:
         hasProfileText(profile.revenusMensuels) ||
         (hasProfileText(profile.budget) && profile.budget !== "Budget à confirmer") ||
@@ -950,13 +950,13 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "care",
-      label: "Définir le niveau d'autonomie (1–10)",
+      label: "Set autonomy level (1–10)",
       complete: profile.autonomyScore != null && profile.autonomyScore >= 1,
       weight: 12,
     },
     {
       id: "search",
-      label: "Compléter les critères de recherche",
+      label: "Complete search criteria",
       complete:
         hasProfileText(profile.searchSector) &&
         profile.searchBudgetMax != null &&
@@ -965,7 +965,7 @@ export function computeFamilyDossierCompleteness(
     },
     {
       id: "signature",
-      label: "Signer le consentement",
+      label: "Sign the consent",
       complete: Boolean(profile.consentPartage) && hasProfileText(profile.signatureNom),
       weight: 5,
     },
@@ -986,7 +986,7 @@ export function computeFamilyDossierCompleteness(
   const next = nextField
     ? nextField.label
     : nextDoc
-      ? `Ajouter ${nextDoc.name}`
+      ? `Add ${nextDoc.name.charAt(0).toLowerCase()}${nextDoc.name.slice(1)}`
       : null;
 
   return {

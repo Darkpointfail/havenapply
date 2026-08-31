@@ -16,6 +16,7 @@ import {
   assistantSuggestions,
   type AssistantTurn,
 } from "@/data/assistant";
+import { useT } from "@/lib/i18n/locale";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -245,6 +246,7 @@ function OverviewMode({
   onUploadDoc: (docId: string) => void;
   onWithdrawAccess: (residenceId: string) => void;
 }) {
+  const t = useT();
   const progress = computeFamilyDossierCompleteness(profile);
   const docsReceived = progress.docsReceived;
   const docsTotal = progress.docsTotal;
@@ -359,12 +361,16 @@ function OverviewMode({
       <div className="flex flex-col gap-5">
         <div className="fs-card p-6 text-white" style={{ background: "var(--fs-black)" }}>
           <p className="fs-label" style={{ color: "#8E9B96" }}>
-            Avancement du dossier
+            {t("File progress")}
           </p>
           <p className="fs-serif mt-3 text-[44px] leading-none">{progress.percent} %</p>
           <p className="mt-2 text-[13px] text-[#8E9B96]">
-            {progress.fieldsDone} sections sur {progress.fieldsTotal} · {docsReceived} pièces sur{" "}
-            {docsTotal}
+            {t("{fieldsDone} of {fieldsTotal} sections · {docsReceived} of {docsTotal} documents", {
+              fieldsDone: progress.fieldsDone,
+              fieldsTotal: progress.fieldsTotal,
+              docsReceived,
+              docsTotal,
+            })}
           </p>
           <div
             className="mt-4 h-2.5 overflow-hidden rounded-full"

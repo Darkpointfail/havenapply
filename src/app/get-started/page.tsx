@@ -41,40 +41,40 @@ const ROLE_OPTIONS: {
 }[] = [
   {
     id: "family",
-    initial: "P",
-    title: "Proche aidant",
-    description: "Pour vous-même ou pour un proche à la recherche d'un milieu de vie.",
+    initial: "F",
+    title: "Family caregiver",
+    description: "For yourself or a loved one looking for a place to live.",
     points: [
-      "Un seul dossier d'admission, réutilisé partout",
-      "Des résidences suggérées selon le profil",
-      "Le suivi des demandes au même endroit",
+      "One admission file, reused everywhere",
+      "Residences suggested from the profile",
+      "Track every application in one place",
     ],
   },
   {
     id: "facility",
-    initial: "É",
-    title: "Établissement",
-    description: "Pour recevoir, évaluer et suivre les demandes d'admission.",
+    initial: "R",
+    title: "Residence",
+    description: "To receive, review, and follow admission applications.",
     points: [
-      "Des dossiers complets et normalisés",
-      "Une console d'admission et une liste d'attente",
-      "Vos disponibilités visibles par les familles",
+      "Complete, standardized dossiers",
+      "An admissions console and waitlist",
+      "Availability visible to families",
     ],
   },
 ];
 
 const FAMILY_FOR = [
-  "Un parent",
-  "Mon conjoint ou ma conjointe",
-  "Moi-même",
-  "Un autre proche",
+  "A parent",
+  "My spouse or partner",
+  "Myself (the resident)",
+  "Another relative",
 ] as const;
 
 const FACILITY_TYPES = [
-  "Résidence privée pour aînés",
-  "CHSLD",
-  "Ressource intermédiaire",
-  "Unité de soins de mémoire",
+  "Private senior residence",
+  "Long-term care home (CHSLD)",
+  "Intermediate resource",
+  "Memory care unit",
 ] as const;
 
 function roleFromQuery(value: string | null): GetStartedRole | null {
@@ -157,7 +157,7 @@ function GetStartedInner() {
     if (!role || submitting) return;
     setError(null);
     if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(t("Passwords do not match."));
       return;
     }
     setSubmitting(true);
@@ -229,11 +229,12 @@ function GetStartedInner() {
       </header>
 
       <main className="gs-main">
-        <p className="gs-eyebrow">Créer un compte</p>
-        <h1 className="gs-h1">Vous utilisez HavenApply à quel titre ?</h1>
+        <p className="gs-eyebrow">{t("Create an account")}</p>
+        <h1 className="gs-h1">{t("How will you use HavenApply?")}</h1>
         <p className="gs-lead">
-          Choisissez votre rôle une seule fois. Il reste associé à votre compte et détermine ce que
-          vous voyez à la connexion.
+          {t(
+            "Choose your role once. It stays linked to your account and shapes what you see when you sign in.",
+          )}
         </p>
 
         <div className="mt-9 grid gap-[18px] md:grid-cols-2">
@@ -263,9 +264,9 @@ function GetStartedInner() {
                 >
                   {option.initial}
                 </span>
-                <h2 className="gs-role-title">{option.title}</h2>
+                <h2 className="gs-role-title">{t(option.title)}</h2>
                 <p className="mt-2 text-[15px] leading-relaxed text-[var(--gs-ink-body)]">
-                  {option.description}
+                  {t(option.description)}
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {option.points.map((point) => (
@@ -278,7 +279,7 @@ function GetStartedInner() {
                         style={{ background: "var(--gs-green)" }}
                         aria-hidden
                       />
-                      <span>{point}</span>
+                      <span>{t(point)}</span>
                     </li>
                   ))}
                 </ul>
@@ -289,7 +290,7 @@ function GetStartedInner() {
                     color: selected ? "var(--gs-green)" : "var(--gs-ink-muted)",
                   }}
                 >
-                  {selected ? "Sélectionné" : "Choisir ce rôle"}
+                  {selected ? t("Selected") : t("Choose this role")}
                 </div>
               </button>
             );
@@ -307,14 +308,16 @@ function GetStartedInner() {
             <div className="gs-form-card">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="gs-eyebrow !tracking-[0.07em]">Inscription</p>
+                  <p className="gs-eyebrow !tracking-[0.07em]">{t("Sign up")}</p>
                   <h2 className="gs-h2 mt-1.5">
-                    {role === "facility" ? "Compte établissement" : "Compte proche aidant"}
+                    {role === "facility"
+                      ? t("Residence account")
+                      : t("Family caregiver account")}
                   </h2>
                   <p className="mt-2 max-w-xl text-[14.5px] text-[var(--gs-ink-muted)]">
                     {role === "facility"
-                      ? "Votre établissement sera vérifié avant la mise en ligne de sa fiche."
-                      : "Votre rôle est enregistré avec votre compte pour vos prochaines connexions."}
+                      ? t("Your residence will be verified before its profile goes live.")
+                      : t("Your role is saved with your account for future sign-ins.")}
                   </p>
                 </div>
                 {role ? (
@@ -326,7 +329,7 @@ function GetStartedInner() {
                       setError(null);
                     }}
                   >
-                    Changer de rôle
+                    {t("Change role")}
                   </button>
                 ) : null}
               </div>
@@ -336,7 +339,7 @@ function GetStartedInner() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <span className="gs-field-label">Prénom</span>
+                    <span className="gs-field-label">{t("First name")}</span>
                     <input
                       required
                       className="gs-input"
@@ -346,7 +349,7 @@ function GetStartedInner() {
                     />
                   </label>
                   <label className="block">
-                    <span className="gs-field-label">Nom</span>
+                    <span className="gs-field-label">{t("Last name")}</span>
                     <input
                       required
                       className="gs-input"
@@ -358,7 +361,7 @@ function GetStartedInner() {
                 </div>
 
                 <label className="block">
-                  <span className="gs-field-label">Courriel</span>
+                  <span className="gs-field-label">{t("Email")}</span>
                   <input
                     required
                     type="email"
@@ -371,40 +374,43 @@ function GetStartedInner() {
 
                 {role === "family" ? (
                   <ChipGroup
-                    label="Pour qui préparez-vous le dossier ?"
-                    options={FAMILY_FOR}
-                    value={familyFor}
-                    onChange={setFamilyFor}
+                    label={t("Who is this file for?")}
+                    options={FAMILY_FOR.map((o) => t(o))}
+                    value={t(familyFor)}
+                    onChange={(v) => {
+                      const match = FAMILY_FOR.find((o) => t(o) === v) || FAMILY_FOR[0];
+                      setFamilyFor(match);
+                    }}
                   />
                 ) : null}
 
                 {role === "facility" ? (
                   <>
                     <label className="block">
-                      <span className="gs-field-label">Nom de l&apos;établissement</span>
+                      <span className="gs-field-label">{t("Residence name")}</span>
                       <input
                         required
                         className="gs-input"
                         value={organization}
                         onChange={(e) => setOrganization(e.target.value)}
                         autoComplete="organization"
-                        placeholder="Résidence Les Jardins du Fleuve"
+                        placeholder={t("e.g. Les Jardins du Fleuve Residence")}
                       />
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
-                        <span className="gs-field-label">Fonction</span>
+                        <span className="gs-field-label">{t("Job title")}</span>
                         <input
                           required
                           className="gs-input"
                           value={jobTitle}
                           onChange={(e) => setJobTitle(e.target.value)}
                           autoComplete="organization-title"
-                          placeholder="Direction des admissions"
+                          placeholder={t("Director of Admissions")}
                         />
                       </label>
                       <label className="block">
-                        <span className="gs-field-label">Téléphone</span>
+                        <span className="gs-field-label">{t("Phone")}</span>
                         <input
                           type="tel"
                           className="gs-input"
@@ -416,17 +422,20 @@ function GetStartedInner() {
                       </label>
                     </div>
                     <ChipGroup
-                      label="Type d'établissement"
-                      options={FACILITY_TYPES}
-                      value={facilityType}
-                      onChange={setFacilityType}
+                      label={t("Type of residence")}
+                      options={FACILITY_TYPES.map((o) => t(o))}
+                      value={t(facilityType)}
+                      onChange={(v) => {
+                        const match = FACILITY_TYPES.find((o) => t(o) === v) || FACILITY_TYPES[0];
+                        setFacilityType(match);
+                      }}
                     />
                   </>
                 ) : null}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <span className="gs-field-label">Mot de passe</span>
+                    <span className="gs-field-label">{t("Password")}</span>
                     <input
                       required
                       type="password"
@@ -437,11 +446,11 @@ function GetStartedInner() {
                       autoComplete="new-password"
                     />
                     <span className="mt-1.5 block text-[12.5px] text-[var(--gs-ink-faint)]">
-                      Au moins 8 caractères
+                      {t("At least 8 characters")}
                     </span>
                   </label>
                   <label className="block">
-                    <span className="gs-field-label">Confirmation</span>
+                    <span className="gs-field-label">{t("Confirm password")}</span>
                     <input
                       required
                       type="password"
@@ -476,7 +485,7 @@ function GetStartedInner() {
                     </Link>
                     {termsLabel.after}{" "}
                     <Link href={collectionPath(locale)} className="font-medium text-[var(--gs-green)] no-underline">
-                      {locale === "en" ? "Read the collection notice" : "Lire l'avis de collecte"}
+                      {t("Read the collection notice")}
                     </Link>
                     .
                   </span>
@@ -487,13 +496,17 @@ function GetStartedInner() {
                   disabled={submitting || !role}
                   className="gs-submit"
                 >
-                  {submitting ? "Création du compte…" : "Créer mon compte"}
+                  {submitting ? t("Creating account…") : t("Create my account")}
                 </button>
 
                 <p className="text-center text-[13.5px] text-[var(--gs-ink-muted)]">
                   {role === "facility"
-                    ? "Nous validons votre établissement sous un jour ouvrable, puis votre console d'admission est activée."
-                    : "Vous pourrez commencer le dossier de votre proche immédiatement et le reprendre en tout temps."}
+                    ? t(
+                        "We verify your residence within one business day, then your admissions console is activated.",
+                      )
+                    : t(
+                        "You can start your loved one’s file right away and come back anytime.",
+                      )}
                 </p>
               </form>
             </div>
@@ -502,11 +515,11 @@ function GetStartedInner() {
 
         {!role ? (
           <p className="mt-10 text-center text-[14.5px] text-[var(--gs-ink-muted)]">
-            Vous représentez un CISSS, un CIUSSS ou un groupe de résidences ?{" "}
+            {t("Do you represent a CISSS, CIUSSS, or a residence group?")}{" "}
             <Link href="/contact" className="font-semibold text-[var(--gs-green)] no-underline">
-              Écrivez-nous
+              {t("Write to us")}
             </Link>{" "}
-            et nous configurons vos accès.
+            {t("and we will set up your access.")}
           </p>
         ) : null}
       </main>

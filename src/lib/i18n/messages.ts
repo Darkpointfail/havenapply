@@ -2084,6 +2084,59 @@ export const frMessages: Record<string, string> = {
   "of": "sur",
   "checked": "vérifiés",
   "left": "restant(s)",
+
+  // ——— Get started (signup) ———
+  "How will you use HavenApply?": "Vous utilisez HavenApply à quel titre ?",
+  "Choose your role once. It stays linked to your account and shapes what you see when you sign in.":
+    "Choisissez votre rôle une seule fois. Il reste associé à votre compte et détermine ce que vous voyez à la connexion.",
+  "Family caregiver": "Proche aidant",
+  "For yourself or a loved one looking for a place to live.":
+    "Pour vous-même ou pour un proche à la recherche d'un milieu de vie.",
+  "One admission file, reused everywhere": "Un seul dossier d'admission, réutilisé partout",
+  "Residences suggested from the profile": "Des résidences suggérées selon le profil",
+  "Track every application in one place": "Le suivi des demandes au même endroit",
+  Residence: "Établissement",
+  "To receive, review, and follow admission applications.":
+    "Pour recevoir, évaluer et suivre les demandes d'admission.",
+  "Complete, standardized dossiers": "Des dossiers complets et normalisés",
+  "An admissions console and waitlist": "Une console d'admission et une liste d'attente",
+  "Availability visible to families": "Vos disponibilités visibles par les familles",
+  Selected: "Sélectionné",
+  "Choose this role": "Choisir ce rôle",
+  "Sign up": "Inscription",
+  "Residence account": "Compte établissement",
+  "Family caregiver account": "Compte proche aidant",
+  "Your residence will be verified before its profile goes live.":
+    "Votre établissement sera vérifié avant la mise en ligne de sa fiche.",
+  "Your role is saved with your account for future sign-ins.":
+    "Votre rôle est enregistré avec votre compte pour vos prochaines connexions.",
+  "Change role": "Changer de rôle",
+  "Who is this file for?": "Pour qui préparez-vous le dossier ?",
+  "A parent": "Un parent",
+  "My spouse or partner": "Mon conjoint ou ma conjointe",
+  "Myself (the resident)": "Moi-même",
+  "Another relative": "Un autre proche",
+  "Residence name": "Nom de l'établissement",
+  "e.g. Les Jardins du Fleuve Residence": "ex. Résidence Les Jardins du Fleuve",
+  "Job title": "Fonction",
+  "Type of residence": "Type d'établissement",
+  "Private senior residence": "Résidence privée pour aînés",
+  "Long-term care home (CHSLD)": "CHSLD",
+  "Intermediate resource": "Ressource intermédiaire",
+  "Memory care unit": "Unité de soins de mémoire",
+  "At least 8 characters": "Au moins 8 caractères",
+  "Passwords do not match.": "Les mots de passe ne correspondent pas.",
+  "Creating account…": "Création du compte…",
+  "Create my account": "Créer mon compte",
+  "We verify your residence within one business day, then your admissions console is activated.":
+    "Nous validons votre établissement sous un jour ouvrable, puis votre console d'admission est activée.",
+  "You can start your loved one’s file right away and come back anytime.":
+    "Vous pourrez commencer le dossier de votre proche immédiatement et le reprendre en tout temps.",
+  "Do you represent a CISSS, CIUSSS, or a residence group?":
+    "Vous représentez un CISSS, un CIUSSS ou un groupe de résidences ?",
+  "Write to us": "Écrivez-nous",
+  "and we will set up your access.": "et nous configurons vos accès.",
+  "Read the collection notice": "Lire l'avis de collecte",
 };
 
 export function translate(locale: Locale, key: string): string {

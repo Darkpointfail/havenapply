@@ -37,11 +37,54 @@ export type FamilyProfile = {
   nom: string;
   rel: string;
   photo: string | null;
+  /** ISO date (yyyy-mm-dd) when known. */
+  dateNaissance: string;
+  sexe: string;
+  adresse: string;
+  ville: string;
+  province: string;
+  codePostal: string;
+  /** Contacts */
+  contactPrincipalNom: string;
+  contactPrincipalLien: string;
+  contactPrincipalTel: string;
+  contactPrincipalCourriel: string;
+  contactSecondaireNom: string;
+  contactSecondaireLien: string;
+  contactSecondaireTel: string;
+  contactSecondaireCourriel: string;
+  /** Statut légal */
+  mandatProtection: string;
+  procuration: string;
+  curatelle: string;
+  directivesMedicales: string;
+  nomMandataire: string;
+  /** Assurances */
+  assuranceMaladie: string;
+  assurancePrivee: string;
+  numeroPolice: string;
+  assuranceVie: string;
+  /** Finances */
+  revenusMensuels: string;
+  sourcesRevenus: string;
+  garantFinancier: string;
+  modePaiement: string;
   meta: string;
   autonomie: string;
   services: string;
+  /** Soins */
+  mobilite: string;
+  aideRepas: string;
+  aideHygiene: string;
+  aideMedication: string;
+  allergies: string;
+  regimeAlimentaire: string;
   budget: string;
   move: string;
+  /** Signature */
+  consentPartage: boolean;
+  signatureNom: string;
+  signatureDate: string;
   draft: boolean;
   docs: FamilyDoc[];
   accesses: { residenceId: string; residenceName: string; city: string }[];
@@ -188,11 +231,47 @@ export const INITIAL_PROFILES: FamilyProfile[] = [
     nom: "Lévesque",
     rel: "Votre mère",
     photo: null,
+    dateNaissance: "1942-03-15",
+    sexe: "Femme",
+    adresse: "1200 chemin Saint-Louis",
+    ville: "Sillery",
+    province: "Québec",
+    codePostal: "G1S 1E1",
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta: "84 ans · Sillery, Québec · dossier créé le 12 août 2026",
     autonomie: "Semi-autonome",
     services: "Repas, médicaments, aide légère",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget: "3 400 $ / mois",
     move: "Octobre 2026",
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: false,
     docs: cloneDocs(REQUIRED_DOCS),
     accesses: [
@@ -239,7 +318,10 @@ type SeniorLike = {
   relationship?: string;
   city?: string;
   state?: string;
+  address?: string;
+  zip?: string;
   dateOfBirth?: string;
+  gender?: string;
   budgetMax?: string;
   budgetUnsure?: boolean;
   urgency?: string;
@@ -270,7 +352,7 @@ function urgencyToMoveLabel(urgency?: string): string {
 }
 
 /**
- * Build at most one FamilyProfile from a persisted senior.
+ * Build at most one FamilyProfile from a persisted senior (+ optional resident dossier).
  * Returns null when firstName or lastName is missing (empty / create-dossier state).
  */
 export function buildProfileFromSenior(
@@ -301,11 +383,47 @@ export function buildProfileFromSenior(
     nom,
     rel: (senior.relationship || "").trim() || "Proche",
     photo: senior.photoDataUrl || null,
+    dateNaissance: (senior.dateOfBirth || "").trim(),
+    sexe: (senior.gender || "").trim(),
+    adresse: (senior.address || "").trim(),
+    ville: (senior.city || "").trim(),
+    province: (senior.state || "").trim() || "Québec",
+    codePostal: (senior.zip || "").trim(),
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta,
     autonomie: "À préciser",
     services: "À préciser",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget,
     move: urgencyToMoveLabel(senior.urgency),
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: false,
     docs,
     accesses,
@@ -319,15 +437,83 @@ export function createEmptyProfile(id: string): FamilyProfile {
     nom: "",
     rel: "Proche",
     photo: null,
+    dateNaissance: "",
+    sexe: "",
+    adresse: "",
+    ville: "",
+    province: "Québec",
+    codePostal: "",
+    contactPrincipalNom: "",
+    contactPrincipalLien: "",
+    contactPrincipalTel: "",
+    contactPrincipalCourriel: "",
+    contactSecondaireNom: "",
+    contactSecondaireLien: "",
+    contactSecondaireTel: "",
+    contactSecondaireCourriel: "",
+    mandatProtection: "",
+    procuration: "",
+    curatelle: "",
+    directivesMedicales: "",
+    nomMandataire: "",
+    assuranceMaladie: "RAMQ",
+    assurancePrivee: "",
+    numeroPolice: "",
+    assuranceVie: "",
+    revenusMensuels: "",
+    sourcesRevenus: "",
+    garantFinancier: "",
+    modePaiement: "",
     meta: "Dossier en création",
     autonomie: "À préciser",
     services: "À préciser",
+    mobilite: "",
+    aideRepas: "",
+    aideHygiene: "",
+    aideMedication: "",
+    allergies: "",
+    regimeAlimentaire: "",
     budget: "À préciser",
     move: "À préciser",
+    consentPartage: false,
+    signatureNom: "",
+    signatureDate: "",
     draft: true,
     docs: emptyDraftDocs(),
     accesses: [],
   };
+}
+
+/**
+ * Map FamilyProfile UI patches onto SeniorProfile persistence fields.
+ * Only includes keys present on the patch (partial updates).
+ */
+export function familyPatchToSenior(
+  patch: Partial<FamilyProfile>,
+): Partial<{
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  photoDataUrl: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+}> {
+  const out: ReturnType<typeof familyPatchToSenior> = {};
+  if (patch.prenom !== undefined) out.firstName = patch.prenom;
+  if (patch.nom !== undefined) out.lastName = patch.nom;
+  if (patch.rel !== undefined) out.relationship = patch.rel;
+  if (patch.photo !== undefined) out.photoDataUrl = patch.photo || "";
+  if (patch.dateNaissance !== undefined) out.dateOfBirth = patch.dateNaissance;
+  if (patch.sexe !== undefined) out.gender = patch.sexe;
+  if (patch.adresse !== undefined) out.address = patch.adresse;
+  if (patch.ville !== undefined) out.city = patch.ville;
+  if (patch.province !== undefined) out.state = patch.province;
+  if (patch.codePostal !== undefined) out.zip = patch.codePostal;
+  return out;
 }
 
 export function profileDisplayName(p: FamilyProfile) {

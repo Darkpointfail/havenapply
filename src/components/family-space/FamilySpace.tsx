@@ -18,6 +18,7 @@ import {
   createEmptyProfile,
   docsProgress,
   emptyDraftDocs,
+  familyPatchToSenior,
   mapRequiredDocsFromDocuments,
   profileDisplayName,
   type FamilyApplication,
@@ -30,6 +31,7 @@ import {
 } from "@/data/family-space";
 import { useAuth } from "@/lib/auth";
 import { useFamilyData } from "@/lib/family-data";
+import { applyFamilyPatchToDossier, wizardFieldsFromDossier } from "@/lib/family-dossier-wizard";
 import { buildSubmitDraft, categoryForFrDocId, storeAppToUi } from "@/lib/fr-portal-dynamic";
 import { rightsPath } from "@/content/legal";
 import { useLocale } from "@/lib/i18n/locale";
@@ -88,6 +90,8 @@ export function FamilySpace() {
     submitApplication,
     withdrawApplication,
     updateSeniorDraft,
+    updateResidentDossier,
+    saveResidentDossier,
     saveStatus,
     saveError,
     recordProfileConsent,
@@ -119,6 +123,12 @@ export function FamilySpace() {
   const chatInputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const claireBootstrapped = useRef(false);
+  const dossierSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dossierDraftRef = useRef(data.residentDossier);
+
+  useEffect(() => {
+    dossierDraftRef.current = data.residentDossier;
+  }, [data.residentDossier]);
   const [helpChat, setHelpChat] = useState<AssistantTurn[]>([
     {
       from: "claire",
@@ -253,16 +263,37 @@ export function FamilySpace() {
 
   const profiles = useMemo(() => {
     const fromSenior = buildProfileFromSenior(data.senior, liveDocs, accessesFromApps);
-    if (fromSenior) return [fromSenior];
+    if (fromSenior) {
+      const fromDossier = wizardFieldsFromDossier(data.residentDossier);
+      const hydrated: FamilyProfile = {
+        ...fromSenior,
+        ...fromDossier,
+        autonomie: data.residentDossier.autonomyLevel?.trim() || fromSenior.autonomie,
+      };
+      if (localDraft && localDraft.id === hydrated.id) {
+        return [
+          {
+            ...hydrated,
+            ...localDraft,
+            prenom: localDraft.prenom || hydrated.prenom,
+            nom: localDraft.nom || hydrated.nom,
+            docs: liveDocs.length ? liveDocs : localDraft.docs,
+            accesses: accessesFromApps.length ? accessesFromApps : localDraft.accesses,
+            draft: localDraft.draft && !(data.senior.firstName && data.senior.lastName),
+          },
+        ];
+      }
+      return [hydrated];
+    }
     if (localDraft) {
       return [{ ...localDraft, docs: liveDocs.length ? liveDocs : localDraft.docs }];
     }
     return [];
-  }, [data.senior, liveDocs, accessesFromApps, localDraft]);
+  }, [data.senior, data.residentDossier, liveDocs, accessesFromApps, localDraft]);
 
   useEffect(() => {
     if (data.senior.firstName?.trim() && data.senior.lastName?.trim()) {
-      setLocalDraft(null);
+      setLocalDraft((prev) => (prev?.draft ? { ...prev, draft: false } : prev));
     }
   }, [data.senior.firstName, data.senior.lastName]);
 
@@ -350,22 +381,35 @@ export function FamilySpace() {
 
   const patchActive = (patch: Partial<FamilyProfile>) => {
     setLocalDraft((prev) => {
-      if (!prev || prev.id !== activeProfileId) return prev;
-      return { ...prev, ...patch };
+      if (prev && prev.id === activeProfileId) {
+        return { ...prev, ...patch };
+      }
+      // Keep an overlay draft so wizard fields remain editable before/after senior hydrate.
+      const base =
+        profiles.find((p) => p.id === activeProfileId) ??
+        createEmptyProfile(activeProfileId || "p-senior");
+      return { ...base, ...patch, id: activeProfileId || base.id };
     });
-    const seniorPatch: {
-      firstName?: string;
-      lastName?: string;
-      relationship?: string;
-      photoDataUrl?: string;
-    } = {};
-    if (patch.prenom !== undefined) seniorPatch.firstName = patch.prenom;
-    if (patch.nom !== undefined) seniorPatch.lastName = patch.nom;
-    if (patch.rel !== undefined) seniorPatch.relationship = patch.rel;
-    if (patch.photo !== undefined) seniorPatch.photoDataUrl = patch.photo || "";
+
+    const seniorPatch = familyPatchToSenior(patch);
+    if (
+      seniorPatch.zip != null &&
+      String(seniorPatch.zip).trim() &&
+      !/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(String(seniorPatch.zip).trim())
+    ) {
+      delete seniorPatch.zip;
+    }
     if (Object.keys(seniorPatch).length > 0) {
       updateSeniorDraft(seniorPatch);
     }
+
+    const nextDossier = applyFamilyPatchToDossier(dossierDraftRef.current, patch);
+    dossierDraftRef.current = nextDossier;
+    updateResidentDossier(nextDossier);
+    if (dossierSaveTimer.current) clearTimeout(dossierSaveTimer.current);
+    dossierSaveTimer.current = setTimeout(() => {
+      saveResidentDossier(dossierDraftRef.current);
+    }, 450);
   };
 
   const selectProfile = (id: string) => {

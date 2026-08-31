@@ -127,7 +127,6 @@ export function ResidencesBrowse({
   const [region, setRegion] = useState("");
   const [unitTypes, setUnitTypes] = useState<string[]>([]);
   const [services, setServices] = useState<string[]>([]);
-  const [compareIds, setCompareIds] = useState<string[]>([]);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const profile = careProfile ?? EMPTY_CARE_PROFILE;
   const readiness = matchReady ?? getMatchReadiness(profile).ready;
@@ -135,14 +134,6 @@ export function ResidencesBrowse({
 
   const toggle = (list: string[], value: string, set: (v: string[]) => void) => {
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
-  };
-
-  const toggleCompare = (id: string) => {
-    setCompareIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 3) return prev;
-      return [...prev, id];
-    });
   };
 
   const filtered = useMemo(() => {

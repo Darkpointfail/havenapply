@@ -131,8 +131,13 @@ export function isSelfApplicant(senior: Pick<SeniorProfile, "relationship" | "fi
   return (
     rel.includes("myself") ||
     rel.includes("self") ||
+    rel.includes("moi-même") ||
+    rel.includes("moi-meme") ||
     filled.includes("looking for myself") ||
-    filled.includes("i am the senior")
+    filled.includes("i am the senior") ||
+    filled.includes("pour moi") ||
+    filled.includes("moi-même") ||
+    filled.includes("moi-meme")
   );
 }
 

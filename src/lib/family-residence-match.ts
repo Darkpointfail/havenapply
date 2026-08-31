@@ -720,7 +720,7 @@ export function computeMatch(
           topConsider ? ` À vérifier : ${topConsider}.` : ""
         }`
       : `${residence.name} ne couvre qu’une partie de vos besoins${
-          topConsider ? ` — ${topConsider}` : ""
+          topConsider ? ` : ${topConsider}` : ""
         }.${topWhy ? ` Points favorables : ${topWhy}.` : ""}`;
 
   return {

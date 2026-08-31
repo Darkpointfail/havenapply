@@ -1501,7 +1501,7 @@ export const frMessages: Record<string, string> = {
   Allergies: "Allergies",
   "Medications, foods, or none known": "Médicaments, aliments, ou aucune connue",
   "Current medications": "Médicaments actuels",
-  "Name, dose, and when taken — or upload a list later": "Nom, dose et moment — ou téléversez une liste plus tard",
+  "Name, dose, and when taken: or upload a list later": "Nom, dose et moment : ou téléversez une liste plus tard",
   "Past surgeries": "Chirurgies passées",
   "Recent hospitalizations": "Hospitalisations récentes",
   "Vaccination status": "Statut vaccinal",
@@ -1585,7 +1585,7 @@ export const frMessages: Record<string, string> = {
   "Anything else?": "Autre chose ?",
   "Step 5 of 9": "Étape 5 sur 9",
   "Financial picture": "Situation financière",
-  "Keep it simple. Exact numbers can wait — ranges are fine.": "Restez simple. Les montants exacts peuvent attendre — des fourchettes suffisent.",
+  "Keep it simple. Exact numbers can wait: ranges are fine.": "Restez simple. Les montants exacts peuvent attendre : des fourchettes suffisent.",
   "Monthly income": "Revenu mensuel",
   Approximate: "Approximatif",
   "Maximum monthly budget": "Budget mensuel maximum",
@@ -1600,7 +1600,7 @@ export const frMessages: Record<string, string> = {
   "PDF, photos, or scans. AI places each file in the right category.": "PDF, photos ou scans. L’IA place chaque fichier dans la bonne catégorie.",
   "Browse files": "Parcourir les fichiers",
   "Scan from phone": "Scanner depuis le téléphone",
-  "Added as Other — review the category if needed": "Ajouté dans Autre — vérifiez la catégorie si besoin",
+  "Added as Other: review the category if needed": "Ajouté dans Autre : vérifiez la catégorie si besoin",
   "Sorted into {category}": "Classé dans {category}",
   "Still helpful to add": "Utile d’ajouter encore",
   "Missing Insurance": "Assurance manquante",
@@ -1643,11 +1643,11 @@ export const frMessages: Record<string, string> = {
   "Step 9 of 9": "Étape 9 sur 9",
   "Send the same dossier": "Envoyer le même dossier",
   "Search, select several communities, and apply once for all of them.": "Recherchez, sélectionnez plusieurs établissements, et postulez une seule fois pour tous.",
-  "You can still send — adding missing items improves response speed.": "Vous pouvez quand même envoyer — compléter accélère les réponses.",
+  "You can still send: adding missing items improves response speed.": "Vous pouvez quand même envoyer : compléter accélère les réponses.",
   "Ready to submit": "Prêt à envoyer",
   "Search communities by name or city": "Rechercher des établissements par nom ou ville",
   "Already submitted": "Déjà envoyé",
-  "{count} selected — same dossier, one click": "{count} sélectionné(s) — même dossier, un clic",
+  "{count} selected: same dossier, one click": "{count} sélectionné(s) : même dossier, un clic",
   "Select one or more communities": "Sélectionnez un ou plusieurs établissements",
   "Sending…": "Envoi…",
   "Nothing new was sent. You may already have active applications at these communities.": "Rien de nouveau n’a été envoyé. Vous avez peut-être déjà des candidatures actives.",
@@ -1670,8 +1670,8 @@ export const frMessages: Record<string, string> = {
 
   // LTC admission dossier fields
   "Administrative information": "Informations administratives",
-  "Identity, contacts, and legal decision-makers — once for every residence.":
-    "Identité, contacts et décideurs légaux — une seule fois pour chaque établissement.",
+  "Identity, contacts, and legal decision-makers: once for every residence.":
+    "Identité, contacts et décideurs légaux : une seule fois pour chaque établissement.",
   "Steps 1–2 of 15": "Étapes 1–2 sur 15",
   "Step 3 of 15": "Étape 3 sur 15",
   "Step 4 of 15": "Étape 4 sur 15",
@@ -1711,7 +1711,7 @@ export const frMessages: Record<string, string> = {
   "No jargon required. Share what residences need for admissions.":
     "Pas de jargon. Partagez ce dont les établissements ont besoin pour les admissions.",
   "Medication allergies & reactions": "Allergies médicamenteuses et réactions",
-  "e.g. Penicillin — rash": "ex. Pénicilline — éruption",
+  "e.g. Penicillin: rash": "ex. Pénicilline : éruption",
   "Include the reaction when known": "Indiquez la réaction si elle est connue",
   "Food / environmental allergies": "Allergies alimentaires / environnementales",
   "e.g. Peanuts, latex, pollen": "ex. Arachides, latex, pollen",
@@ -1823,21 +1823,21 @@ export const frMessages: Record<string, string> = {
   "Open transfer": "Ouvrir le transfert",
   "Untitled transfer": "Transfert sans titre",
   "No patient transfers yet": "Aucun transfert patient pour le moment",
-  "Create a transfer when a resident needs to move to another facility — select the center, reason, and clinical information to share.":
-    "Créez un transfert lorsqu’un résident doit aller dans un autre établissement — sélectionnez le centre, la raison et les informations cliniques à partager.",
+  "Create a transfer when a resident needs to move to another facility: select the center, reason, and clinical information to share.":
+    "Créez un transfert lorsqu’un résident doit aller dans un autre établissement : sélectionnez le centre, la raison et les informations cliniques à partager.",
   "Inter-facility transfers with reason, clinical packet, and receiving center.":
     "Transferts inter-établissements avec raison, dossier clinique et centre destinataire.",
   "Manage move-in transitions for accepted candidates, and create patient transfers to send clinical packets to another center.":
     "Gérez les transitions d’emménagement pour les candidats acceptés, et créez des transferts patients pour envoyer un dossier clinique à un autre centre.",
   "Move-in transitions": "Transitions d’emménagement",
-  "Accepted candidates preparing for move-in — contracts, deposits, and arrival details.":
-    "Candidats acceptés préparant l’emménagement — contrats, dépôts et détails d’arrivée.",
+  "Accepted candidates preparing for move-in: contracts, deposits, and arrival details.":
+    "Candidats acceptés préparant l’emménagement : contrats, dépôts et détails d’arrivée.",
   "Create a transfer packet to send a resident’s clinical and administrative information to another center.":
     "Créez un dossier de transfert pour envoyer les informations cliniques et administratives d’un résident à un autre centre.",
   "Prefill from resident dossier (optional)":
     "Préremplir depuis un dossier résident (optionnel)",
-  "Start blank — enter details manually":
-    "Commencer vide — saisir les détails manuellement",
+  "Start blank: enter details manually":
+    "Commencer vide : saisir les détails manuellement",
   "Create transfer from dossier": "Créer le transfert depuis le dossier",
   "Create blank transfer": "Créer un transfert vide",
   "Create blank instead": "Créer un transfert vide à la place",
@@ -1860,8 +1860,8 @@ export const frMessages: Record<string, string> = {
   "Select a reason…": "Sélectionnez une raison…",
   Urgency: "Urgence",
   "Reason details": "Détails de la raison",
-  "Explain why the resident needs this transfer — shared with the receiving center.":
-    "Expliquez pourquoi le résident a besoin de ce transfert — communiqué au centre destinataire.",
+  "Explain why the resident needs this transfer: shared with the receiving center.":
+    "Expliquez pourquoi le résident a besoin de ce transfert : communiqué au centre destinataire.",
   "Receiving center *": "Centre destinataire *",
   "Search the Medicare / Haven catalog or enter the destination facility manually.":
     "Recherchez dans le catalogue Medicare / Haven ou saisissez l’établissement destinataire manuellement.",

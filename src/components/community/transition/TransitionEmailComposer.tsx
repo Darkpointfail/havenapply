@@ -62,7 +62,7 @@ export function TransitionEmailComposer({
         <div className="mt-4 rounded-xl border border-line bg-bg-soft/60 px-3 py-3 text-xs text-ink-muted">
           <p className="font-medium text-ink">Preview</p>
           <p className="mt-1">
-            <span className="text-ink-faint">To:</span> {recipient || "—"}
+            <span className="text-ink-faint">To:</span> {recipient || "-"}
           </p>
           <p>
             <span className="text-ink-faint">Subject:</span> {subject}

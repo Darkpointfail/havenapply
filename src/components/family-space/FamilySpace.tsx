@@ -650,7 +650,7 @@ export function FamilySpace() {
     <div className={`fs ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="fs-header sticky top-0 z-40 text-white">
         <div className="fs-header-inner">
-          <a href="/family/dashboard" className="fs-brand" aria-label="HavenApply — accueil">
+          <a href="/family/dashboard" className="fs-brand" aria-label="HavenApply : accueil">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/favicon-48-v6.png"
@@ -975,7 +975,7 @@ export function FamilySpace() {
                 { from: "family", body: helpInput.trim() },
                 {
                   from: "claire",
-                  body: "Merci. Un conseiller pourra préciser si besoin — en attendant, vérifiez les pièces manquantes dans Dossiers.",
+                  body: "Merci. Un conseiller pourra préciser si besoin : en attendant, vérifiez les pièces manquantes dans Dossiers.",
                 },
               ]);
               setHelpInput("");
@@ -1018,7 +1018,7 @@ function Accueil({
     ? dossierCompleteness.next
     : "Créer un dossier (pour vous ou un proche)";
   const intro = !hasDossier
-    ? "Créez un dossier — pour vous-même ou pour un proche — afin de déposer des demandes auprès des résidences partenaires."
+    ? "Créez un dossier : pour vous-même ou pour un proche, afin de déposer des demandes auprès des résidences partenaires."
     : dossierCompleteness.next
       ? `Poursuivez votre dossier. Prochaine action : ${dossierCompleteness.next.charAt(0).toLowerCase()}${dossierCompleteness.next.slice(1)}.`
       : "Votre dossier est à jour. Vous pouvez chercher une résidence ou suivre vos demandes en cours.";
@@ -1136,7 +1136,7 @@ function Accueil({
                   {nextVisit.visit?.dateLabel || "À venir"}
                 </span>
                 <span className="mt-1 text-[13px] text-[var(--fs-ink-muted)]">
-                  {nextVisit.visit?.timeLabel || "—"}
+                  {nextVisit.visit?.timeLabel || "-"}
                 </span>
               </div>
               <div className="min-w-0">
@@ -1538,7 +1538,7 @@ function Demandes({
                 place: `${app.residenceName} · ${app.city}`,
               };
               const [dayToken, ...monthParts] = visit.dateLabel.split(" ");
-              const day = /^\d+$/.test(dayToken) ? dayToken : "—";
+              const day = /^\d+$/.test(dayToken) ? dayToken : "-";
               const month = monthParts[0] || "Visite";
               return (
                 <article key={`visit-${app.id}`} className="fs-card p-5">

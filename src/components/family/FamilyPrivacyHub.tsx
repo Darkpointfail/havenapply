@@ -870,7 +870,7 @@ export default function FamilyPrivacyHub() {
                     </span>
                     <div style={{ marginTop: 4, color: "#3d5249" }}>
                       {e.resource}
-                      {e.detail ? ` — ${e.detail}` : ""}
+                      {e.detail ? ` : ${e.detail}` : ""}
                     </div>
                   </li>
                 ))}

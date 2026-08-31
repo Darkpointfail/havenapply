@@ -558,7 +558,7 @@ export async function buildFamilyExport(ownerId: string) {
     })),
     notes: [
       "Les fichiers binaires ne sont pas inclus. Téléchargez chaque document séparément.",
-      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+      "Ce fichier contient des renseignements personnels : conservez-le de façon sécurisée.",
     ],
   };
 }

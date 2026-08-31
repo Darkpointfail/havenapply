@@ -93,7 +93,7 @@ export function StepHealth({
                   ),
                 });
               }}
-              placeholder={t("e.g. Penicillin — rash")}
+              placeholder={t("e.g. Penicillin: rash")}
             />
           </DossierField>
 
@@ -120,7 +120,7 @@ export function StepHealth({
               className={`${dossierFieldClass} min-h-[96px] resize-y`}
               value={value.currentMedications}
               onChange={(e) => onChange({ currentMedications: e.target.value })}
-              placeholder={t("Name, dose, and when taken — or upload a list later")}
+              placeholder={t("Name, dose, and when taken: or upload a list later")}
             />
           </DossierField>
 

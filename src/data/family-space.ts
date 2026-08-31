@@ -725,7 +725,7 @@ export const INITIAL_APPLICATIONS: FamilyApplication[] = [
     depositedOn: "20 août 2026",
     status: "Liste d'attente",
     progress: 1,
-    update: "Placé en liste d'attente — rang communiqué par la résidence.",
+    update: "Placé en liste d'attente : rang communiqué par la résidence.",
     updateTone: "neutral",
   },
   {

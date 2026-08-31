@@ -307,7 +307,7 @@ export function applyFamilyPatchToDossier(
             : patch.autonomyScore <= 8
               ? "assez autonome"
               : "très autonome";
-      next.autonomyLevel = `${patch.autonomyScore}/10 — ${label}`;
+      next.autonomyLevel = `${patch.autonomyScore}/10 : ${label}`;
     }
   }
 

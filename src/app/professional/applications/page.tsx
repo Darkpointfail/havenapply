@@ -82,7 +82,7 @@ function ApplicationsInner() {
                 <p className="text-sm text-ink-secondary">{a.communityName}</p>
                 <Badge tone={statusTone(a.status)}>{APPLICATION_STATUS_LABEL[a.status]}</Badge>
                 <p className="text-sm text-ink-muted">
-                  {a.submittedAt ? formatRelative(a.submittedAt) : "—"}
+                  {a.submittedAt ? formatRelative(a.submittedAt) : "-"}
                 </p>
                 <p className="text-sm text-ink-muted">{a.nextAction}</p>
                 <p className="truncate text-sm text-ink-faint">{a.lastMessage}</p>

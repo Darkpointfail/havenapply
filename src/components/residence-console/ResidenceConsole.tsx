@@ -1491,7 +1491,7 @@ function EtablissementView() {
             className="rounded-[7px] border border-[var(--rc-border)] bg-white px-3 py-1.5 text-[12px] text-[var(--rc-ink-muted)]"
             style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
           >
-            photo de la résidence — façade
+            photo de la résidence : façade
           </span>
         </div>
 

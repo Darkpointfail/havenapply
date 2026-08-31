@@ -12,7 +12,7 @@ describe("computeFamilyDossierCompleteness", () => {
     expect(c.percent).toBe(0);
     expect(c.fieldsDone).toBe(0);
     expect(c.docsReceived).toBe(0);
-    expect(c.next).toMatch(/créer un dossier/i);
+    expect(c.next).toMatch(/create a file/i);
   });
 
   it("stays near 0% on a blank draft (default RAMQ alone does not count)", () => {
@@ -20,7 +20,7 @@ describe("computeFamilyDossierCompleteness", () => {
     expect(c.percent).toBe(0);
     expect(c.fieldsDone).toBe(0);
     expect(c.docsReceived).toBe(0);
-    expect(c.next).toBe("Indiquer pour qui est le dossier");
+    expect(c.next).toBe("Say who the file is for");
   });
 
   it("increases when written fields are filled, even with 0 documents", () => {
@@ -43,7 +43,7 @@ describe("computeFamilyDossierCompleteness", () => {
     expect(filled.percent).toBeGreaterThan(blank.percent);
     expect(filled.percent).toBeGreaterThan(40);
     expect(filled.fieldsDone).toBeGreaterThanOrEqual(5);
-    expect(filled.next).not.toMatch(/pièce d'identité/i);
+    expect(filled.next).not.toMatch(/identity document/i);
   });
 
   it("prefers the next missing field over the next document", () => {
@@ -56,7 +56,7 @@ describe("computeFamilyDossierCompleteness", () => {
       // ville missing → identity incomplete
       docs: emptyDraftDocs(),
     });
-    expect(c.next).toBe("Compléter l'identité (nom et ville)");
+    expect(c.next).toBe("Complete identity (name and city)");
   });
 
   it("falls back to a document next action when fields are complete", () => {
@@ -80,7 +80,7 @@ describe("computeFamilyDossierCompleteness", () => {
       docs: emptyDraftDocs(),
     });
     expect(c.fieldsDone).toBe(c.fieldsTotal);
-    expect(c.next).toMatch(/^Ajouter /);
+    expect(c.next).toMatch(/^Add /);
     expect(c.percent).toBeLessThan(100);
   });
 });
@@ -91,9 +91,9 @@ describe("buildNextSteps fieldNext", () => {
       hasSeniorProfile: true,
       docs: emptyDraftDocs(),
       applicationsCount: 0,
-      fieldNext: "Compléter l'identité (nom et ville)",
+      fieldNext: "Complete identity (name and city)",
     });
-    expect(steps[0]?.label).toBe("Compléter l'identité (nom et ville)");
-    expect(steps.some((s) => /ajouter pièce/i.test(s.label))).toBe(true);
+    expect(steps[0]?.label).toBe("Complete identity (name and city)");
+    expect(steps.some((s) => /^add /i.test(s.label))).toBe(true);
   });
 });

@@ -8,85 +8,105 @@ export type AssistantTurn = {
 };
 
 const OPENERS_PROCHE: Record<ProfileStepIndex, string> = {
-  0: "Bonjour. Ce dossier est-il pour vous-même, ou pour un proche que vous accompagnez ?",
-  1: "Parfait. Indiquons maintenant le nom et les coordonnées de la personne qui cherche une résidence.",
-  2: "Parlons des personnes-ressources. Qui est le contact principal, et quel est son lien avec la personne ?",
-  3: "Au sujet du statut légal : y a-t-il un mandat de protection ou une procuration en vigueur ?",
-  4: "Passons aux assurances. A-t-elle une assurance privée en plus de la RAMQ ?",
-  5: "Pour les finances, quel budget mensuel envisagez-vous pour la résidence ?",
-  6: "Parlons des soins. Sur une échelle de 1 à 10, où situez-vous son autonomie ?",
-  7: "Maintenant, les critères de recherche : secteur, budget, taille, et vos priorités.",
-  8: "Nous y sommes presque. Souhaitez-vous que je vérifie le récapitulatif avant la signature ?",
+  0: "Hello. Is this file for yourself, or for a loved one you are supporting?",
+  1: "Perfect. Let's note the name and contact details of the person looking for a residence.",
+  2: "Let's talk about emergency contacts. Who is the main contact, and what is their relationship to the person?",
+  3: "About legal status: is there a protection mandate or power of attorney in effect?",
+  4: "Next, insurance. Do they have private insurance in addition to RAMQ?",
+  5: "For finances, what monthly budget are you considering for the residence?",
+  6: "Let's talk about care needs. On a scale of 1 to 10, where would you place their autonomy?",
+  7: "Now search criteria: area, budget, size, and your priorities.",
+  8: "We're almost there. Would you like me to review the summary before signing?",
 };
 
 const OPENERS_SELF: Record<ProfileStepIndex, string> = {
-  0: "Bonjour. Ce dossier est-il pour vous-même, ou pour un proche que vous accompagnez ?",
-  1: "Très bien. Confirmons vos renseignements personnels pour le dossier d’admission.",
-  2: "Ajoutons vos personnes-ressources : qui contacter en priorité ?",
-  3: "Au sujet du statut légal : avez-vous un mandat de protection ou une procuration ?",
-  4: "Passons aux assurances. Avez-vous une assurance privée en plus de la RAMQ ?",
-  5: "Pour les finances, quel budget mensuel envisagez-vous pour votre résidence ?",
-  6: "Parlons de vos besoins de soins. Sur une échelle de 1 à 10, où situez-vous votre autonomie ?",
-  7: "Indiquons vos critères de recherche : secteur, budget, taille, et ce qui compte le plus pour vous.",
-  8: "Dernière étape : vérifions le récapitulatif avant de signer.",
+  0: "Hello. Is this file for yourself, or for a loved one you are supporting?",
+  1: "Very well. Let's confirm your personal details for the admission file.",
+  2: "Add your emergency contacts: who should we reach first?",
+  3: "About legal status: do you have a protection mandate or power of attorney?",
+  4: "Next, insurance. Do you have private insurance in addition to RAMQ?",
+  5: "For finances, what monthly budget are you considering for your residence?",
+  6: "Let's talk about your care needs. On a scale of 1 to 10, where would you place your autonomy?",
+  7: "Let's note your search criteria: area, budget, size, and what matters most to you.",
+  8: "Last step: let's review the summary before signing.",
 };
 
 const SUGGESTIONS: Record<ProfileStepIndex, string[]> = {
-  0: ["Pour moi-même", "Pour un proche", "Passer à l'étape suivante"],
-  1: ["Je préfère dicter plus tard", "Passer à l'étape suivante"],
-  2: ["Moi, contact principal", "Ajouter un second contact", "Passer à l'étape suivante"],
-  3: ["Oui, mandat de protection", "Procuration seulement", "Je dois vérifier"],
-  4: ["Oui, assurance privée", "Seulement la RAMQ", "Je ne sais pas"],
-  5: ["Environ 3 400 $", "Jusqu'à 3 700 $", "Flexible selon les services"],
-  6: ["Autonomie autour de 4/10", "Marche avec une canne", "Fauteuil roulant"],
-  7: ["Priorité aux soins", "Proche de Sillery", "Budget max 3500 $"],
-  8: ["Oui, vérifie pour moi", "Tout est prêt", "Revenir à une étape"],
+  0: ["For myself", "For a loved one", "Skip to the next step"],
+  1: ["I prefer to dictate later", "Skip to the next step"],
+  2: ["I am the main contact", "Add a second contact", "Skip to the next step"],
+  3: ["Yes, protection mandate", "Power of attorney only", "I need to check"],
+  4: ["Yes, private insurance", "RAMQ only", "I don't know"],
+  5: ["Around $3,400", "Up to $3,700", "Flexible depending on services"],
+  6: ["Autonomy around 4/10", "Walks with a cane", "Wheelchair"],
+  7: ["Priority on care", "Close to Sillery", "Max budget $3,500"],
+  8: ["Yes, review it for me", "Everything is ready", "Go back to a step"],
 };
 
 function replyFor(step: ProfileStepIndex, message: string, forSelf: boolean): string {
   const m = message.toLowerCase();
   if (step === 0) {
-    if (m.includes("moi") || m.includes("self")) {
-      return "Dossier pour vous-même : les prochaines étapes parleront de vos besoins et de votre recherche.";
+    if (
+      m.includes("moi") ||
+      m.includes("myself") ||
+      m.includes("self") ||
+      m.includes("for myself")
+    ) {
+      return "File for yourself: the next steps will cover your needs and your search.";
     }
-    if (m.includes("proche") || m.includes("parent") || m.includes("mère") || m.includes("père")) {
-      return "Dossier pour un proche : précisez le lien, puis nous remplirons son identité.";
+    if (
+      m.includes("proche") ||
+      m.includes("loved one") ||
+      m.includes("parent") ||
+      m.includes("mère") ||
+      m.includes("père") ||
+      m.includes("mother") ||
+      m.includes("father")
+    ) {
+      return "File for a loved one: note the relationship, then we will fill in their identity.";
     }
-    return "Choisissez « Pour moi-même » ou « Pour un proche » pour adapter le parcours.";
+    return 'Choose "For myself" or "For a loved one" to adapt the journey.';
   }
   if (step === 1) {
     return forSelf
-      ? "Merci. Vos renseignements d’identité sont notés."
-      : "Merci. J’ai noté les renseignements d’identité de la personne.";
+      ? "Thank you. Your identity details are noted."
+      : "Thank you. I noted the person's identity details.";
   }
   if (step === 2) {
-    return "C'est noté dans Contacts. Nous pourrons compléter les téléphones et courriels juste après.";
+    return "Noted under Contacts. We can complete phones and emails right after.";
   }
   if (step === 3) {
-    if (m.includes("mandat")) {
-      return "J'ai coché « mandat de protection ». Ajoutez le nom du mandataire quand vous l'avez sous la main.";
+    if (m.includes("mandat") || m.includes("mandate") || m.includes("protection")) {
+      return 'I checked "protection mandate". Add the mandate holder\'s name when you have it.';
     }
-    return "Statut légal mis à jour. Vous pourrez joindre le document dans Notre dossier.";
+    return "Legal status updated. You can attach the document in Our file.";
   }
   if (step === 4) {
-    return "Assurances mises à jour. Si une police manque, la résidence pourra quand même ouvrir le dossier.";
+    return "Insurance updated. If a policy is missing, the residence can still open the file.";
   }
   if (step === 5) {
-    if (m.includes("3 400") || m.includes("3400") || m.includes("3 700")) {
-      return "J'ai inscrit le budget mensuel. Cela m'aidera à suggérer des résidences adaptées.";
+    if (
+      m.includes("3 400") ||
+      m.includes("3400") ||
+      m.includes("3,400") ||
+      m.includes("3 700") ||
+      m.includes("3700") ||
+      m.includes("3,700")
+    ) {
+      return "I recorded the monthly budget. That will help me suggest matching residences.";
     }
-    return "Finances notées. Nous pourrons ajuster le mode de paiement plus tard.";
+    return "Finances noted. We can adjust the payment method later.";
   }
   if (step === 6) {
-    if (m.includes("/10") || m.includes("autonomie")) {
-      return "J'ai noté le niveau d'autonomie. Il servira au matching avec les catégories RPA.";
+    if (m.includes("/10") || m.includes("autonomie") || m.includes("autonomy")) {
+      return "I noted the autonomy level. It will be used for matching with RPA categories.";
     }
-    return "Soins mis à jour. Signalez aussi allergies et mémoire si c'est pertinent.";
+    return "Care updated. Also mention allergies and memory if relevant.";
   }
   if (step === 7) {
-    return "Critères de recherche mis à jour. Vous pouvez ajuster les curseurs de priorité à tout moment.";
+    return "Search criteria updated. You can adjust the priority sliders anytime.";
   }
-  return "Récapitulatif prêt. Quand vous serez à l'aise, cochez le consentement et signez à l'étape Signature.";
+  return "Summary ready. When you are comfortable, check the consent and sign at the Signature step.";
 }
 
 function clampStep(step: number): ProfileStepIndex {

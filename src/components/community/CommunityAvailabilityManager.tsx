@@ -167,12 +167,12 @@ export function CommunityAvailabilityManager() {
               size="sm"
               onClick={() => {
                 if (!draft.roomType.trim()) {
-                  alert("Enter a room type.");
+                  alert(t("Enter a room type."));
                   return;
                 }
                 const res = upsertAvailability(draft);
                 if (res.ok) setDraft(null);
-                else alert(res.error);
+                else alert(res.error ? t(res.error) : t("Unable to save availability."));
               }}
             >
               {t("Save")}

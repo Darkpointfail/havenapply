@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CheckSquare, FileText, Home, MessageSquare, Search } from "lucide-react";
 import { familyMobileNav } from "@/config/navigation";
+import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 const icons = {
@@ -17,6 +18,7 @@ const icons = {
 
 /** @deprecated Prefer FamilyMobileNav, kept for compatibility */
 export function MobileNav() {
+  const t = useT();
   const pathname = usePathname();
 
   return (
@@ -35,7 +37,7 @@ export function MobileNav() {
                 )}
               >
                 <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-                {item.label}
+                {t(item.label)}
               </Link>
             </li>
           );

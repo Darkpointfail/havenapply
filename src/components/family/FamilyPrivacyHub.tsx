@@ -19,7 +19,7 @@ import {
   maskSensitiveText,
 } from "@/lib/privacy-security";
 import { collectionPath, privacyPath } from "@/content/legal";
-import { useLocale } from "@/lib/i18n/locale";
+import { useLocale, useT } from "@/lib/i18n/locale";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -46,29 +46,51 @@ type SectionId =
   | "droits";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "apercu", label: "Vue d'ensemble" },
-  { id: "consentements", label: "Consentements" },
-  { id: "preferences", label: "Préférences" },
-  { id: "securite", label: "Sécurité" },
-  { id: "historique", label: "Historique des accès" },
-  { id: "droits", label: "Mes droits (Loi 25)" },
+  { id: "apercu", label: "Overview" },
+  { id: "consentements", label: "Consents" },
+  { id: "preferences", label: "Preferences" },
+  { id: "securite", label: "Security" },
+  { id: "historique", label: "Access history" },
+  { id: "droits", label: "My rights (Québec Law 25)" },
 ];
 
-const OPS_FR: Record<string, string> = {
-  access_view: "Consultation",
+const OPS_LABEL: Record<string, string> = {
+  access_view: "View",
   export: "Export",
-  rectify: "Rectification",
-  consent_revoke: "Retrait de consentement",
-  deletion_request: "Demande de suppression",
-  deletion_executed: "Suppression effectuée",
-  view_sensitive: "Consultation sensible",
-  download: "Téléchargement",
-  delete: "Suppression",
-  share: "Partage",
-  revoke_share: "Retrait d'accès",
-  password_change: "Changement de mot de passe",
-  session_revoke: "Révocation de session",
+  rectify: "Correction",
+  consent_revoke: "Consent withdrawal",
+  deletion_request: "Deletion request",
+  deletion_executed: "Deletion completed",
+  view_sensitive: "Sensitive data viewed",
+  download: "Download",
+  delete: "Deletion",
+  share: "Share",
+  revoke_share: "Access revoked",
+  password_change: "Password change",
+  session_revoke: "Session revoked",
 };
+
+/** Legacy FR rights-log details → EN keys for t(). */
+const RIGHTS_DETAIL_EN: Record<string, string> = {
+  "Ouverture de la page des droits": "Opened the rights page",
+  "Export JSON des données familiales": "JSON export of family data",
+  "Retrait du consentement de conservation": "Profile retention consent withdrawn",
+  "Portée profile": "Scope profile",
+  "Portée account": "Scope account",
+  "Demande enregistrée (profile)": "Request recorded (profile)",
+  "Demande enregistrée (account)": "Request recorded (account)",
+  "Suppression exécutée (profile)": "Deletion executed (profile)",
+  "Suppression exécutée (account)": "Deletion executed (account)",
+  "Suppression exécutée (portée: profile)": "Deletion executed (scope: profile)",
+  "Suppression exécutée (portée: account)": "Deletion executed (scope: account)",
+};
+
+function rightsDetailLabel(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  detail: string,
+) {
+  return t(RIGHTS_DETAIL_EN[detail] ?? detail);
+}
 
 function scrollToSection(id: SectionId) {
   const el = document.getElementById(id);
@@ -81,6 +103,7 @@ function scrollToSection(id: SectionId) {
 export default function FamilyPrivacyHub() {
   const router = useRouter();
   const { locale } = useLocale();
+  const t = useT();
   const { user, signOut } = useAuth();
   const {
     ready: familyReady,
@@ -152,14 +175,14 @@ export default function FamilyPrivacyHub() {
       .filter((a) => a.status !== "withdrawn")
       .map((a) => ({
         id: `app-${a.id}`,
-        communityName: a.residenceName || "Résidence",
-        resourceLabel: "Dossier d'admission transmis",
+        communityName: a.residenceName || t("Residence"),
+        resourceLabel: t("Admission file submitted"),
         sharedAt: a.submittedAt,
-        authorizedBy: user?.name || "Vous",
+        authorizedBy: user?.name || t("You"),
         active: a.status !== "withdrawn",
         statusLabel: a.status,
       }));
-  }, [data.applications, user?.name]);
+  }, [data.applications, user?.name, t]);
 
   const [retentionGranted, setRetentionGranted] = useState(true);
 
@@ -175,11 +198,11 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(false);
     setBusy(false);
     if (!ok) {
-      setError(saveError || "Impossible de retirer le consentement.");
+      setError(saveError ? t(saveError) : t("Unable to withdraw consent."));
       return;
     }
     setRetentionGranted(false);
-    setMessage("Consentement de conservation du profil retiré pour l'avenir.");
+    setMessage(t("Profile retention consent withdrawn for the future."));
     void refreshLogs();
   };
 
@@ -190,16 +213,16 @@ export default function FamilyPrivacyHub() {
     const ok = await recordProfileConsent(true);
     setBusy(false);
     if (!ok) {
-      setError(saveError || "Impossible d'enregistrer le consentement.");
+      setError(saveError ? t(saveError) : t("Unable to save consent."));
       return;
     }
     setRetentionGranted(true);
-    setMessage("Consentement de conservation du profil enregistré.");
+    setMessage(t("Profile retention consent saved."));
     void refreshLogs();
   };
 
   const expectedPhrase =
-    deleteScope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
+    deleteScope === "account" ? t("DELETE MY ACCOUNT") : t("DELETE THE FILE");
 
   const onExecuteDelete = async () => {
     if (confirmPhrase !== expectedPhrase) return;
@@ -213,10 +236,10 @@ export default function FamilyPrivacyHub() {
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      setError(result.error ? t(result.error) : t("Unable to complete deletion."));
       return;
     }
-    setMessage(result.message);
+    setMessage(result.message ? t(result.message) : null);
     setConfirmPhrase("");
     setShowDeleteConfirm(false);
     if (deleteScope === "account") {
@@ -235,7 +258,7 @@ export default function FamilyPrivacyHub() {
         className={`${publicSans.variable} ${sourceSerif.variable} flex min-h-[40vh] items-center justify-center text-sm text-[#5c6f66]`}
         style={{ fontFamily: "var(--font-public-sans), system-ui, sans-serif" }}
       >
-        Chargement de la confidentialité…
+        {t("Loading privacy settings…")}
       </div>
     );
   }
@@ -272,7 +295,7 @@ export default function FamilyPrivacyHub() {
             flexWrap: "wrap",
           }}
         >
-          <nav aria-label="Fil d'Ariane">
+          <nav aria-label={t("Breadcrumb")}>
             <ol
               style={{
                 display: "flex",
@@ -288,7 +311,7 @@ export default function FamilyPrivacyHub() {
             >
               <li>
                 <Link href="/family/dashboard" style={{ color: "#0A6F63", textDecoration: "none" }}>
-                  Accueil
+                  {t("Home")}
                 </Link>
               </li>
               <li aria-hidden style={{ opacity: 0.5 }}>
@@ -296,7 +319,7 @@ export default function FamilyPrivacyHub() {
               </li>
               <li>
                 <Link href="/family/settings" style={{ color: "#0A6F63", textDecoration: "none" }}>
-                  Paramètres
+                  {t("Settings")}
                 </Link>
               </li>
               <li aria-hidden style={{ opacity: 0.5 }}>
@@ -304,7 +327,7 @@ export default function FamilyPrivacyHub() {
               </li>
               <li>
                 <span aria-current="page" style={{ fontWeight: 600, color: "#14201c" }}>
-                  Confidentialité et données
+                  {t("Privacy and data")}
                 </span>
               </li>
             </ol>
@@ -313,7 +336,7 @@ export default function FamilyPrivacyHub() {
             href="/family/dashboard"
             style={{ fontSize: 14, color: "#0A6F63", textDecoration: "none", minHeight: 44, display: "inline-flex", alignItems: "center" }}
           >
-            Retour à l&apos;espace famille
+            {t("Back to family space")}
           </Link>
         </div>
       </header>
@@ -330,7 +353,7 @@ export default function FamilyPrivacyHub() {
               fontWeight: 600,
             }}
           >
-            Paramètres
+            {t("Settings")}
           </p>
           <h1
             style={{
@@ -341,18 +364,17 @@ export default function FamilyPrivacyHub() {
               lineHeight: 1.15,
             }}
           >
-            Confidentialité et données
+            {t("Privacy and data")}
           </h1>
           <p style={{ margin: "12px 0 0", fontSize: 15.5, lineHeight: 1.6, color: "#3d5249", maxWidth: 640 }}>
-            Comprenez l&apos;utilisation de vos renseignements, gérez vos consentements et
-            exercez vos droits.
+            {t("Understand how your information is used, manage your consents, and exercise your rights.")}
           </p>
         </header>
 
         <CollectionNotice variant="profile" />
 
         <nav
-          aria-label="Sections confidentialité"
+          aria-label={t("Privacy sections")}
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -390,7 +412,7 @@ export default function FamilyPrivacyHub() {
                   cursor: "pointer",
                 }}
               >
-                {s.label}
+                {t(s.label)}
               </button>
             );
           })}
@@ -412,14 +434,15 @@ export default function FamilyPrivacyHub() {
           </div>
         )}
 
-        {/* Vue d'ensemble */}
+        {/* Overview */}
         <section id="apercu" aria-labelledby="apercu-title" style={{ scrollMarginTop: 120 }}>
           <h2 id="apercu-title" style={h2Style}>
-            Vue d&apos;ensemble
+            {t("Overview")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 16 }}>
-            Gérez séparément le partage avec les résidences et l&apos;exercice de vos droits
-            prévus par la Loi 25 sur la protection des renseignements personnels au Québec.
+            {t(
+              "Manage residence data sharing separately from exercising your rights under Québec's Law 25 on the protection of personal information.",
+            )}
           </p>
           <div
             style={{
@@ -429,10 +452,9 @@ export default function FamilyPrivacyHub() {
             }}
           >
             <article style={cardStyle}>
-              <h3 style={h3Style}>Gérer les consentements</h3>
+              <h3 style={h3Style}>{t("Manage consents")}</h3>
               <p style={pStyle}>
-                Voyez quelles résidences ont reçu des renseignements et retirez les accès
-                futurs.
+                {t("See which residences have received information and withdraw future access.")}
               </p>
               <button
                 type="button"
@@ -442,14 +464,13 @@ export default function FamilyPrivacyHub() {
                   scrollToSection("consentements");
                 }}
               >
-                Voir les consentements
+                {t("View consents")}
               </button>
             </article>
             <article style={cardStyle}>
-              <h3 style={h3Style}>Exercer vos droits</h3>
+              <h3 style={h3Style}>{t("Exercise your rights")}</h3>
               <p style={pStyle}>
-                Accédez à vos données, demandez une correction ou présentez une demande de
-                suppression.
+                {t("Access your data, request a correction, or submit a deletion request.")}
               </p>
               <button
                 type="button"
@@ -459,24 +480,25 @@ export default function FamilyPrivacyHub() {
                   scrollToSection("droits");
                 }}
               >
-                Mes droits (Loi 25)
+                {t("My rights (Québec Law 25)")}
               </button>
             </article>
           </div>
         </section>
 
-        {/* Consentements */}
+        {/* Consents */}
         <section
           id="consentements"
           aria-labelledby="consentements-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="consentements-title" style={h2Style}>
-            Consentements
+            {t("Consents")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 14 }}>
-            Le retrait d&apos;un accès futur ne peut pas rappeler les copies déjà
-            téléchargées légalement par une résidence.
+            {t(
+              "Withdrawing future access cannot recall copies a residence has already legally downloaded.",
+            )}
           </p>
 
           <article style={{ ...cardStyle, marginBottom: 14 }}>
@@ -490,12 +512,12 @@ export default function FamilyPrivacyHub() {
               }}
             >
               <div style={{ flex: "1 1 240px" }}>
-                <h3 style={h3Style}>Conservation du profil familial</h3>
-                <p style={pStyle}>{PROFILE_RETENTION_PURPOSE_TEXT}</p>
+                <h3 style={h3Style}>{t("Family profile retention")}</h3>
+                <p style={pStyle}>{t(PROFILE_RETENTION_PURPOSE_TEXT)}</p>
                 <p style={{ ...metaStyle, marginTop: 10 }}>
-                  Statut :{" "}
-                  <strong>{retentionGranted ? "Actif" : "Retiré"}</strong>
-                  {user?.name ? ` · Donné par ${user.name}` : null}
+                  {t("Status:")}{" "}
+                  <strong>{retentionGranted ? t("Active") : t("Withdrawn")}</strong>
+                  {user?.name ? ` · ${t("Given by {name}", { name: user.name })}` : null}
                 </p>
               </div>
               {retentionGranted ? (
@@ -505,7 +527,7 @@ export default function FamilyPrivacyHub() {
                   disabled={busy}
                   onClick={() => void onRevokeRetention()}
                 >
-                  Retirer pour l&apos;avenir
+                  {t("Withdraw for the future")}
                 </button>
               ) : (
                 <button
@@ -514,12 +536,12 @@ export default function FamilyPrivacyHub() {
                   disabled={busy}
                   onClick={() => void onGrantRetention()}
                 >
-                  Donner mon consentement
+                  {t("Give my consent")}
                 </button>
               )}
             </div>
             {saveStatus === "saving" ? (
-              <p style={{ ...metaStyle, marginTop: 10 }}>Enregistrement…</p>
+              <p style={{ ...metaStyle, marginTop: 10 }}>{t("Saving…")}</p>
             ) : null}
           </article>
 
@@ -539,19 +561,21 @@ export default function FamilyPrivacyHub() {
                     <StatusPill active={c.active} />
                   </div>
                   <p style={{ ...pStyle, marginTop: 8 }}>
-                    Renseignements autorisés : {c.resourceLabel}
+                    {t("Information authorized: {value}", { value: c.resourceLabel })}
                   </p>
                   <p style={metaStyle}>
-                    Date du consentement : {formatPrivacyTime(c.sharedAt)}
+                    {t("Consent date: {value}", { value: formatPrivacyTime(c.sharedAt) })}
                   </p>
                   <p style={metaStyle}>
-                    Personne ayant donné le consentement : {c.authorizedBy} (
-                    {maskSensitiveText(c.authorizedByEmail)})
+                    {t("Consent given by: {name} ({email})", {
+                      name: c.authorizedBy,
+                      email: maskSensitiveText(c.authorizedByEmail),
+                    })}
                   </p>
                   {c.revokedAt ? (
                     <p style={metaStyle}>
-                      Retiré le {formatPrivacyTime(c.revokedAt)}
-                      {c.revokedBy ? ` par ${c.revokedBy}` : ""}
+                      {t("Withdrawn on {date}", { date: formatPrivacyTime(c.revokedAt) })}
+                      {c.revokedBy ? ` ${t("by {name}", { name: c.revokedBy })}` : ""}
                     </p>
                   ) : null}
                 </div>
@@ -563,14 +587,17 @@ export default function FamilyPrivacyHub() {
                       onClick={() => {
                         if (
                           confirm(
-                            `Retirer les accès futurs de ${c.communityName} à « ${c.resourceLabel} » ? Les copies déjà téléchargées ne peuvent pas être rappelées.`,
+                            t(
+                              'Withdraw {community}\'s future access to "{resource}"? Copies already downloaded cannot be recalled.',
+                              { community: c.communityName, resource: c.resourceLabel },
+                            ),
                           )
                         ) {
                           revokeConsent(c.id);
                         }
                       }}
                     >
-                      Retirer les accès futurs
+                      {t("Withdraw future access")}
                     </button>
                   ) : (
                     <button
@@ -578,7 +605,7 @@ export default function FamilyPrivacyHub() {
                       style={btnOutline}
                       onClick={() => restoreConsent(c.id)}
                     >
-                      Rétablir l&apos;accès
+                      {t("Restore access")}
                     </button>
                   )}
                 </div>
@@ -593,21 +620,25 @@ export default function FamilyPrivacyHub() {
                 <StatusPill active={a.active} />
               </div>
               <p style={{ ...pStyle, marginTop: 8 }}>
-                Renseignements autorisés : {a.resourceLabel}
+                {t("Information authorized: {value}", { value: a.resourceLabel })}
               </p>
               <p style={metaStyle}>
-                Date du consentement :{" "}
-                {a.sharedAt
-                  ? new Date(a.sharedAt).toLocaleString("fr-CA")
-                  : "Non précisée"}
+                {t("Consent date: {value}", {
+                  value: a.sharedAt
+                    ? new Date(a.sharedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")
+                    : t("Not specified"),
+                })}
               </p>
               <p style={metaStyle}>
-                Personne ayant donné le consentement : {a.authorizedBy}
+                {t("Consent given by: {name}", { name: a.authorizedBy })}
               </p>
-              <p style={metaStyle}>Statut de la demande : {a.statusLabel}</p>
+              <p style={metaStyle}>
+                {t("Application status: {value}", { value: a.statusLabel })}
+              </p>
               <p style={{ ...metaStyle, marginTop: 8 }}>
-                Pour retirer l&apos;accès à une résidence, ouvrez le dossier concerné dans
-                l&apos;espace famille ou utilisez{" "}
+                {t(
+                  "To withdraw access for a residence, open the relevant file in the family space or use",
+                )}{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -616,7 +647,7 @@ export default function FamilyPrivacyHub() {
                   }}
                   style={linkBtn}
                 >
-                  Mes droits (Loi 25)
+                  {t("My rights (Québec Law 25)")}
                 </button>
                 .
               </p>
@@ -625,28 +656,29 @@ export default function FamilyPrivacyHub() {
 
           {workspace.consents.length === 0 && applicationShares.length === 0 ? (
             <p style={pStyle}>
-              Aucun partage avec une résidence pour le moment. Lorsqu&apos;une demande sera
-              déposée, le consentement associé apparaîtra ici.
+              {t(
+                "No residence sharing yet. Once you submit an application, the associated consent will appear here.",
+              )}
             </p>
           ) : null}
         </section>
 
-        {/* Préférences */}
+        {/* Preferences */}
         <section
           id="preferences"
           aria-labelledby="preferences-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="preferences-title" style={h2Style}>
-            Préférences
+            {t("Preferences")}
           </h2>
           <article style={{ ...cardStyle, marginBottom: 12 }}>
-            <h3 style={h3Style}>Communications par courriel</h3>
+            <h3 style={h3Style}>{t("Email communications")}</h3>
             {(
               [
-                ["productEmails", "Mises à jour sur vos demandes"],
-                ["securityEmails", "Alertes de sécurité (recommandé)"],
-                ["marketingEmails", "Nouvelles occasionnelles sur le service"],
+                ["productEmails", "Updates about your applications"],
+                ["securityEmails", "Security alerts (recommended)"],
+                ["marketingEmails", "Occasional service news"],
               ] as const
             ).map(([key, label]) => (
               <label
@@ -667,12 +699,12 @@ export default function FamilyPrivacyHub() {
                   onChange={(e) => updatePreferences({ [key]: e.target.checked })}
                   style={{ marginTop: 4, width: 18, height: 18 }}
                 />
-                <span>{label}</span>
+                <span>{t(label)}</span>
               </label>
             ))}
           </article>
           <article style={cardStyle}>
-            <h3 style={h3Style}>Consentements par défaut</h3>
+            <h3 style={h3Style}>{t("Default consents")}</h3>
             <label
               style={{
                 display: "flex",
@@ -693,8 +725,7 @@ export default function FamilyPrivacyHub() {
                 style={{ marginTop: 4, width: 18, height: 18 }}
               />
               <span>
-                Autoriser le partage du dossier avec les résidences auxquelles je dépose une
-                demande
+                {t("Allow sharing my file with residences I apply to")}
               </span>
             </label>
             <label
@@ -714,28 +745,29 @@ export default function FamilyPrivacyHub() {
                 onChange={(e) => updatePreferences({ shareAnalytics: e.target.checked })}
                 style={{ marginTop: 4, width: 18, height: 18 }}
               />
-              <span>Partager des statistiques d&apos;usage anonymisées</span>
+              <span>{t("Share anonymized usage statistics")}</span>
             </label>
           </article>
         </section>
 
-        {/* Sécurité */}
+        {/* Security */}
         <section
           id="securite"
           aria-labelledby="securite-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="securite-title" style={h2Style}>
-            Sécurité
+            {t("Security")}
           </h2>
           <article style={{ ...cardStyle, marginBottom: 12 }}>
-            <h3 style={h3Style}>Mot de passe</h3>
+            <h3 style={h3Style}>{t("Password")}</h3>
             <p style={pStyle}>
-              Utilisez un mot de passe unique d&apos;au moins 8 caractères, avec majuscule,
-              minuscule et chiffre.
+              {t(
+                "Use a unique password of at least 8 characters, with an uppercase letter, a lowercase letter, and a number.",
+              )}
             </p>
             <label style={{ display: "block", marginTop: 12 }}>
-              <span style={metaStyle}>Mot de passe actuel</span>
+              <span style={metaStyle}>{t("Current password")}</span>
               <input
                 type="password"
                 autoComplete="current-password"
@@ -745,7 +777,7 @@ export default function FamilyPrivacyHub() {
               />
             </label>
             <label style={{ display: "block", marginTop: 12 }}>
-              <span style={metaStyle}>Nouveau mot de passe</span>
+              <span style={metaStyle}>{t("New password")}</span>
               <input
                 type="password"
                 autoComplete="new-password"
@@ -761,15 +793,15 @@ export default function FamilyPrivacyHub() {
               onClick={async () => {
                 const res = await changePassword(currentPw, newPw);
                 if (res.ok) {
-                  setPwMsg("Mot de passe mis à jour.");
+                  setPwMsg(t("Password updated."));
                   setCurrentPw("");
                   setNewPw("");
                 } else {
-                  setPwMsg(res.error || "Impossible de mettre à jour le mot de passe.");
+                  setPwMsg(res.error || t("Unable to update password."));
                 }
               }}
             >
-              Mettre à jour le mot de passe
+              {t("Update password")}
             </button>
           </article>
 
@@ -783,9 +815,9 @@ export default function FamilyPrivacyHub() {
                 alignItems: "center",
               }}
             >
-              <h3 style={{ ...h3Style, margin: 0 }}>Sessions actives</h3>
+              <h3 style={{ ...h3Style, margin: 0 }}>{t("Active sessions")}</h3>
               <button type="button" style={btnOutline} onClick={revokeOtherSessions}>
-                Déconnecter les autres appareils
+                {t("Sign out other devices")}
               </button>
             </div>
             <ul style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "grid", gap: 10 }}>
@@ -806,10 +838,13 @@ export default function FamilyPrivacyHub() {
                   <div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: 14.5 }}>
                       {s.label}
-                      {s.current ? " · Session actuelle" : ""}
+                      {s.current ? ` · ${t("Current session")}` : ""}
                     </p>
                     <p style={metaStyle}>
-                      {s.userAgentHint} · Dernière activité {formatPrivacyTime(s.lastActiveAt)}
+                      {t("{device} · Last active {date}", {
+                        device: s.userAgentHint,
+                        date: formatPrivacyTime(s.lastActiveAt),
+                      })}
                     </p>
                   </div>
                   <button
@@ -817,14 +852,14 @@ export default function FamilyPrivacyHub() {
                     style={btnDangerOutline}
                     onClick={() => {
                       if (s.current) {
-                        if (!confirm("Vous déconnecter de cet appareil ?")) return;
+                        if (!confirm(t("Sign out of this device?"))) return;
                         signOut();
                         return;
                       }
                       revokeSession(s.id);
                     }}
                   >
-                    Révoquer
+                    {t("Revoke")}
                   </button>
                 </li>
               ))}
@@ -832,45 +867,47 @@ export default function FamilyPrivacyHub() {
           </article>
         </section>
 
-        {/* Historique */}
+        {/* Access history */}
         <section
           id="historique"
           aria-labelledby="historique-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="historique-title" style={h2Style}>
-            Historique des accès
+            {t("Access history")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 14 }}>
-            Journal des consultations et des opérations sensibles liées à votre compte.
+            {t("Log of views and sensitive operations related to your account.")}
           </p>
           <article style={cardStyle}>
             {logs.length === 0 && workspace.accessLog.length === 0 ? (
-              <p style={pStyle}>Aucune opération enregistrée pour le moment.</p>
+              <p style={pStyle}>{t("No operations recorded yet.")}</p>
             ) : (
               <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
                 {logs.map((l) => (
                   <li key={l.id} style={logItemStyle}>
-                    <strong>{OPS_FR[l.operation] || l.operation}</strong>
+                    <strong>{t(OPS_LABEL[l.operation] || l.operation)}</strong>
                     <span style={{ color: "#5c6f66" }}>
                       {" · "}
-                      {new Date(l.recordedAt).toLocaleString("fr-CA")}
+                      {new Date(l.recordedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}
                     </span>
                     {l.detail ? (
-                      <div style={{ marginTop: 4, color: "#3d5249" }}>{l.detail}</div>
+                      <div style={{ marginTop: 4, color: "#3d5249" }}>
+                        {rightsDetailLabel(t, l.detail)}
+                      </div>
                     ) : null}
                   </li>
                 ))}
                 {workspace.accessLog.slice(0, 20).map((e) => (
                   <li key={e.id} style={logItemStyle}>
-                    <strong>{OPS_FR[e.action] || e.action}</strong>
+                    <strong>{t(OPS_LABEL[e.action] || e.action)}</strong>
                     <span style={{ color: "#5c6f66" }}>
                       {" · "}
                       {formatPrivacyTime(e.at)} · {e.actor}
                     </span>
                     <div style={{ marginTop: 4, color: "#3d5249" }}>
                       {e.resource}
-                      {e.detail ? ` — ${e.detail}` : ""}
+                      {e.detail ? ` — ${rightsDetailLabel(t, e.detail)}` : ""}
                     </div>
                   </li>
                 ))}
@@ -879,57 +916,59 @@ export default function FamilyPrivacyHub() {
           </article>
         </section>
 
-        {/* Mes droits Loi 25 */}
+        {/* My rights (Québec Law 25) */}
         <section
           id="droits"
           aria-labelledby="droits-title"
           style={{ ...sectionBlock, scrollMarginTop: 120 }}
         >
           <h2 id="droits-title" style={h2Style}>
-            Mes droits (Loi 25)
+            {t("My rights (Québec Law 25)")}
           </h2>
           <p style={{ ...pStyle, marginBottom: 16 }}>
-            Vous pouvez demander l&apos;accès à vos renseignements personnels, leur
-            rectification, le retrait d&apos;un consentement et, lorsque la loi le permet,
-            leur suppression. Une vérification d&apos;identité peut être exigée avant de
-            traiter une demande.
+            {t(
+              "You can request access to your personal information, its correction, the withdrawal of a consent, and, where the law allows, its deletion. Identity verification may be required before a request is processed.",
+            )}
           </p>
 
           <article style={{ ...cardStyle, marginBottom: 12 }}>
-            <h3 style={h3Style}>Télécharger mes données</h3>
+            <h3 style={h3Style}>{t("Download my data")}</h3>
             <p style={pStyle}>
-              Obtenez une copie JSON de votre compte, des profils, consentements, documents
-              (métadonnées) et historique des droits.
+              {t(
+                "Get a JSON copy of your account, profiles, consents, documents (metadata), and rights history.",
+              )}
             </p>
             <p style={metaStyle}>
-              Connecté·e : <strong>{user?.email}</strong>
+              {t("Signed in as:")} <strong>{user?.email}</strong>
             </p>
             <button type="button" style={btnPrimary} onClick={onExport}>
-              Télécharger mes données
+              {t("Download my data")}
             </button>
           </article>
 
           <article style={{ ...cardStyle, marginBottom: 12 }}>
-            <h3 style={h3Style}>Demander une correction</h3>
+            <h3 style={h3Style}>{t("Request a correction")}</h3>
             <p style={pStyle}>
-              Corrigez le profil contact et le dossier de la personne aînée directement dans
-              l&apos;espace famille. Les modifications sont enregistrées.
+              {t(
+                "Correct the contact profile and the senior's file directly in the family space. Changes are saved.",
+              )}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
               <Link href="/family/dashboard?view=dossier" style={btnOutlineLink}>
-                Modifier le dossier
+                {t("Edit the file")}
               </Link>
               <Link href="/family/dashboard?view=dossier" style={btnOutlineLink}>
-                Ouvrir mon profil
+                {t("Open my profile")}
               </Link>
             </div>
           </article>
 
           <article style={{ ...cardStyle, marginBottom: 12 }}>
-            <h3 style={h3Style}>Retirer un consentement</h3>
+            <h3 style={h3Style}>{t("Withdraw a consent")}</h3>
             <p style={pStyle}>
-              Retirez le consentement de conservation du profil ou les accès futurs aux
-              résidences. Le retrait vaut pour l&apos;avenir.
+              {t(
+                "Withdraw the profile retention consent or future residence access. The withdrawal applies going forward.",
+              )}
             </p>
             <button
               type="button"
@@ -939,7 +978,7 @@ export default function FamilyPrivacyHub() {
                 scrollToSection("consentements");
               }}
             >
-              Gérer les consentements
+              {t("Manage consents")}
             </button>
           </article>
 
@@ -953,11 +992,12 @@ export default function FamilyPrivacyHub() {
             aria-labelledby="suppression-title"
           >
             <h3 id="suppression-title" style={{ ...h3Style, color: "#8a3b28" }}>
-              Demander la suppression de mes données
+              {t("Request deletion of my data")}
             </h3>
             <p style={pStyle}>
-              La demande sera examinée avant suppression. Certaines données peuvent devoir
-              être conservées pendant la période exigée par la loi.
+              {t(
+                "The request will be reviewed before deletion. Some data may need to be retained for the period required by law.",
+              )}
             </p>
             {!showDeleteConfirm ? (
               <button
@@ -965,12 +1005,12 @@ export default function FamilyPrivacyHub() {
                 style={{ ...btnDanger, marginTop: 14 }}
                 onClick={() => setShowDeleteConfirm(true)}
               >
-                Commencer une demande de suppression
+                {t("Start a deletion request")}
               </button>
             ) : (
               <div
                 role="region"
-                aria-label="Confirmation de suppression"
+                aria-label={t("Deletion confirmation")}
                 style={{
                   marginTop: 16,
                   padding: 16,
@@ -980,7 +1020,7 @@ export default function FamilyPrivacyHub() {
                 }}
               >
                 <p style={{ ...pStyle, marginBottom: 12 }}>
-                  Avant d&apos;envoyer votre demande, confirmez que vous comprenez :
+                  {t("Before sending your request, confirm that you understand:")}
                 </p>
                 <ul
                   style={{
@@ -992,25 +1032,28 @@ export default function FamilyPrivacyHub() {
                   }}
                 >
                   <li>
-                    Les données concernées : profil familial, dossier de la personne aînée,
-                    documents téléversés, consentements et historique associé à cet espace.
+                    {t(
+                      "Data concerned: family profile, senior’s file, uploaded documents, consents, and history linked to this space.",
+                    )}
                   </li>
                   <li>
-                    Certaines données peuvent être conservées légalement (obligations de
-                    conservation, sécurité, litiges).
+                    {t(
+                      "Some data may be retained legally (retention duties, security, disputes).",
+                    )}
                   </li>
                   <li>
-                    La suppression du compte peut interrompre votre accès à HavenApply et aux
-                    demandes en cours.
+                    {t(
+                      "Deleting the account may interrupt your access to HavenApply and open applications.",
+                    )}
                   </li>
                   <li>
-                    La demande sera traitée après vérification de votre identité.
+                    {t("The request will be processed after your identity is verified.")}
                   </li>
                 </ul>
 
                 <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
                   <legend style={{ fontSize: 13, color: "#5c6f66", marginBottom: 8 }}>
-                    Portée de la demande
+                    {t("Scope of the request")}
                   </legend>
                   <label style={radioLabel}>
                     <input
@@ -1019,7 +1062,7 @@ export default function FamilyPrivacyHub() {
                       checked={deleteScope === "profile"}
                       onChange={() => setDeleteScope("profile")}
                     />
-                    Supprimer le dossier de la personne aînée (garder le compte)
+                    {t("Delete the senior’s file (keep the account)")}
                   </label>
                   <label style={radioLabel}>
                     <input
@@ -1028,12 +1071,12 @@ export default function FamilyPrivacyHub() {
                       checked={deleteScope === "account"}
                       onChange={() => setDeleteScope("account")}
                     />
-                    Supprimer toutes les données familiales de cet espace
+                    {t("Delete all family data in this space")}
                   </label>
                 </fieldset>
 
                 <label style={{ display: "block", marginTop: 12 }}>
-                  <span style={metaStyle}>Motif (optionnel)</span>
+                  <span style={metaStyle}>{t("Reason (optional)")}</span>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
@@ -1044,7 +1087,8 @@ export default function FamilyPrivacyHub() {
                 </label>
                 <label style={{ display: "block", marginTop: 12 }}>
                   <span style={metaStyle}>
-                    Tapez <strong>{expectedPhrase}</strong> pour confirmer
+                    {t("Please type the following phrase to confirm:")}{" "}
+                    <strong>{expectedPhrase}</strong>
                   </span>
                   <input
                     value={confirmPhrase}
@@ -1061,7 +1105,7 @@ export default function FamilyPrivacyHub() {
                     disabled={busy || confirmPhrase !== expectedPhrase}
                     onClick={() => void onExecuteDelete()}
                   >
-                    {busy ? "Traitement…" : "Envoyer la demande de suppression"}
+                    {busy ? t("Processing…") : t("Send deletion request")}
                   </button>
                   <button
                     type="button"
@@ -1071,7 +1115,7 @@ export default function FamilyPrivacyHub() {
                       setConfirmPhrase("");
                     }}
                   >
-                    Annuler
+                    {t("Cancel")}
                   </button>
                 </div>
               </div>
@@ -1080,28 +1124,27 @@ export default function FamilyPrivacyHub() {
 
           <article style={cardStyle}>
             <h3 style={h3Style}>
-              Contacter la personne responsable de la protection des renseignements
-              personnels
+              {t("Contact the privacy officer")}
             </h3>
             <p style={pStyle}>
-              Pour toute question relative à la confidentialité ou pour exercer vos droits
-              hors de cette interface, écrivez à la personne responsable de la protection des
-              renseignements personnels.
+              {t(
+                "For any privacy question or to exercise your rights outside this interface, write to the privacy officer.",
+              )}
             </p>
             <a
               href="mailto:privacy@havenapply.com"
               style={{ ...btnOutlineLink, marginTop: 14 }}
             >
-              Contacter privacy@havenapply.com
+              {t("Contact privacy@havenapply.com")}
             </a>
             <p style={{ ...metaStyle, marginTop: 12 }}>
-              Consultez aussi la{" "}
+              {t("Also see the")}{" "}
               <Link href={privacyPath(locale)} style={{ color: "#0A6F63" }}>
-                politique de confidentialité
+                {t("privacy policy")}
               </Link>{" "}
-              et l&apos;
+              {t("and the")}{" "}
               <Link href={collectionPath(locale)} style={{ color: "#0A6F63" }}>
-                avis de collecte
+                {t("collection notice")}
               </Link>
               .
             </p>
@@ -1113,6 +1156,7 @@ export default function FamilyPrivacyHub() {
 }
 
 function StatusPill({ active }: { active: boolean }) {
+  const t = useT();
   return (
     <span
       style={{
@@ -1127,7 +1171,7 @@ function StatusPill({ active }: { active: boolean }) {
         color: active ? "#0A6F63" : "#5c6f66",
       }}
     >
-      {active ? "Actif" : "Retiré"}
+      {active ? t("Active") : t("Withdrawn")}
     </span>
   );
 }

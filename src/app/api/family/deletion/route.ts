@@ -30,16 +30,21 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
 
   const scope = body.scope === "profile" ? "profile" : "account";
 
   if (body.confirmExecute) {
-    const expected = scope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
-    if (body.confirmPhrase?.trim() !== expected) {
+    const accountPhrases = new Set(["DELETE MY ACCOUNT", "SUPPRIMER MON COMPTE"]);
+    const profilePhrases = new Set(["DELETE THE FILE", "SUPPRIMER LE DOSSIER"]);
+    const allowed = scope === "account" ? accountPhrases : profilePhrases;
+    const phrase = body.confirmPhrase?.trim() || "";
+    if (!allowed.has(phrase)) {
       return jsonError(
-        `Pour confirmer, saisissez exactement : ${expected}`,
+        scope === "account"
+          ? "To confirm, type exactly: DELETE MY ACCOUNT"
+          : "To confirm, type exactly: DELETE THE FILE",
         400,
       );
     }
@@ -47,14 +52,14 @@ export async function POST(request: Request) {
       scope,
       reason: body.reason,
     });
-    if (!result) return jsonError("Impossible d'exécuter la suppression.", 404);
+    if (!result) return jsonError("Unable to complete deletion.", 404);
     return jsonOk({
       executed: true,
       scope: result.scope,
       message:
         scope === "account"
-          ? "Vos données familiales ont été supprimées de cet espace."
-          : "Le dossier de la personne aînée a été effacé.",
+          ? "Your family data has been deleted from this space."
+          : "The senior's file has been erased.",
     });
   }
 
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
     scope,
     reason: body.reason,
   });
-  if (!bundle) return jsonError("Impossible d'enregistrer la demande.", 404);
-  await recordRightsOperation(auth.user.id, "deletion_request", `Portée ${scope}`);
+  if (!bundle) return jsonError("Unable to save the request.", 404);
+  await recordRightsOperation(auth.user.id, "deletion_request", `Scope ${scope}`);
   return jsonOk({ bundle, executed: false });
 }

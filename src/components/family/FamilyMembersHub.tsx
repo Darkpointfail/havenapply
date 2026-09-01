@@ -25,6 +25,7 @@ import {
   type FamilyRole,
 } from "@/lib/family-collaboration";
 import { useFamilyCollaboration } from "@/lib/family-collaboration-store";
+import { useT } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 type Tab = "members" | "permissions" | "tasks" | "comments" | "activity";
@@ -47,6 +48,7 @@ function roleTone(role: FamilyRole): "brand" | "success" | "neutral" | "warn" | 
 }
 
 export function FamilyMembersHub() {
+  const t = useT();
   const { user } = useAuth();
   const {
     ready,
@@ -124,7 +126,7 @@ export function FamilyMembersHub() {
       message: inviteMessage,
     });
     if (!res.ok) {
-      setInviteError(res.error || "Could not send invitation.");
+      setInviteError(res.error ? t(res.error) : t("Could not send invitation."));
       return;
     }
     setInviteSuccess(
@@ -215,7 +217,7 @@ export function FamilyMembersHub() {
                     size="sm"
                     onClick={() => {
                       const res = acceptInvitation(inv.token);
-                      if (!res.ok) alert(res.error);
+                      if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                     }}
                   >
                     Accept
@@ -346,7 +348,7 @@ export function FamilyMembersHub() {
                             m.id,
                             e.target.value as Exclude<FamilyRole, "owner">,
                           );
-                          if (!res.ok) alert(res.error);
+                          if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                         }}
                         aria-label={`Change role for ${m.name}`}
                       >
@@ -364,7 +366,7 @@ export function FamilyMembersHub() {
                         onClick={() => {
                           if (confirm(`Remove access for ${m.name}?`)) {
                             const res = removeMember(m.id);
-                            if (!res.ok) alert(res.error);
+                            if (!res.ok) alert(res.error ? t(res.error) : t("Something went wrong."));
                           }
                         }}
                       >

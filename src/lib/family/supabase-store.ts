@@ -288,7 +288,7 @@ export async function loadOrCreateSupabaseFamily(user: {
     .single();
 
   if (error || !created) {
-    throw new Error(error?.message || "Impossible de créer le compte famille.");
+    throw new Error(error?.message || "Unable to create the family account.");
   }
 
   await client.from("family_members").insert({
@@ -510,7 +510,7 @@ export async function requestDeletion(
     user_id: ownerId,
     family_id: fam?.id ?? null,
     operation: "deletion_request",
-    detail: `Demande enregistrée (${input.scope})`,
+    detail: `Request recorded (${input.scope})`,
   });
   return loadOrCreateSupabaseFamily({
     id: ownerId,
@@ -532,7 +532,7 @@ export async function buildFamilyExport(ownerId: string) {
     user_id: ownerId,
     family_id: bundle.account.id,
     operation: "export",
-    detail: "Export JSON des données familiales",
+    detail: "JSON export of family data",
   });
   const { data: logs } = await client
     .from("rights_operation_logs")
@@ -557,8 +557,8 @@ export async function buildFamilyExport(ownerId: string) {
       recordedAt: l.recorded_at,
     })),
     notes: [
-      "Les fichiers binaires ne sont pas inclus. Téléchargez chaque document séparément.",
-      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+      "Binary files are not included. Download each document separately.",
+      "This file contains personal information — store it securely.",
     ],
   };
 }
@@ -700,7 +700,7 @@ export async function executeAccountDeletion(
     user_id: ownerId,
     family_id: fam.id,
     operation: "deletion_executed",
-    detail: `Suppression exécutée (${input.scope})`,
+    detail: `Deletion executed (${input.scope})`,
   });
 
   if (input.scope === "account") {
@@ -710,7 +710,7 @@ export async function executeAccountDeletion(
         deleted_at: new Date().toISOString(),
         primary_email: null,
         primary_phone: null,
-        family_name: "Compte supprimé",
+        family_name: "Deleted account",
       })
       .eq("id", fam.id);
   }
@@ -744,9 +744,9 @@ export async function uploadDocument(input: {
 }) {
   const client = await sb();
   const { data: fam } = await client.from("families").select("*").eq("owner_id", input.ownerId).is("deleted_at", null).maybeSingle();
-  if (!fam) return { error: "Compte introuvable.", status: 404 as const };
+  if (!fam) return { error: "Account not found.", status: 404 as const };
   const senior = await ensureSenior(client, fam.id, input.ownerId, input.seniorId ?? null);
-  if (!senior) return { error: "Profil introuvable.", status: 404 as const };
+  if (!senior) return { error: "Profile not found.", status: 404 as const };
 
   const docId = newOpaqueId("doc").replace("doc_", "");
   // Use uuid-like path; storage bucket senior-documents
@@ -756,7 +756,7 @@ export async function uploadDocument(input: {
     contentType: input.mimeType,
     upsert: false,
   });
-  if (upErr) return { error: "Échec du téléversement.", status: 500 as const };
+  if (upErr) return { error: "Upload failed.", status: 500 as const };
 
   const categoryMap: Record<string, string> = {
     identification: "id",
@@ -800,7 +800,7 @@ export async function uploadDocument(input: {
     .select("*")
     .single();
 
-  if (error || !docRow) return { error: "Impossible d'enregistrer le document.", status: 500 as const };
+  if (error || !docRow) return { error: "Unable to save the document.", status: 500 as const };
 
   const bundle = await loadOrCreateSupabaseFamily({
     id: input.ownerId,
@@ -840,7 +840,7 @@ export async function replaceDocumentFile(input: {
 }) {
   const removed = await removeDocument(input.ownerId, input.docId);
   if (!removed || "error" in (removed as object)) {
-    return { error: "Document introuvable.", status: 404 as const };
+    return { error: "Document not found.", status: 404 as const };
   }
   // Need category from old — simplified: re-upload as other if unknown
   return uploadDocument({

@@ -78,7 +78,7 @@ function fromYesNoUnsure(v: YesNoUnsure | undefined, detail?: string): string {
   if (detail && detail.trim()) return detail.trim();
   if (v === "yes") return "Oui";
   if (v === "no") return "Non";
-  if (v === "unsure") return "À préciser";
+  if (v === "unsure") return "To be determined";
   return "";
 }
 

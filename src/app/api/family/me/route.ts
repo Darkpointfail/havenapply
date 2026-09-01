@@ -9,6 +9,6 @@ export async function GET() {
     const bundle = await loadOrCreateFamilyBundle(auth.user);
     return jsonOk({ bundle });
   } catch {
-    return jsonError("Impossible de charger votre dossier.", 500);
+    return jsonError("Unable to load your file.", 500);
   }
 }

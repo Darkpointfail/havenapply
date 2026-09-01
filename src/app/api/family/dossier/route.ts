@@ -15,7 +15,7 @@ export async function PATCH(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
 
   let bundle = null;
@@ -29,6 +29,6 @@ export async function PATCH(request: Request) {
       body.emergencyContacts,
     );
   }
-  if (!bundle) return jsonError("Aucune donnée à enregistrer.", 400);
+  if (!bundle) return jsonError("No data to save.", 400);
   return jsonOk({ bundle });
 }

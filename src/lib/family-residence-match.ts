@@ -1,5 +1,8 @@
 import type { Residence } from "@/data/family-space";
 
+export type TranslateFn = (key: string, vars?: Record<string, string | number>) => string;
+const identityT: TranslateFn = (key) => key;
+
 /** Importance 1–5 per axis; converted into normalized weights at score time. */
 export type MatchPriorities = {
   care: number;
@@ -146,11 +149,11 @@ export function parseAutonomyScore(raw: string | number | null | undefined): num
 }
 
 export function autonomyLabel(score: number | null): string {
-  if (score == null) return "À préciser";
-  if (score <= 3) return `${score}/10 · peu autonome`;
-  if (score <= 6) return `${score}/10 · semi-autonome`;
-  if (score <= 8) return `${score}/10 · assez autonome`;
-  return `${score}/10 · très autonome`;
+  if (score == null) return "To be determined";
+  if (score <= 3) return `${score}/10 · limited autonomy`;
+  if (score <= 6) return `${score}/10 · semi-autonomous`;
+  if (score <= 8) return `${score}/10 · fairly autonomous`;
+  return `${score}/10 · highly autonomous`;
 }
 
 /**
@@ -161,7 +164,13 @@ export function residenceAutonomyBand(residence: Residence): { lo: number; hi: n
   const raw = (residence.categoryLabel || "").toLowerCase();
   const cats: number[] = [];
   for (const n of [1, 2, 3, 4]) {
-    if (raw.includes(`catégorie ${n}`) || raw.includes(`categorie ${n}`)) cats.push(n);
+    if (
+      raw.includes(`catégorie ${n}`) ||
+      raw.includes(`categorie ${n}`) ||
+      raw.includes(`category ${n}`)
+    ) {
+      cats.push(n);
+    }
   }
   // Fallback: parse facts
   if (cats.length === 0) {
@@ -187,7 +196,7 @@ export function residenceAutonomyBand(residence: Residence): { lo: number; hi: n
     lo = Math.min(lo, b[0]);
     hi = Math.max(hi, b[1]);
   }
-  return { lo, hi, labels: cats.map((c) => `catégorie ${c}`) };
+  return { lo, hi, labels: cats.map((c) => `category ${c}`) };
 }
 
 function residenceCapacity(residence: Residence): number {
@@ -270,6 +279,7 @@ export function resolveWeights(
 function scoreCareAxis(
   profil: FamilyCareProfile,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): { score: number; why: string[]; consider: string[] } {
   const why: string[] = [];
   const consider: string[] = [];
@@ -281,20 +291,20 @@ function scoreCareAxis(
     if (patient >= band.lo && patient <= band.hi) {
       score = 92;
       why.push(
-        `Autonomie ${patient}/10 compatible avec ${band.labels.join(" / ")} (${band.lo}–${band.hi}/10)`,
+        t("Autonomy {score}/10 compatible with {labels} ({lo}–{hi}/10)", { score: patient, labels: band.labels.join(" / "), lo: band.lo, hi: band.hi }),
       );
     } else {
       const dist = patient < band.lo ? band.lo - patient : patient - band.hi;
       // Each point of gap costs ~18 → gap of 4+ ≈ near-floor
       score = Math.max(8, 85 - dist * 18);
       consider.push(
-        `Autonomie ${patient}/10 vs résidence plutôt ${band.lo}–${band.hi}/10 (${band.labels.join(", ")})`,
+        t("Autonomy {score}/10 vs residence closer to {lo}–{hi}/10 ({labels})", { score: patient, lo: band.lo, hi: band.hi, labels: band.labels.join(", ") }),
       );
       if (dist >= 3) {
         consider.unshift(
           patient < band.lo
-            ? "La personne est nettement moins autonome que le profil typique de cette résidence"
-            : "La personne est plus autonome que le niveau de soins typique ici",
+            ? t("The person is significantly less autonomous than this residence's typical profile")
+            : t("The person is more autonomous than the typical care level here"),
         );
       }
     }
@@ -302,43 +312,49 @@ function scoreCareAxis(
     const hint = profil.autonomyHint.toLowerCase();
     if (hint.includes("soin") && band.labels.some((l) => l.includes("4"))) {
       score += 15;
-      why.push("Niveau de soins aligné (catégorie 4)");
+      why.push(t("Care level aligned (category 4)"));
     } else if (hint.includes("semi") && band.labels.some((l) => l.includes("2") || l.includes("3"))) {
       score += 10;
-      why.push("Semi-autonomie compatible avec la catégorie RPA");
-    } else if ((hint.includes("autonome") || hint.includes("indépend")) && band.labels.includes("catégorie 1")) {
+      why.push(t("Semi-autonomy compatible with the RPA category"));
+    } else if (
+      (hint.includes("autonome") ||
+        hint.includes("indépend") ||
+        hint.includes("autonomous") ||
+        hint.includes("independ")) &&
+      band.labels.some((l) => l.includes("category 1") || l.includes("catégorie 1"))
+    ) {
       score += 12;
-      why.push("Profil autonome compatible");
+      why.push(t("Autonomous profile compatible"));
     }
   }
 
   if (profil.needsNursing) {
     if (hasCare(residence, "infirmiers") || residence.hasNursingStaff) {
       score = Math.min(100, score + 8);
-      why.push("Soins infirmiers déclarés");
+      why.push(t("Nursing care declared"));
     } else {
       score = Math.max(5, score - 22);
-      consider.unshift("Soins infirmiers non confirmés alors que le dossier en a besoin");
+      consider.unshift(t("Nursing care not confirmed while the file needs it"));
     }
   }
 
   if (profil.needsBathHelp) {
     if (hasCare(residence, "bain")) {
       score = Math.min(100, score + 5);
-      why.push("Aide au bain déclarée");
+      why.push(t("Bathing assistance declared"));
     } else {
       score = Math.max(5, score - 12);
-      consider.push("Aide au bain non déclarée au registre");
+      consider.push(t("Bathing assistance not declared in the registry"));
     }
   }
 
   if (profil.needsMobilityHelp) {
     if (hasCare(residence, "mobilité")) {
       score = Math.min(100, score + 5);
-      why.push("Aide à la mobilité déclarée");
+      why.push(t("Mobility assistance declared"));
     } else {
       score = Math.max(5, score - 14);
-      consider.push("Aide à la mobilité non déclarée (besoin présent au dossier)");
+      consider.push(t("Mobility assistance not declared (need present in the file)"));
     }
   }
 
@@ -348,13 +364,14 @@ function scoreCareAxis(
 function scoreGeoAxis(
   profil: FamilyCareProfile,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): { score: number | null; why?: string; consider?: string } {
   const sector = (profil.search.sector || profil.sector || "").trim();
   if (!sector) return { score: null };
 
   const hit = sectorHit(sector, residence);
   if (hit === true) {
-    return { score: 95, why: `Dans le secteur « ${sector} »` };
+    return { score: 95, why: t('In the "{sector}" area', { sector }) };
   }
 
   // Soft match on region token
@@ -362,18 +379,19 @@ function scoreGeoAxis(
     ? residence.city.slice(residence.city.indexOf(",") + 1).trim().toLowerCase()
     : "";
   if (region && sector.toLowerCase().includes(region.split(" ")[0] || "")) {
-    return { score: 62, why: `Même région administrative (${region})` };
+    return { score: 62, why: t("Same administrative region ({region})", { region }) };
   }
 
   return {
     score: 28,
-    consider: `Hors du secteur recherché (« ${sector} »)`,
+    consider: t('Outside the desired area ("{sector}")', { sector }),
   };
 }
 
 function scoreBudgetAxis(
   profil: FamilyCareProfile,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): { score: number | null; why?: string; consider?: string } {
   const max =
     profil.search.budgetMax && profil.search.budgetMax > 0
@@ -386,24 +404,24 @@ function scoreBudgetAxis(
   const priced = estimateMonthlyPrice(residence);
   if (!priced) return { score: null };
   const { amount, estimated } = priced;
-  const suffix = estimated ? " (estimation)" : "";
+  const suffix = estimated ? t(" (estimate)") : "";
 
   if (amount > max) {
     const over = (amount - max) / max;
     return {
       score: Math.max(8, Math.round(52 - Math.min(40, over * 55))),
-      consider: `Tarif indicatif ${amount.toLocaleString("fr-CA")} $ > budget ${max.toLocaleString("fr-CA")} $${suffix}`,
+      consider: t("Indicative rate {amount} $ > budget {max} ${suffix}", { amount: amount.toLocaleString("en-CA"), max: max.toLocaleString("en-CA"), suffix }),
     };
   }
   if (amount <= max * 0.9) {
     return {
       score: 92,
-      why: `Dans le budget (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+      why: t("Within budget (~{amount} $){suffix}", { amount: amount.toLocaleString("en-CA"), suffix }),
     };
   }
   return {
     score: 74,
-    why: `Proche du budget max (~${amount.toLocaleString("fr-CA")} $)${suffix}`,
+    why: t("Close to max budget (~{amount} $){suffix}", { amount: amount.toLocaleString("en-CA"), suffix }),
   };
 }
 
@@ -433,6 +451,7 @@ export function estimateMonthlyPrice(residence: Residence): {
 function scoreSizeAxis(
   profil: FamilyCareProfile,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): { score: number | null; why?: string; consider?: string } {
   const pref = profil.search.size || "any";
   if (pref === "any") return { score: null };
@@ -440,20 +459,21 @@ function scoreSizeAxis(
   const bucket = sizeBucket(cap);
   if (bucket === "unknown") return { score: null };
   if (bucket === pref) {
-    const labels = { small: "petite", medium: "moyenne", large: "grande" } as const;
-    return { score: 92, why: `Taille ${labels[pref]} (${cap} unités)` };
+    const labels = { small: t("small"), medium: t("medium"), large: t("large") } as const;
+    return { score: 92, why: t("Size {label} ({cap} units)", { label: labels[pref], cap }) };
   }
   const order = { small: 0, medium: 1, large: 2 } as const;
   const dist = Math.abs(order[bucket] - order[pref]);
   return {
     score: dist === 1 ? 48 : 22,
-    consider: `Taille ${bucket} (${cap}) vs préférence ${pref}`,
+    consider: t("Size {bucket} ({cap}) vs preference {pref}", { bucket, cap, pref }),
   };
 }
 
 function scoreRatingAxis(
   profil: FamilyCareProfile,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): { score: number | null; why?: string; consider?: string } {
   const rating = residence.googleRating;
   if (rating == null || !Number.isFinite(rating)) {
@@ -461,18 +481,18 @@ function scoreRatingAxis(
   }
   const min = profil.search.minGoogleRating;
   if (min != null && rating < min) {
-    return { score: Math.max(15, (rating / 5) * 55), consider: `Note Google ${rating.toFixed(1)} sous le minimum ${min}` };
+    return { score: Math.max(15, (rating / 5) * 55), consider: t("Google rating {rating} below minimum {min}", { rating: rating.toFixed(1), min }) };
   }
-  return { score: Math.round((rating / 5) * 100), why: `Note Google ${rating.toFixed(1)}/5` };
+  return { score: Math.round((rating / 5) * 100), why: t("Google rating {rating}/5", { rating: rating.toFixed(1) }) };
 }
 
-function scoreRegistryAxis(residence: Residence): { score: number; why?: string } {
+function scoreRegistryAxis(residence: Residence, t: TranslateFn = identityT): { score: number; why?: string } {
   // Normalize compatibilityBase (~50–88) toward 0–100
   const base = residence.compatibilityBase;
   const score = Math.round(Math.max(0, Math.min(100, ((base - 40) / 50) * 100)));
   return {
     score,
-    why: residence.confirmed ? "Certifiée au registre RPA" : undefined,
+    why: residence.confirmed ? t("Certified in the RPA registry") : undefined,
   };
 }
 
@@ -577,10 +597,10 @@ export type MatchReadiness = {
 export function getMatchReadiness(profil: FamilyCareProfile): MatchReadiness {
   const missing: string[] = [];
   if (profil.autonomyScore == null || profil.autonomyScore < 1 || profil.autonomyScore > 10) {
-    missing.push("Score d'autonomie (1 à 10)");
+    missing.push("Autonomy score (1 to 10)");
   }
   if (!(profil.search.sector || profil.sector).trim()) {
-    missing.push("Secteur / ville recherchée");
+    missing.push("Desired area / city");
   }
   const budget =
     profil.search.budgetMax && profil.search.budgetMax > 0
@@ -589,7 +609,7 @@ export function getMatchReadiness(profil: FamilyCareProfile): MatchReadiness {
         ? profil.budgetMax
         : null;
   if (budget == null || !Number.isFinite(budget) || budget <= 0) {
-    missing.push("Budget mensuel maximum");
+    missing.push("Max monthly budget");
   }
   return { ready: missing.length === 0, missing };
 }
@@ -600,13 +620,14 @@ export function getMatchReadiness(profil: FamilyCareProfile): MatchReadiness {
 export function computeMatch(
   profil: FamilyCareProfile = EMPTY_CARE_PROFILE,
   residence: Residence,
+  t: TranslateFn = identityT,
 ): ResidenceMatch {
-  const care = scoreCareAxis(profil, residence);
-  const geo = scoreGeoAxis(profil, residence);
-  const budget = scoreBudgetAxis(profil, residence);
-  const size = scoreSizeAxis(profil, residence);
-  const rating = scoreRatingAxis(profil, residence);
-  const registry = scoreRegistryAxis(residence);
+  const care = scoreCareAxis(profil, residence, t);
+  const geo = scoreGeoAxis(profil, residence, t);
+  const budget = scoreBudgetAxis(profil, residence, t);
+  const size = scoreSizeAxis(profil, residence, t);
+  const rating = scoreRatingAxis(profil, residence, t);
+  const registry = scoreRegistryAxis(residence, t);
 
   const available: Partial<Record<MatchAxisId, boolean>> = {
     care: true,
@@ -628,30 +649,30 @@ export function computeMatch(
   }[] = [
     {
       id: "care",
-      label: "Soins & autonomie",
+      label: t("Care & autonomy"),
       score: care.score,
       why: care.why[0],
       consider: care.consider[0],
     },
-    { id: "geo", label: "Secteur", score: geo.score, why: geo.why, consider: geo.consider },
+    { id: "geo", label: t("Geographic area"), score: geo.score, why: geo.why, consider: geo.consider },
     {
       id: "budget",
-      label: "Budget",
+      label: t("Budget"),
       score: budget.score,
       why: budget.why,
       consider: budget.consider,
     },
-    { id: "size", label: "Taille", score: size.score, why: size.why, consider: size.consider },
+    { id: "size", label: t("Size"), score: size.score, why: size.why, consider: size.consider },
     {
       id: "rating",
-      label: "Note Google",
+      label: t("Google rating"),
       score: rating.score,
       why: rating.why,
       consider: rating.consider,
     },
     {
       id: "registry",
-      label: "Registre RPA",
+      label: t("RPA registry"),
       score: registry.score,
       why: registry.why,
     },
@@ -704,24 +725,30 @@ export function computeMatch(
 
   const headline =
     tone === "strong"
-      ? "Très bonne correspondance"
+      ? t("Very strong match")
       : tone === "good"
-        ? "Bonne correspondance"
+        ? t("Good match")
         : tone === "fair"
-          ? "Correspondance partielle"
-          : "Correspondance limitée";
+          ? t("Partial match")
+          : t("Limited match");
 
   const topWhy = why.slice(0, 3).join(", ");
-  const topConsider = consider.slice(0, 2).join(" ; ");
+  const topConsider = consider.slice(0, 2).join("; ");
 
   const summary =
     tone === "strong" || tone === "good"
-      ? `${residence.name} semble bien coller à votre dossier${topWhy ? ` : ${topWhy}` : "."}${
-          topConsider ? ` À vérifier : ${topConsider}.` : ""
-        }`
-      : `${residence.name} ne couvre qu’une partie de vos besoins${
-          topConsider ? ` — ${topConsider}` : ""
-        }.${topWhy ? ` Points favorables : ${topWhy}.` : ""}`;
+      ? t("{name} looks like a strong fit for your file{whySuffix}{considerSuffix}", {
+          name: residence.name,
+          whySuffix: topWhy ? t(" : {details}", { details: topWhy }) : ".",
+          considerSuffix: topConsider
+            ? t(" To verify: {details}.", { details: topConsider })
+            : "",
+        })
+      : t("{name} only covers part of your needs{considerSuffix}{whySuffix}", {
+          name: residence.name,
+          considerSuffix: topConsider ? t(" — {details}", { details: topConsider }) : "",
+          whySuffix: topWhy ? t(" Favorable points: {details}.", { details: topWhy }) : "",
+        });
 
   return {
     score,

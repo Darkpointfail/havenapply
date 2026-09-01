@@ -18,7 +18,7 @@ describe("getMatchReadiness", () => {
       searchCriteria: { sector: "Québec", budgetMax: null },
     });
     expect(getMatchReadiness(partial).ready).toBe(false);
-    expect(getMatchReadiness(partial).missing).toContain("Budget mensuel maximum");
+    expect(getMatchReadiness(partial).missing).toContain("Max monthly budget");
 
     const ready = careProfileFromFamilyInputs({
       autonomyScore: 4,

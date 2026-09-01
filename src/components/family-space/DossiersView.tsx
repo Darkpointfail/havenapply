@@ -17,6 +17,55 @@ import {
   type AssistantTurn,
 } from "@/data/assistant";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
+
+/** PROFILE_STEPS ships pre-set French labels; map each to its English source key for t(). */
+const STEP_LABEL_KEYS: Record<string, string> = {
+  "Pour qui": "Who it's for",
+  Identité: "Identity",
+  Contacts: "Contacts",
+  "Statut légal": "Legal status",
+  Assurances: "Insurance",
+  Finances: "Finances",
+  Soins: "Care",
+  Recherche: "Search",
+  Signature: "Signature",
+};
+
+const GENDER_OPTIONS = ["Femme", "Homme", "Autre", "Préfère ne pas dire"] as const;
+
+const GENDER_VALUE_ALIASES: Record<string, (typeof GENDER_OPTIONS)[number]> = {
+  Female: "Femme",
+  Male: "Homme",
+  Other: "Autre",
+  "Prefer not to say": "Préfère ne pas dire",
+};
+
+function normalizedGenderValue(value: string) {
+  return GENDER_VALUE_ALIASES[value] ?? value;
+}
+
+function normalizedYesNoValue(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "oui" || normalized === "yes") return "Oui";
+  if (normalized === "non" || normalized === "no") return "Non";
+  if (
+    normalized === "à préciser" ||
+    normalized === "a preciser" ||
+    normalized === "to be determined"
+  ) {
+    return "";
+  }
+  return value;
+}
+
+function localizedProfileDisplayName(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  profile: FamilyProfile,
+) {
+  const name = profileDisplayName(profile);
+  return name === "New file" ? t(name) : name;
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -70,6 +119,7 @@ export function DossiersView({
   onSuggest: (msg: string) => void;
   accountUser?: { firstName: string; lastName: string; email: string };
 }) {
+  const t = useT();
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0];
 
   if (!profiles.length || !activeProfile) {
@@ -78,25 +128,27 @@ export function DossiersView({
         <div className="fs-card flex flex-wrap items-start justify-between gap-4 p-6 md:p-7">
           <div className="max-w-2xl">
             <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">
-              Dossiers d&apos;admission
+              {t("Admission files")}
             </h1>
             <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            Un dossier pour vous, ou pour une personne que vous accompagnez. Les pièces et
-            renseignements servent à toutes les demandes déposées pour ce profil.
+            {t(
+              "A file for you, or for someone you are supporting. The documents and details apply to every application submitted for this profile.",
+            )}
           </p>
         </div>
         <button type="button" className="fs-btn fs-btn-outline shrink-0" onClick={onCreateProfile}>
-          + Créer un dossier
+          + {t("Create a file")}
         </button>
       </div>
         <div className="fs-card p-10 text-center">
-          <h2 className="fs-serif text-[24px]">Aucun dossier pour le moment</h2>
+          <h2 className="fs-serif text-[24px]">{t("No file yet")}</h2>
           <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--fs-ink-body)]">
-            Indiquez si le dossier est pour vous-même ou pour un proche, puis ajoutez les pièces
-            requises pour déposer des demandes.
+            {t(
+              "Indicate whether the file is for yourself or a loved one, then add the documents required to submit applications.",
+            )}
           </p>
           <button type="button" className="fs-btn fs-btn-primary mt-6" onClick={onCreateProfile}>
-            Créer un dossier
+            {t("Create a file")}
           </button>
         </div>
       </div>
@@ -108,15 +160,16 @@ export function DossiersView({
       <div className="fs-card flex flex-wrap items-start justify-between gap-4 p-6 md:p-7">
         <div className="max-w-2xl">
           <h1 className="fs-serif text-[28px] leading-tight md:text-[32px]">
-            Dossiers d&apos;admission
+            {t("Admission files")}
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            Un dossier par personne que vous accompagnez. Les renseignements et les pièces
-            d&apos;un dossier servent à toutes les demandes déposées pour cette personne.
+            {t(
+              "One file per person you are supporting. A file's details and documents apply to every application submitted for that person.",
+            )}
           </p>
         </div>
         <button type="button" className="fs-btn fs-btn-outline shrink-0" onClick={onCreateProfile}>
-          + Créer un dossier
+          + {t("Create a file")}
         </button>
       </div>
 
@@ -148,16 +201,21 @@ export function DossiersView({
                       : { background: "var(--fs-green-tint)", color: "#0A6F63" }
                 }
               >
-                {p.draft ? "Brouillon" : "Actif"}
+                {p.draft ? t("Draft") : t("Active")}
               </span>
-              <p className="fs-serif mt-3 text-[18px] leading-snug">{profileDisplayName(p)}</p>
+              <p className="fs-serif mt-3 text-[18px] leading-snug">
+                {localizedProfileDisplayName(t, p)}
+              </p>
               <p
                 className="mt-1 text-[13px]"
                 style={{ color: active ? "#C5D2CD" : "var(--fs-ink-muted)" }}
               >
                 {p.draft
-                  ? `En création · ${prog.percent} %`
-                  : `${p.rel} · ${prog.percent} % complété`}
+                  ? t("In progress · {percent}%", { percent: prog.percent })
+                  : t("{rel} · {percent}% complete", {
+                      rel: catalogLabel(t, p.rel || "Family"),
+                      percent: prog.percent,
+                    })}
               </p>
               <div
                 className="mt-3 h-[5px] overflow-hidden rounded-full"
@@ -187,7 +245,7 @@ export function DossiersView({
           }}
           onClick={() => onSetMode("overview")}
         >
-          Vue d&apos;ensemble
+          {t("Overview")}
         </button>
         <button
           type="button"
@@ -199,7 +257,7 @@ export function DossiersView({
           }}
           onClick={() => onSetMode("edition")}
         >
-          Renseignements et documents
+          {t("Information and documents")}
         </button>
       </div>
 
@@ -251,20 +309,55 @@ function OverviewMode({
   const docsReceived = progress.docsReceived;
   const docsTotal = progress.docsTotal;
   const meta = [
-    ["Niveau d'autonomie", profile.draft || !profile.autonomie ? "À préciser" : profile.autonomie],
     [
-      "Score autonomie",
-      profile.autonomyScore != null ? `${profile.autonomyScore}/10` : "À préciser",
+      t("Autonomy level"),
+      profile.draft ||
+      !profile.autonomie ||
+      profile.autonomie === "À préciser" ||
+      profile.autonomie === "To be determined"
+        ? t("To be determined")
+        : catalogLabel(t, profile.autonomie),
     ],
-    ["Services souhaités", profile.draft || !profile.services ? "À préciser" : profile.services],
     [
-      "Recherche",
-      [profile.searchSector, profile.searchBudgetMax ? `max ${profile.searchBudgetMax} $` : null]
+      t("Autonomy score"),
+      profile.autonomyScore != null ? `${profile.autonomyScore}/10` : t("To be determined"),
+    ],
+    [
+      t("Desired services"),
+      profile.draft ||
+      !profile.services ||
+      profile.services === "À préciser" ||
+      profile.services === "To be determined"
+        ? t("To be determined")
+        : catalogLabel(t, profile.services),
+    ],
+    [
+      t("Search"),
+      [
+        profile.searchSector,
+        profile.searchBudgetMax ? t("max {amount} $", { amount: profile.searchBudgetMax }) : null,
+      ]
         .filter(Boolean)
-        .join(" · ") || "À préciser",
+        .join(" · ") || t("To be determined"),
     ],
-    ["Budget mensuel", profile.draft || !profile.budget ? "À préciser" : profile.budget],
-    ["Emménagement souhaité", profile.draft || !profile.move ? "À préciser" : profile.move],
+    [
+      t("Monthly budget"),
+      profile.draft ||
+      !profile.budget ||
+      profile.budget === "À préciser" ||
+      profile.budget === "To be determined"
+        ? t("To be determined")
+        : catalogLabel(t, profile.budget),
+    ],
+    [
+      t("Desired move-in"),
+      profile.draft ||
+      !profile.move ||
+      profile.move === "À préciser" ||
+      profile.move === "To be determined"
+        ? t("To be determined")
+        : catalogLabel(t, profile.move),
+    ],
   ];
 
   return (
@@ -276,15 +369,16 @@ function OverviewMode({
             style={{ background: "var(--fs-terra-bg)" }}
           >
             <p className="max-w-xl text-[14.5px] leading-relaxed" style={{ color: "var(--fs-terra)" }}>
-              Ce dossier vient d&apos;être créé. Remplissez les renseignements du demandeur pour
-              qu&apos;il puisse être transmis à des résidences.
+              {t(
+                "This file was just created. Fill in the applicant's information so it can be sent to residences.",
+              )}
             </p>
             <button
               type="button"
               className="fs-btn fs-btn-primary shrink-0"
               onClick={() => onSetMode("edition")}
             >
-              Commencer
+              {t("Get started")}
             </button>
           </div>
         ) : null}
@@ -301,7 +395,7 @@ function OverviewMode({
                   <img src={profile.photo} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center px-3 text-center text-[12px] text-[var(--fs-ink-faint)]">
-                    Ajouter une photo
+                    {t("Add a photo")}
                   </div>
                 )}
               </div>
@@ -315,13 +409,17 @@ function OverviewMode({
                 }}
               />
               <p className="mt-2 max-w-[132px] text-[12px] text-[var(--fs-ink-faint)]">
-                Visible par les résidences
+                {t("Visible to residences")}
               </p>
             </label>
             <div className="min-w-0 flex-1">
-              <h2 className="fs-serif text-[28px] leading-tight">{profileDisplayName(profile)}</h2>
+              <h2 className="fs-serif text-[28px] leading-tight">
+                {localizedProfileDisplayName(t, profile)}
+              </h2>
               <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                {profile.draft ? "Dossier en création" : `${profile.rel} · ${profile.meta}`}
+                {profile.draft
+                  ? t("File in progress")
+                  : `${catalogLabel(t, profile.rel || "Family")} · ${catalogLabel(t, profile.meta)}`}
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {meta.map(([l, v]) => (
@@ -337,7 +435,7 @@ function OverviewMode({
                   className="fs-btn fs-btn-outline"
                   onClick={() => onSetMode("edition")}
                 >
-                  Modifier les renseignements
+                  {t("Edit information")}
                 </button>
               </div>
             </div>
@@ -345,10 +443,12 @@ function OverviewMode({
         </div>
 
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[22px]">Documents</h3>
+          <h3 className="fs-serif text-[22px]">{t("Documents")}</h3>
           <p className="mt-1 text-[13.5px] text-[var(--fs-ink-muted)]">
-            {docsReceived} pièce{docsReceived > 1 ? "s" : ""} sur {docsTotal} · les
-            mêmes pièces servent à toutes les demandes de ce dossier
+            {t(
+              "{docsReceived} of {docsTotal} documents · the same documents apply to every application for this file",
+              { docsReceived, docsTotal },
+            )}
           </p>
           <ul className="mt-5 divide-y divide-[var(--fs-border-faint)]">
             {profile.docs.map((d) => (
@@ -383,21 +483,24 @@ function OverviewMode({
           </div>
           <p className="mt-4 text-[14px] text-[#C5D2CD]">
             {progress.next
-              ? `Prochaine action : ${progress.next.charAt(0).toLowerCase()}${progress.next.slice(1)}.`
-              : "Dossier complet — renseignements et pièces à jour."}
+              ? t("Next action: {action}.", {
+                  action: `${progress.next.charAt(0).toLowerCase()}${progress.next.slice(1)}`,
+                })
+              : t("File complete — information and documents are up to date.")}
           </p>
         </div>
 
         <div className="fs-card p-6">
-          <h3 className="fs-serif text-[19px]">Qui voit ce dossier</h3>
+          <h3 className="fs-serif text-[19px]">{t("Who can see this file")}</h3>
           <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-            Ces résidences ont reçu ce dossier et peuvent consulter les renseignements et les
-            pièces qu&apos;il contient. Vous pouvez retirer l&apos;accès en tout temps.
+            {t(
+              "These residences have received this file and can view the information and documents it contains. You can withdraw access at any time.",
+            )}
           </p>
           <ul className="mt-4 divide-y divide-[var(--fs-border-faint)]">
             {profile.accesses.length === 0 ? (
               <li className="py-3 text-[14.5px] text-[var(--fs-ink-muted)]">
-                Aucune résidence n&apos;a encore accès à ce dossier.
+                {t("No residence has access to this file yet.")}
               </li>
             ) : (
               profile.accesses.map((a) => (
@@ -413,13 +516,15 @@ function OverviewMode({
                     className="shrink-0 text-[13.5px] font-semibold text-[var(--fs-ink-muted)] hover:text-[var(--fs-terra)]"
                     onClick={() => {
                       if (
-                        window.confirm(`Retirer l'accès de ${a.residenceName} à ce dossier ?`)
+                        window.confirm(
+                          t("Withdraw {name}'s access to this file?", { name: a.residenceName }),
+                        )
                       ) {
                         onWithdrawAccess(a.residenceId);
                       }
                     }}
                   >
-                    Retirer l&apos;accès
+                    {t("Withdraw access")}
                   </button>
                 </li>
               ))
@@ -432,6 +537,7 @@ function OverviewMode({
 }
 
 function DocRow({ doc, onUpload }: { doc: FamilyDoc; onUpload: () => void }) {
+  const t = useT();
   const received = doc.status === "reçu";
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 py-3.5">
@@ -441,8 +547,8 @@ function DocRow({ doc, onUpload }: { doc: FamilyDoc; onUpload: () => void }) {
           style={{ background: received ? "var(--fs-success)" : "var(--fs-terra)" }}
         />
         <div>
-          <p className="font-semibold">{doc.name}</p>
-          <p className="text-[13px] text-[var(--fs-ink-muted)]">{doc.detail}</p>
+          <p className="font-semibold">{t(doc.name)}</p>
+          <p className="text-[13px] text-[var(--fs-ink-muted)]">{t(doc.detail)}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -450,10 +556,10 @@ function DocRow({ doc, onUpload }: { doc: FamilyDoc; onUpload: () => void }) {
           className="text-[13.5px] font-semibold"
           style={{ color: received ? "var(--fs-success)" : "var(--fs-terra)" }}
         >
-          {received ? "Reçu" : "En attente"}
+          {received ? t("Received") : t("Pending")}
         </span>
         <label className="fs-btn fs-btn-outline cursor-pointer">
-          {received ? "Remplacer" : "Téléverser"}
+          {received ? t("Replace") : t("Upload")}
           <input
             type="file"
             className="sr-only"
@@ -497,6 +603,7 @@ function EditionMode({
   onSuggest: (msg: string) => void;
   accountUser?: { firstName: string; lastName: string; email: string };
 }) {
+  const t = useT();
   const totalSteps = PROFILE_STEPS.length;
   const isLast = profileStep >= totalSteps - 1;
   const forSelf = isFamilyProfileSelf(profile);
@@ -523,19 +630,20 @@ function EditionMode({
             <h2 className="fs-serif text-[26px] leading-tight">
               {profile.draft
                 ? forSelf
-                  ? "Création de votre dossier"
+                  ? t("Creating your file")
                   : profile.profileSubject === "proche"
-                    ? "Création du dossier d’un proche"
-                    : "Nouveau dossier d’admission"
-                : `Dossier de ${profileDisplayName(profile)}`}
+                    ? t("Creating a loved one's file")
+                    : t("New admission file")
+                : t("{name}'s file", { name: localizedProfileDisplayName(t, profile) })}
             </h2>
             <p className="mt-2 max-w-2xl text-[14.5px] text-[var(--fs-ink-body)]">
-              Vous pouvez interrompre à tout moment et reprendre plus tard : vos réponses sont
-              enregistrées à chaque étape.
+              {t(
+                "You can pause at any time and pick up later: your answers are saved at every step.",
+              )}
             </p>
           </div>
           <p className="shrink-0 text-[14px] font-medium text-[var(--fs-ink-muted)]">
-            Étape {profileStep + 1} sur {totalSteps}
+            {t("Step {current} of {total}", { current: profileStep + 1, total: totalSteps })}
           </p>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--fs-subtle)]">
@@ -559,7 +667,7 @@ function EditionMode({
                   color: on ? "#fff" : "var(--fs-ink-muted)",
                 }}
               >
-                {i + 1}. {label}
+                {i + 1}. {t(STEP_LABEL_KEYS[label] ?? label)}
               </button>
             );
           })}
@@ -584,11 +692,11 @@ function EditionMode({
               disabled={profileStep === 0}
               onClick={() => onSetStep(Math.max(0, profileStep - 1))}
             >
-              Précédent
+              {t("Previous")}
             </button>
             <p className="text-[13.5px] text-[var(--fs-ink-muted)]">
-              Étape {profileStep + 1} sur {totalSteps}
-              {!canProceed ? " · choisissez pour qui est le dossier" : ""}
+              {t("Step {current} of {total}", { current: profileStep + 1, total: totalSteps })}
+              {!canProceed ? ` · ${t("choose who this file is for")}` : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -596,7 +704,7 @@ function EditionMode({
                 className="fs-btn fs-btn-outline"
                 onClick={() => onSetMode("overview")}
               >
-                Enregistrer et voir le dossier
+                {t("Save and view file")}
               </button>
               <button
                 type="button"
@@ -604,7 +712,7 @@ function EditionMode({
                 disabled={!canProceed}
                 onClick={finishOrNext}
               >
-                {isLast ? "Terminer" : "Suivant"}
+                {isLast ? t("Finish") : t("Next")}
               </button>
             </div>
           </div>
@@ -616,7 +724,7 @@ function EditionMode({
             className="fs-btn fs-btn-outline self-start"
             onClick={onToggleClaire}
           >
-            Remplir avec Claire
+            {t("Fill in with Claire")}
           </button>
           {claireOpen ? (
             <aside className="fs-claire-sticky sticky top-[74px] h-fit">
@@ -654,6 +762,7 @@ function ClairePanel({
   onSendChat: () => void;
   onSuggest: (msg: string) => void;
 }) {
+  const t = useT();
   const suggestions = assistantSuggestions(profileStep);
   const turns = chat.length > 0 ? chat : [{ from: "claire" as const, body: assistantOpener(profileStep) }];
 
@@ -667,9 +776,9 @@ function ClairePanel({
           C
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold">Claire, votre accompagnatrice</p>
+          <p className="text-[14px] font-semibold">{t("Claire, your assistant")}</p>
           <p className="text-[12px] text-[#8E9B96]">
-            {claireTyping ? "Claire écrit…" : "Elle remplit le dossier avec vous"}
+            {claireTyping ? t("Claire is typing…") : t("She fills in the file with you")}
           </p>
         </div>
       </div>
@@ -684,7 +793,7 @@ function ClairePanel({
                   : { background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }
               }
             >
-              {m.body}
+              {t(m.body)}
             </div>
           </div>
         ))}
@@ -694,7 +803,7 @@ function ClairePanel({
               className="px-3 py-2 text-[13px] text-[var(--fs-ink-muted)]"
               style={{ background: "var(--fs-hover)", borderRadius: "12px 12px 12px 4px" }}
             >
-              Claire écrit…
+              {t("Claire is typing…")}
             </div>
           </div>
         ) : null}
@@ -709,7 +818,7 @@ function ClairePanel({
               onClick={() => onSuggest(s)}
               className="rounded-[20px] border border-[var(--fs-border)] bg-white px-2.5 py-1.5 text-[12.5px] font-medium hover:bg-[var(--fs-hover)] disabled:opacity-50"
             >
-              {s}
+              {t(s)}
             </button>
           ))}
         </div>
@@ -722,14 +831,14 @@ function ClairePanel({
         >
           <input
             className="fs-input"
-            placeholder="Répondre à Claire…"
+            placeholder={t("Reply to Claire…")}
             value={chatInput}
             disabled={claireTyping}
             onChange={(e) => onChatInput(e.target.value)}
-            aria-label="Message à Claire"
+            aria-label={t("Message to Claire")}
           />
           <button type="submit" className="fs-btn fs-btn-primary" disabled={claireTyping || !chatInput.trim()}>
-            Envoyer
+            {t("Send")}
           </button>
         </form>
       </div>
@@ -748,16 +857,18 @@ function EditionStepFields({
   onPatchActive: (patch: Partial<FamilyProfile>) => void;
   accountUser?: { firstName: string; lastName: string; email: string };
 }) {
+  const t = useT();
   const forSelf = isFamilyProfileSelf(profile);
 
   if (step === 0) {
     return (
       <div className="space-y-6">
         <div>
-          <p className="fs-serif text-[24px] leading-tight">Ce dossier est pour qui ?</p>
+          <p className="fs-serif text-[24px] leading-tight">{t("Who is this file for?")}</p>
           <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-[var(--fs-ink-body)]">
-            HavenApply sert soit à votre propre recherche de résidence, soit à accompagner un
-            proche. Le parcours s’adapte à votre choix.
+            {t(
+              "HavenApply can be used for your own residence search or to support a loved one. The journey adapts to your choice.",
+            )}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -779,9 +890,9 @@ function EditionStepFields({
               })
             }
           >
-            <p className="fs-serif text-[22px]">Pour moi-même</p>
+            <p className="fs-serif text-[22px]">{t("For myself")}</p>
             <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-              Je crée mon dossier d’admission et je cherche une résidence pour moi.
+              {t("I'm creating my admission file and searching for a residence for myself.")}
             </p>
           </button>
           <button
@@ -801,24 +912,24 @@ function EditionStepFields({
               })
             }
           >
-            <p className="fs-serif text-[22px]">Pour un proche</p>
+            <p className="fs-serif text-[22px]">{t("For a loved one")}</p>
             <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-              J’accompagne un parent, conjoint, ami ou autre personne dans sa recherche.
+              {t("I'm supporting a parent, spouse, friend, or other person in their search.")}
             </p>
           </button>
         </div>
         {profile.profileSubject === "proche" ? (
-          <Field label="Lien avec cette personne">
+          <Field label={t("Relationship to this person")}>
             <select
               className="fs-input max-w-md"
               value={profile.rel}
               onChange={(e) => onPatchActive({ rel: e.target.value })}
-              aria-label="Lien avec le proche"
+              aria-label={t("Relationship to the loved one")}
             >
-              <option value="">Choisir…</option>
+              <option value="">{t("Choose…")}</option>
               {PROCHE_RELATIONSHIP_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {catalogLabel(t, opt)}
                 </option>
               ))}
             </select>
@@ -826,7 +937,7 @@ function EditionStepFields({
         ) : null}
         {profile.profileSubject === "self" ? (
           <p className="text-[14px] text-[var(--fs-ink-muted)]">
-            L’étape Identité pourra reprendre votre nom de compte
+            {t("The Identity step can reuse your account name")}
             {accountUser?.firstName ? ` (${accountUser.firstName})` : ""}.
           </p>
         ) : null}
@@ -839,11 +950,11 @@ function EditionStepFields({
       <div className="space-y-4">
         <p className="text-[14.5px] text-[var(--fs-ink-body)]">
           {forSelf
-            ? "Vos renseignements personnels pour le dossier d’admission."
-            : "Renseignements sur la personne qui cherche une résidence."}
+            ? t("Your personal information for the admission file.")
+            : t("Information about the person seeking a residence.")}
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Prénom">
+        <Field label={t("First name")}>
           <input
             className="fs-input"
             value={profile.prenom}
@@ -851,7 +962,7 @@ function EditionStepFields({
             autoComplete="given-name"
           />
         </Field>
-        <Field label="Nom">
+        <Field label={t("Last name")}>
           <input
             className="fs-input"
             value={profile.nom}
@@ -859,7 +970,7 @@ function EditionStepFields({
             autoComplete="family-name"
           />
         </Field>
-        <Field label="Date de naissance">
+        <Field label={t("Date of birth")}>
           <input
             className="fs-input"
             type="date"
@@ -867,21 +978,22 @@ function EditionStepFields({
             onChange={(e) => onPatchActive({ dateNaissance: e.target.value })}
           />
         </Field>
-        <Field label="Sexe">
+        <Field label={t("Sex")}>
           <select
             className="fs-input"
-            value={profile.sexe}
+            value={normalizedGenderValue(profile.sexe)}
             onChange={(e) => onPatchActive({ sexe: e.target.value })}
-            aria-label="Sexe"
+            aria-label={t("Sex")}
           >
-            <option value="">À préciser</option>
-            <option value="Femme">Femme</option>
-            <option value="Homme">Homme</option>
-            <option value="Autre">Autre</option>
-            <option value="Préfère ne pas dire">Préfère ne pas dire</option>
+            <option value="">{t("To be determined")}</option>
+            {GENDER_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {catalogLabel(t, value)}
+              </option>
+            ))}
           </select>
         </Field>
-        <Field label="Adresse actuelle">
+        <Field label={t("Current address")}>
           <input
             className="fs-input"
             value={profile.adresse}
@@ -889,7 +1001,7 @@ function EditionStepFields({
             autoComplete="street-address"
           />
         </Field>
-        <Field label="Ville">
+        <Field label={t("City")}>
           <input
             className="fs-input"
             value={profile.ville}
@@ -897,7 +1009,7 @@ function EditionStepFields({
             autoComplete="address-level2"
           />
         </Field>
-        <Field label="Province">
+        <Field label={t("Province")}>
           <input
             className="fs-input"
             value={profile.province}
@@ -905,7 +1017,7 @@ function EditionStepFields({
             autoComplete="address-level1"
           />
         </Field>
-        <Field label="Code postal">
+        <Field label={t("Postal code")}>
           <input
             className="fs-input"
             value={profile.codePostal}
@@ -921,21 +1033,21 @@ function EditionStepFields({
   if (step === 2) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Nom du contact principal">
+        <Field label={t("Primary contact name")}>
           <input
             className="fs-input"
             value={profile.contactPrincipalNom}
             onChange={(e) => onPatchActive({ contactPrincipalNom: e.target.value })}
           />
         </Field>
-        <Field label={forSelf ? "Lien avec vous" : "Lien avec le demandeur"}>
+        <Field label={forSelf ? t("Relationship to you") : t("Relationship to the applicant")}>
           <input
             className="fs-input"
             value={profile.contactPrincipalLien}
             onChange={(e) => onPatchActive({ contactPrincipalLien: e.target.value })}
           />
         </Field>
-        <Field label="Téléphone">
+        <Field label={t("Phone")}>
           <input
             className="fs-input"
             value={profile.contactPrincipalTel}
@@ -943,7 +1055,7 @@ function EditionStepFields({
             autoComplete="tel"
           />
         </Field>
-        <Field label="Courriel">
+        <Field label={t("Email")}>
           <input
             className="fs-input"
             type="email"
@@ -952,28 +1064,28 @@ function EditionStepFields({
             autoComplete="email"
           />
         </Field>
-        <Field label="Nom du contact secondaire">
+        <Field label={t("Secondary contact name")}>
           <input
             className="fs-input"
             value={profile.contactSecondaireNom}
             onChange={(e) => onPatchActive({ contactSecondaireNom: e.target.value })}
           />
         </Field>
-        <Field label={forSelf ? "Lien avec vous" : "Lien avec le demandeur"}>
+        <Field label={forSelf ? t("Relationship to you") : t("Relationship to the applicant")}>
           <input
             className="fs-input"
             value={profile.contactSecondaireLien}
             onChange={(e) => onPatchActive({ contactSecondaireLien: e.target.value })}
           />
         </Field>
-        <Field label="Téléphone">
+        <Field label={t("Phone")}>
           <input
             className="fs-input"
             value={profile.contactSecondaireTel}
             onChange={(e) => onPatchActive({ contactSecondaireTel: e.target.value })}
           />
         </Field>
-        <Field label="Courriel">
+        <Field label={t("Email")}>
           <input
             className="fs-input"
             type="email"
@@ -989,29 +1101,29 @@ function EditionStepFields({
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <YesNoField
-          label="Mandat de protection"
+          label={t("Protection mandate")}
           value={profile.mandatProtection}
           onChange={(v) => onPatchActive({ mandatProtection: v })}
         />
         <YesNoField
-          label="Procuration"
+          label={t("Power of attorney")}
           value={profile.procuration}
           onChange={(v) => onPatchActive({ procuration: v })}
         />
         <YesNoField
-          label="Curatelle"
+          label={t("Curatorship")}
           value={profile.curatelle}
           onChange={(v) => onPatchActive({ curatelle: v })}
         />
-        <Field label="Directives médicales anticipées">
+        <Field label={t("Advance medical directives")}>
           <input
             className="fs-input"
             value={profile.directivesMedicales}
             onChange={(e) => onPatchActive({ directivesMedicales: e.target.value })}
-            placeholder="Oui / Non / détails"
+            placeholder={t("Yes / No / details")}
           />
         </Field>
-        <Field label="Nom du mandataire">
+        <Field label={t("Mandatary's name")}>
           <input
             className="fs-input"
             value={profile.nomMandataire}
@@ -1025,28 +1137,28 @@ function EditionStepFields({
   if (step === 4) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Assurance maladie">
+        <Field label={t("Health insurance")}>
           <input
             className="fs-input"
             value={profile.assuranceMaladie}
             onChange={(e) => onPatchActive({ assuranceMaladie: e.target.value })}
           />
         </Field>
-        <Field label="Assurance privée">
+        <Field label={t("Private insurance")}>
           <input
             className="fs-input"
             value={profile.assurancePrivee}
             onChange={(e) => onPatchActive({ assurancePrivee: e.target.value })}
           />
         </Field>
-        <Field label="Numéro de police">
+        <Field label={t("Policy number")}>
           <input
             className="fs-input"
             value={profile.numeroPolice}
             onChange={(e) => onPatchActive({ numeroPolice: e.target.value })}
           />
         </Field>
-        <Field label="Assurance vie">
+        <Field label={t("Life insurance")}>
           <input
             className="fs-input"
             value={profile.assuranceVie}
@@ -1060,33 +1172,33 @@ function EditionStepFields({
   if (step === 5) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Revenus mensuels">
+        <Field label={t("Monthly income")}>
           <input
             className="fs-input"
             value={profile.revenusMensuels}
             onChange={(e) => onPatchActive({ revenusMensuels: e.target.value })}
           />
         </Field>
-        <Field label="Sources de revenus">
+        <Field label={t("Income sources")}>
           <input
             className="fs-input"
             value={profile.sourcesRevenus}
             onChange={(e) => onPatchActive({ sourcesRevenus: e.target.value })}
           />
         </Field>
-        <Field label="Garant financier">
+        <Field label={t("Financial guarantor")}>
           <input
             className="fs-input"
             value={profile.garantFinancier}
             onChange={(e) => onPatchActive({ garantFinancier: e.target.value })}
           />
         </Field>
-        <Field label="Mode de paiement">
+        <Field label={t("Payment method")}>
           <input
             className="fs-input"
             value={profile.modePaiement}
             onChange={(e) => onPatchActive({ modePaiement: e.target.value })}
-            placeholder="Privé, assurance…"
+            placeholder={t("Private, insurance…")}
           />
         </Field>
       </div>
@@ -1097,10 +1209,11 @@ function EditionStepFields({
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="sm:col-span-2 lg:col-span-3 rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] p-4">
-          <p className="fs-label mb-2">Autonomie physique (1 à 10)</p>
+          <p className="fs-label mb-2">{t("Physical autonomy (1 to 10)")}</p>
           <p className="mb-3 text-[13.5px] text-[var(--fs-ink-muted)]">
-            1 = pas du tout autonome · 10 = 100 % autonome. Ce score guide le matching avec les
-            catégories RPA.
+            {t(
+              "1 = not autonomous at all · 10 = 100% autonomous. This score guides matching with RPA categories.",
+            )}
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <input
@@ -1116,15 +1229,15 @@ function EditionStepFields({
                   autonomyScore: n,
                   autonomie:
                     n <= 3
-                      ? `${n}/10 — peu autonome`
+                      ? `${n}/10 — limited autonomy`
                       : n <= 6
-                        ? `${n}/10 — semi-autonome`
+                        ? `${n}/10 — semi-autonomous`
                         : n <= 8
-                          ? `${n}/10 — assez autonome`
-                          : `${n}/10 — très autonome`,
+                          ? `${n}/10 — fairly autonomous`
+                          : `${n}/10 — highly autonomous`,
                 });
               }}
-              aria-label="Score d'autonomie de 1 à 10"
+              aria-label={t("Autonomy score from 1 to 10")}
             />
             <span className="fs-serif text-[28px] tabular-nums text-[var(--fs-green)]">
               {profile.autonomyScore ?? "—"}
@@ -1138,57 +1251,61 @@ function EditionStepFields({
               onClick={() =>
                 onPatchActive({
                   autonomyScore: 5,
-                  autonomie: "5/10 — semi-autonome",
+                  autonomie: "5/10 — semi-autonomous",
                 })
               }
             >
-              Définir à 5/10 pour commencer
+              {t("Set to 5/10 to get started")}
             </button>
           ) : null}
         </div>
-        <Field label="Niveau d'autonomie (libellé)">
+        <Field label={t("Autonomy level (label)")}>
           <input
             className="fs-input"
-            value={profile.autonomie === "À préciser" ? "" : profile.autonomie}
+            value={
+              profile.autonomie === "À préciser" || profile.autonomie === "To be determined"
+                ? ""
+                : profile.autonomie
+            }
             onChange={(e) => onPatchActive({ autonomie: e.target.value })}
           />
         </Field>
-        <Field label="Mobilité">
+        <Field label={t("Mobility")}>
           <input
             className="fs-input"
             value={profile.mobilite}
             onChange={(e) => onPatchActive({ mobilite: e.target.value })}
           />
         </Field>
-        <Field label="Aide au repas">
+        <Field label={t("Meal assistance")}>
           <input
             className="fs-input"
             value={profile.aideRepas}
             onChange={(e) => onPatchActive({ aideRepas: e.target.value })}
           />
         </Field>
-        <Field label="Aide à l'hygiène">
+        <Field label={t("Hygiene assistance")}>
           <input
             className="fs-input"
             value={profile.aideHygiene}
             onChange={(e) => onPatchActive({ aideHygiene: e.target.value })}
           />
         </Field>
-        <Field label="Aide à la médication">
+        <Field label={t("Medication assistance")}>
           <input
             className="fs-input"
             value={profile.aideMedication}
             onChange={(e) => onPatchActive({ aideMedication: e.target.value })}
           />
         </Field>
-        <Field label="Allergies">
+        <Field label={t("Allergies")}>
           <input
             className="fs-input"
             value={profile.allergies}
             onChange={(e) => onPatchActive({ allergies: e.target.value })}
           />
         </Field>
-        <Field label="Régime alimentaire">
+        <Field label={t("Diet")}>
           <input
             className="fs-input"
             value={profile.regimeAlimentaire}
@@ -1230,22 +1347,23 @@ function EditionStepFields({
     return (
       <div className="space-y-6">
         <div>
-          <p className="fs-serif text-[20px]">Ce que vous recherchez</p>
+          <p className="fs-serif text-[20px]">{t("What you're looking for")}</p>
           <p className="mt-1 max-w-[640px] text-[14.5px] text-[var(--fs-ink-body)]">
-            Distinct du profil de soins : ces critères orientent le score de correspondance
-            (secteur, budget, taille) et la pondération des priorités.
+            {t(
+              "Separate from the care profile: these criteria drive the match score (area, budget, size) and priority weighting.",
+            )}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Secteur / ville recherchée">
+          <Field label={t("Desired area / city")}>
             <input
               className="fs-input"
               value={profile.searchSector}
               onChange={(e) => onPatchActive({ searchSector: e.target.value })}
-              placeholder="Ex. Sillery, Lévis, Montréal…"
+              placeholder={t("E.g. Sillery, Lévis, Montreal…")}
             />
           </Field>
-          <Field label="Rayon max (km)">
+          <Field label={t("Max radius (km)")}>
             <input
               className="fs-input"
               type="number"
@@ -1260,7 +1378,7 @@ function EditionStepFields({
               placeholder="25"
             />
           </Field>
-          <Field label="Budget mensuel max ($)">
+          <Field label={t("Max monthly budget ($)")}>
             <input
               className="fs-input"
               type="number"
@@ -1275,7 +1393,7 @@ function EditionStepFields({
               placeholder="3500"
             />
           </Field>
-          <Field label="Taille d'établissement">
+          <Field label={t("Facility size")}>
             <select
               className="fs-input"
               value={profile.searchSize}
@@ -1285,13 +1403,13 @@ function EditionStepFields({
                 })
               }
             >
-              <option value="any">Indifférent</option>
-              <option value="small">Petite (&lt; 40 unités)</option>
-              <option value="medium">Moyenne (40–99)</option>
-              <option value="large">Grande (100+)</option>
+              <option value="any">{t("No preference")}</option>
+              <option value="small">{t("Small (< 40 units)")}</option>
+              <option value="medium">{t("Medium (40–99)")}</option>
+              <option value="large">{t("Large (100+)")}</option>
             </select>
           </Field>
-          <Field label="Note Google minimale (si dispo)">
+          <Field label={t("Minimum Google rating (if available)")}>
             <select
               className="fs-input"
               value={profile.searchMinRating ?? ""}
@@ -1301,44 +1419,45 @@ function EditionStepFields({
                 })
               }
             >
-              <option value="">Sans minimum</option>
-              <option value="3">3,0+</option>
-              <option value="3.5">3,5+</option>
-              <option value="4">4,0+</option>
-              <option value="4.5">4,5+</option>
+              <option value="">{t("No minimum")}</option>
+              <option value="3">{t("3.0+")}</option>
+              <option value="3.5">{t("3.5+")}</option>
+              <option value="4">{t("4.0+")}</option>
+              <option value="4.5">{t("4.5+")}</option>
             </select>
           </Field>
         </div>
 
         <div className="rounded-[12px] border border-[var(--fs-border)] p-4">
-          <p className="fs-label mb-1">Pondération des priorités</p>
+          <p className="fs-label mb-1">{t("Priority weighting")}</p>
           <p className="mb-4 text-[13.5px] text-[var(--fs-ink-muted)]">
-            1 = peu important · 5 = très important. Les axes sans donnée (ex. note Google, tarif)
-            sont ignorés automatiquement.
+            {t(
+              "1 = not important · 5 = very important. Criteria without data (e.g. Google rating, price) are ignored automatically.",
+            )}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Priority
-              label="Soins & autonomie"
+              label={t("Care & autonomy")}
               value={profile.priorityCare}
               onChange={(n) => onPatchActive({ priorityCare: n })}
             />
             <Priority
-              label="Secteur géographique"
+              label={t("Geographic area")}
               value={profile.priorityGeo}
               onChange={(n) => onPatchActive({ priorityGeo: n })}
             />
             <Priority
-              label="Budget"
+              label={t("Budget")}
               value={profile.priorityBudget}
               onChange={(n) => onPatchActive({ priorityBudget: n })}
             />
             <Priority
-              label="Taille"
+              label={t("Size")}
               value={profile.prioritySize}
               onChange={(n) => onPatchActive({ prioritySize: n })}
             />
             <Priority
-              label="Note Google"
+              label={t("Google rating")}
               value={profile.priorityRating}
               onChange={(n) => onPatchActive({ priorityRating: n })}
             />
@@ -1351,9 +1470,11 @@ function EditionStepFields({
   return (
     <div className="space-y-4">
       <p className="text-[14.5px] text-[var(--fs-ink-body)]">
-        Récapitulatif du dossier
-        {forSelf ? "" : ` de ${profileDisplayName(profile)}`}. Vérifiez les renseignements avant
-        de signer.
+        {forSelf
+          ? t("File summary. Review the information before signing.")
+          : t("Summary of {name}'s file. Review the information before signing.", {
+              name: localizedProfileDisplayName(t, profile),
+            })}
       </p>
       <label className="flex items-start gap-3 rounded-[10px] bg-[var(--fs-subtle)] p-4">
         <input
@@ -1363,19 +1484,19 @@ function EditionStepFields({
           onChange={(e) => onPatchActive({ consentPartage: e.target.checked })}
         />
         <span className="text-[14.5px]">
-          Je consens au partage de ce dossier avec les résidences choisies.
+          {t("I consent to sharing this file with the selected residences.")}
         </span>
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Signature du demandeur ou du mandataire">
+        <Field label={t("Signature of the applicant or mandatary")}>
           <input
             className="fs-input"
-            placeholder="Nom complet"
+            placeholder={t("Full name")}
             value={profile.signatureNom}
             onChange={(e) => onPatchActive({ signatureNom: e.target.value })}
           />
         </Field>
-        <Field label="Date">
+        <Field label={t("Date")}>
           <input
             className="fs-input"
             type="date"
@@ -1397,17 +1518,21 @@ function YesNoField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const t = useT();
   return (
     <Field label={label}>
       <select
         className="fs-input"
-        value={value}
+        value={normalizedYesNoValue(value)}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
       >
-        <option value="">À préciser</option>
-        <option value="Oui">Oui</option>
-        <option value="Non">Non</option>
+        <option value="">{t("To be determined")}</option>
+        {["Oui", "Non"].map((option) => (
+          <option key={option} value={option}>
+            {catalogLabel(t, option)}
+          </option>
+        ))}
       </select>
     </Field>
   );

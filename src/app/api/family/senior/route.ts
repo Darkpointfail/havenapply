@@ -11,7 +11,7 @@ export async function PATCH(request: Request) {
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonError("Requête invalide.", 400);
+    return jsonError("Invalid request.", 400);
   }
 
   const seniorId = body.seniorId != null ? String(body.seniorId) : null;
@@ -28,6 +28,6 @@ export async function PATCH(request: Request) {
   const bundle = await patchSenior(auth.user.id, seniorId, data, {
     stepIndex: onboardingStep,
   });
-  if (!bundle) return jsonError("Impossible d'enregistrer le profil.", 404);
+  if (!bundle) return jsonError("Unable to save the profile.", 404);
   return jsonOk({ bundle });
 }

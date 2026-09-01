@@ -13,8 +13,8 @@ export type NavGroup = {
 };
 
 export const publicNav: NavItem[] = [
-  { href: "/#comment", label: "Comment ça marche" },
-  { href: "/get-started", label: "Commencer" },
+  { href: "/#comment", label: "How it works" },
+  { href: "/get-started", label: "Get started" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -29,9 +29,9 @@ export const publicAuthLinks = {
  * Account destinations (settings, privacy, members) stay reachable from the avatar menu.
  */
 export const familyNav: NavItem[] = [
-  { href: "/family/dashboard", label: "Accueil" },
-  { href: "/family/settings", label: "Paramètres" },
-  { href: "/family/privacy", label: "Confidentialité" },
+  { href: "/family/dashboard", label: "Home" },
+  { href: "/family/settings", label: "Settings" },
+  { href: "/family/privacy", label: "Privacy" },
 ];
 
 /**
@@ -41,28 +41,28 @@ export const familyNav: NavItem[] = [
 export const familyNavGroups: NavGroup[] = [
   {
     id: "dashboard",
-    label: "Accueil",
+    label: "Home",
     href: "/family/dashboard",
-    children: [{ href: "/family/dashboard", label: "Espace famille" }],
+    children: [{ href: "/family/dashboard", label: "Family space" }],
   },
   {
     id: "account",
-    label: "Compte",
+    label: "Account",
     href: "/family/settings",
     children: [
-      { href: "/family/settings", label: "Paramètres" },
-      { href: "/family/privacy", label: "Confidentialité et données" },
+      { href: "/family/settings", label: "Settings" },
+      { href: "/family/privacy", label: "Privacy and data" },
       { href: "/family/notifications", label: "Notifications" },
-      { href: "/family/family-members", label: "Membres de la famille" },
+      { href: "/family/family-members", label: "Family members" },
     ],
   },
 ];
 
-/** Bottom bar — FamilySpace owns in-app navigation; Accueil for account pages. */
+/** Bottom bar — FamilySpace owns in-app navigation; Home for account pages. */
 export const familyMobileNav: NavItem[] = [
-  { href: "/family/dashboard", label: "Accueil" },
-  { href: "/family/settings", label: "Paramètres" },
-  { href: "/family/privacy", label: "Confidentialité" },
+  { href: "/family/dashboard", label: "Home" },
+  { href: "/family/settings", label: "Settings" },
+  { href: "/family/privacy", label: "Privacy" },
 ];
 
 /**

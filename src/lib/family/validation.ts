@@ -42,39 +42,39 @@ export function clampString(value: unknown, max: number): string {
 export function validateApplicantPatch(patch: Record<string, unknown>): string | null {
   if ("email" in patch && patch.email != null) {
     const email = String(patch.email);
-    if (email && !isValidEmail(email)) return "Adresse courriel invalide.";
+    if (email && !isValidEmail(email)) return "Invalid email address.";
   }
   if ("phone" in patch && patch.phone != null && !isValidPhone(String(patch.phone))) {
-    return "Numéro de téléphone invalide.";
+    return "Invalid phone number.";
   }
   if ("firstName" in patch && !clampString(patch.firstName, 80)) {
-    return "Le prénom est obligatoire.";
+    return "First name is required.";
   }
   if ("lastName" in patch && !clampString(patch.lastName, 80)) {
-    return "Le nom est obligatoire.";
+    return "Last name is required.";
   }
   return null;
 }
 
 export function validateSeniorPatch(patch: Record<string, unknown>): string | null {
   if ("email" in patch && patch.email != null && String(patch.email) && !isValidEmail(String(patch.email))) {
-    return "Adresse courriel de la personne aînée invalide.";
+    return "Invalid senior email address.";
   }
   if ("phone" in patch && patch.phone != null && !isValidPhone(String(patch.phone))) {
-    return "Téléphone de la personne aînée invalide.";
+    return "Invalid senior phone number.";
   }
   if ("zip" in patch && patch.zip != null && !isValidPostalCode(String(patch.zip))) {
-    return "Code postal invalide.";
+    return "Invalid postal code.";
   }
   if ("dateOfBirth" in patch && patch.dateOfBirth != null && !isValidDateISO(String(patch.dateOfBirth))) {
-    return "Date de naissance invalide.";
+    return "Invalid date of birth.";
   }
   if ("budgetMin" in patch || "budgetMax" in patch) {
     const min = patch.budgetMin != null && String(patch.budgetMin) !== "" ? Number(patch.budgetMin) : null;
     const max = patch.budgetMax != null && String(patch.budgetMax) !== "" ? Number(patch.budgetMax) : null;
-    if (min != null && Number.isNaN(min)) return "Budget minimum invalide.";
-    if (max != null && Number.isNaN(max)) return "Budget maximum invalide.";
-    if (min != null && max != null && min > max) return "Le budget minimum ne peut pas dépasser le maximum.";
+    if (min != null && Number.isNaN(min)) return "Invalid minimum budget.";
+    if (max != null && Number.isNaN(max)) return "Invalid maximum budget.";
+    if (min != null && max != null && min > max) return "Minimum budget cannot exceed maximum.";
   }
   return null;
 }
@@ -84,13 +84,13 @@ export function validateUploadMeta(input: {
   sizeBytes: number;
   originalFilename: string;
 }): string | null {
-  if (!input.originalFilename?.trim()) return "Nom de fichier manquant.";
+  if (!input.originalFilename?.trim()) return "Filename is missing.";
   if (!ALLOWED_DOC_MIME.has(input.mimeType)) {
-    return "Type de fichier non accepté. Utilisez PDF, JPEG, PNG ou WebP.";
+    return "File type not accepted. Use PDF, JPEG, PNG, or WebP.";
   }
-  if (input.sizeBytes <= 0) return "Fichier vide.";
+  if (input.sizeBytes <= 0) return "Empty file.";
   if (input.sizeBytes > MAX_DOC_UPLOAD_BYTES) {
-    return "Le fichier dépasse la taille maximale de 10 Mo.";
+    return "File exceeds the 10 MB size limit.";
   }
   return null;
 }

@@ -35,7 +35,7 @@ const marketingLinks = [
 ];
 
 const familyLinks = [
-  { href: "/family/dashboard", label: "Accueil", icon: LayoutDashboard },
+  { href: "/family/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/family/find-communities", label: "Communities", icon: Search },
   { href: "/family/applications", label: "My applications", icon: CheckSquare },
   { href: "/family/documents", label: "Documents", icon: FileText },
@@ -45,8 +45,8 @@ const familyLinks = [
 ];
 
 export function Header() {
-
-  const t = useT();  const pathname = usePathname();
+  const t = useT();
+  const pathname = usePathname();
   const router = useRouter();
   const { user, ready, signOut } = useAuth();
   const { theme, toggle } = useTheme();
@@ -136,7 +136,7 @@ export function Header() {
                       : "text-ink-muted hover:bg-bg-soft hover:text-ink",
                   )}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               );
             })}
@@ -203,7 +203,7 @@ export function Header() {
         <button
           type="button"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-soft text-ink lg:hidden"
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label={open ? t("Close menu") : t("Open menu")}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X size={18} /> : <Menu size={18} />}
@@ -220,7 +220,7 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className="rounded-xl px-3 py-3 text-ink hover:bg-bg-soft"
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             ))}
             {isFamily ? (

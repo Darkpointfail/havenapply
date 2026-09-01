@@ -19,6 +19,7 @@ import {
 import type { ApplicationStatus } from "@/data/applications";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -180,8 +181,8 @@ function ApplicationsListInner() {
                   <div className="min-w-0">
                     <p className="font-semibold">{a.seniorName}</p>
                     <p className="mt-0.5 text-sm text-ink-muted">
-                      {a.family.name} · {a.relationship}
-                      {a.careType ? ` · ${a.careType}` : ""}
+                      {a.family.name} · {catalogLabel(t, a.relationship)}
+                      {a.careType ? ` · ${catalogLabel(t, a.careType)}` : ""}
                     </p>
                     {a.publicRef ? (
                       <p className="mt-1 font-mono text-xs tracking-wide text-ink-faint">
@@ -199,15 +200,18 @@ function ApplicationsListInner() {
                   </div>
                   <div className="flex items-center gap-2">
                     {!isHistory && !isTransition && (a.documentRequest || a.infoRequest) && (
-                      <Badge tone="warn">Needs info</Badge>
+                      <Badge tone="warn">{t("Needs info")}</Badge>
                     )}
                     {tProgress ? (
                       <Badge tone={tProgress.complete ? "success" : "brand"}>
-                        Transition {tProgress.done}/{tProgress.total}
+                        {t("Transition {done}/{total}", {
+                          done: tProgress.done,
+                          total: tProgress.total,
+                        })}
                       </Badge>
                     ) : (
                       <Badge tone={isHistory ? outcomeTone(a.status) : statusTone(a.status)}>
-                        {isHistory ? outcomeLabel(a.status) : statusLabel(a.status)}
+                        {t(isHistory ? outcomeLabel(a.status) : statusLabel(a.status))}
                       </Badge>
                     )}
                   </div>

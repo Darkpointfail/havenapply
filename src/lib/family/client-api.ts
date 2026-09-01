@@ -13,10 +13,10 @@ async function parse<T>(res: Response): Promise<ApiOk<T> | ApiFail> {
   try {
     json = (await res.json()) as Record<string, unknown>;
   } catch {
-    return { ok: false, error: "Réponse serveur invalide." };
+    return { ok: false, error: "Invalid server response." };
   }
   if (!res.ok || json.ok === false) {
-    return { ok: false, error: String(json.error || "Une erreur est survenue.") };
+    return { ok: false, error: String(json.error || "Something went wrong.") };
   }
   return { ok: true, ...(json as T) };
 }
@@ -173,13 +173,13 @@ export async function apiUploadDocument(input: {
         if (xhr.status >= 200 && xhr.status < 300 && json.ok !== false) {
           resolve({ ok: true, ...(json as { bundle: FamilyBundle }) });
         } else {
-          resolve({ ok: false, error: String(json.error || "Échec du téléversement.") });
+          resolve({ ok: false, error: String(json.error || "Upload failed.") });
         }
       } catch {
-        resolve({ ok: false, error: "Réponse serveur invalide." });
+        resolve({ ok: false, error: "Invalid server response." });
       }
     };
-    xhr.onerror = () => resolve({ ok: false, error: "Erreur réseau lors du téléversement." });
+    xhr.onerror = () => resolve({ ok: false, error: "Network error during upload." });
     xhr.send(form);
   });
 }

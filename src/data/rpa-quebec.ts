@@ -49,10 +49,10 @@ export type RpaResidenceRow = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  "1": "catégorie 1 (autonomie)",
-  "2": "catégorie 2 (assistance légère)",
-  "3": "catégorie 3 (assistance)",
-  "4": "catégorie 4 (soins)",
+  "1": "category 1 (autonomy)",
+  "2": "category 2 (light assistance)",
+  "3": "category 3 (assistance)",
+  "4": "category 4 (care)",
 };
 
 function categoryPhrase(raw: string): string {
@@ -60,19 +60,19 @@ function categoryPhrase(raw: string): string {
     .split("|")
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((c) => CATEGORY_LABELS[c] ?? `catégorie ${c}`);
-  if (parts.length === 0) return "catégorie non précisée";
+    .map((c) => CATEGORY_LABELS[c] ?? `category ${c}`);
+  if (parts.length === 0) return "category not specified";
   if (parts.length === 1) return parts[0];
-  return parts.join(" et ");
+  return parts.join(" and ");
 }
 
 function autonomyFromCategory(raw: string): { value: string; offered: boolean } {
   const cats = raw.split("|").map((p) => p.trim()).filter(Boolean);
-  if (cats.includes("4")) return { value: "Assistance à soins intermédiaires", offered: true };
+  if (cats.includes("4")) return { value: "Intermediate care assistance", offered: true };
   if (cats.includes("3")) return { value: "Assistance", offered: true };
-  if (cats.includes("2")) return { value: "Semi-autonome à assistance légère", offered: true };
-  if (cats.includes("1")) return { value: "Autonome", offered: true };
-  return { value: "À confirmer", offered: false };
+  if (cats.includes("2")) return { value: "Semi-autonomous to light assistance", offered: true };
+  if (cats.includes("1")) return { value: "Autonomous", offered: true };
+  return { value: "To confirm", offered: false };
 }
 
 function hasService(services: string[], needle: string) {
@@ -88,8 +88,8 @@ function unitSummary(row: RpaResidenceRow): {
     rows.push({
       type: "Logement",
       area: "—",
-      price: "Sur demande",
-      availability: `${row.apartments} au registre`,
+      price: "On request",
+      availability: `${row.apartments} in registry`,
       availabilityTone: "green",
     });
   }
@@ -97,8 +97,8 @@ function unitSummary(row: RpaResidenceRow): {
     rows.push({
       type: "Chambre simple",
       area: "—",
-      price: "Sur demande",
-      availability: `${row.roomsSingle} au registre`,
+      price: "On request",
+      availability: `${row.roomsSingle} in registry`,
       availabilityTone: "green",
     });
   }
@@ -106,17 +106,17 @@ function unitSummary(row: RpaResidenceRow): {
     rows.push({
       type: "Chambre double",
       area: "—",
-      price: "Sur demande",
-      availability: `${row.roomsDouble} au registre`,
+      price: "On request",
+      availability: `${row.roomsDouble} in registry`,
       availabilityTone: "green",
     });
   }
   if (rows.length === 0) {
     rows.push({
-      type: "Unité locative",
+      type: "Rental unit",
       area: "—",
-      price: "Sur demande",
-      availability: "À confirmer",
+      price: "On request",
+      availability: "To confirm",
       availabilityTone: "terra",
     });
   }
@@ -125,18 +125,18 @@ function unitSummary(row: RpaResidenceRow): {
 
 function buildFacts(row: RpaResidenceRow): { label: string; value: string }[] {
   const facts: { label: string; value: string }[] = [];
-  if (row.capacity) facts.push({ label: "Capacité", value: `${row.capacity} personnes` });
-  if (row.units) facts.push({ label: "Unités RPA", value: String(row.units) });
-  if (row.residents != null) facts.push({ label: "Résidents déclarés", value: String(row.residents) });
+  if (row.capacity) facts.push({ label: "Capacity", value: `${row.capacity} people` });
+  if (row.units) facts.push({ label: "RPA units", value: String(row.units) });
+  if (row.residents != null) facts.push({ label: "Declared residents", value: String(row.residents) });
   if (row.certification) facts.push({ label: "Certification", value: row.certification });
-  if (row.category) facts.push({ label: "Catégories RPA", value: row.category.replace(/\|/g, " · ") });
-  if (row.floors) facts.push({ label: "Étages", value: String(row.floors) });
-  if (row.elevators != null) facts.push({ label: "Ascenseurs", value: String(row.elevators) });
-  if (row.openedOn) facts.push({ label: "Ouverture", value: row.openedOn.slice(0, 4) });
-  if (row.phone) facts.push({ label: "Téléphone", value: row.phone });
+  if (row.category) facts.push({ label: "RPA categories", value: row.category.replace(/\|/g, " · ") });
+  if (row.floors) facts.push({ label: "Floors", value: String(row.floors) });
+  if (row.elevators != null) facts.push({ label: "Elevators", value: String(row.elevators) });
+  if (row.openedOn) facts.push({ label: "Opened", value: row.openedOn.slice(0, 4) });
+  if (row.phone) facts.push({ label: "Phone", value: row.phone });
   if (row.mrc) facts.push({ label: "MRC", value: row.mrc });
-  if (row.operator) facts.push({ label: "Exploitant", value: row.operator });
-  if (row.group) facts.push({ label: "Regroupement", value: row.group });
+  if (row.operator) facts.push({ label: "Operator", value: row.operator });
+  if (row.group) facts.push({ label: "Group", value: row.group });
   const ages = row.ages;
   if (ages) {
     const parts = [
@@ -144,22 +144,22 @@ function buildFacts(row: RpaResidenceRow): { label: string; value: string }[] {
       ages.from75to84 != null ? `${ages.from75to84} × 75-84` : null,
       ages.from65to74 != null ? `${ages.from65to74} × 65-74` : null,
     ].filter(Boolean);
-    if (parts.length) facts.push({ label: "Profil d'âge", value: parts.join(" · ") });
+    if (parts.length) facts.push({ label: "Age profile", value: parts.join(" · ") });
   }
   if (row.safety && row.safety.length > 0) {
-    facts.push({ label: "Sécurité", value: row.safety.slice(0, 4).join(" · ") });
+    facts.push({ label: "Safety features", value: row.safety.slice(0, 4).join(" · ") });
   }
-  if (row.security) facts.push({ label: "Appel à l'aide", value: row.security });
+  if (row.security) facts.push({ label: "Call for help", value: row.security });
   const staff = row.staffing;
   if (staff?.hasNursingPresence) {
     const n = staff.nursesWeekday;
     facts.push({
-      label: "Infirmières (sem.)",
-      value: `J${n.day} / S${n.evening} / N${n.night}`,
+      label: "Nurses (weekday)",
+      value: `D${n.day} / E${n.evening} / N${n.night}`,
     });
   } else if (staff && staff.aidesWeekdayDay > 0) {
     facts.push({
-      label: "Préposés (jour sem.)",
+      label: "Aides (weekday day)",
       value: String(staff.aidesWeekdayDay),
     });
   }
@@ -181,27 +181,27 @@ function mapRow(row: RpaResidenceRow): Residence {
   const safety = row.safety || [];
 
   const why: string[] = [];
-  if (certified) why.push("Certifiée au registre des RPA");
-  if (meals) why.push("Repas offerts");
-  if (nursing) why.push(nursingStaff ? "Présence infirmière déclarée" : "Soins infirmiers déclarés");
-  if (bath) why.push("Aide au bain déclarée");
-  if (mobility) why.push("Aide à la mobilité");
-  if (row.entente108) why.push("Unités avec entente 108");
-  if (safety.length >= 3) why.push("Équipements de sécurité déclarés");
-  if (why.length === 0) why.push("Fiche issue du registre public des RPA du Québec");
+  if (certified) why.push("Certified in the RPA registry");
+  if (meals) why.push("Meals offered");
+  if (nursing) why.push(nursingStaff ? "Nursing presence declared" : "Nursing care declared");
+  if (bath) why.push("Bathing assistance declared");
+  if (mobility) why.push("Mobility assistance");
+  if (row.entente108) why.push("Units under agreement 108");
+  if (safety.length >= 3) why.push("Declared safety equipment");
+  if (why.length === 0) why.push("Listing from Québec's public RPA registry");
 
   const consider: string[] = [
-    "Tarifs et disponibilités à confirmer auprès de la résidence",
+    "Rates and availability to confirm with the residence",
   ];
-  if (!nursing) consider.push("Peu ou pas de présence infirmière déclarée");
-  if (errance) consider.push("Accueille une clientèle à risque d'errance");
-  if (!bath) consider.push("Aide au bain non déclarée au registre");
+  if (!nursing) consider.push("Little or no declared nursing presence");
+  if (errance) consider.push("Accepts residents at risk of wandering");
+  if (!bath) consider.push("Bathing assistance not declared in the registry");
 
   const highlights = [
     categoryPhrase(row.category),
-    row.capacity ? `Capacité ${row.capacity}` : null,
-    nursing ? "Soins infirmiers" : null,
-    meals ? "Repas" : null,
+    row.capacity ? `Capacity ${row.capacity}` : null,
+    nursing ? "Nursing care" : null,
+    meals ? "Meals" : null,
     safety[0] || null,
   ].filter(Boolean) as string[];
 
@@ -223,23 +223,23 @@ function mapRow(row: RpaResidenceRow): Residence {
     name: row.name,
     city: `${row.city}, ${row.region}`,
     units,
-    badge: certified ? "Registre RPA" : row.certification || "Registre RPA",
+    badge: certified ? "RPA registry" : row.certification || "RPA registry",
     badgeTone: certified ? "green" : "neutral",
     description: [
-      `${row.name} est une ${row.type || "résidence privée pour aînés"} à ${row.city}`,
+      `${row.name} is a ${row.type || "private residence for seniors"} in ${row.city}`,
       ` (${row.region}), ${categoryPhrase(row.category)}.`,
-      row.capacity ? ` Capacité déclarée de ${row.capacity} personnes` : "",
-      row.residents != null ? ` pour ${row.residents} résidents au registre.` : ".",
-      " Source : registre public des RPA du Québec (extraction 2025-12-31).",
+      row.capacity ? ` Declared capacity of ${row.capacity} people` : "",
+      row.residents != null ? ` for ${row.residents} residents in the registry.` : ".",
+      " Source: Québec public RPA registry (extracted 2025-12-31).",
     ].join(""),
     unitType,
-    price: "Sur demande",
-    response: row.phone ? `tél. ${row.phone}` : "coordonnées au registre",
-    responseLabel: row.phone ? "Coordonnées au registre" : "À confirmer",
+    price: "On request",
+    response: row.phone ? `tel. ${row.phone}` : "registry contact details",
+    responseLabel: row.phone ? "Registry contact details" : "To confirm",
     area: "—",
-    availability: certified ? "Inscription ouverte" : "À vérifier",
+    availability: certified ? "Applications open" : "To verify",
     availabilityTone: certified ? "green" : "terra",
-    services: row.services.length > 0 ? row.services : ["À confirmer"],
+    services: row.services.length > 0 ? row.services : ["To confirm"],
     partner: false,
     distanceKm: 0,
     priceAmount: 0,
@@ -250,44 +250,44 @@ function mapRow(row: RpaResidenceRow): Residence {
     consider,
     unitRows,
     care: [
-      { label: "Niveau d'autonomie accepté", value: autonomy.value, offered: autonomy.offered },
+      { label: "Accepted autonomy level", value: autonomy.value, offered: autonomy.offered },
       {
-        label: "Soins infirmiers",
+        label: "Nursing care",
         value: nursing
           ? nursingStaff
-            ? "Présence déclarée"
-            : "Service déclaré"
-          : "Non déclarés",
+            ? "Presence declared"
+            : "Service declared"
+          : "Not declared (pl)",
         offered: nursing,
       },
-      { label: "Aide au bain", value: bath ? "Déclarée" : "Non déclarée", offered: bath },
+      { label: "Bathing assistance", value: bath ? "Declared" : "Not declared (f)", offered: bath },
       {
-        label: "Soins de mémoire",
-        value: errance ? "Clientèle à risque d'errance accueillie" : "Non précisés",
+        label: "Memory care",
+        value: errance ? "Accepts residents at risk of wandering" : "Not specified",
         offered: errance,
       },
       {
-        label: "Aide à la mobilité",
-        value: mobility ? "Déclarée" : "Non déclarée",
+        label: "Mobility assistance",
+        value: mobility ? "Declared" : "Not declared",
         offered: mobility,
       },
     ],
     location: {
       address: addressLine,
       travel: row.mrc ? `MRC ${row.mrc}` : row.region,
-      transit: row.security || safety.slice(0, 2).join(" · ") || "Sécurité au registre",
+      transit: row.security || safety.slice(0, 2).join(" · ") || "Registry safety info",
       ...(typeof row.lat === "number" && typeof row.lng === "number"
         ? { lat: row.lat, lng: row.lng }
         : {}),
     },
     documents: [
-      { name: "Pièce d'identité", inDossier: false },
-      { name: "Bilan médical", inDossier: false },
-      { name: "Liste de médicaments", inDossier: false },
+      { name: "Proof of identity", inDossier: false },
+      { name: "Medical assessment", inDossier: false },
+      { name: "Medication list", inDossier: false },
     ],
     waitNote:
-      "Données du registre des RPA (complet vérifiable, extraction 2025-12-31). Vérifiez tarifs et disponibilités avant de déposer.",
-    photoLabels: ["Emplacement", "Espaces communs", "Unité type", "Visite"],
+      "Data from the RPA registry (verifiable complete extract, 2025-12-31). Confirm rates and availability before applying.",
+    photoLabels: ["Location", "Common areas", "Sample unit", "Visit"],
     facts: buildFacts(row),
     highlights,
     hasNursingStaff: nursing,
@@ -306,7 +306,7 @@ export const RPA_REGIONS = Array.from(new Set(rows.map((r) => r.region))).sort((
 );
 
 export const RPA_SOURCE = {
-  label: (catalog as { source?: string }).source ?? "Registre des RPA — Québec",
+  label: "RPA registry — Québec (full verifiable catalog)",
   extractedOn: (catalog as { extractedOn?: string }).extractedOn ?? "2025-12-31",
   count: rows.length,
 };

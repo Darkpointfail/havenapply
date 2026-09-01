@@ -15,8 +15,46 @@ import {
   getMatchReadiness,
   type FamilyCareProfile,
 } from "@/lib/family-residence-match";
+import { useLocale, useT } from "@/lib/i18n/locale";
+import { catalogLabel } from "@/lib/i18n/catalog-labels";
 
 const PAGE_SIZE = 24;
+
+function factValue(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  label: string,
+  value: string,
+) {
+  if (label === "Capacity" || label === "Capacité") {
+    const m = value.match(/^(\d+)\s*(people|personnes)$/i);
+    if (m) return t("{count} people", { count: m[1] });
+  }
+  return catalogLabel(t, value);
+}
+
+function describeResidence(
+  r: Residence,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
+  const cityOnly = r.city.split(",")[0]?.trim() || r.city;
+  const region = r.city.includes(",")
+    ? r.city.slice(r.city.indexOf(",") + 1).trim()
+    : "";
+  const category = catalogLabel(t, r.categoryLabel || "category not specified");
+  const capacityPart = r.units
+    ? t(" Declared capacity of {count} people.", { count: r.units })
+    : "";
+  return t(
+    "{name} is a private residence for seniors in {city} ({region}), {category}.{capacityPart} Source: Québec public RPA registry (extracted 2025-12-31).",
+    {
+      name: r.name,
+      city: cityOnly,
+      region,
+      category,
+      capacityPart,
+    },
+  );
+}
 
 function PhotoBlock({
   className = "",
@@ -75,6 +113,7 @@ function FilterPills({
   selected: string[];
   onToggle: (value: string) => void;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">{label}</p>
@@ -94,7 +133,7 @@ function FilterPills({
                 cursor: "pointer",
               }}
             >
-              {opt}
+              {catalogLabel(t, opt)}
             </button>
           );
         })}
@@ -123,6 +162,8 @@ export function ResidencesBrowse({
   onApply: (id: string) => void;
   onCompleteDossier?: () => void;
 }) {
+  const t = useT();
+  const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState("");
   const [unitTypes, setUnitTypes] = useState<string[]>([]);
@@ -154,36 +195,40 @@ export function ResidencesBrowse({
     if (!readiness) {
       return [...list].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     }
-    const scored = list.map((r) => ({ r, score: computeMatch(profile, r).score }));
+    const scored = list.map((r) => ({ r, score: computeMatch(profile, r, t).score }));
     scored.sort((a, b) => b.score - a.score);
     return scored.map((s) => s.r);
-  }, [query, region, services, unitTypes, profile, readiness]);
+  }, [query, region, services, unitTypes, profile, readiness, t]);
 
   const shown = filtered.slice(0, visible);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="fs-serif text-[28px] leading-tight">Résidences</h1>
+        <h1 className="fs-serif text-[28px] leading-tight">{t("Residences")}</h1>
         <p className="mt-2 max-w-[640px] text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-          Parcourez le registre des RPA du Québec ({RPA_SOURCE.count.toLocaleString("fr-CA")}{" "}
-          résidences actives, extraction {RPA_SOURCE.extractedOn}) et déposez une demande depuis le
-          dossier de votre proche.
+          {t(
+            "Browse Quebec's registry of RPAs ({count} active residences, extracted {date}) and submit a request straight from your loved one's file.",
+            {
+              count: RPA_SOURCE.count.toLocaleString(locale === "en" ? "en-CA" : "fr-CA"),
+              date: RPA_SOURCE.extractedOn,
+            },
+          )}
         </p>
         {!readiness ? (
           <div className="mt-4 rounded-[14px] border border-[var(--fs-border)] bg-[linear-gradient(135deg,#F7F3EF_0%,#FFFFFF_55%,#F3FAF8_100%)] p-5">
             <p className="fs-serif text-[22px] leading-tight">
-              Remplissez le dossier pour avoir des recommandations personnalisées
+              {t("Complete the file to get personalized recommendations")}
             </p>
             <p className="mt-2 max-w-[640px] text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-              Les scores de correspondance s’affichent seulement lorsque les critères essentiels
-              sont complétés (autonomie, secteur et budget). En attendant, vous pouvez explorer le
-              registre sans ranking personnalisé.
+              {t(
+                "Match scores only appear once the essential criteria are completed (autonomy, area, and budget). In the meantime, you can browse the registry without a personalized ranking.",
+              )}
             </p>
             {missing.length > 0 ? (
               <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-[var(--fs-ink-muted)]">
                 {missing.map((m) => (
-                  <li key={m}>{m}</li>
+                  <li key={m}>{t(m)}</li>
                 ))}
               </ul>
             ) : null}
@@ -193,7 +238,7 @@ export function ResidencesBrowse({
                 className="fs-btn fs-btn-primary mt-4"
                 onClick={onCompleteDossier}
               >
-                Compléter le dossier
+                {t("Complete the file")}
               </button>
             ) : null}
           </div>
@@ -202,10 +247,10 @@ export function ResidencesBrowse({
 
       <div className="fs-grid-search grid gap-6 lg:grid-cols-[290px_1fr]">
         <aside className="fs-card sticky top-[90px] h-fit p-5">
-          <p className="fs-serif text-[18px]">Critères</p>
+          <p className="fs-serif text-[18px]">{t("Criteria")}</p>
           <div className="mt-5 space-y-5">
             <div>
-              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Recherche</p>
+              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">{t("Search")}</p>
               <input
                 className="fs-input"
                 value={query}
@@ -213,13 +258,13 @@ export function ResidencesBrowse({
                   setQuery(e.target.value);
                   setVisible(PAGE_SIZE);
                 }}
-                placeholder="Nom, ville ou adresse"
-                aria-label="Recherche de résidence"
+                placeholder={t("Name, city, or address")}
+                aria-label={t("Search for a residence")}
               />
             </div>
 
             <div>
-              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">Région</p>
+              <p className="mb-2 text-[13px] text-[var(--fs-ink-muted)]">{t("Region")}</p>
               <select
                 className="fs-input"
                 value={region}
@@ -227,9 +272,9 @@ export function ResidencesBrowse({
                   setRegion(e.target.value);
                   setVisible(PAGE_SIZE);
                 }}
-                aria-label="Région"
+                aria-label={t("Region")}
               >
-                <option value="">Tout le Québec</option>
+                <option value="">{t("All of Quebec")}</option>
                 {RPA_REGIONS.map((name) => (
                   <option key={name} value={name}>
                     {name}
@@ -239,7 +284,7 @@ export function ResidencesBrowse({
             </div>
 
             <FilterPills
-              label="Type d'unité"
+              label={t("Unit type")}
               options={[...UNIT_TYPES]}
               selected={unitTypes}
               onToggle={(v) => {
@@ -249,7 +294,7 @@ export function ResidencesBrowse({
             />
 
             <FilterPills
-              label="Services déclarés"
+              label={t("Declared services")}
               options={[...SERVICES]}
               selected={services}
               onToggle={(v) => {
@@ -261,8 +306,9 @@ export function ResidencesBrowse({
 
           <div className="mt-5 border-t border-[var(--fs-border)] pt-4">
             <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
-              Source : {RPA_SOURCE.label}. Les tarifs et disponibilités restent à confirmer auprès
-              de chaque résidence.
+              {t("Source: {label}. Rates and availability are still to be confirmed with each residence.", {
+                label: RPA_SOURCE.label,
+              })}
             </p>
           </div>
         </aside>
@@ -270,20 +316,20 @@ export function ResidencesBrowse({
         <div className="min-w-0 flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[14.5px] text-[var(--fs-ink-muted)]">
-              {filtered.length.toLocaleString("fr-CA")} résidence
-              {filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
+              {filtered.length.toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}{" "}
+              {filtered.length > 1 ? t("residences found") : t("residence found")}
               {shown.length < filtered.length
-                ? ` · affichage de ${shown.length.toLocaleString("fr-CA")}`
+                ? ` · ${t("showing")} ${shown.length.toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}`
                 : ""}
             </p>
             <p className="text-[14px] font-medium text-[var(--fs-ink)]">
-              {readiness ? "Tri par correspondance" : "Tri alphabétique"}
+              {readiness ? t("Sorted by match") : t("Sorted alphabetically")}
             </p>
           </div>
 
           <div className="space-y-4">
             {shown.map((r) => {
-              const match = readiness ? computeMatch(profile, r) : null;
+              const match = readiness ? computeMatch(profile, r, t) : null;
               const scoreColor =
                 match && (match.tone === "strong" || match.tone === "good")
                   ? "var(--fs-success)"
@@ -301,7 +347,7 @@ export function ResidencesBrowse({
                       <div className="min-w-0">
                         <h2 className="fs-serif text-[23px] leading-tight">{r.name}</h2>
                         <p className="mt-1 text-[14.5px] text-[var(--fs-ink-muted)]">
-                          {r.city} · {r.units} unités
+                          {r.city} · {r.units} {t("units")}
                           {r.categoryLabel ? ` · ${r.categoryLabel}` : ""}
                         </p>
                       </div>
@@ -310,7 +356,7 @@ export function ResidencesBrowse({
                           <span
                             className="inline-flex items-baseline gap-1 rounded-full border-2 bg-white px-3 py-1"
                             style={{ borderColor: scoreColor }}
-                            aria-label={`Score ${match.score}`}
+                            aria-label={t("Score {score}", { score: match.score })}
                           >
                             <span
                               className="fs-serif text-[20px] leading-none"
@@ -323,14 +369,14 @@ export function ResidencesBrowse({
                             </span>
                           </span>
                         ) : null}
-                        <Badge tone={r.badgeTone}>{r.badge}</Badge>
+                        <Badge tone={r.badgeTone}>{catalogLabel(t, r.badge)}</Badge>
                       </div>
                     </div>
 
                     <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
                       {match
                         ? `${match.headline} — ${match.summary}`
-                        : r.description}
+                        : describeResidence(r, t)}
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -346,7 +392,7 @@ export function ResidencesBrowse({
                               color: "var(--fs-ink-muted)",
                             }}
                           >
-                            {s}
+                            {catalogLabel(t, s)}
                           </span>
                         ))}
                     </div>
@@ -357,14 +403,14 @@ export function ResidencesBrowse({
                         className="fs-btn fs-btn-primary"
                         onClick={() => onApply(r.id)}
                       >
-                        Appliquer
+                        {t("Apply")}
                       </button>
                       <button
                         type="button"
                         className="fs-btn fs-btn-outline"
                         onClick={() => onOpen(r.id, "match")}
                       >
-                        Voir pourquoi
+                        {t("See why")}
                       </button>
                     </div>
                   </div>
@@ -374,9 +420,9 @@ export function ResidencesBrowse({
 
             {shown.length === 0 ? (
               <div className="fs-card p-8 text-center">
-                <p className="fs-serif text-[20px]">Aucune résidence pour ces critères</p>
+                <p className="fs-serif text-[20px]">{t("No residences match these criteria")}</p>
                 <p className="mt-2 text-[14.5px] text-[var(--fs-ink-muted)]">
-                  Élargissez la région ou retirez un filtre de service.
+                  {t("Try a wider region or remove a service filter.")}
                 </p>
               </div>
             ) : null}
@@ -388,7 +434,7 @@ export function ResidencesBrowse({
               className="fs-btn fs-btn-outline self-center"
               onClick={() => setVisible((n) => n + PAGE_SIZE)}
             >
-              Voir plus de résidences
+              {t("See more residences")}
             </button>
           ) : null}
         </div>
@@ -416,10 +462,11 @@ export function ResidenceFiche({
   onApply: () => void;
   onCompleteDossier?: () => void;
 }) {
+  const t = useT();
   const profile = careProfile ?? EMPTY_CARE_PROFILE;
   const readiness = matchReady ?? getMatchReadiness(profile).ready;
   const missing = matchMissing ?? getMatchReadiness(profile).missing;
-  const match = readiness ? computeMatch(profile, residence) : null;
+  const match = readiness ? computeMatch(profile, residence, t) : null;
   const scoreColor =
     match && (match.tone === "strong" || match.tone === "good")
       ? "var(--fs-success)"
@@ -431,7 +478,7 @@ export function ResidenceFiche({
   return (
     <div className="flex flex-col gap-4 pb-24 lg:pb-4">
       <button type="button" className="fs-btn-ghost w-fit" onClick={onBack}>
-        ← Retour aux résultats
+        ← {t("Back to results")}
       </button>
 
       {/* Match panel — first visual block */}
@@ -448,7 +495,7 @@ export function ResidenceFiche({
             <div
               className="mx-auto flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border-[6px] bg-white"
               style={{ borderColor: scoreColor }}
-              aria-label={`Score de correspondance ${match.score} pour cent`}
+              aria-label={t("Match score {score} percent", { score: match.score })}
             >
               <span className="fs-serif text-[34px] leading-none" style={{ color: scoreColor }}>
                 {match.score}
@@ -460,7 +507,7 @@ export function ResidenceFiche({
 
             <div className="min-w-0 text-center md:text-left">
               <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
-                Correspondance avec votre dossier
+                {t("Match with your file")}
               </p>
               <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
                 {match.headline}
@@ -513,7 +560,7 @@ export function ResidenceFiche({
                       borderColor: "transparent",
                     }}
                   >
-                    {w}
+                    {t(w)}
                   </span>
                 ))}
                 {match.consider.slice(0, 2).map((c) => (
@@ -526,7 +573,7 @@ export function ResidenceFiche({
                       borderColor: "transparent",
                     }}
                   >
-                    {c}
+                    {t(c)}
                   </span>
                 ))}
               </div>
@@ -534,26 +581,27 @@ export function ResidenceFiche({
 
             <div className="hidden md:block">
               <button type="button" className="fs-btn fs-btn-primary px-6" onClick={onApply}>
-                Déposer une demande
+                {t("Submit an application")}
               </button>
             </div>
           </div>
         ) : (
           <div className="p-6 md:p-8">
             <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--fs-ink-muted)]">
-              Correspondance
+              {t("Match")}
             </p>
             <h2 className="fs-serif mt-1 text-[26px] leading-tight md:text-[30px]">
-              Remplissez le dossier pour avoir des recommandations personnalisées
+              {t("Complete the file to get personalized recommendations")}
             </h2>
             <p className="mt-3 max-w-[640px] text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
-              Autonomie, secteur et budget sont requis avant d’afficher un score pour cette
-              résidence.
+              {t(
+                "Autonomy, area, and budget are required before a score can be shown for this residence.",
+              )}
             </p>
             {missing.length > 0 ? (
               <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-[var(--fs-ink-muted)]">
                 {missing.map((m) => (
-                  <li key={m}>{m}</li>
+                  <li key={m}>{t(m)}</li>
                 ))}
               </ul>
             ) : null}
@@ -564,11 +612,11 @@ export function ResidenceFiche({
                   className="fs-btn fs-btn-primary"
                   onClick={onCompleteDossier}
                 >
-                  Compléter le dossier
+                  {t("Complete the file")}
                 </button>
               ) : null}
               <button type="button" className="fs-btn fs-btn-outline" onClick={onApply}>
-                Appliquer sans score
+                {t("Apply without a score")}
               </button>
             </div>
           </div>
@@ -576,15 +624,15 @@ export function ResidenceFiche({
       </section>
 
       <div className="fs-card overflow-hidden">
-        <PhotoBlock height={220} className="border-0" label="Emplacement" />
+        <PhotoBlock height={220} className="border-0" label={t("Location")} />
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-[820px]">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={residence.badgeTone}>{residence.badge}</Badge>
+                <Badge tone={residence.badgeTone}>{catalogLabel(t, residence.badge)}</Badge>
                 {residence.categoryLabel ? (
                   <span className="text-[13px] text-[var(--fs-ink-muted)]">
-                    {residence.categoryLabel}
+                    {catalogLabel(t, residence.categoryLabel)}
                   </span>
                 ) : null}
               </div>
@@ -593,11 +641,11 @@ export function ResidenceFiche({
               </h1>
               <p className="mt-2 text-[15px] text-[var(--fs-ink-muted)]">
                 {residence.city}
-                {residence.units ? ` · ${residence.units} unités` : ""}
+                {residence.units ? ` · ${residence.units} ${t("units")}` : ""}
                 {residence.phone ? ` · ${residence.phone}` : ""}
               </p>
               <p className="mt-4 text-[15.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                {residence.description}
+                {describeResidence(residence, t)}
               </p>
               <p className="mt-3 text-[14px] text-[var(--fs-ink-muted)]">
                 {residence.location.address}
@@ -607,7 +655,7 @@ export function ResidenceFiche({
 
           {residence.facts && residence.facts.length > 0 ? (
             <div className="mt-8">
-              <p className="fs-label mb-3">En un coup d&apos;œil</p>
+              <p className="fs-label mb-3">{t("At a glance")}</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {residence.facts.map((f) => (
                   <div
@@ -615,10 +663,10 @@ export function ResidenceFiche({
                     className="rounded-[12px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-3"
                   >
                     <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--fs-ink-muted)]">
-                      {f.label}
+                      {catalogLabel(t, f.label)}
                     </p>
                     <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--fs-ink)]">
-                      {f.value}
+                      {factValue(t, f.label, f.value)}
                     </p>
                   </div>
                 ))}
@@ -629,16 +677,16 @@ export function ResidenceFiche({
           <div className="fs-grid-main mt-8 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
             <div className="space-y-6">
               <div>
-                <p className="fs-label mb-3">Types d&apos;unités</p>
+                <p className="fs-label mb-3">{t("Unit types")}</p>
                 <div className="overflow-hidden rounded-[12px] border border-[var(--fs-border)]">
                   <div
                     className="grid gap-[18px] border-b border-[var(--fs-border)] bg-[var(--fs-subtle)] px-4 py-2.5 text-[12.5px] font-semibold uppercase tracking-[0.07em] text-[var(--fs-ink-muted)]"
                     style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
                   >
-                    <span>Type</span>
-                    <span>Superficie</span>
-                    <span>Prix</span>
-                    <span>Disponibilité</span>
+                    <span>{t("Type")}</span>
+                    <span>{t("Area")}</span>
+                    <span>{t("Price")}</span>
+                    <span>{t("Availability")}</span>
                   </div>
                   {residence.unitRows.map((u) => (
                     <div
@@ -646,9 +694,9 @@ export function ResidenceFiche({
                       className="grid gap-[18px] border-b border-[var(--fs-border-faint)] px-4 py-3 last:border-0"
                       style={{ gridTemplateColumns: "1.2fr 0.8fr 1.1fr 1.2fr" }}
                     >
-                      <span className="font-semibold">{u.type}</span>
-                      <span className="text-[var(--fs-ink-muted)]">{u.area}</span>
-                      <span>{u.price}</span>
+                      <span className="font-semibold">{catalogLabel(t, u.type)}</span>
+                      <span className="text-[var(--fs-ink-muted)]">{t(u.area)}</span>
+                      <span>{t(u.price)}</span>
                       <span
                         className="font-semibold"
                         style={{
@@ -658,7 +706,7 @@ export function ResidenceFiche({
                               : "var(--fs-success)",
                         }}
                       >
-                        {u.availability}
+                        {catalogLabel(t, u.availability)}
                       </span>
                     </div>
                   ))}
@@ -666,7 +714,7 @@ export function ResidenceFiche({
               </div>
 
               <div>
-                <p className="fs-label mb-3">Soins et autonomie</p>
+                <p className="fs-label mb-3">{t("Care and autonomy")}</p>
                 <div className="space-y-2">
                   {residence.care.map((c) => (
                     <div
@@ -674,14 +722,14 @@ export function ResidenceFiche({
                       className="flex items-start justify-between gap-3 rounded-[10px] border border-[var(--fs-border-faint)] px-3.5 py-2.5"
                     >
                       <div>
-                        <p className="text-[14px] font-medium">{c.label}</p>
-                        <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{c.value}</p>
+                        <p className="text-[14px] font-medium">{t(c.label)}</p>
+                        <p className="text-[13.5px] text-[var(--fs-ink-muted)]">{t(c.value)}</p>
                       </div>
                       <span
                         className="shrink-0 text-[12.5px] font-semibold"
                         style={{ color: c.offered ? "var(--fs-success)" : "var(--fs-ink-muted)" }}
                       >
-                        {c.offered ? "Oui" : "Non"}
+                        {c.offered ? t("Yes") : t("No")}
                       </span>
                     </div>
                   ))}
@@ -689,13 +737,13 @@ export function ResidenceFiche({
               </div>
 
               <p className="text-[13px] leading-relaxed text-[var(--fs-ink-muted)]">
-                {residence.waitNote}
+                {t(residence.waitNote)}
               </p>
             </div>
 
             <aside className="space-y-4">
               <div>
-                <p className="fs-label mb-3">Services déclarés</p>
+                <p className="fs-label mb-3">{t("Declared services")}</p>
                 <div className="flex flex-wrap gap-2">
                   {residence.services.map((s) => (
                     <span
@@ -707,31 +755,32 @@ export function ResidenceFiche({
                         color: "var(--fs-ink)",
                       }}
                     >
-                      {s}
+                      {catalogLabel(t, s)}
                     </span>
                   ))}
                 </div>
               </div>
 
               <div className="sticky top-[96px] rounded-[14px] border border-[var(--fs-border)] bg-[var(--fs-subtle)] p-5">
-                <p className="fs-serif text-[20px] leading-tight">Prêt à postuler ?</p>
+                <p className="fs-serif text-[20px] leading-tight">{t("Ready to apply?")}</p>
                 <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--fs-ink-body)]">
-                  Déposez le dossier de votre proche en quelques clics. La résidence reçoit une
-                  demande structurée, sans formulaires redondants.
+                  {t(
+                    "Submit your loved one’s file in a few clicks. The residence receives a structured application, without redundant forms.",
+                  )}
                 </p>
                 <button
                   type="button"
                   className="fs-btn fs-btn-primary mt-4 w-full text-[15px]"
                   onClick={onApply}
                 >
-                  Appliquer à cette résidence
+                  {t("Apply to this residence")}
                 </button>
                 {residence.phone ? (
                   <a
                     href={`tel:${residence.phone.replace(/\s/g, "")}`}
                     className="fs-btn fs-btn-outline mt-2 w-full text-center text-[14.5px]"
                   >
-                    Appeler {residence.phone}
+                    {t("Call {phone}", { phone: residence.phone })}
                   </a>
                 ) : null}
               </div>
@@ -743,7 +792,9 @@ export function ResidenceFiche({
       {/* Mobile sticky apply */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--fs-border)] bg-white/95 p-3 backdrop-blur lg:hidden">
         <button type="button" className="fs-btn fs-btn-primary w-full" onClick={onApply}>
-          {match ? `Appliquer · score ${match.score}` : "Appliquer à cette résidence"}
+          {match
+            ? t("Apply · score {score}", { score: match.score })
+            : t("Apply to this residence")}
         </button>
       </div>
     </div>

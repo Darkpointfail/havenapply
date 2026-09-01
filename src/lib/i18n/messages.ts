@@ -3137,6 +3137,30 @@ export const frMessages: Record<string, string> = {
   "3 1/2": "3½",
   "3 1/2 with care": "3½ soins",
   "3 1/2 with services": "3½ services",
+  "To confirm, type exactly: {hint}": "Pour confirmer, saisissez exactement : {hint}",
+  "To confirm, type exactly: DELETE MY ACCOUNT":
+    "Pour confirmer, saisissez exactement : DELETE MY ACCOUNT",
+  "To confirm, type exactly: DELETE THE FILE":
+    "Pour confirmer, saisissez exactement : DELETE THE FILE",
+  "Opened the rights page": "Ouverture de la page des droits",
+  "JSON export of family data": "Export JSON des données familiales",
+  "Profile retention consent withdrawn": "Retrait du consentement de conservation",
+  "Scope profile": "Portée profile",
+  "Scope account": "Portée account",
+  "Request recorded (profile)": "Demande enregistrée (profile)",
+  "Request recorded (account)": "Demande enregistrée (account)",
+  "Deletion executed (profile)": "Suppression exécutée (profile)",
+  "Deletion executed (account)": "Suppression exécutée (account)",
+  "Deletion executed (scope: profile)": "Suppression exécutée (portée: profile)",
+  "Deletion executed (scope: account)": "Suppression exécutée (portée: account)",
+  "RPA registry — Québec (full verifiable catalog)":
+    "Registre des RPA — Québec (complet vérifiable)",
+  "Binary files are not included in this export. Download each document from the family space.":
+    "Les fichiers binaires ne sont pas inclus dans cet export. Utilisez le téléchargement de chaque document depuis l'espace famille.",
+  "Binary files are not included. Download each document separately.":
+    "Les fichiers binaires ne sont pas inclus. Téléchargez chaque document séparément.",
+  "This file contains personal information — store it securely.":
+    "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
 
   // Authz + validation errors
   "Session expired. Please sign in again.": "Session expirée. Veuillez vous reconnecter.",

@@ -36,10 +36,15 @@ export async function POST(request: Request) {
   const scope = body.scope === "profile" ? "profile" : "account";
 
   if (body.confirmExecute) {
-    const expected = scope === "account" ? "SUPPRIMER MON COMPTE" : "SUPPRIMER LE DOSSIER";
-    if (body.confirmPhrase?.trim() !== expected) {
+    const accountPhrases = new Set(["DELETE MY ACCOUNT", "SUPPRIMER MON COMPTE"]);
+    const profilePhrases = new Set(["DELETE THE FILE", "SUPPRIMER LE DOSSIER"]);
+    const allowed = scope === "account" ? accountPhrases : profilePhrases;
+    const phrase = body.confirmPhrase?.trim() || "";
+    if (!allowed.has(phrase)) {
       return jsonError(
-        `Pour confirmer, saisissez exactement : ${expected}`,
+        scope === "account"
+          ? "To confirm, type exactly: DELETE MY ACCOUNT"
+          : "To confirm, type exactly: DELETE THE FILE",
         400,
       );
     }
@@ -63,6 +68,6 @@ export async function POST(request: Request) {
     reason: body.reason,
   });
   if (!bundle) return jsonError("Unable to save the request.", 404);
-  await recordRightsOperation(auth.user.id, "deletion_request", `Portée ${scope}`);
+  await recordRightsOperation(auth.user.id, "deletion_request", `Scope ${scope}`);
   return jsonOk({ bundle, executed: false });
 }

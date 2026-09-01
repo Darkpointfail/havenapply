@@ -70,6 +70,28 @@ const OPS_LABEL: Record<string, string> = {
   session_revoke: "Session revoked",
 };
 
+/** Legacy FR rights-log details → EN keys for t(). */
+const RIGHTS_DETAIL_EN: Record<string, string> = {
+  "Ouverture de la page des droits": "Opened the rights page",
+  "Export JSON des données familiales": "JSON export of family data",
+  "Retrait du consentement de conservation": "Profile retention consent withdrawn",
+  "Portée profile": "Scope profile",
+  "Portée account": "Scope account",
+  "Demande enregistrée (profile)": "Request recorded (profile)",
+  "Demande enregistrée (account)": "Request recorded (account)",
+  "Suppression exécutée (profile)": "Deletion executed (profile)",
+  "Suppression exécutée (account)": "Deletion executed (account)",
+  "Suppression exécutée (portée: profile)": "Deletion executed (scope: profile)",
+  "Suppression exécutée (portée: account)": "Deletion executed (scope: account)",
+};
+
+function rightsDetailLabel(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  detail: string,
+) {
+  return t(RIGHTS_DETAIL_EN[detail] ?? detail);
+}
+
 function scrollToSection(id: SectionId) {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -870,7 +892,9 @@ export default function FamilyPrivacyHub() {
                       {new Date(l.recordedAt).toLocaleString(locale === "en" ? "en-CA" : "fr-CA")}
                     </span>
                     {l.detail ? (
-                      <div style={{ marginTop: 4, color: "#3d5249" }}>{l.detail}</div>
+                      <div style={{ marginTop: 4, color: "#3d5249" }}>
+                        {rightsDetailLabel(t, l.detail)}
+                      </div>
                     ) : null}
                   </li>
                 ))}
@@ -883,7 +907,7 @@ export default function FamilyPrivacyHub() {
                     </span>
                     <div style={{ marginTop: 4, color: "#3d5249" }}>
                       {e.resource}
-                      {e.detail ? ` — ${e.detail}` : ""}
+                      {e.detail ? ` — ${rightsDetailLabel(t, e.detail)}` : ""}
                     </div>
                   </li>
                 ))}

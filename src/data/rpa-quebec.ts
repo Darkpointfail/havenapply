@@ -306,7 +306,7 @@ export const RPA_REGIONS = Array.from(new Set(rows.map((r) => r.region))).sort((
 );
 
 export const RPA_SOURCE = {
-  label: (catalog as { source?: string }).source ?? "RPA registry — Québec",
+  label: "RPA registry — Québec (full verifiable catalog)",
   extractedOn: (catalog as { extractedOn?: string }).extractedOn ?? "2025-12-31",
   count: rows.length,
 };

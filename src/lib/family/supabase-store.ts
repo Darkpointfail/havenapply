@@ -510,7 +510,7 @@ export async function requestDeletion(
     user_id: ownerId,
     family_id: fam?.id ?? null,
     operation: "deletion_request",
-    detail: `Demande enregistrée (${input.scope})`,
+    detail: `Request recorded (${input.scope})`,
   });
   return loadOrCreateSupabaseFamily({
     id: ownerId,
@@ -532,7 +532,7 @@ export async function buildFamilyExport(ownerId: string) {
     user_id: ownerId,
     family_id: bundle.account.id,
     operation: "export",
-    detail: "Export JSON des données familiales",
+    detail: "JSON export of family data",
   });
   const { data: logs } = await client
     .from("rights_operation_logs")
@@ -557,8 +557,8 @@ export async function buildFamilyExport(ownerId: string) {
       recordedAt: l.recorded_at,
     })),
     notes: [
-      "Les fichiers binaires ne sont pas inclus. Téléchargez chaque document séparément.",
-      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+      "Binary files are not included. Download each document separately.",
+      "This file contains personal information — store it securely.",
     ],
   };
 }
@@ -700,7 +700,7 @@ export async function executeAccountDeletion(
     user_id: ownerId,
     family_id: fam.id,
     operation: "deletion_executed",
-    detail: `Suppression exécutée (${input.scope})`,
+    detail: `Deletion executed (${input.scope})`,
   });
 
   if (input.scope === "account") {
@@ -710,7 +710,7 @@ export async function executeAccountDeletion(
         deleted_at: new Date().toISOString(),
         primary_email: null,
         primary_phone: null,
-        family_name: "Compte supprimé",
+        family_name: "Deleted account",
       })
       .eq("id", fam.id);
   }

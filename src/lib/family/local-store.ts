@@ -300,7 +300,7 @@ export async function recordProfileConsent(
       revokedAt: ts,
     };
     await writeStore(ownerId, store);
-    await appendRightsLog(ownerId, "consent_revoke", "Retrait du consentement de conservation");
+    await appendRightsLog(ownerId, "consent_revoke", "Profile retention consent withdrawn");
     // re-read after log
     const again = await readStore(ownerId);
     return again ? buildBundle(again) : null;
@@ -339,7 +339,7 @@ export async function requestAccountDeletion(
   store.account.deletionRequest = req;
   store.account.updatedAt = ts;
   await writeStore(ownerId, store);
-  await appendRightsLog(ownerId, "deletion_request", `Portée ${input.scope}`);
+  await appendRightsLog(ownerId, "deletion_request", `Scope ${input.scope}`);
   return buildBundle(store);
 }
 
@@ -594,7 +594,7 @@ export type FamilyExportPayload = {
 export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPayload | null> {
   const store = await readStore(ownerId);
   if (!store) return null;
-  await appendRightsLog(ownerId, "export", "Export JSON des données familiales");
+  await appendRightsLog(ownerId, "export", "JSON export of family data");
   const bundle = buildBundle(store);
   const rightsLog = await readRightsLog(ownerId);
   return {
@@ -603,7 +603,12 @@ export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPa
     account: bundle.account,
     seniors: bundle.seniors.map((s) => ({
       ...s,
-      profile: { ...s.profile, photoDataUrl: s.profile.photoDataUrl ? "[photo omise dans l'export JSON — téléchargez le document séparément si besoin]" : "" },
+      profile: {
+        ...s.profile,
+        photoDataUrl: s.profile.photoDataUrl
+          ? "[photo omitted from JSON export — download the document separately if needed]"
+          : "",
+      },
     })),
     documents: bundle.documents,
     applications: bundle.applications,
@@ -611,8 +616,8 @@ export async function buildFamilyExport(ownerId: string): Promise<FamilyExportPa
     progress: bundle.progress,
     rightsLog,
     notes: [
-      "Les fichiers binaires ne sont pas inclus dans cet export. Utilisez le téléchargement de chaque document depuis l'espace famille.",
-      "Ce fichier contient des renseignements personnels — conservez-le de façon sécurisée.",
+      "Binary files are not included in this export. Download each document from the family space.",
+      "This file contains personal information — store it securely.",
     ],
   };
 }
@@ -661,7 +666,7 @@ export async function executeAccountDeletion(
   await appendRightsLog(
     ownerId,
     "deletion_executed",
-    `Suppression exécutée (portée: ${input.scope})`,
+    `Deletion executed (scope: ${input.scope})`,
   );
 
   if (input.scope === "profile") {

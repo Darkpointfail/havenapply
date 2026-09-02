@@ -48,6 +48,48 @@ const fr: Dict = {
   status: "Statut",
   site: "Site",
   family: "Famille",
+  newApplication: "Nouvelle candidature",
+  continueDraft: "Continuer le brouillon",
+  viewApplication: "Voir la candidature",
+  chooseSite: "Choisir une résidence",
+  chooseSiteHelp: "Sélectionnez un site actif et vérifié pour démarrer un brouillon.",
+  noSitesAvailable: "Aucun site n'accepte de candidatures pour le moment.",
+  startDraft: "Créer le brouillon",
+  draftProgress: "Progression",
+  stepResident: "Personne concernée",
+  stepContact: "Coordonnées",
+  stepReview: "Récapitulatif et consentement",
+  residentPreferredName: "Prénom / nom préféré",
+  residentBirthYear: "Année de naissance",
+  contactName: "Nom du contact",
+  contactEmail: "Courriel du contact",
+  contactPhone: "Téléphone du contact",
+  preferredMoveMonth: "Mois souhaité d'emménagement (AAAA-MM)",
+  urgencyNote: "Note opérationnelle (sans contenu médical)",
+  saveContinue: "Enregistrer et continuer",
+  backToList: "Retour aux candidatures",
+  reviewTitle: "Vérifiez avant de soumettre",
+  reviewHelp:
+    "Ces informations seront transmises à la résidence. Aucun contenu médical n'est demandé à cette étape.",
+  consentPrivacy: "J'ai lu l'avis de confidentialité et j'accepte le traitement de ces données.",
+  consentShareWithSite:
+    "J'autorise HavenApply à transmettre cette candidature au site de résidence sélectionné.",
+  submitApplication: "Soumettre la candidature",
+  submissionConfirmed: "Candidature soumise",
+  submissionConfirmedBody: "Votre demande est enregistrée côté serveur. Conservez le numéro de référence.",
+  referenceNumber: "Numéro de référence",
+  openStatus: "Voir le statut",
+  statusDRAFT: "Brouillon",
+  statusSUBMITTED: "Soumise",
+  statusUNDER_REVIEW: "En examen",
+  statusNEEDS_DOCUMENTS: "Documents requis",
+  statusWAITLISTED: "Liste d'attente",
+  statusACCEPTED: "Acceptée",
+  statusREJECTED: "Refusée",
+  statusWITHDRAWN: "Retirée",
+  validationError: "Veuillez compléter les champs requis.",
+  history: "Historique",
+  city: "Ville",
 };
 
 const en: Dict = {
@@ -80,7 +122,7 @@ const en: Dict = {
   backHome: "Back to home",
   checkEmail: "If an account exists, an email has been sent.",
   checkEmailTitle: "Check your email",
-  checkEmailBody: "A verification link was sent. Open it to activate your account.",
+  checkEmailBody: "A verification link was sent. Open it to activate the account.",
   verifyEmail: "Verify email",
   verifyEmailBody: "Confirm your address to activate the account.",
   invalidCredentials: "Invalid email or password.",
@@ -91,6 +133,48 @@ const en: Dict = {
   status: "Status",
   site: "Site",
   family: "Family",
+  newApplication: "New application",
+  continueDraft: "Continue draft",
+  viewApplication: "View application",
+  chooseSite: "Choose a residence",
+  chooseSiteHelp: "Select an active, verified site to start a draft.",
+  noSitesAvailable: "No sites are accepting applications right now.",
+  startDraft: "Create draft",
+  draftProgress: "Progress",
+  stepResident: "Resident",
+  stepContact: "Contact",
+  stepReview: "Review and consent",
+  residentPreferredName: "Preferred name",
+  residentBirthYear: "Birth year",
+  contactName: "Contact name",
+  contactEmail: "Contact email",
+  contactPhone: "Contact phone",
+  preferredMoveMonth: "Preferred move month (YYYY-MM)",
+  urgencyNote: "Operational note (no medical content)",
+  saveContinue: "Save and continue",
+  backToList: "Back to applications",
+  reviewTitle: "Review before submitting",
+  reviewHelp:
+    "This information will be shared with the residence. No medical content is collected at this step.",
+  consentPrivacy: "I have read the privacy notice and agree to processing of this data.",
+  consentShareWithSite:
+    "I authorize HavenApply to share this application with the selected residence site.",
+  submitApplication: "Submit application",
+  submissionConfirmed: "Application submitted",
+  submissionConfirmedBody: "Your request is stored on the server. Keep the reference number.",
+  referenceNumber: "Reference number",
+  openStatus: "View status",
+  statusDRAFT: "Draft",
+  statusSUBMITTED: "Submitted",
+  statusUNDER_REVIEW: "Under review",
+  statusNEEDS_DOCUMENTS: "Documents needed",
+  statusWAITLISTED: "Waitlisted",
+  statusACCEPTED: "Accepted",
+  statusREJECTED: "Rejected",
+  statusWITHDRAWN: "Withdrawn",
+  validationError: "Please complete the required fields.",
+  history: "History",
+  city: "City",
 };
 
 const catalogs: Record<Locale, Dict> = { fr, en };
@@ -98,4 +182,10 @@ const catalogs: Record<Locale, Dict> = { fr, en };
 export function createT(locale: Locale) {
   const table = catalogs[locale] ?? catalogs.fr;
   return (key: keyof typeof fr) => table[key] ?? en[key] ?? key;
+}
+
+export function statusLabel(locale: Locale, status: string): string {
+  const t = createT(locale);
+  const key = `status${status}` as keyof typeof fr;
+  return t(key);
 }

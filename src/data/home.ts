@@ -25,13 +25,13 @@ export const homeNav = {
 } as const;
 
 export const homeHero = {
-  pill: "Demande d'admission 100 % en ligne",
-  title: "Fini les dossiers papier. Une demande, toutes les résidences.",
+  pill: "Tout votre parcours d'admission au même endroit",
+  title: "Préparez, envoyez et suivez vos demandes d'admission en ligne",
   lead:
-    "Plus de formulaires papier à imprimer, à faxer ou à déposer sur place. Vous remplissez le dossier une seule fois sur HavenApply et vous l'envoyez en ligne à toutes les résidences que vous choisissez, d'un même clic.",
-  ctaPrimary: "Déposer ma demande en ligne",
-  ctaSecondary: "Voir comment ça marche",
-  note: "Gratuit pour les familles. Aucun déplacement, aucun papier, aucun engagement.",
+    "Créez votre dossier à votre rythme, ajoutez vos documents et transmettez-le aux résidences de votre choix. Suivez ensuite chaque demande et les prochaines étapes depuis un seul espace.",
+  ctaPrimary: "Commencer mon dossier",
+  ctaSecondary: "Découvrir le fonctionnement",
+  note: "Avancez à votre rythme. Rien n'est envoyé sans votre accord.",
   photoAlt: "Une fille adulte et sa mère âgée, assises ensemble à la maison",
 } as const;
 

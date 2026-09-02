@@ -10,13 +10,13 @@ export const fr = {
   "hp.nav.menu": "Menu",
   "hp.nav.close": "Fermer",
 
-  "hp.hero.pill": "Demande d'admission 100 % en ligne",
-  "hp.hero.title": "Envoyez votre demande d'admission en ligne, en quelques clics",
+  "hp.hero.pill": "Tout votre parcours d'admission au même endroit",
+  "hp.hero.title": "Préparez, envoyez et suivez vos demandes d'admission en ligne",
   "hp.hero.lead":
-    "Le dossier se remplit en quelques minutes, puis nous vous recommandons les résidences qui correspondent vraiment aux besoins de votre proche, à votre budget et à votre secteur. Vous cochez celles que vous retenez, la demande part à toutes en même temps.",
-  "hp.hero.ctaPrimary": "Déposer ma demande en ligne",
-  "hp.hero.ctaSecondary": "Voir comment ça marche",
-  "hp.hero.note": "Gratuit pour les familles. Aucun déplacement, aucun papier, aucun engagement.",
+    "Créez votre dossier à votre rythme, ajoutez vos documents et transmettez-le aux résidences de votre choix. Suivez ensuite chaque demande et les prochaines étapes depuis un seul espace.",
+  "hp.hero.ctaPrimary": "Commencer mon dossier",
+  "hp.hero.ctaSecondary": "Découvrir le fonctionnement",
+  "hp.hero.note": "Avancez à votre rythme. Rien n'est envoyé sans votre accord.",
   "hp.hero.photoAlt": "Une fille adulte et sa mère âgée, assises ensemble à la maison",
 
   "hp.proof.aria": "HavenApply en chiffres",

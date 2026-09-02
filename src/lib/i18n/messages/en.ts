@@ -13,13 +13,13 @@ export const en: Messages = {
   "hp.nav.menu": "Menu",
   "hp.nav.close": "Close",
 
-  "hp.hero.pill": "100% online admission application",
-  "hp.hero.title": "Send your admission application online, in a few clicks",
+  "hp.hero.pill": "Your residence applications, all in one place",
+  "hp.hero.title": "Prepare, send and track your applications online",
   "hp.hero.lead":
-    "The file takes a few minutes to complete, then we recommend residences that truly match your loved one’s needs, your budget, and your area. You select the ones you want—the application goes to all of them at once.",
-  "hp.hero.ctaPrimary": "Submit my application online",
+    "Build your application at your own pace, add your documents and send it to the residences you choose. Then follow every application and next step from one place.",
+  "hp.hero.ctaPrimary": "Start my application",
   "hp.hero.ctaSecondary": "See how it works",
-  "hp.hero.note": "Free for families. No travel, no paperwork, no commitment.",
+  "hp.hero.note": "Move at your own pace. Nothing is sent without your approval.",
   "hp.hero.photoAlt": "An adult daughter and her elderly mother sitting together at home",
 
   "hp.proof.aria": "HavenApply at a glance",

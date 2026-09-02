@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
+import { Logo } from "@/components/brand/Logo";
 import {
   homeCompanion,
   homeCta,
@@ -50,29 +51,6 @@ function CheckIcon() {
   );
 }
 
-function Brand({ footer = false }: { footer?: boolean }) {
-  return (
-    <Link href="/" className={footer ? "al-footer-brand" : "al-brand"}>
-      <Image
-        src="/brand/havenapply-logo.png"
-        alt="HavenApply"
-        width={footer ? 26 : 34}
-        height={footer ? 26 : 34}
-        className={footer ? undefined : "al-brand-mark"}
-        style={
-          footer
-            ? undefined
-            : { width: 34, height: 34, borderRadius: 8, objectFit: "cover" }
-        }
-        priority={!footer}
-      />
-      <span className={footer ? undefined : "al-brand-name"}>
-        {footer ? homeFooter.brand : "HavenApply"}
-      </span>
-    </Link>
-  );
-}
-
 export function AccueilLanding() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
@@ -93,7 +71,7 @@ export function AccueilLanding() {
     <div className={`al ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="al-header">
         <div className="al-header-inner">
-          <Brand />
+          <Logo size="nav" className="al-logo" />
           <nav className="al-nav" aria-label="Navigation principale">
             {navItems.map((item) => (
               <a key={item.href} href={item.href}>
@@ -371,7 +349,7 @@ export function AccueilLanding() {
 
       <footer className="al-footer">
         <div className="al-footer-inner">
-          <Brand footer />
+          <Logo size="nav" light className="al-logo-footer" />
           <p className="al-footer-tag">{homeFooter.tagline}</p>
           <nav className="al-footer-links" aria-label="Pied de page">
             <a href={homeLinks.comment}>{homeFooter.how}</a>

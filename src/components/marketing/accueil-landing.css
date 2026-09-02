@@ -86,27 +86,12 @@ html {
   margin: 0 auto;
 }
 
-.al-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: var(--ink);
+.al-logo {
   flex-shrink: 0;
 }
 
-.al-brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.al-brand-name {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 1;
+.al-logo-footer {
+  flex-shrink: 0;
 }
 
 .al-nav {
@@ -858,27 +843,6 @@ html {
   gap: 16px 28px;
 }
 
-.al-footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--on-dark);
-  text-decoration: none;
-}
-
-.al-footer-brand img {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  object-fit: cover;
-}
-
-.al-footer-brand span {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 16px;
-}
-
 .al-footer-tag {
   font-size: 14px;
   margin: 0;
@@ -934,15 +898,6 @@ html {
 
   .al-header-inner {
     flex-wrap: wrap;
-  }
-
-  .al-brand-mark {
-    width: 32px;
-    height: 32px;
-  }
-
-  .al-brand-name {
-    font-size: 19px;
   }
 
   .al-nav,

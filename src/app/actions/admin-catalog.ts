@@ -190,6 +190,7 @@ export async function updateSiteAction(locale: string, siteId: string, formData:
       actorUserId: session.user.id,
       siteId,
       fields: {
+        organizationId: String(formData.get("organizationId") || "") || undefined,
         name: String(formData.get("name") || ""),
         slug: String(formData.get("slug") || "") || undefined,
         city: String(formData.get("city") || "") || null,

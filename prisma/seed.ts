@@ -1,53 +1,308 @@
-import bcrypt from "bcryptjs";
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient, Role, StaffPermission } from "@prisma/client";
+import { hashPassword, generateRawToken, hashToken } from "../src/lib/crypto";
 
 const prisma = new PrismaClient();
+const DEV_PASSWORD = "DevOnlyPass123!";
 
-/**
- * Development-only accounts. Every seeded user has isDevAccount=true.
- * Passwords are printed once in the seed output — never use in production.
- */
+async function upsertUser(input: {
+  email: string;
+  name: string;
+  role: Role;
+  passwordHash: string;
+}) {
+  return prisma.user.upsert({
+    where: { email: input.email },
+    update: {
+      name: input.name,
+      role: input.role,
+      passwordHash: input.passwordHash,
+      isDevAccount: true,
+      emailVerified: new Date(),
+    },
+    create: {
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      passwordHash: input.passwordHash,
+      isDevAccount: true,
+      emailVerified: new Date(),
+      notificationPreference: { create: {} },
+    },
+  });
+}
+
 async function main() {
-  const password = "DevOnlyPass123!";
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await hashPassword(DEV_PASSWORD);
 
-  const accounts = [
-    {
-      email: "family.dev@havenapply.local",
-      name: "Dev Family",
-      role: Role.FAMILY,
-    },
-    {
-      email: "staff.dev@havenapply.local",
-      name: "Dev Staff",
-      role: Role.STAFF,
-    },
-  ] as const;
+  const familyA = await upsertUser({
+    email: "family.a@havenapply.local",
+    name: "Family A Owner",
+    role: "FAMILY",
+    passwordHash,
+  });
+  const familyB = await upsertUser({
+    email: "family.b@havenapply.local",
+    name: "Family B Owner",
+    role: "FAMILY",
+    passwordHash,
+  });
+  const staffSite1 = await upsertUser({
+    email: "staff.site1@havenapply.local",
+    name: "Staff Site 1",
+    role: "STAFF",
+    passwordHash,
+  });
+  const staffOther = await upsertUser({
+    email: "staff.other@havenapply.local",
+    name: "Staff Other Site",
+    role: "STAFF",
+    passwordHash,
+  });
+  const admin = await upsertUser({
+    email: "admin.dev@havenapply.local",
+    name: "Dev Admin",
+    role: "ADMIN",
+    passwordHash,
+  });
 
-  for (const account of accounts) {
-    await prisma.user.upsert({
-      where: { email: account.email },
-      update: {
-        name: account.name,
-        role: account.role,
-        passwordHash,
-        isDevAccount: true,
+  // Legacy aliases used by earlier e2e tests
+  await upsertUser({
+    email: "family.dev@havenapply.local",
+    name: "Dev Family",
+    role: "FAMILY",
+    passwordHash,
+  });
+  await upsertUser({
+    email: "staff.dev@havenapply.local",
+    name: "Dev Staff",
+    role: "STAFF",
+    passwordHash,
+  });
+
+  const profileA = await prisma.familyProfile.upsert({
+    where: { id: "seed-family-a" },
+    update: { displayName: "Family A", ownerUserId: familyA.id },
+    create: {
+      id: "seed-family-a",
+      displayName: "Family A",
+      ownerUserId: familyA.id,
+      memberships: {
+        create: { userId: familyA.id, role: "OWNER", acceptedAt: new Date() },
       },
-      create: {
-        email: account.email,
-        name: account.name,
-        role: account.role,
-        passwordHash,
-        isDevAccount: true,
-        emailVerified: new Date(),
+    },
+  });
+
+  const profileB = await prisma.familyProfile.upsert({
+    where: { id: "seed-family-b" },
+    update: { displayName: "Family B", ownerUserId: familyB.id },
+    create: {
+      id: "seed-family-b",
+      displayName: "Family B",
+      ownerUserId: familyB.id,
+      memberships: {
+        create: { userId: familyB.id, role: "OWNER", acceptedAt: new Date() },
+      },
+    },
+  });
+
+  // Ensure memberships if profiles already existed without them
+  await prisma.caregiverMembership.upsert({
+    where: {
+      familyProfileId_userId: { familyProfileId: profileA.id, userId: familyA.id },
+    },
+    update: { role: "OWNER", acceptedAt: new Date() },
+    create: {
+      familyProfileId: profileA.id,
+      userId: familyA.id,
+      role: "OWNER",
+      acceptedAt: new Date(),
+    },
+  });
+  await prisma.caregiverMembership.upsert({
+    where: {
+      familyProfileId_userId: { familyProfileId: profileB.id, userId: familyB.id },
+    },
+    update: { role: "OWNER", acceptedAt: new Date() },
+    create: {
+      familyProfileId: profileB.id,
+      userId: familyB.id,
+      role: "OWNER",
+      acceptedAt: new Date(),
+    },
+  });
+
+  const org = await prisma.residenceOrganization.upsert({
+    where: { slug: "demo-residences" },
+    update: { name: "Demo Residences Org" },
+    create: { name: "Demo Residences Org", slug: "demo-residences" },
+  });
+
+  const site1 = await prisma.residenceSite.upsert({
+    where: { id: "seed-site-1" },
+    update: { name: "Site One", city: "Québec", organizationId: org.id },
+    create: {
+      id: "seed-site-1",
+      name: "Site One",
+      city: "Québec",
+      organizationId: org.id,
+    },
+  });
+  const site2 = await prisma.residenceSite.upsert({
+    where: { id: "seed-site-2" },
+    update: { name: "Site Two", city: "Lévis", organizationId: org.id },
+    create: {
+      id: "seed-site-2",
+      name: "Site Two",
+      city: "Lévis",
+      organizationId: org.id,
+    },
+  });
+
+  async function ensureStaff(
+    userId: string,
+    organizationId: string,
+    siteId: string,
+    permissions: StaffPermission[],
+  ) {
+    const existing = await prisma.staffMembership.findFirst({
+      where: { userId, organizationId, siteId },
+    });
+    if (existing) {
+      await prisma.staffMembershipPermission.deleteMany({ where: { membershipId: existing.id } });
+      await prisma.staffMembershipPermission.createMany({
+        data: permissions.map((permission) => ({ membershipId: existing.id, permission })),
+      });
+      return existing;
+    }
+    return prisma.staffMembership.create({
+      data: {
+        userId,
+        organizationId,
+        siteId,
+        permissions: {
+          create: permissions.map((permission) => ({ permission })),
+        },
       },
     });
   }
 
-  console.log("Seeded DEV accounts (isDevAccount=true):");
-  for (const account of accounts) {
-    console.log(`  - ${account.role}: ${account.email} / ${password}`);
-  }
+  await ensureStaff(staffSite1.id, org.id, site1.id, [
+    "VIEW_APPLICATIONS",
+    "MANAGE_APPLICATIONS",
+    "MANAGE_DOCUMENTS",
+  ]);
+  await ensureStaff(staffOther.id, org.id, site2.id, [
+    "VIEW_APPLICATIONS",
+    "MANAGE_APPLICATIONS",
+  ]);
+
+  // Attach legacy staff.dev to site1
+  const legacyStaff = await prisma.user.findUniqueOrThrow({
+    where: { email: "staff.dev@havenapply.local" },
+  });
+  await ensureStaff(legacyStaff.id, org.id, site1.id, [
+    "VIEW_APPLICATIONS",
+    "MANAGE_APPLICATIONS",
+    "MANAGE_DOCUMENTS",
+    "MANAGE_STAFF",
+  ]);
+
+  const legacyFamily = await prisma.user.findUniqueOrThrow({
+    where: { email: "family.dev@havenapply.local" },
+  });
+  await prisma.caregiverMembership.upsert({
+    where: {
+      familyProfileId_userId: { familyProfileId: profileA.id, userId: legacyFamily.id },
+    },
+    update: { role: "EDITOR", acceptedAt: new Date() },
+    create: {
+      familyProfileId: profileA.id,
+      userId: legacyFamily.id,
+      role: "EDITOR",
+      acceptedAt: new Date(),
+    },
+  });
+
+  const appA1 = await prisma.application.upsert({
+    where: { publicRef: "HA-SEED-A1" },
+    update: {
+      familyProfileId: profileA.id,
+      siteId: site1.id,
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+    },
+    create: {
+      publicRef: "HA-SEED-A1",
+      familyProfileId: profileA.id,
+      siteId: site1.id,
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+      statusHistory: {
+        create: { toStatus: "SUBMITTED", changedByUserId: familyA.id, note: "Seeded" },
+      },
+    },
+  });
+
+  await prisma.application.upsert({
+    where: { publicRef: "HA-SEED-B2" },
+    update: {
+      familyProfileId: profileB.id,
+      siteId: site2.id,
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+    },
+    create: {
+      publicRef: "HA-SEED-B2",
+      familyProfileId: profileB.id,
+      siteId: site2.id,
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+      statusHistory: {
+        create: { toStatus: "SUBMITTED", changedByUserId: familyB.id, note: "Seeded" },
+      },
+    },
+  });
+
+  await prisma.document.upsert({
+    where: { id: "seed-doc-a1" },
+    update: {},
+    create: {
+      id: "seed-doc-a1",
+      familyProfileId: profileA.id,
+      applicationId: appA1.id,
+      storageKey: "seed/family-a/doc.pdf",
+      fileName: "id.pdf",
+      contentType: "application/pdf",
+      sizeBytes: 1024,
+      uploadedByUserId: familyA.id,
+    },
+  });
+
+  // Sample unused invitation token hash (raw not printed — for schema presence only)
+  const inviteRaw = generateRawToken(16);
+  await prisma.staffInvitation.upsert({
+    where: { tokenHash: hashToken("seed-invite-placeholder") },
+    update: {},
+    create: {
+      organizationId: org.id,
+      siteId: site1.id,
+      email: "invitee@havenapply.local",
+      tokenHash: hashToken("seed-invite-placeholder"),
+      invitedByUserId: staffSite1.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      permissions: { create: [{ permission: "VIEW_APPLICATIONS" }] },
+    },
+  });
+  void inviteRaw;
+
+  console.log("Seeded DEV multi-tenant accounts (isDevAccount=true, password shared):");
+  console.log(`  password: ${DEV_PASSWORD}`);
+  console.log("  FAMILY A:", familyA.email);
+  console.log("  FAMILY B:", familyB.email);
+  console.log("  STAFF site1:", staffSite1.email);
+  console.log("  STAFF site2:", staffOther.email);
+  console.log("  ADMIN:", admin.email);
+  console.log("  legacy family.dev / staff.dev also seeded");
 }
 
 main()

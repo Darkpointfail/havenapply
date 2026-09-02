@@ -52,11 +52,11 @@ jobs:
         run: npm ci
       - name: Prisma generate
         run: npx prisma generate
+      - name: Migrate + seed
+        run: npx prisma migrate deploy && npm run db:seed
       - name: Lint
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Unit tests
+      - name: Unit + permission tests
         run: npm test
-      - name: Migrate + seed
-        run: npx prisma migrate deploy && npm run db:seed

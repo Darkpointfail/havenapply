@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { createT, isLocale, type Locale } from "@/lib/i18n";
 import { AuthCard } from "@/components/AuthCard";
-import { getCsrfToken, CSRF_FIELD } from "@/lib/csrf";
-import { resetAction } from "@/app/actions/auth";
+import { verifyAction } from "@/app/actions/auth";
+import { verifyEmail } from "@/lib/auth-actions";
+import { dashboardPathForRole } from "@/lib/paths";
 
-export default async function ResetPasswordPage({
+export default async function VerifyEmailPage({
   params,
   searchParams,
 }: {
@@ -16,27 +17,26 @@ export default async function ResetPasswordPage({
   const locale = raw as Locale;
   const t = createT(locale);
   const q = await searchParams;
-  const csrfToken = await getCsrfToken();
+
+  // Auto-verify when link is opened with token+email (GET).
+  if (q.token && q.email && !q.error) {
+    const result = await verifyEmail({ email: q.email, token: q.token });
+    if (result.ok) {
+      redirect(dashboardPathForRole(result.role, locale));
+    }
+  }
 
   return (
-    <AuthCard title={t("resetPassword")}>
-      {q.error ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">Token invalid or expired.</p>
+    <AuthCard title={t("verifyEmail")}>
+      <p className="mb-4 text-sm opacity-70">{t("verifyEmailBody")}</p>
+      {q.error || (q.token && q.email) ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          Token invalid or expired.
+        </p>
       ) : null}
-      <form action={resetAction.bind(null, locale)} className="space-y-4">
-        <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
+      <form action={verifyAction.bind(null, locale)} className="space-y-4">
         <input type="hidden" name="token" value={q.token || ""} />
         <input type="hidden" name="email" value={q.email || ""} />
-        <label className="block text-sm">
-          <span className="mb-1 block opacity-70">{t("newPassword")}</span>
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
-          />
-        </label>
         <button
           type="submit"
           className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"

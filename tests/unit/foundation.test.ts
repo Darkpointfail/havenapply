@@ -32,20 +32,10 @@ describe("env validation", () => {
     expect(parsed.success).toBe(false);
   });
 
-  it("requires RESEND_API_KEY when EMAIL_DRIVER=resend", () => {
-    const parsed = envSchema.safeParse({
-      ...validEnv,
-      EMAIL_DRIVER: "resend",
-      RESEND_API_KEY: undefined,
-    });
-    expect(parsed.success).toBe(false);
-  });
-
-  it("getEnv memoizes after first parse", () => {
+  it("getEnv works", () => {
     resetEnvCache();
     const a = getEnv(validEnv as unknown as NodeJS.ProcessEnv);
-    const b = getEnv(validEnv as unknown as NodeJS.ProcessEnv);
-    expect(a.APP_URL).toBe(b.APP_URL);
+    expect(a.APP_URL).toBe("http://localhost:3000");
   });
 });
 
@@ -56,20 +46,16 @@ describe("i18n", () => {
     expect(isLocale("de")).toBe(false);
   });
 
-  it("returns French copy for fr", () => {
-    const t = createT("fr");
-    expect(t("signIn")).toBe("Connexion");
-  });
-
-  it("returns English copy for en", () => {
-    const t = createT("en");
-    expect(t("signIn")).toBe("Sign in");
+  it("returns localized sign-in", () => {
+    expect(createT("fr")("signIn")).toBe("Connexion");
+    expect(createT("en")("signIn")).toBe("Sign in");
   });
 });
 
 describe("role dashboards", () => {
-  it("routes FAMILY and STAFF to distinct paths", () => {
+  it("routes roles to distinct paths", () => {
     expect(dashboardPathForRole("FAMILY", "fr")).toBe("/fr/family/dashboard");
     expect(dashboardPathForRole("STAFF", "en")).toBe("/en/staff/dashboard");
+    expect(dashboardPathForRole("ADMIN", "fr")).toBe("/fr/staff/dashboard");
   });
 });

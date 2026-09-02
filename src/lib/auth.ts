@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getEnv } from "@/lib/env";
 import { SESSION_COOKIE } from "@/lib/auth-actions";
+import { hashToken } from "@/lib/crypto";
 
 export type AppSession = {
   user: {
@@ -13,14 +14,15 @@ export type AppSession = {
     name?: string | null;
     role: Role;
     isDevAccount: boolean;
+    emailVerified: boolean;
   };
   expires: string;
+  sessionId: string;
 };
 
 /**
- * Auth.js is wired with the Prisma adapter (database sessions). Password auth
- * creates Session rows directly (`createDatabaseSession`). Session reads go
- * through Prisma so we never enable the Credentials+JWT-only path.
+ * Auth.js Prisma adapter remains for Account/Session model compatibility.
+ * Password sessions are created in auth-actions and resolved here via hashed tokens.
  */
 export const { handlers, signOut } = NextAuth(() => {
   const env = getEnv();
@@ -41,30 +43,33 @@ export const { handlers, signOut } = NextAuth(() => {
 
 export async function auth(): Promise<AppSession | null> {
   const jar = await cookies();
-  const token =
+  const raw =
     jar.get(SESSION_COOKIE)?.value ||
     jar.get(`__Secure-${SESSION_COOKIE}`)?.value;
-  if (!token) return null;
+  if (!raw) return null;
 
-  const row = await prisma.session.findUnique({
-    where: { sessionToken: token },
+  const sessionTokenHash = hashToken(raw);
+  const row = await prisma.session.findFirst({
+    where: {
+      sessionTokenHash,
+      revokedAt: null,
+      expires: { gt: new Date() },
+    },
     include: { user: true },
   });
-  if (!row || row.expires < new Date()) {
-    if (row) {
-      await prisma.session.delete({ where: { sessionToken: token } }).catch(() => undefined);
-    }
-    return null;
-  }
+
+  if (!row) return null;
 
   return {
+    sessionId: row.id,
+    expires: row.expires.toISOString(),
     user: {
       id: row.user.id,
       email: row.user.email,
       name: row.user.name,
       role: row.user.role,
       isDevAccount: row.user.isDevAccount,
+      emailVerified: Boolean(row.user.emailVerified),
     },
-    expires: row.expires.toISOString(),
   };
 }

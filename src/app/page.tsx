@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
-import { HomePageView } from "@/components/marketing/HomePageView";
+import { AccueilLanding } from "@/components/marketing/AccueilLanding";
+import { homeMeta } from "@/data/home";
 
 export const metadata: Metadata = {
-  title: "HavenApply — Submit your admission application online",
-  description:
-    "Complete the file in a few minutes, then we recommend residences that truly match your loved one's needs, your budget, and your area. Select the ones you want; the application goes to all of them at once.",
+  title: homeMeta.title,
+  description: homeMeta.description,
+  openGraph: {
+    title: homeMeta.title,
+    description: homeMeta.description,
+    images: [
+      {
+        url: homeMeta.ogImage,
+        width: 1200,
+        height: 630,
+        alt: "HavenApply — Demande d'admission en résidence",
+      },
+    ],
+  },
 };
 
 export default function HomePage() {
-  return <HomePageView />;
+  return <AccueilLanding />;
 }

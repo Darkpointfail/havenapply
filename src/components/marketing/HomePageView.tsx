@@ -1,7 +1,8 @@
 "use client";
 
-import { PublicHomePage } from "@/components/marketing/PublicHomePage";
+import { AccueilLanding } from "@/components/marketing/AccueilLanding";
 
+/** Alias conservé pour les imports existants. */
 export function HomePageView() {
-  return <PublicHomePage />;
+  return <AccueilLanding />;
 }

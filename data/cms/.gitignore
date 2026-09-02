@@ -1,2 +1,0 @@
-# Raw CMS downloads (rebuild with npm run cms:build)
-data/cms/*.csv

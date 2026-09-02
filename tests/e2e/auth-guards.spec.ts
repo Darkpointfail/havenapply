@@ -4,7 +4,7 @@ test.describe("public auth pages", () => {
   test("home redirects anonymous users to locale home", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/fr\/?$/);
-    await expect(page.getByRole("heading")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("sign-in page is reachable", async ({ page }) => {

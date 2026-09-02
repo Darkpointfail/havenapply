@@ -306,10 +306,10 @@ export function PublicHomePage({
   return (
     <div className={`hp ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="hp-header">
-        <div className="hp-wrap flex h-[68px] items-center justify-between gap-4">
-          <Logo href={`/${locale}`} size="nav" className="!ml-0 !translate-y-0" />
+        <div className="hp-wrap hp-header-inner">
+          <Logo href={`/${locale}`} size="nav" className="!ml-0 !translate-y-0 shrink-0" />
 
-          <nav className="hp-desktop-nav flex items-center gap-7">
+          <nav className="hp-header-nav hp-desktop-nav" aria-label="Navigation">
             {nav.map((item) => (
               <a key={item.href} href={item.href} className="hp-nav-link">
                 {item.label}
@@ -317,14 +317,20 @@ export function PublicHomePage({
             ))}
           </nav>
 
-          <div className="hp-desktop-nav flex items-center gap-3">
+          <div className="hp-header-actions hp-desktop-nav">
             <LocaleSwitcher locale={locale} compact />
             {signedIn ? (
               <>
                 <Link href={accountHome} className="hp-btn-ghost">
                   {t("hp.nav.mySpace")}
                 </Link>
-                <button type="button" className="hp-btn-ghost" onClick={() => { window.location.href = `/${locale}/sign-in`; }}>
+                <button
+                  type="button"
+                  className="hp-btn-ghost"
+                  onClick={() => {
+                    window.location.href = `/${locale}/sign-in`;
+                  }}
+                >
                   {t("hp.nav.signOut")}
                 </button>
               </>

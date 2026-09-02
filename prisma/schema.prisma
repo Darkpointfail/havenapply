@@ -31,11 +31,11 @@ enum ApplicationStatus {
   DRAFT
   SUBMITTED
   UNDER_REVIEW
-  INFO_REQUESTED
-  ACCEPTED
-  DECLINED
-  WITHDRAWN
+  NEEDS_DOCUMENTS
   WAITLISTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
 }
 
 enum AuthTokenPurpose {
@@ -161,11 +161,13 @@ model CaregiverMembership {
 }
 
 model ResidenceOrganization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  isActive   Boolean  @default(true)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   sites        ResidenceSite[]
   memberships  StaffMembership[]
@@ -177,6 +179,8 @@ model ResidenceSite {
   organizationId String
   name           String
   city           String?
+  isActive       Boolean  @default(true)
+  isVerified     Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -245,15 +249,37 @@ model StaffInvitationPermission {
   @@id([invitationId, permission])
 }
 
+/// Family → site admission application.
+/// Payload is intentionally minimized (identity/contact/consents only — no medical narrative).
 model Application {
   id              String            @id @default(cuid())
   familyProfileId String
   siteId          String
   status          ApplicationStatus @default(DRAFT)
-  publicRef       String?           @unique
+  /// Human-readable, non-guessable reference (e.g. HA-7K3MQ9WP). Assigned at draft creation.
+  publicRef       String            @unique
   submittedAt     DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  /// Preferred name of the person seeking residence (not a full legal dossier).
+  residentPreferredName String?
+  /// Birth year only — avoids storing a full date of birth until necessary.
+  residentBirthYear     Int?
+  contactName           String?
+  contactEmail          String?
+  contactPhone          String?
+  /// Preferred move window as YYYY-MM (optional).
+  preferredMoveMonth    String?
+  /// Short operational note only — never medical content. Max enforced in validation.
+  urgencyNote           String?
+  consentPrivacy        Boolean  @default(false)
+  consentShareWithSite  Boolean  @default(false)
+  consentAt             DateTime?
+  /// Wizard step 1..4 for draft UX (site → resident → contact → review).
+  draftStep             Int      @default(1)
+  /// Client-provided key making submit idempotent across retries.
+  submitIdempotencyKey  String?  @unique
 
   family        FamilyProfile              @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
   site          ResidenceSite              @relation(fields: [siteId], references: [id], onDelete: Restrict)

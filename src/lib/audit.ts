@@ -13,6 +13,9 @@ export type AuditAction =
   | "staff.invitation_accepted"
   | "document.viewed"
   | "document.downloaded"
+  | "application.created"
+  | "application.viewed"
+  | "application.submitted"
   | "application.status_changed";
 
 /**

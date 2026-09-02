@@ -1,4 +1,4 @@
-import type { Role, StaffPermission } from "@prisma/client";
+import { CaregiverRole, type Role, type StaffPermission } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export class AuthzError extends Error {
@@ -28,6 +28,24 @@ export async function assertCanAccessFamily(userId: string, familyProfileId: str
     },
   });
   if (!membership) throw new AuthzError("FAMILY_NOT_FOUND", 404);
+}
+
+/** OWNER/EDITOR may create, edit, submit, withdraw. VIEWER is read-only. */
+export async function assertCanMutateFamily(
+  userId: string,
+  familyProfileId: string,
+  role?: Role,
+) {
+  if (role === "ADMIN") return;
+  const membership = await prisma.caregiverMembership.findFirst({
+    where: {
+      userId,
+      familyProfileId,
+      acceptedAt: { not: null },
+      role: { in: [CaregiverRole.OWNER, CaregiverRole.EDITOR] },
+    },
+  });
+  if (!membership) throw new AuthzError("FORBIDDEN", 403);
 }
 
 export async function listAccessibleSiteIds(userId: string): Promise<string[] | "ALL"> {

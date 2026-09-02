@@ -133,28 +133,53 @@ async function main() {
 
   const org = await prisma.residenceOrganization.upsert({
     where: { slug: "demo-residences" },
-    update: { name: "Demo Residences Org" },
-    create: { name: "Demo Residences Org", slug: "demo-residences" },
+    update: {
+      name: "Demo Residences Org",
+      isActive: true,
+      isVerified: true,
+    },
+    create: {
+      name: "Demo Residences Org",
+      slug: "demo-residences",
+      isActive: true,
+      isVerified: true,
+    },
   });
 
   const site1 = await prisma.residenceSite.upsert({
     where: { id: "seed-site-1" },
-    update: { name: "Site One", city: "Québec", organizationId: org.id },
+    update: {
+      name: "Site One",
+      city: "Québec",
+      organizationId: org.id,
+      isActive: true,
+      isVerified: true,
+    },
     create: {
       id: "seed-site-1",
       name: "Site One",
       city: "Québec",
       organizationId: org.id,
+      isActive: true,
+      isVerified: true,
     },
   });
   const site2 = await prisma.residenceSite.upsert({
     where: { id: "seed-site-2" },
-    update: { name: "Site Two", city: "Lévis", organizationId: org.id },
+    update: {
+      name: "Site Two",
+      city: "Lévis",
+      organizationId: org.id,
+      isActive: true,
+      isVerified: true,
+    },
     create: {
       id: "seed-site-2",
       name: "Site Two",
       city: "Lévis",
       organizationId: org.id,
+      isActive: true,
+      isVerified: true,
     },
   });
 
@@ -230,6 +255,14 @@ async function main() {
       siteId: site1.id,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      residentPreferredName: "Alice A",
+      residentBirthYear: 1942,
+      contactName: "Family A Owner",
+      contactEmail: "family.a@havenapply.local",
+      contactPhone: "+14185550101",
+      consentPrivacy: true,
+      consentShareWithSite: true,
+      consentAt: new Date(),
     },
     create: {
       publicRef: "HA-SEED-A1",
@@ -237,6 +270,14 @@ async function main() {
       siteId: site1.id,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      residentPreferredName: "Alice A",
+      residentBirthYear: 1942,
+      contactName: "Family A Owner",
+      contactEmail: "family.a@havenapply.local",
+      contactPhone: "+14185550101",
+      consentPrivacy: true,
+      consentShareWithSite: true,
+      consentAt: new Date(),
       statusHistory: {
         create: { toStatus: "SUBMITTED", changedByUserId: familyA.id, note: "Seeded" },
       },
@@ -250,6 +291,14 @@ async function main() {
       siteId: site2.id,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      residentPreferredName: "Bernard B",
+      residentBirthYear: 1938,
+      contactName: "Family B Owner",
+      contactEmail: "family.b@havenapply.local",
+      contactPhone: "+14185550102",
+      consentPrivacy: true,
+      consentShareWithSite: true,
+      consentAt: new Date(),
     },
     create: {
       publicRef: "HA-SEED-B2",
@@ -257,6 +306,14 @@ async function main() {
       siteId: site2.id,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      residentPreferredName: "Bernard B",
+      residentBirthYear: 1938,
+      contactName: "Family B Owner",
+      contactEmail: "family.b@havenapply.local",
+      contactPhone: "+14185550102",
+      consentPrivacy: true,
+      consentShareWithSite: true,
+      consentAt: new Date(),
       statusHistory: {
         create: { toStatus: "SUBMITTED", changedByUserId: familyB.id, note: "Seeded" },
       },

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guards";
-import { createT, isLocale, type Locale } from "@/lib/i18n";
+import { createT, isLocale, statusLabel, type Locale } from "@/lib/i18n";
 import { listStaffApplications } from "@/lib/applications";
 
 export default async function StaffDashboardPage({
@@ -32,15 +32,18 @@ export default async function StaffDashboardPage({
         ) : (
           <ul className="mt-4 divide-y divide-[var(--line)]">
             {applications.map((app) => (
-              <li key={app.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+              <li
+                key={app.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
+              >
                 <div>
                   <p className="font-medium">
                     {app.family.displayName} → {app.site.name}
                   </p>
-                  <p className="opacity-60">{app.publicRef || app.id}</p>
+                  <p className="opacity-60">{app.publicRef}</p>
                 </div>
                 <span className="rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium">
-                  {app.status}
+                  {statusLabel(locale, app.status)}
                 </span>
               </li>
             ))}

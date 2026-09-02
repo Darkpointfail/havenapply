@@ -32,6 +32,12 @@ export default async function HomePage({
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
+          href={`/${locale}/residences`}
+          className="rounded-full border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-medium"
+        >
+          {t("catalog")}
+        </Link>
+        <Link
           href={`/${locale}/sign-up`}
           className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-sm font-medium text-white"
         >

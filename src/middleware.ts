@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   "/check-email",
   "/access-denied",
   "/invite",
+  "/residences",
   "/api/auth",
 ];
 
@@ -81,7 +82,10 @@ export async function middleware(request: NextRequest) {
   if (!isPublic && !sessionToken) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/sign-in`;
-    url.searchParams.set("next", pathname);
+    // Preserve query (e.g. siteClaim) so deep-link apply survives auth.
+    const nextTarget = `${pathname}${request.nextUrl.search || ""}`;
+    url.search = "";
+    url.searchParams.set("next", nextTarget);
     return NextResponse.redirect(url);
   }
 

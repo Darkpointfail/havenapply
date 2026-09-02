@@ -70,6 +70,30 @@ enum InvitationStatus {
   REVOKED
 }
 
+/// Public catalog / admin lifecycle for a physical residence site.
+enum SiteStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  VERIFIED
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum DataSourceKind {
+  GOVERNMENT
+  FACILITY
+  EDITORIAL
+  UNKNOWN
+}
+
+enum DataConfidence {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
 /// Auth.js-compatible user. Global role is coarse; staff site access uses StaffMembership.
 model User {
   id            String    @id @default(cuid())
@@ -215,13 +239,18 @@ model CaregiverInvitation {
 }
 
 model ResidenceOrganization {
-  id         String   @id @default(cuid())
-  name       String
-  slug       String   @unique
-  isActive   Boolean  @default(true)
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  /// Operating organization (legal/operator), distinct from physical sites.
+  legalName   String?
+  phone       String?
+  email       String?
+  website     String?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   sites        ResidenceSite[]
   memberships  StaffMembership[]
@@ -229,22 +258,103 @@ model ResidenceOrganization {
 }
 
 model ResidenceSite {
-  id             String   @id @default(cuid())
+  id             String     @id @default(cuid())
   organizationId String
   name           String
+  /// Stable public slug for canonical URLs.
+  slug           String     @unique
+  status         SiteStatus @default(DRAFT)
+  /// Legacy mirrors of status for older gates (kept in sync by admin services).
+  isActive       Boolean    @default(false)
+  isVerified     Boolean    @default(false)
+
+  /// Physical address — empty means unknown, never "not offered".
+  addressLine1   String?
+  addressLine2   String?
   city           String?
-  isActive       Boolean  @default(true)
-  isVerified     Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  region         String?
+  postalCode     String?
+  country        String?    @default("CA")
+  latitude       Float?
+  longitude      Float?
+
+  /// Public contact (facility-provided or editorial — see provenance).
+  phone          String?
+  email          String?
+  website        String?
+
+  /// Official identifiers (e.g. Québec RLS) — never invent.
+  rlsNumber      String?
+  officialCategories Json?
+
+  /// Editorial description (explicitly editorial source).
+  descriptionEditorial String?
+
+  /// Separated facts — each is ProvenancedValue JSON or null (= unknown).
+  /// Shape: { value, source, collectedAt?, verifiedAt?, method?, confidence }
+  servicesFact      Json?
+  unitsFact         Json?
+  pricingFact       Json?
+  availabilityFact  Json?
+  autonomyFact      Json?
+  photosFact        Json?
+
+  /// Site-level identity provenance.
+  dataSource         DataSourceKind @default(UNKNOWN)
+  collectedAt        DateTime?
+  verifiedAt         DateTime?
+  verificationMethod String?
+  confidence         DataConfidence @default(UNKNOWN)
+
+  /// Duplicate clustering (soft) — points at preferred canonical site when merged.
+  duplicateOfSiteId  String?
+  publishedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organization ResidenceOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  duplicateOf  ResidenceSite?        @relation("SiteDuplicates", fields: [duplicateOfSiteId], references: [id], onDelete: SetNull)
+  duplicates   ResidenceSite[]       @relation("SiteDuplicates")
   memberships  StaffMembership[]
   invitations  StaffInvitation[]
   invitationSites StaffInvitationSite[]
   applications Application[]
+  changeHistory SiteChangeHistory[]
+  slugRedirects SiteSlugRedirect[]
 
   @@index([organizationId])
+  @@index([status])
+  @@index([city, region])
+  @@index([rlsNumber])
+  @@index([duplicateOfSiteId])
+}
+
+model SiteSlugRedirect {
+  id        String   @id @default(cuid())
+  fromSlug  String   @unique
+  siteId    String
+  createdAt DateTime @default(now())
+
+  site ResidenceSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+}
+
+model SiteChangeHistory {
+  id           String   @id @default(cuid())
+  siteId       String
+  actorUserId  String?
+  action       String
+  /// Diff snapshot — never store secrets.
+  beforeJson   Json?
+  afterJson    Json?
+  note         String?
+  createdAt    DateTime @default(now())
+
+  site ResidenceSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, createdAt])
 }
 
 model StaffMembership {

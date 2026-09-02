@@ -41,7 +41,7 @@ async function assertSiteAcceptsSubmissions(siteId: string) {
     include: { organization: true },
   });
   if (!site) throw new AuthzError("SITE_NOT_FOUND", 404);
-  if (!site.isActive || !site.isVerified) {
+  if (site.status !== "ACTIVE" || !site.isActive || !site.isVerified) {
     throw new ApplicationError("SITE_NOT_ACCEPTING", 422);
   }
   if (!site.organization.isActive || !site.organization.isVerified) {
@@ -53,13 +53,90 @@ async function assertSiteAcceptsSubmissions(siteId: string) {
 export async function listActiveVerifiedSites() {
   return prisma.residenceSite.findMany({
     where: {
+      status: "ACTIVE",
       isActive: true,
       isVerified: true,
+      duplicateOfSiteId: null,
       organization: { isActive: true, isVerified: true },
     },
     include: { organization: { select: { id: true, name: true, slug: true } } },
     orderBy: [{ city: "asc" }, { name: "asc" }],
   });
+}
+
+/**
+ * Create draft for an ACTIVE site. Prefers existing open draft for same family+site (no duplicate).
+ */
+export async function createDraftApplication(input: {
+  userId: string;
+  role: Role;
+  familyProfileId?: string;
+  siteId: string;
+  ipAddress?: string | null;
+}) {
+  if (input.role !== "FAMILY" && input.role !== "ADMIN") {
+    throw new AuthzError("FORBIDDEN", 403);
+  }
+
+  const familyProfileId =
+    input.familyProfileId || (await getPrimaryFamilyProfileId(input.userId));
+  await assertCanMutateFamily(input.userId, familyProfileId, input.role);
+  await assertSiteAcceptsSubmissions(input.siteId);
+
+  const existingDraft = await prisma.application.findFirst({
+    where: {
+      familyProfileId,
+      siteId: input.siteId,
+      status: "DRAFT",
+    },
+    include: { site: true, family: true },
+  });
+  if (existingDraft) return existingDraft;
+
+  let publicRef = generateApplicationPublicRef();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const created = await prisma.application.create({
+        data: {
+          familyProfileId,
+          siteId: input.siteId,
+          status: "DRAFT",
+          publicRef,
+          draftStep: 2,
+          statusHistory: {
+            create: {
+              toStatus: "DRAFT",
+              changedByUserId: input.userId,
+              note: "Draft created",
+            },
+          },
+        },
+        include: { site: true, family: true },
+      });
+
+      await writeAudit({
+        actorUserId: input.userId,
+        action: "application.created",
+        entityType: "Application",
+        entityId: created.id,
+        metadata: { publicRef: created.publicRef, siteId: input.siteId },
+        ipAddress: input.ipAddress,
+      });
+
+      return created;
+    } catch (error) {
+      const code =
+        typeof error === "object" && error && "code" in error
+          ? String((error as { code: string }).code)
+          : "";
+      if (code === "P2002") {
+        publicRef = generateApplicationPublicRef();
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new ApplicationError("PUBLIC_REF_COLLISION", 500);
 }
 
 export async function getPrimaryFamilyProfileId(userId: string): Promise<string> {
@@ -201,68 +278,6 @@ export async function getApplicationForUser(
   }
 
   return app;
-}
-
-export async function createDraftApplication(input: {
-  userId: string;
-  role: Role;
-  familyProfileId?: string;
-  siteId: string;
-  ipAddress?: string | null;
-}) {
-  if (input.role !== "FAMILY" && input.role !== "ADMIN") {
-    throw new AuthzError("FORBIDDEN", 403);
-  }
-
-  const familyProfileId =
-    input.familyProfileId || (await getPrimaryFamilyProfileId(input.userId));
-  await assertCanMutateFamily(input.userId, familyProfileId, input.role);
-  await assertSiteAcceptsSubmissions(input.siteId);
-
-  let publicRef = generateApplicationPublicRef();
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      const created = await prisma.application.create({
-        data: {
-          familyProfileId,
-          siteId: input.siteId,
-          status: "DRAFT",
-          publicRef,
-          draftStep: 2,
-          statusHistory: {
-            create: {
-              toStatus: "DRAFT",
-              changedByUserId: input.userId,
-              note: "Draft created",
-            },
-          },
-        },
-        include: { site: true, family: true },
-      });
-
-      await writeAudit({
-        actorUserId: input.userId,
-        action: "application.created",
-        entityType: "Application",
-        entityId: created.id,
-        metadata: { publicRef: created.publicRef, siteId: input.siteId },
-        ipAddress: input.ipAddress,
-      });
-
-      return created;
-    } catch (error) {
-      const code =
-        typeof error === "object" && error && "code" in error
-          ? String((error as { code: string }).code)
-          : "";
-      if (code === "P2002") {
-        publicRef = generateApplicationPublicRef();
-        continue;
-      }
-      throw error;
-    }
-  }
-  throw new ApplicationError("PUBLIC_REF_COLLISION", 500);
 }
 
 export async function updateDraftApplication(input: {

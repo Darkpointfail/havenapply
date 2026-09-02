@@ -16,9 +16,9 @@ export default async function AdminHubPage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("adminConsole")}</h1>
-        <p className="mt-2 text-sm opacity-70">
+      <div className="ha-card">
+        <h1 className="ha-title">{t("adminConsole")}</h1>
+        <p className="ha-subtitle">
           {t("welcome")}, {session.user.name || session.user.email}
         </p>
       </div>
@@ -29,14 +29,14 @@ export default async function AdminHubPage({
           className="rounded-xl border border-[var(--line)] bg-white p-6 transition hover:border-[var(--brand)]"
         >
           <h2 className="text-lg font-semibold">{t("adminOrgs")}</h2>
-          <p className="mt-2 text-sm opacity-70">{t("createOrg")}</p>
+          <p className="ha-subtitle">{t("createOrg")}</p>
         </Link>
         <Link
           href={`/${locale}/admin/sites`}
           className="rounded-xl border border-[var(--line)] bg-white p-6 transition hover:border-[var(--brand)]"
         >
           <h2 className="text-lg font-semibold">{t("adminSites")}</h2>
-          <p className="mt-2 text-sm opacity-70">{t("createSite")}</p>
+          <p className="ha-subtitle">{t("createSite")}</p>
         </Link>
       </div>
     </section>

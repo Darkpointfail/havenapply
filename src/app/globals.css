@@ -100,10 +100,11 @@
 }
 
 body {
-  background: var(--bg);
+  background: var(--bg-soft);
   color: var(--ink);
-  font-family: var(--font-public-sans), var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-public-sans), system-ui, sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -121,4 +122,111 @@ a {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Shared app surface language (portals + catalog) */
+.ha-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .ha-card {
+    padding: 2rem;
+  }
+}
+
+.ha-title {
+  font-family: var(--font-source-serif), Georgia, serif;
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.ha-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.ha-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.ha-input:focus {
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+.ha-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  border-radius: 12px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: filter 0.15s var(--ease), background 0.15s var(--ease), transform 0.1s var(--ease);
+}
+
+.ha-btn-primary {
+  background: var(--brand-strong);
+  color: #fff;
+  box-shadow: var(--shadow-xs);
+}
+
+.ha-btn-primary:hover {
+  filter: brightness(0.96);
+}
+
+.ha-btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.ha-btn-secondary:hover {
+  background: var(--bg-soft);
+  border-color: var(--line-strong);
+}
+
+.ha-list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.ha-list-row:last-child {
+  border-bottom: 0;
+}
+
+.ha-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
 }

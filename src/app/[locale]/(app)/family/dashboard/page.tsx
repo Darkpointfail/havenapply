@@ -18,62 +18,52 @@ export default async function FamilyDashboardPage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("familyDashboard")}</h1>
-            <p className="mt-2 text-sm opacity-70">
+            <p className="ha-pill">{t("appName")}</p>
+            <h1 className="ha-title mt-3">{t("familyDashboard")}</h1>
+            <p className="ha-subtitle">
               {t("welcome")}, {session.user.name || session.user.email}
               {session.user.isDevAccount ? " · DEV" : ""}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/${locale}/family/members`}
-              className="rounded-full border border-[var(--line)] px-4 py-2 text-sm"
-            >
+            <Link href={`/${locale}/family/members`} className="ha-btn ha-btn-secondary">
               {t("manageMembers")}
             </Link>
-            <Link
-              href={`/${locale}/family/applications/new`}
-              className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white"
-            >
+            <Link href={`/${locale}/family/applications/new`} className="ha-btn ha-btn-primary">
               {t("newApplication")}
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h2 className="text-lg font-semibold">{t("applications")}</h2>
+      <div className="ha-card">
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--ink)]">{t("applications")}</h2>
         {applications.length === 0 ? (
-          <p className="mt-4 text-sm opacity-70">{t("emptyFamily")}</p>
+          <p className="mt-4 text-sm text-[var(--ink-muted)]">{t("emptyFamily")}</p>
         ) : (
-          <ul className="mt-4 divide-y divide-[var(--line)]">
+          <ul className="mt-2">
             {applications.map((app) => (
-              <li
-                key={app.id}
-                className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
-              >
+              <li key={app.id} className="ha-list-row text-sm">
                 <div>
-                  <p className="font-medium">{app.site.name}</p>
-                  <p className="opacity-60">{app.publicRef}</p>
+                  <p className="font-semibold text-[var(--ink)]">{app.site.name}</p>
+                  <p className="text-[var(--ink-muted)]">{app.publicRef}</p>
+                  <p className="mt-1">
+                    <span className="ha-pill">{statusLabel(locale, app.status)}</span>
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium">
-                    {statusLabel(locale, app.status)}
-                  </span>
-                  <Link
-                    href={
-                      app.status === "DRAFT"
-                        ? `/${locale}/family/applications/${app.id}/edit`
-                        : `/${locale}/family/applications/${app.id}`
-                    }
-                    className="underline opacity-80 hover:opacity-100"
-                  >
-                    {app.status === "DRAFT" ? t("continueDraft") : t("viewApplication")}
-                  </Link>
-                </div>
+                <Link
+                  href={
+                    app.status === "DRAFT"
+                      ? `/${locale}/family/applications/${app.id}/edit`
+                      : `/${locale}/family/applications/${app.id}`
+                  }
+                  className="ha-btn ha-btn-secondary"
+                >
+                  {app.status === "DRAFT" ? t("continueDraft") : t("viewApplication")}
+                </Link>
               </li>
             ))}
           </ul>

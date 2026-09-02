@@ -49,10 +49,11 @@
 .hp-h1 {
   font-family: var(--hp-serif);
   font-weight: 600;
-  font-size: 56px;
-  line-height: 1.08;
-  text-wrap: balance;
+  font-size: clamp(32px, 3.6vw, 44px);
+  line-height: 1.2;
   color: var(--hp-ink);
+  text-wrap: unset;
+  white-space: normal;
 }
 
 .hp-h2 {
@@ -172,15 +173,68 @@
   border-bottom: 1px solid var(--hp-border);
 }
 
+.hp-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 68px;
+  flex-wrap: nowrap;
+}
+
+.hp-desktop-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.hp-header-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 18px;
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+  overflow: visible;
+}
+
+.hp-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .hp-nav-link {
   color: var(--hp-ink-body);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   transition: color 140ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .hp-nav-link:hover {
   color: var(--hp-green);
+}
+
+.hp-header .hp-btn,
+.hp-header .hp-btn-ghost,
+.hp-header .hp-btn-outline {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hp-header .hp-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.hp-header .hp-btn-ghost {
+  font-size: 14px;
 }
 
 .hp-chat-shadow {
@@ -198,7 +252,9 @@
   .hp-h2 {
     font-size: 30px;
   }
-  .hp-desktop-nav {
+  .hp-desktop-nav,
+  .hp-header-nav,
+  .hp-header-actions {
     display: none !important;
   }
   .hp-mobile-toggle {

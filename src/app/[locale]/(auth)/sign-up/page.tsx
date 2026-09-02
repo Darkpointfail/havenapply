@@ -35,15 +35,15 @@ export default async function SignUpPage({
   const viaInvite = Boolean(inviteKind && inviteToken);
 
   return (
-    <AuthCard title={t("signUp")}>
+    <AuthCard title={t("signUp")} locale={locale}>
       {q.error === "email_taken" ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{t("emailTaken")}</p>
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">{t("emailTaken")}</p>
       ) : null}
       {q.error === "rate_limited" ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{t("rateLimited")}</p>
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">{t("rateLimited")}</p>
       ) : null}
       {q.error === "invite_invalid" ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">
           {t("inviteNotFound")}
         </p>
       ) : null}
@@ -63,7 +63,7 @@ export default async function SignUpPage({
         ) : null}
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("name")}</span>
-          <input name="name" required className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" />
+          <input name="name" required className="ha-input" />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("email")}</span>
@@ -72,7 +72,7 @@ export default async function SignUpPage({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+            className="ha-input"
             data-testid="sign-up-email"
           />
         </label>
@@ -84,14 +84,14 @@ export default async function SignUpPage({
             required
             minLength={8}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+            className="ha-input"
             data-testid="sign-up-password"
           />
         </label>
         {!viaInvite ? (
           <label className="block text-sm">
             <span className="mb-1 block opacity-70">{t("role")}</span>
-            <select name="role" className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" defaultValue="FAMILY">
+            <select name="role" className="ha-input" defaultValue="FAMILY">
               <option value="FAMILY">{t("roleFamily")}</option>
               <option value="STAFF">{t("roleStaff")}</option>
             </select>
@@ -105,7 +105,7 @@ export default async function SignUpPage({
         )}
         <button
           type="submit"
-          className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          className="ha-btn ha-btn-primary w-full"
           data-testid="sign-up-submit"
         >
           {t("submit")}

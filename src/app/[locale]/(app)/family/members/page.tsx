@@ -46,7 +46,7 @@ export default async function FamilyMembersPage({
   return (
     <section className="mx-auto max-w-xl space-y-6">
       <div className="rounded-2xl border border-[var(--line)] bg-white p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("familyMembersTitle")}</h1>
+        <h1 className="ha-title">{t("familyMembersTitle")}</h1>
         <p className="mt-2 text-sm opacity-70">{t("familyMembersHelp")}</p>
         {q.ok ? (
           <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

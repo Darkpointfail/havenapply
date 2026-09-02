@@ -18,10 +18,10 @@ export default async function VerifyEmailPage({
 
   // Cookie session must be set in a Server Action — do not call verifyEmail during RSC render.
   return (
-    <AuthCard title={t("verifyEmail")}>
+    <AuthCard title={t("verifyEmail")} locale={locale}>
       <p className="mb-4 text-sm opacity-70">{t("verifyEmailBody")}</p>
       {q.error ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">
           Token invalid or expired.
         </p>
       ) : null}
@@ -30,7 +30,7 @@ export default async function VerifyEmailPage({
         <input type="hidden" name="email" value={q.email || ""} />
         <button
           type="submit"
-          className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          className="ha-btn ha-btn-primary w-full"
           data-testid="verify-email-submit"
         >
           {t("submit")}

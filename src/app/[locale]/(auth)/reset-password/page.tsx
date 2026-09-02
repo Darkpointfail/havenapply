@@ -19,9 +19,9 @@ export default async function ResetPasswordPage({
   const csrfToken = await getCsrfToken();
 
   return (
-    <AuthCard title={t("resetPassword")}>
+    <AuthCard title={t("resetPassword")} locale={locale}>
       {q.error ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">Token invalid or expired.</p>
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">Token invalid or expired.</p>
       ) : null}
       <form action={resetAction.bind(null, locale)} className="space-y-4">
         <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
@@ -34,12 +34,12 @@ export default async function ResetPasswordPage({
             type="password"
             required
             minLength={8}
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+            className="ha-input"
           />
         </label>
         <button
           type="submit"
-          className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          className="ha-btn ha-btn-primary w-full"
         >
           {t("submit")}
         </button>

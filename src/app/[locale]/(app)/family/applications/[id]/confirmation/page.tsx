@@ -33,7 +33,7 @@ export default async function ConfirmationPage({
   return (
     <section className="mx-auto max-w-xl space-y-6">
       <div className="rounded-2xl border border-[var(--line)] bg-white p-8 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("submissionConfirmed")}</h1>
+        <h1 className="ha-title">{t("submissionConfirmed")}</h1>
         <p className="mt-3 text-sm opacity-70">{t("submissionConfirmedBody")}</p>
         <p className="mt-6 text-xs uppercase tracking-wide opacity-50">{t("referenceNumber")}</p>
         <p className="mt-1 font-mono text-xl font-semibold">{app.publicRef}</p>

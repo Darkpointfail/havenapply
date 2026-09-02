@@ -48,8 +48,8 @@ export default async function PublicSitePage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{site.name}</h1>
+      <div className="ha-card">
+        <h1 className="ha-title">{site.name}</h1>
         <p className="mt-1 text-sm opacity-60">{site.organization.name}</p>
 
         {site.descriptionEditorial ? (

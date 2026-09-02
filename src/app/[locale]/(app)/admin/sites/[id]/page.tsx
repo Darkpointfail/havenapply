@@ -76,10 +76,10 @@ export default async function EditSitePage({
 
   return (
     <section className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("editSite")}</h1>
+            <h1 className="ha-title">{t("editSite")}</h1>
             <p className="mt-2 text-sm opacity-70">
               <Link href={`/${locale}/admin/sites`} className="underline">
                 {t("adminSites")}
@@ -326,7 +326,7 @@ export default async function EditSitePage({
       </div>
 
       {duplicates.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+        <div className="ha-card">
           <h2 className="text-lg font-semibold">{t("duplicatesFound")}</h2>
           <ul className="mt-4 divide-y divide-[var(--line)]">
             {duplicates.map((dup) => (
@@ -353,7 +353,7 @@ export default async function EditSitePage({
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <h2 className="text-lg font-semibold">{t("changeHistory")}</h2>
         {site.changeHistory.length === 0 ? (
           <p className="mt-4 text-sm opacity-70">—</p>

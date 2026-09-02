@@ -10,8 +10,40 @@ datasource db {
 enum Role {
   FAMILY
   STAFF
+  ADMIN
 }
 
+enum CaregiverRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum StaffPermission {
+  VIEW_APPLICATIONS
+  MANAGE_APPLICATIONS
+  MANAGE_DOCUMENTS
+  MANAGE_STAFF
+  MANAGE_ORG
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  INFO_REQUESTED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  WAITLISTED
+}
+
+enum AuthTokenPurpose {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+/// Auth.js-compatible user. Global role is coarse; staff site access uses StaffMembership.
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -20,12 +52,21 @@ model User {
   passwordHash  String?
   image         String?
   role          Role      @default(FAMILY)
-  /// Seed / local-only accounts. Never treat as production users.
   isDevAccount  Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
+
+  accounts               Account[]
+  sessions               Session[]
+  authTokens             AuthToken[]
+  ownedFamilies          FamilyProfile[]          @relation("FamilyOwner")
+  caregiverMemberships   CaregiverMembership[]
+  staffMemberships       StaffMembership[]
+  staffInvitationsSent   StaffInvitation[]        @relation("InvitationInviter")
+  uploadedDocuments      Document[]               @relation("DocumentUploader")
+  statusChanges          ApplicationStatusHistory[] @relation("StatusChanger")
+  auditEvents            AuditEvent[]
+  notificationPreference NotificationPreference?
 }
 
 model Account {
@@ -46,18 +87,243 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+/// Revocable database sessions. Cookie holds raw token; DB stores SHA-256 hash.
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  sessionToken     String    @unique
+  sessionTokenHash String    @unique
+  userId           String
+  expires          DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  ipAddress        String?
+  userAgent        String?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
 }
 
+/// Legacy Auth.js verification table (kept for adapter compatibility).
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+/// One-time auth tokens (email verify / password reset). Only hashes are stored.
+model AuthToken {
+  id        String           @id @default(cuid())
+  userId    String?
+  email     String
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose])
+  @@index([expiresAt])
+}
+
+model FamilyProfile {
+  id          String   @id @default(cuid())
+  ownerUserId String
+  displayName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner        User                  @relation("FamilyOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  memberships  CaregiverMembership[]
+  applications Application[]
+  documents    Document[]
+
+  @@index([ownerUserId])
+}
+
+model CaregiverMembership {
+  id              String        @id @default(cuid())
+  familyProfileId String
+  userId          String
+  role            CaregiverRole @default(VIEWER)
+  invitedByUserId String?
+  acceptedAt      DateTime?
+  createdAt       DateTime      @default(now())
+
+  family FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([familyProfileId, userId])
+  @@index([userId])
+}
+
+model ResidenceOrganization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites        ResidenceSite[]
+  memberships  StaffMembership[]
+  invitations  StaffInvitation[]
+}
+
+model ResidenceSite {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  city           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization ResidenceOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships  StaffMembership[]
+  invitations  StaffInvitation[]
+  applications Application[]
+
+  @@index([organizationId])
+}
+
+model StaffMembership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  /// Null = organization-wide access to all sites.
+  siteId         String?
+  createdAt      DateTime @default(now())
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization ResidenceOrganization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site         ResidenceSite?         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  permissions  StaffMembershipPermission[]
+
+  @@unique([userId, organizationId, siteId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([siteId])
+}
+
+model StaffMembershipPermission {
+  membershipId String
+  permission   StaffPermission
+
+  membership StaffMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, permission])
+}
+
+model StaffInvitation {
+  id             String   @id @default(cuid())
+  organizationId String
+  siteId         String?
+  email          String
+  tokenHash      String   @unique
+  invitedByUserId String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  organization ResidenceOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  site         ResidenceSite?        @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  invitedBy    User                  @relation("InvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  permissions  StaffInvitationPermission[]
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model StaffInvitationPermission {
+  invitationId String
+  permission   StaffPermission
+
+  invitation StaffInvitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@id([invitationId, permission])
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  familyProfileId String
+  siteId          String
+  status          ApplicationStatus @default(DRAFT)
+  publicRef       String?           @unique
+  submittedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  family        FamilyProfile              @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
+  site          ResidenceSite              @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  statusHistory ApplicationStatusHistory[]
+  documents     Document[]
+
+  @@index([familyProfileId])
+  @@index([siteId])
+  @@index([status])
+}
+
+model ApplicationStatusHistory {
+  id              String             @id @default(cuid())
+  applicationId   String
+  fromStatus      ApplicationStatus?
+  toStatus        ApplicationStatus
+  changedByUserId String?
+  /// Operational note only — never medical content.
+  note            String?
+  createdAt       DateTime           @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation("StatusChanger", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  familyProfileId String
+  applicationId   String?
+  storageKey      String
+  fileName        String
+  contentType     String
+  sizeBytes       Int
+  uploadedByUserId String
+  createdAt       DateTime @default(now())
+
+  family     FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  uploadedBy User          @relation("DocumentUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([familyProfileId])
+  @@index([applicationId])
+}
+
+/// Security / ops audit trail. Never store secrets or medical content in metadata.
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorUserId String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  emailEnabled        Boolean @default(true)
+  applicationUpdates  Boolean @default(true)
+  documentUpdates     Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

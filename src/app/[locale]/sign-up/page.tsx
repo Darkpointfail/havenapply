@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { registerUser } from "@/lib/auth-actions";
 import { auth } from "@/lib/auth";
 import { createT, isLocale, type Locale } from "@/lib/i18n";
-import { dashboardPathForRole } from "@/lib/paths";
 import { AuthCard } from "@/components/AuthCard";
+import { getCsrfToken, CSRF_FIELD } from "@/lib/csrf";
+import { registerAction } from "@/app/actions/auth";
 
 export default async function SignUpPage({
   params,
@@ -18,38 +18,25 @@ export default async function SignUpPage({
   const locale = raw as Locale;
   const t = createT(locale);
   const session = await auth();
-  if (session?.user) redirect(dashboardPathForRole(session.user.role, locale));
-  const q = await searchParams;
-
-  async function action(formData: FormData) {
-    "use server";
-    const result = await registerUser({
-      name: String(formData.get("name") || ""),
-      email: String(formData.get("email") || ""),
-      password: String(formData.get("password") || ""),
-      role: String(formData.get("role") || "FAMILY"),
-    });
-    if (!result.ok) {
-      redirect(`/${locale}/sign-up?error=email`);
-    }
-    redirect(dashboardPathForRole(result.role, locale));
+  if (session?.user?.emailVerified) {
+    redirect(session.user.role === "FAMILY" ? `/${locale}/family/dashboard` : `/${locale}/staff/dashboard`);
   }
+  const q = await searchParams;
+  const csrfToken = await getCsrfToken();
 
   return (
     <AuthCard title={t("signUp")}>
-      {q.error === "email" ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {t("emailTaken")}
-        </p>
+      {q.error === "email_taken" ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{t("emailTaken")}</p>
       ) : null}
-      <form action={action} className="space-y-4">
+      {q.error === "rate_limited" ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{t("rateLimited")}</p>
+      ) : null}
+      <form action={registerAction.bind(null, locale)} className="space-y-4">
+        <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("name")}</span>
-          <input
-            name="name"
-            required
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
-          />
+          <input name="name" required className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("email")}</span>
@@ -74,11 +61,7 @@ export default async function SignUpPage({
         </label>
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("role")}</span>
-          <select
-            name="role"
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
-            defaultValue="FAMILY"
-          >
+          <select name="role" className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" defaultValue="FAMILY">
             <option value="FAMILY">{t("roleFamily")}</option>
             <option value="STAFF">{t("roleStaff")}</option>
           </select>

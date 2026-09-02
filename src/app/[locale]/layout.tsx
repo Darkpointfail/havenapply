@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { destroyDatabaseSession } from "@/lib/auth-actions";
 import { createT, isLocale, type Locale } from "@/lib/i18n";
 import { dashboardPathForRole } from "@/lib/paths";
+import { logoutAction } from "@/app/actions/auth";
 
 export default async function LocaleLayout({
   children,
@@ -38,15 +38,9 @@ export default async function LocaleLayout({
                   href={dashboardPathForRole(session.user.role, locale)}
                   className="opacity-80 hover:opacity-100"
                 >
-                  {session.user.role === "STAFF" ? t("staffDashboard") : t("familyDashboard")}
+                  {session.user.role === "FAMILY" ? t("familyDashboard") : t("staffDashboard")}
                 </Link>
-                <form
-                  action={async () => {
-                    "use server";
-                    await destroyDatabaseSession();
-                    redirect(`/${locale}/sign-in`);
-                  }}
-                >
+                <form action={logoutAction.bind(null, locale)}>
                   <button type="submit" className="opacity-80 hover:opacity-100">
                     {t("signOut")}
                   </button>

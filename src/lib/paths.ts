@@ -1,5 +1,6 @@
 import type { Role } from "@prisma/client";
 
 export function dashboardPathForRole(role: Role, locale: string) {
-  return role === "STAFF" ? `/${locale}/staff/dashboard` : `/${locale}/family/dashboard`;
+  if (role === "STAFF" || role === "ADMIN") return `/${locale}/staff/dashboard`;
+  return `/${locale}/family/dashboard`;
 }

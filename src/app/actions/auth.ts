@@ -55,18 +55,24 @@ export async function registerAction(locale: string, formData: FormData) {
 }
 
 export async function loginAction(locale: string, formData: FormData) {
-  const result = await loginUser({
-    email: String(formData.get("email") || ""),
-    password: String(formData.get("password") || ""),
-    csrfToken: String(formData.get("csrfToken") || ""),
-  });
+  const next = String(formData.get("next") || "");
+  let result: Awaited<ReturnType<typeof loginUser>>;
+  try {
+    result = await loginUser({
+      email: String(formData.get("email") || ""),
+      password: String(formData.get("password") || ""),
+      csrfToken: String(formData.get("csrfToken") || ""),
+    });
+  } catch {
+    const q = new URLSearchParams({ error: "invalid_credentials" });
+    if (next) q.set("next", next);
+    redirect(`/${locale}/sign-in?${q.toString()}`);
+  }
   if (!result.ok) {
-    const next = String(formData.get("next") || "");
     const q = new URLSearchParams({ error: result.error.toLowerCase() });
     if (next) q.set("next", next);
     redirect(`/${locale}/sign-in?${q.toString()}`);
   }
-  const next = String(formData.get("next") || "");
   if (next.startsWith(`/${locale}/`) || next.startsWith("/fr/") || next.startsWith("/en/")) {
     redirect(next);
   }

@@ -43,6 +43,7 @@ export async function createDraftAction(locale: string, formData: FormData) {
 
   // Prefer signed siteClaim — never trust a client-substituted siteId when claim is present.
   const claim = String(formData.get("siteClaim") || "");
+  const rawSiteId = String(formData.get("siteId") || "");
   let siteId = "";
   if (claim) {
     const { verifySiteClaim } = await import("@/lib/site-claim");
@@ -50,9 +51,15 @@ export async function createDraftAction(locale: string, formData: FormData) {
     if (!verified) {
       errorRedirect(loc, "/family/applications/new", "INVALID_SITE_CLAIM");
     }
-    siteId = verified.siteId;
+    siteId = verified!.siteId;
+    // Ignore any conflicting siteId — substitution attempt cannot override claim.
+    void rawSiteId;
   } else {
-    siteId = String(formData.get("siteId") || "");
+    siteId = rawSiteId;
+  }
+
+  if (!siteId) {
+    errorRedirect(loc, "/family/applications/new", "SITE_REQUIRED");
   }
 
   try {

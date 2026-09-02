@@ -32,7 +32,7 @@ function requireAdmin(role: Role) {
 }
 
 async function uniqueSiteSlug(base: string, excludeId?: string) {
-  let slug = slugify(base);
+  const slug = slugify(base);
   for (let i = 0; i < 20; i++) {
     const candidate = i === 0 ? slug : `${slug}-${i + 1}`;
     const existing = await prisma.residenceSite.findFirst({

@@ -235,7 +235,7 @@ function AccountMenu() {
 
   const handleSignOut = () => {
     signOut();
-    router.push("/community/sign-in?signedOut=1");
+    router.push("/get-started?signedOut=1");
   };
 
   return (

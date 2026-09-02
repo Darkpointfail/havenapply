@@ -138,7 +138,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           nav={communityNav}
           homeHref={communityHome}
           badge="Admissions"
-          signOutHref="/community/sign-in?signedOut=1"
+          signOutHref="/get-started?signedOut=1"
         />
         <main className="flex-1 page-enter">{children}</main>
       </>

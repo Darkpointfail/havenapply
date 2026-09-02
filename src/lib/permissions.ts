@@ -93,7 +93,7 @@ export function canAccessInternalPortal(user: SessionUser | null | undefined): b
 }
 
 export function signInPathForRole(role: UserRole): string {
-  if (isFacilityRole(role)) return "/community/sign-in";
+  if (isFacilityRole(role)) return "/get-started";
   if (role === "internal") return "/internal/sign-in";
   return "/sign-in";
 }

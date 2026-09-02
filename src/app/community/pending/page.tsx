@@ -40,7 +40,7 @@ function PendingInner() {
             variant="ghost"
             onClick={() => {
               signOut();
-              window.location.href = "/community/sign-in";
+              window.location.href = "/get-started";
             }}
           >
             {t("Sign out")}

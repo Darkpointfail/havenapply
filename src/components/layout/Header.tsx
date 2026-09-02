@@ -95,10 +95,10 @@ export function Header() {
               onClick={() => {
                 signOut();
                 if (typeof window !== "undefined") {
-                  window.location.assign("/community/sign-in?signedOut=1");
+                  window.location.assign("/get-started?signedOut=1");
                   return;
                 }
-                router.push("/community/sign-in?signedOut=1");
+                router.push("/get-started?signedOut=1");
               }}
             >
               <LogOut size={14} /> Sign out

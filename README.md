@@ -107,27 +107,20 @@ remain Auth.js-compatible.
 
 ## Decisions
 
-1. **Greenfield foundation** on branch `cursor/platform-foundation-a002` — previous
-   demo UI, localStorage bridges, and site password gate were removed.
-2. **No admission domain data** in the UI yet — dashboards are intentionally empty.
-3. **Locale in the URL** (`/fr/...`, `/en/...`) with a tiny dictionary (not a full
-   CMS). Expand when product copy grows.
-4. **Password auth + DB sessions** via custom session creation compatible with
-   Auth.js cookie/adapter, rather than JWT-only Credentials.
+1. **Greenfield foundation** on branch `cursor/platform-foundation-a002`.
+2. **Password auth + DB sessions**: custom session creation (hashed token cookie
+   `haven.session`) + Auth.js Prisma adapter models; not Credentials+JWT.
+3. **Passwords**: Argon2id. **Auth tokens** (verify/reset): SHA-256 hashes only.
+4. **Authorization**: caregiver memberships for families; org/site staff
+   memberships + permissions for residences. Cross-tenant access returns 404.
 
 ## Remaining limits
 
-- No application/dossier/document product flows yet (foundation only).
-- No email verification gate on sign-up (reset flow sends mail; sign-up does not
-  require verified email yet).
-- Middleware role checks are coarse (cookie presence); fine-grained role
-  enforcement is server-side in pages.
-- Playwright role-isolation tests expect a seeded database and running app.
-- CI runs lint, typecheck, unit tests, migrate, and seed (not full Playwright
-  browser suite by default, to keep CI lean).
+- Document upload UI / signed download UI still minimal (services exist).
+- Staff invitation accept page not fully wired in UI (service + mail exist).
+- Middleware enforces cookie presence; fine-grained authz is server-side.
+- CI runs lint, typecheck, migrate, seed, vitest (Playwright local/optional).
 
 ## CI
 
-GitHub Actions workflow `.github/workflows/ci.yml` runs on `main` and
-`cursor/**` branches: install → prisma generate → lint → typecheck → vitest →
-migrate → seed against a Postgres service container.
+GitHub Actions: install → prisma generate → migrate + seed → lint → typecheck → vitest.

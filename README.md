@@ -20,7 +20,7 @@ PostgreSQL/Prisma, Auth.js database sessions, MinIO, and Mailpit.
 cp .env.example .env
 docker compose up -d
 npm install
-npx prisma migrate dev --name init
+npm run db:migrate
 npm run db:seed
 npm run dev
 ```
@@ -29,13 +29,17 @@ Open [http://localhost:3000](http://localhost:3000) (redirects to `/fr`).
 
 ### Dev accounts (seed only)
 
-| Role   | Email                         | Password         | Flag            |
-|--------|-------------------------------|------------------|-----------------|
-| FAMILY | `family.dev@havenapply.local` | `DevOnlyPass123!` | `isDevAccount` |
-| STAFF  | `staff.dev@havenapply.local`  | `DevOnlyPass123!` | `isDevAccount` |
+| Role   | Email                           | Password          | Flag            |
+|--------|---------------------------------|-------------------|-----------------|
+| FAMILY | `family.a@havenapply.local`     | `DevOnlyPass123!` | `isDevAccount`  |
+| FAMILY | `family.dev@havenapply.local`   | `DevOnlyPass123!` | `isDevAccount`  |
+| STAFF  | `staff.site1@havenapply.local`  | `DevOnlyPass123!` | `isDevAccount`  |
+| STAFF  | `staff.dev@havenapply.local`    | `DevOnlyPass123!` | `isDevAccount`  |
+| ADMIN  | `admin.dev@havenapply.local`    | `DevOnlyPass123!` | `isDevAccount`  |
 
 These accounts are explicitly marked `isDevAccount=true`. There is **no** open
-demo mode and **no** site-wide password gate.
+demo mode and **no** site-wide password gate. Seed may also create sample
+applications for local testing; the UI never hard-codes admission rows.
 
 ### Local services
 
@@ -107,7 +111,8 @@ remain Auth.js-compatible.
 
 ## Decisions
 
-1. **Greenfield foundation** on branch `cursor/platform-foundation-a002`.
+1. **Executable foundation** lives on `main` (this verification branch:
+   `cursor/platform-foundation-exec-a002`).
 2. **Password auth + DB sessions**: custom session creation (hashed token cookie
    `haven.session`) + Auth.js Prisma adapter models; not Credentials+JWT.
 3. **Passwords**: Argon2id. **Auth tokens** (verify/reset): SHA-256 hashes only.

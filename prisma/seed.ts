@@ -385,15 +385,22 @@ async function main() {
   const inviteRaw = generateRawToken(16);
   await prisma.staffInvitation.upsert({
     where: { tokenHash: hashToken("seed-invite-placeholder") },
-    update: {},
+    update: {
+      status: "PENDING",
+      orgRole: "VIEWER",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
     create: {
       organizationId: org.id,
       siteId: site1.id,
       email: "invitee@havenapply.local",
       tokenHash: hashToken("seed-invite-placeholder"),
       invitedByUserId: staffSite1.id,
+      status: "PENDING",
+      orgRole: "VIEWER",
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       permissions: { create: [{ permission: "VIEW_APPLICATIONS" }] },
+      sites: { create: [{ siteId: site1.id }] },
     },
   });
   void inviteRaw;

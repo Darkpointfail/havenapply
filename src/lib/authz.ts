@@ -12,7 +12,7 @@ export class AuthzError extends Error {
 
 export async function listAccessibleFamilyIds(userId: string): Promise<string[]> {
   const rows = await prisma.caregiverMembership.findMany({
-    where: { userId, acceptedAt: { not: null } },
+    where: { userId, acceptedAt: { not: null }, revokedAt: null },
     select: { familyProfileId: true },
   });
   return rows.map((r) => r.familyProfileId);
@@ -25,6 +25,7 @@ export async function assertCanAccessFamily(userId: string, familyProfileId: str
       userId,
       familyProfileId,
       acceptedAt: { not: null },
+      revokedAt: null,
     },
   });
   if (!membership) throw new AuthzError("FAMILY_NOT_FOUND", 404);
@@ -42,6 +43,7 @@ export async function assertCanMutateFamily(
       userId,
       familyProfileId,
       acceptedAt: { not: null },
+      revokedAt: null,
       role: { in: [CaregiverRole.OWNER, CaregiverRole.EDITOR] },
     },
   });
@@ -53,7 +55,7 @@ export async function listAccessibleSiteIds(userId: string): Promise<string[] | 
   if (user?.role === "ADMIN") return "ALL";
 
   const memberships = await prisma.staffMembership.findMany({
-    where: { userId },
+    where: { userId, revokedAt: null },
     include: { organization: { include: { sites: { select: { id: true } } } } },
   });
 
@@ -83,6 +85,7 @@ export async function getStaffMembershipForSite(userId: string, siteId: string) 
     where: {
       userId,
       organizationId: site.organizationId,
+      revokedAt: null,
       OR: [{ siteId: null }, { siteId: site.id }],
     },
   });
@@ -156,6 +159,7 @@ export async function assertStaffPermission(
     where: {
       userId,
       organizationId,
+      revokedAt: null,
       OR: [{ siteId: null }, ...(siteId ? [{ siteId }] : [])],
     },
     include: { permissions: true },

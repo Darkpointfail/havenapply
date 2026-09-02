@@ -27,12 +27,20 @@ export default async function FamilyDashboardPage({
               {session.user.isDevAccount ? " · DEV" : ""}
             </p>
           </div>
-          <Link
-            href={`/${locale}/family/applications/new`}
-            className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white"
-          >
-            {t("newApplication")}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/${locale}/family/members`}
+              className="rounded-full border border-[var(--line)] px-4 py-2 text-sm"
+            >
+              {t("manageMembers")}
+            </Link>
+            <Link
+              href={`/${locale}/family/applications/new`}
+              className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white"
+            >
+              {t("newApplication")}
+            </Link>
+          </div>
         </div>
       </div>
 

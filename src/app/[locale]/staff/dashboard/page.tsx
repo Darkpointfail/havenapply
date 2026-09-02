@@ -88,6 +88,14 @@ export default async function StaffDashboardPage({
           {t("welcome")}, {session.user.name || session.user.email}
           {session.user.isDevAccount ? " · DEV" : ""}
         </p>
+        <p className="mt-4">
+          <Link
+            href={`/${locale}/staff/members`}
+            className="text-sm underline opacity-80 hover:opacity-100"
+          >
+            {t("manageMembers")}
+          </Link>
+        </p>
       </div>
 
       <div className="rounded-2xl border border-[var(--line)] bg-white p-8">

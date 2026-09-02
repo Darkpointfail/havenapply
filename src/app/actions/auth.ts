@@ -12,15 +12,29 @@ import {
 import { dashboardPathForRole } from "@/lib/paths";
 
 export async function registerAction(locale: string, formData: FormData) {
+  const inviteKind = String(formData.get("inviteKind") || "");
+  const inviteToken = String(formData.get("inviteToken") || "");
   const result = await registerUser({
     name: String(formData.get("name") || ""),
     email: String(formData.get("email") || ""),
     password: String(formData.get("password") || ""),
     role: String(formData.get("role") || "FAMILY"),
     csrfToken: String(formData.get("csrfToken") || ""),
+    inviteKind: inviteKind === "caregiver" || inviteKind === "staff" ? inviteKind : undefined,
+    inviteToken: inviteToken || undefined,
   });
   if (!result.ok) {
-    redirect(`/${locale}/sign-up?error=${result.error.toLowerCase()}`);
+    const q = new URLSearchParams({ error: result.error.toLowerCase() });
+    if (inviteToken) q.set("inviteToken", inviteToken);
+    if (inviteKind) q.set("inviteKind", inviteKind);
+    redirect(`/${locale}/sign-up?${q.toString()}`);
+  }
+  if ("inviteKind" in result && result.inviteKind) {
+    redirect(
+      result.inviteKind === "staff"
+        ? `/${locale}/staff/dashboard?invite=accepted`
+        : `/${locale}/family/dashboard?invite=accepted`,
+    );
   }
   redirect(`/${locale}/check-email?email=${encodeURIComponent(String(formData.get("email") || ""))}`);
 }
@@ -32,7 +46,14 @@ export async function loginAction(locale: string, formData: FormData) {
     csrfToken: String(formData.get("csrfToken") || ""),
   });
   if (!result.ok) {
-    redirect(`/${locale}/sign-in?error=${result.error.toLowerCase()}`);
+    const next = String(formData.get("next") || "");
+    const q = new URLSearchParams({ error: result.error.toLowerCase() });
+    if (next) q.set("next", next);
+    redirect(`/${locale}/sign-in?${q.toString()}`);
+  }
+  const next = String(formData.get("next") || "");
+  if (next.startsWith(`/${locale}/`) || next.startsWith("/fr/") || next.startsWith("/en/")) {
+    redirect(next);
   }
   redirect(dashboardPathForRole(result.role, locale));
 }

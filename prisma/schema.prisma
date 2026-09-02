@@ -63,6 +63,13 @@ enum OutboxStatus {
   FAILED
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
 /// Auth.js-compatible user. Global role is coarse; staff site access uses StaffMembership.
 model User {
   id            String    @id @default(cuid())
@@ -83,6 +90,7 @@ model User {
   caregiverMemberships   CaregiverMembership[]
   staffMemberships       StaffMembership[]
   staffInvitationsSent   StaffInvitation[]        @relation("InvitationInviter")
+  caregiverInvitationsSent CaregiverInvitation[]  @relation("CaregiverInvitationInviter")
   uploadedDocuments      Document[]               @relation("DocumentUploader")
   statusChanges          ApplicationStatusHistory[] @relation("StatusChanger")
   auditEvents            AuditEvent[]
@@ -158,6 +166,7 @@ model FamilyProfile {
 
   owner        User                  @relation("FamilyOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
   memberships  CaregiverMembership[]
+  invitations  CaregiverInvitation[]
   applications Application[]
   documents    Document[]
 
@@ -171,6 +180,8 @@ model CaregiverMembership {
   role            CaregiverRole @default(VIEWER)
   invitedByUserId String?
   acceptedAt      DateTime?
+  /// Soft revoke — membership no longer grants access when set.
+  revokedAt       DateTime?
   createdAt       DateTime      @default(now())
 
   family FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
@@ -178,6 +189,29 @@ model CaregiverMembership {
 
   @@unique([familyProfileId, userId])
   @@index([userId])
+}
+
+/// Pending invite for a caregiver/proche aidant to join a family profile.
+model CaregiverInvitation {
+  id              String           @id @default(cuid())
+  familyProfileId String
+  email           String
+  /// Limited roles only at create-time (EDITOR/VIEWER). OWNER cannot be invited this way.
+  role            CaregiverRole    @default(VIEWER)
+  tokenHash       String           @unique
+  status          InvitationStatus @default(PENDING)
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime         @default(now())
+
+  family    FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
+  invitedBy User          @relation("CaregiverInvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([email, status])
+  @@index([familyProfileId, status])
+  @@index([expiresAt])
 }
 
 model ResidenceOrganization {
@@ -207,6 +241,7 @@ model ResidenceSite {
   organization ResidenceOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   memberships  StaffMembership[]
   invitations  StaffInvitation[]
+  invitationSites StaffInvitationSite[]
   applications Application[]
 
   @@index([organizationId])
@@ -220,6 +255,8 @@ model StaffMembership {
   siteId         String?
   /// OWNER/EDITOR may mutate admissions; VIEWER is read-only.
   orgRole        StaffOrgRole @default(EDITOR)
+  /// Soft revoke — membership no longer grants access when set.
+  revokedAt      DateTime?
   createdAt      DateTime    @default(now())
 
   user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -243,23 +280,40 @@ model StaffMembershipPermission {
 }
 
 model StaffInvitation {
-  id             String   @id @default(cuid())
-  organizationId String
-  siteId         String?
-  email          String
-  tokenHash      String   @unique
+  id              String           @id @default(cuid())
+  organizationId  String
+  /// Legacy single-site pointer; prefer `sites` for multi-site invites. Null + no sites = org-wide.
+  siteId          String?
+  email           String
+  tokenHash       String           @unique
+  status          InvitationStatus @default(PENDING)
+  orgRole         StaffOrgRole     @default(EDITOR)
   invitedByUserId String
-  expiresAt      DateTime
-  acceptedAt     DateTime?
-  createdAt      DateTime @default(now())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime         @default(now())
 
   organization ResidenceOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   site         ResidenceSite?        @relation(fields: [siteId], references: [id], onDelete: SetNull)
   invitedBy    User                  @relation("InvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Cascade)
   permissions  StaffInvitationPermission[]
+  sites        StaffInvitationSite[]
 
-  @@index([email])
+  @@index([email, status])
   @@index([organizationId])
+  @@index([expiresAt])
+}
+
+model StaffInvitationSite {
+  invitationId String
+  siteId       String
+
+  invitation StaffInvitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  site       ResidenceSite   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@id([invitationId, siteId])
+  @@index([siteId])
 }
 
 model StaffInvitationPermission {

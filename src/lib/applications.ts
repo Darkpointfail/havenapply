@@ -67,6 +67,7 @@ export async function getPrimaryFamilyProfileId(userId: string): Promise<string>
     where: {
       userId,
       acceptedAt: { not: null },
+      revokedAt: null,
       role: { in: [CaregiverRole.OWNER, CaregiverRole.EDITOR] },
     },
     orderBy: { createdAt: "asc" },

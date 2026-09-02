@@ -41,11 +41,32 @@ export async function createDraftAction(locale: string, formData: FormData) {
   const session = await requireRole("FAMILY", loc);
   await assertCsrf(String(formData.get(CSRF_FIELD) || ""));
 
+  // Prefer signed siteClaim — never trust a client-substituted siteId when claim is present.
+  const claim = String(formData.get("siteClaim") || "");
+  const rawSiteId = String(formData.get("siteId") || "");
+  let siteId = "";
+  if (claim) {
+    const { verifySiteClaim } = await import("@/lib/site-claim");
+    const verified = verifySiteClaim(claim);
+    if (!verified) {
+      errorRedirect(loc, "/family/applications/new", "INVALID_SITE_CLAIM");
+    }
+    siteId = verified!.siteId;
+    // Ignore any conflicting siteId — substitution attempt cannot override claim.
+    void rawSiteId;
+  } else {
+    siteId = rawSiteId;
+  }
+
+  if (!siteId) {
+    errorRedirect(loc, "/family/applications/new", "SITE_REQUIRED");
+  }
+
   try {
     const app = await createDraftApplication({
       userId: session.user.id,
       role: session.user.role,
-      siteId: String(formData.get("siteId") || ""),
+      siteId,
       ipAddress: await clientIp(),
     });
     redirect(`/${loc}/family/applications/${app.id}/edit`);

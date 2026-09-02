@@ -29,6 +29,9 @@ export default async function LocaleLayout({
             {t("appName")}
           </Link>
           <nav className="flex flex-wrap items-center gap-3 text-sm">
+            <Link href={`/${locale}/residences`} className="opacity-70 hover:opacity-100">
+              {t("catalog")}
+            </Link>
             <Link href={`/${other}`} className="opacity-70 hover:opacity-100">
               {other.toUpperCase()}
             </Link>
@@ -38,7 +41,11 @@ export default async function LocaleLayout({
                   href={dashboardPathForRole(session.user.role, locale)}
                   className="opacity-80 hover:opacity-100"
                 >
-                  {session.user.role === "FAMILY" ? t("familyDashboard") : t("staffDashboard")}
+                  {session.user.role === "ADMIN"
+                    ? t("adminConsole")
+                    : session.user.role === "FAMILY"
+                      ? t("familyDashboard")
+                      : t("staffDashboard")}
                 </Link>
                 <form action={logoutAction.bind(null, locale)}>
                   <button type="submit" className="opacity-80 hover:opacity-100">

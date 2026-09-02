@@ -14,6 +14,7 @@ import { dashboardPathForRole } from "@/lib/paths";
 export async function registerAction(locale: string, formData: FormData) {
   const inviteKind = String(formData.get("inviteKind") || "");
   const inviteToken = String(formData.get("inviteToken") || "");
+  const next = String(formData.get("next") || "");
   const result = await registerUser({
     name: String(formData.get("name") || ""),
     email: String(formData.get("email") || ""),
@@ -27,16 +28,30 @@ export async function registerAction(locale: string, formData: FormData) {
     const q = new URLSearchParams({ error: result.error.toLowerCase() });
     if (inviteToken) q.set("inviteToken", inviteToken);
     if (inviteKind) q.set("inviteKind", inviteKind);
+    if (next) q.set("next", next);
     redirect(`/${locale}/sign-up?${q.toString()}`);
   }
   if ("inviteKind" in result && result.inviteKind) {
+    if (
+      next.startsWith(`/${locale}/`) ||
+      next.startsWith("/fr/") ||
+      next.startsWith("/en/")
+    ) {
+      redirect(next);
+    }
     redirect(
       result.inviteKind === "staff"
         ? `/${locale}/staff/dashboard?invite=accepted`
         : `/${locale}/family/dashboard?invite=accepted`,
     );
   }
-  redirect(`/${locale}/check-email?email=${encodeURIComponent(String(formData.get("email") || ""))}`);
+  const checkQ = new URLSearchParams({
+    email: String(formData.get("email") || ""),
+  });
+  if (next.startsWith(`/${locale}/`) || next.startsWith("/fr/") || next.startsWith("/en/")) {
+    checkQ.set("next", next);
+  }
+  redirect(`/${locale}/check-email?${checkQ.toString()}`);
 }
 
 export async function loginAction(locale: string, formData: FormData) {

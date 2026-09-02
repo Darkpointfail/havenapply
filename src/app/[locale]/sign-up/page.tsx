@@ -54,6 +54,7 @@ export default async function SignUpPage({
       ) : null}
       <form action={registerAction.bind(null, locale)} className="space-y-4">
         <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
+        {q.next ? <input type="hidden" name="next" value={q.next} /> : null}
         {viaInvite ? (
           <>
             <input type="hidden" name="inviteKind" value={inviteKind} />

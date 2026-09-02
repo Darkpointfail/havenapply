@@ -155,10 +155,12 @@ describe("application loop integration", () => {
     const inactive = await prisma.residenceSite.create({
       data: {
         name: "Inactive Site",
+        slug: `inactive-site-${Date.now()}`,
         city: "Test",
         organizationId: (await prisma.residenceOrganization.findUniqueOrThrow({
           where: { slug: "demo-residences" },
         })).id,
+        status: "VERIFIED",
         isActive: false,
         isVerified: true,
       },

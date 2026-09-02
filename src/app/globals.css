@@ -1,23 +1,124 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f4f7f5;
-  --foreground: #14241e;
-  --brand: #0a6f63;
-  --card: #ffffff;
-  --line: #d5e0db;
+  /* sarcelle — --brand: remplissages décoratifs SEULEMENT (jamais sous du texte) */
+  --brand: #0f8a8a;
+  --brand-strong: #0b7373; /* boutons, liens, texte sarcelle — 5,6:1 sur blanc */
+  --brand-pale: #7ec9c9; /* accents sur fond sombre */
+  --brand-soft: #e7f6f6; /* pastilles, fonds légers */
+  --brand-on-dark: #a8e0e0; /* eyebrow sur fond sombre */
+  --brand-glow: rgba(11, 115, 115, 0.2);
+
+  /* neutres */
+  --ink: #1a1d23;
+  --ink-secondary: #4b5563; /* 7,4:1 */
+  --ink-muted: #6b7280; /* 4,8:1 — jamais sous 16px */
+  --ink-faint: #9ca3af;
+  --ink-deep: #0d2a29; /* héros / pied de page sombre */
+  --surface: #ffffff;
+  --bg: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-soft: #eef3f4; /* sections alternées */
+  --bg-mute: #e3e8eb;
+  --line: #e3e8eb;
+  --line-strong: #d1d5db;
+
+  /* accents & softs (portails existants) */
+  --accent: #d4896a;
+  --accent-soft: #faf0ea;
+  --success: #2f5d45;
+  --success-soft: #e6f1ea;
+  --warn: #8a5b12;
+  --warn-soft: #f7efdf;
+  --danger: #8e2c22;
+  --danger-soft: #f7e6e3;
+  --info: #2c4e6b;
+  --info-soft: #e8eef3;
+  --ai: #6d5f8a;
+  --ai-soft: #f2eff6;
+
+  --shadow-xs: 0 1px 2px rgba(26, 29, 35, 0.04);
+  --shadow-sm: 0 1px 2px rgba(26, 29, 35, 0.04), 0 4px 14px rgba(26, 29, 35, 0.05);
+  --shadow-md: 0 6px 24px rgba(26, 29, 35, 0.07);
+  --shadow-lg: 0 16px 40px rgba(26, 29, 35, 0.1);
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --header-h: 80px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --grain-opacity: 0.03;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-bg-soft: var(--bg-soft);
+  --color-bg-mute: var(--bg-mute);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-deep: var(--ink-deep);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-pale: var(--brand-pale);
+  --color-brand-on-dark: var(--brand-on-dark);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+  --color-teal: var(--brand-strong);
+  --color-teal-deep: var(--brand-strong);
+  --color-teal-soft: var(--brand-soft);
+  --color-sky: var(--info);
+  --color-sky-soft: var(--info-soft);
+  --color-sage: var(--brand-strong);
+  --color-sage-soft: var(--brand-soft);
+  --color-amber: var(--warn);
+  --color-amber-soft: var(--warn-soft);
+  --color-coral: var(--accent);
+  --color-coral-soft: var(--accent-soft);
+  --color-border: var(--line);
+  --font-sans: var(--font-outfit);
+  --shadow-soft: var(--shadow-sm);
+  --shadow-card: var(--shadow-md);
+  --shadow-lift: var(--shadow-lg);
 }
 
 body {
-  background: radial-gradient(1200px 600px at 10% -10%, #dceee9 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #e8efe9 0%, transparent 50%),
-    var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-public-sans), var(--font-geist-sans), system-ui, sans-serif;
   min-height: 100vh;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

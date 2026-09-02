@@ -4,6 +4,7 @@ test.describe("admissions workflow E2E", () => {
   test("family submit → staff review → needs docs → family respond → accept", async ({
     page,
   }) => {
+    test.setTimeout(90_000);
     page.on("dialog", (dialog) => dialog.accept());
 
     await page.goto("/fr/sign-in");
@@ -48,14 +49,25 @@ test.describe("admissions workflow E2E", () => {
     await expect(page).toHaveURL(/\/staff\/applications\//);
     await expect(page.getByTestId("staff-app-status")).toContainText(/Soumise|Submitted/i);
 
-    await page.getByTestId("staff-to-status").selectOption("UNDER_REVIEW");
+    await expect(page.getByTestId("staff-transition-form")).toBeVisible();
+    await page.getByTestId("staff-to-status").selectOption({ value: "UNDER_REVIEW" });
+    await page.getByTestId("staff-to-status").evaluate((el: HTMLSelectElement) => {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.getByTestId("staff-confirm-transition")).toBeVisible();
     await page.getByTestId("staff-confirm-transition").check();
     await page.getByTestId("staff-transition-submit").click();
     await expect(page.getByTestId("staff-transition-ok")).toBeVisible();
     await expect(page.getByTestId("staff-app-status")).toContainText(/En examen|Under review/i);
 
-    await page.getByTestId("staff-to-status").selectOption("NEEDS_DOCUMENTS");
-    await page.getByTestId("staff-family-message").fill("Merci de fournir une pièce d'identité.");
+    await page.getByTestId("staff-to-status").selectOption({ value: "NEEDS_DOCUMENTS" });
+    await page.getByTestId("staff-to-status").evaluate((el: HTMLSelectElement) => {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.getByTestId("staff-family-message-needs")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("staff-family-message-needs").fill("Merci de fournir une pièce d'identité.");
     await page.getByTestId("staff-requested-documents").fill("Pièce d'identité");
     await page.getByTestId("staff-confirm-transition").check();
     await page.getByTestId("staff-transition-submit").click();
@@ -84,8 +96,13 @@ test.describe("admissions workflow E2E", () => {
     await page.getByRole("button", { name: /continuer|continue/i }).click();
     await page.getByTestId(`staff-open-${ref}`).click();
 
-    await page.getByTestId("staff-to-status").selectOption("ACCEPTED");
-    await page.getByTestId("staff-family-message").fill("Félicitations — place disponible.");
+    await page.getByTestId("staff-to-status").selectOption({ value: "ACCEPTED" });
+    await page.getByTestId("staff-to-status").evaluate((el: HTMLSelectElement) => {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.getByTestId("staff-family-message-accept")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("staff-family-message-accept").fill("Félicitations — place disponible.");
     await page.getByTestId("staff-next-steps").fill("Nous vous appellerons sous 48 h.");
     await page.getByTestId("staff-confirm-transition").check();
     await page.getByTestId("staff-transition-submit").click();

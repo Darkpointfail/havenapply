@@ -56,6 +56,6 @@ describe("role dashboards", () => {
   it("routes roles to distinct paths", () => {
     expect(dashboardPathForRole("FAMILY", "fr")).toBe("/fr/family/dashboard");
     expect(dashboardPathForRole("STAFF", "en")).toBe("/en/staff/dashboard");
-    expect(dashboardPathForRole("ADMIN", "fr")).toBe("/fr/staff/dashboard");
+    expect(dashboardPathForRole("ADMIN", "fr")).toBe("/fr/admin");
   });
 });

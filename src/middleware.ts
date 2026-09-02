@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { locales, isLocale, type Locale } from "@/lib/i18n";
-import { CSRF_COOKIE, CSRF_HEADER, createCsrfTokenValue } from "@/lib/csrf";
+import { CSRF_COOKIE, CSRF_HEADER, createCsrfTokenValue } from "@/lib/csrf-constants";
 
 const PUBLIC_PREFIXES = [
   "/sign-in",
@@ -32,6 +32,32 @@ export async function middleware(request: NextRequest) {
     pathname.includes(".")
   ) {
     return NextResponse.next();
+  }
+
+  // API routes are not locale-prefixed; enforce CSRF header injection only.
+  if (pathname.startsWith("/api/")) {
+    const isPublicApi = pathname.startsWith("/api/auth");
+    const sessionToken =
+      request.cookies.get("haven.session")?.value ||
+      request.cookies.get("__Secure-haven.session")?.value;
+
+    if (!isPublicApi && !sessionToken) {
+      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    }
+
+    const csrf = request.cookies.get(CSRF_COOKIE)?.value || createCsrfTokenValue();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(CSRF_HEADER, csrf);
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    if (!request.cookies.get(CSRF_COOKIE)?.value) {
+      response.cookies.set(CSRF_COOKIE, csrf, {
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+    return response;
   }
 
   const parts = pathname.split("/").filter(Boolean);

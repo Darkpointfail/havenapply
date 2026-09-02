@@ -90,6 +90,18 @@ const fr: Dict = {
   validationError: "Veuillez compléter les champs requis.",
   history: "Historique",
   city: "Ville",
+  documents: "Documents",
+  emptyDocuments: "Aucun document pour cette candidature.",
+  uploadDocument: "Téléverser un document",
+  uploadingDocument: "Téléversement…",
+  uploadSuccess: "Document enregistré",
+  uploadError: "Échec du téléversement",
+  chooseFile: "Choisir un fichier",
+  allowedTypes: "PDF, JPEG ou PNG — max 10 Mo. Le type est vérifié sur le contenu réel.",
+  notRealScan: "pas d'analyse antivirus réelle (mode développement)",
+  previewDocument: "Prévisualiser",
+  downloadDocument: "Télécharger",
+  deleteDocument: "Supprimer",
 };
 
 const en: Dict = {
@@ -175,6 +187,18 @@ const en: Dict = {
   validationError: "Please complete the required fields.",
   history: "History",
   city: "City",
+  documents: "Documents",
+  emptyDocuments: "No documents for this application.",
+  uploadDocument: "Upload a document",
+  uploadingDocument: "Uploading…",
+  uploadSuccess: "Document saved",
+  uploadError: "Upload failed",
+  chooseFile: "Choose a file",
+  allowedTypes: "PDF, JPEG or PNG — max 10 MB. Type is validated from file content.",
+  notRealScan: "not a real antivirus scan (development mode)",
+  previewDocument: "Preview",
+  downloadDocument: "Download",
+  deleteDocument: "Delete",
 };
 
 const catalogs: Record<Locale, Dict> = { fr, en };

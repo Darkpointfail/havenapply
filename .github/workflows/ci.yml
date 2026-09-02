@@ -36,6 +36,8 @@ jobs:
       STORAGE_ACCESS_KEY_ID: minioadmin
       STORAGE_SECRET_ACCESS_KEY: minioadmin
       STORAGE_FORCE_PATH_STYLE: "true"
+      DOCUMENT_MAX_BYTES: "10485760"
+      DOCUMENT_SIGNED_URL_TTL_SECONDS: "60"
       EMAIL_DRIVER: smtp
       EMAIL_FROM: "HavenApply <noreply@havenapply.local>"
       SMTP_HOST: 127.0.0.1
@@ -44,6 +46,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Start MinIO
+        run: |
+          docker run -d --name haven-minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9000/minio/health/live >/dev/null; then
+              echo "MinIO ready"
+              break
+            fi
+            sleep 1
+          done
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            -c "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb --ignore-existing local/haven-private && mc anonymous set none local/haven-private"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

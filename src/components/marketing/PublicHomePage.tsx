@@ -576,7 +576,10 @@ export function PublicHomePage() {
               </p>
               <h2 className="hp-h2 mt-3 text-[var(--hp-ink)]">{t("hp.res.title")}</h2>
               <p className="hp-body mt-4">{t("hp.res.body")}</p>
-              <Link href="/community/console" className="hp-btn hp-btn-primary mt-7">
+              <Link
+                href={`/get-started?next=${encodeURIComponent("/family/dashboard?claire=1")}`}
+                className="hp-btn hp-btn-primary mt-7"
+              >
                 {t("hp.res.cta")}
               </Link>
             </div>

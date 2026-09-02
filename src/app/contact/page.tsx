@@ -87,7 +87,7 @@ export default function ContactPage() {
                 <ul className="mt-3 space-y-2">
                   {[
                     { href: "/get-started", label: "For families" },
-                    { href: "/community/sign-in", label: "For communities" },
+                    { href: "/get-started", label: "For communities" },
                     { href: "/#comment", label: "How it works" },
                     { href: "/get-started", label: "Create a family profile" },
                   ].map((l) => (

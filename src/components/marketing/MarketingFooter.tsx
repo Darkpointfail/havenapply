@@ -53,7 +53,7 @@ export function MarketingFooter() {
             <h3 className="text-[16px] font-semibold text-white">{t("For Residences")}</h3>
             <ul className="mt-4 space-y-3">
               <li>
-                <Link href="/community/sign-in" className={linkClass}>
+                <Link href="/get-started" className={linkClass}>
                   {t("For Residences")}
                 </Link>
               </li>
@@ -63,7 +63,7 @@ export function MarketingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/community/sign-in" className={linkClass}>
+                <Link href="/get-started" className={linkClass}>
                   {t("Community sign-in")}
                 </Link>
               </li>

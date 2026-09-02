@@ -60,7 +60,7 @@ function SignInForm() {
       result.data.communityStatus !== "verified" &&
       dest.startsWith("/community/") &&
       dest !== "/community/pending" &&
-      dest !== "/community/sign-in"
+      !dest.startsWith("/get-started")
     ) {
       router.push("/community/pending");
       return;

@@ -117,9 +117,20 @@ remain Auth.js-compatible.
 ## Remaining limits
 
 - Document upload UI / signed download UI still minimal (services exist).
-- Staff invitation accept page not fully wired in UI (service + mail exist).
+- Invitation outbox is dispatched fire-and-forget in-request (no dedicated worker/cron); expiry is evaluated on peek/accept (no background expire job).
+- Invitation security emails always send (prefs do not apply) — documented below.
 - Middleware enforces cookie presence; fine-grained authz is server-side.
 - CI runs lint, typecheck, migrate, seed, vitest (Playwright local/optional).
+
+### Invitations (env)
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `INVITATION_TTL_HOURS` | `168` | One-time invite link lifetime |
+| `INVITATION_ATTEMPT_LIMIT` | `20` | Max peek/accept attempts per IP+token window (15 min) |
+
+Accept URLs are token-only (`/[locale]/invite/{caregiver\|staff}?t=…`) — no email in the query string.
+Security invite emails go through the transactional outbox with idempotency keys; notification preferences do **not** suppress them.
 
 ## CI
 

@@ -34,6 +34,11 @@ const envSchema = z
     CLAMAV_HOST: z.string().optional(),
     CLAMAV_PORT: z.coerce.number().int().positive().optional(),
 
+    /** Invitation link lifetime in hours (default 7 days). */
+    INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(168),
+    /** Max accept/peek attempts per IP+token window. */
+    INVITATION_ATTEMPT_LIMIT: z.coerce.number().int().positive().default(20),
+
     EMAIL_DRIVER: z.enum(["smtp", "resend"]).default("smtp"),
     EMAIL_FROM: z.string().min(3),
     SMTP_HOST: z.string().optional(),

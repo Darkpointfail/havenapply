@@ -18,6 +18,8 @@ const registerSchema = z.object({
   password: z.string().min(8).max(128),
   role: z.enum(["FAMILY", "STAFF"]),
   csrfToken: z.string().min(1),
+  inviteKind: z.enum(["caregiver", "staff"]).optional(),
+  inviteToken: z.string().min(16).optional(),
 });
 
 const loginSchema = z.object({
@@ -141,20 +143,59 @@ export async function registerUser(input: unknown) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { ok: false as const, error: "EMAIL_TAKEN" as const };
 
+  // Optional invite resume: validates email ownership via one-time invite token.
+  let invite:
+    | { kind: "caregiver" | "staff"; token: string; ok: true }
+    | { ok: false }
+    | null = null;
+  if (data.inviteToken && data.inviteKind) {
+    if (data.inviteKind === "caregiver") {
+      const { peekCaregiverInvitation } = await import("@/lib/caregiver-invitations");
+      const peek = await peekCaregiverInvitation({
+        token: data.inviteToken,
+        ipAddress: meta.ipAddress,
+        viewerEmail: email,
+      });
+      if (peek.state !== "VALID") {
+        return { ok: false as const, error: "INVITE_INVALID" as const };
+      }
+      invite = { kind: "caregiver", token: data.inviteToken, ok: true };
+    } else {
+      const { peekStaffInvitation } = await import("@/lib/staff-invitations");
+      const peek = await peekStaffInvitation({
+        token: data.inviteToken,
+        ipAddress: meta.ipAddress,
+        viewerEmail: email,
+      });
+      if (peek.state !== "VALID") {
+        return { ok: false as const, error: "INVITE_INVALID" as const };
+      }
+      invite = { kind: "staff", token: data.inviteToken, ok: true };
+    }
+  }
+
+  const role: Role =
+    invite?.ok && invite.kind === "staff"
+      ? "STAFF"
+      : invite?.ok && invite.kind === "caregiver"
+        ? "FAMILY"
+        : (data.role as Role);
+
   const passwordHash = await hashPassword(data.password);
   const user = await prisma.user.create({
     data: {
       name: data.name,
       email,
       passwordHash,
-      role: data.role as Role,
+      role,
       isDevAccount: false,
-      emailVerified: null,
+      emailVerified: invite?.ok ? new Date() : null,
       notificationPreference: { create: {} },
     },
   });
 
-  if (data.role === "FAMILY") {
+  // Only create a personal family when not joining via caregiver invite.
+  if (role === "FAMILY" && !(invite?.ok && invite.kind === "caregiver")) {
     const family = await prisma.familyProfile.create({
       data: {
         ownerUserId: user.id,
@@ -169,6 +210,40 @@ export async function registerUser(input: unknown) {
         acceptedAt: new Date(),
       },
     });
+  }
+
+  if (invite?.ok) {
+    await createDatabaseSession(user.id);
+    if (invite.kind === "caregiver") {
+      const { acceptCaregiverInvitation } = await import("@/lib/caregiver-invitations");
+      await acceptCaregiverInvitation({
+        userId: user.id,
+        token: invite.token,
+        ipAddress: meta.ipAddress,
+      });
+    } else {
+      const { acceptStaffInvitation } = await import("@/lib/staff-invitations");
+      await acceptStaffInvitation({
+        userId: user.id,
+        token: invite.token,
+        ipAddress: meta.ipAddress,
+      });
+    }
+    await writeAudit({
+      actorUserId: user.id,
+      action: "auth.register",
+      entityType: "User",
+      entityId: user.id,
+      metadata: { role: user.role, viaInvite: invite.kind },
+      ipAddress: meta.ipAddress,
+    });
+    return {
+      ok: true as const,
+      userId: user.id,
+      role: user.role,
+      needsVerification: false as const,
+      inviteKind: invite.kind,
+    };
   }
 
   const rawToken = await issueAuthToken({

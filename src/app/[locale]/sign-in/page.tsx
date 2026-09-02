@@ -5,23 +5,27 @@ import { createT, isLocale, type Locale } from "@/lib/i18n";
 import { AuthCard } from "@/components/AuthCard";
 import { getCsrfToken, CSRF_FIELD } from "@/lib/csrf";
 import { loginAction } from "@/app/actions/auth";
+import { dashboardPathForRole } from "@/lib/paths";
 
 export default async function SignInPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const { locale: raw } = await params;
   if (!isLocale(raw)) redirect("/fr");
   const locale = raw as Locale;
   const t = createT(locale);
+  const q = await searchParams;
   const session = await auth();
   if (session?.user?.emailVerified) {
-    redirect(session.user.role === "FAMILY" ? `/${locale}/family/dashboard` : `/${locale}/staff/dashboard`);
+    if (q.next?.startsWith(`/${locale}/`) || q.next?.startsWith("/fr/") || q.next?.startsWith("/en/")) {
+      redirect(q.next);
+    }
+    redirect(dashboardPathForRole(session.user.role, locale));
   }
-  const q = await searchParams;
   const csrfToken = await getCsrfToken();
 
   const errorMessage =
@@ -33,6 +37,10 @@ export default async function SignInPage({
           ? t("invalidCredentials")
           : null;
 
+  const signUpHref = q.next
+    ? `/${locale}/sign-up?next=${encodeURIComponent(q.next)}`
+    : `/${locale}/sign-up`;
+
   return (
     <AuthCard title={t("signIn")}>
       {errorMessage ? (
@@ -40,6 +48,7 @@ export default async function SignInPage({
       ) : null}
       <form action={loginAction.bind(null, locale)} className="space-y-4">
         <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
+        {q.next ? <input type="hidden" name="next" value={q.next} /> : null}
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("email")}</span>
           <input
@@ -75,7 +84,7 @@ export default async function SignInPage({
       </p>
       <p className="mt-2 text-sm opacity-70">
         {t("needAccount")}{" "}
-        <Link href={`/${locale}/sign-up`} className="underline">
+        <Link href={signUpHref} className="underline">
           {t("signUp")}
         </Link>
       </p>

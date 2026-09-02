@@ -11,6 +11,7 @@ const PUBLIC_PREFIXES = [
   "/verify-email",
   "/check-email",
   "/access-denied",
+  "/invite",
   "/api/auth",
 ];
 

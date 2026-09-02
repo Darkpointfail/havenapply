@@ -19,7 +19,10 @@ export type AuditAction =
   | "application.created"
   | "application.viewed"
   | "application.submitted"
-  | "application.status_changed";
+  | "application.status_changed"
+  | "application.status_reopened"
+  | "application.platform_admin_override"
+  | "notification.sent";
 
 /**
  * Persist an audit event. Never pass secrets, tokens, passwords, or medical content

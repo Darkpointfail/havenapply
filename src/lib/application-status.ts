@@ -1,11 +1,11 @@
 import type { ApplicationStatus, Role } from "@prisma/client";
 
 /**
- * Server-authoritative application status machine.
+ * Server-authoritative admissions status machine (MVP).
  *
- * Family (OWNER/EDITOR): DRAFT → SUBMITTED; any open status → WITHDRAWN.
- * Staff (MANAGE_APPLICATIONS): review / decision transitions after SUBMITTED.
- * ADMIN: union of both.
+ * Staff (OWNER/EDITOR): review & decision transitions.
+ * Family (OWNER/EDITOR): DRAFT→SUBMITTED, withdraw, NEEDS_DOCUMENTS→UNDER_REVIEW (response).
+ * ADMIN/PLATFORM_ADMIN: staff+family edges + audited reopen of terminals.
  */
 
 export const APPLICATION_STATUSES = [
@@ -27,21 +27,30 @@ const FAMILY_TRANSITIONS: ReadonlyArray<readonly [ApplicationStatus, Application
   ["UNDER_REVIEW", "WITHDRAWN"],
   ["NEEDS_DOCUMENTS", "WITHDRAWN"],
   ["WAITLISTED", "WITHDRAWN"],
+  // Family marks document request as answered → back to review.
+  ["NEEDS_DOCUMENTS", "UNDER_REVIEW"],
 ];
 
 const STAFF_TRANSITIONS: ReadonlyArray<readonly [ApplicationStatus, ApplicationStatus]> = [
   ["SUBMITTED", "UNDER_REVIEW"],
+  ["SUBMITTED", "NEEDS_DOCUMENTS"],
+  ["SUBMITTED", "WAITLISTED"],
+  ["SUBMITTED", "ACCEPTED"],
+  ["SUBMITTED", "REJECTED"],
   ["UNDER_REVIEW", "NEEDS_DOCUMENTS"],
   ["UNDER_REVIEW", "WAITLISTED"],
   ["UNDER_REVIEW", "ACCEPTED"],
   ["UNDER_REVIEW", "REJECTED"],
   ["NEEDS_DOCUMENTS", "UNDER_REVIEW"],
-  ["NEEDS_DOCUMENTS", "WAITLISTED"],
-  ["NEEDS_DOCUMENTS", "ACCEPTED"],
-  ["NEEDS_DOCUMENTS", "REJECTED"],
   ["WAITLISTED", "UNDER_REVIEW"],
   ["WAITLISTED", "ACCEPTED"],
   ["WAITLISTED", "REJECTED"],
+];
+
+/** Explicit reopen of terminal decisions — ADMIN or staff OWNER only, with mandatory reason. */
+const REOPEN_TRANSITIONS: ReadonlyArray<readonly [ApplicationStatus, ApplicationStatus]> = [
+  ["ACCEPTED", "UNDER_REVIEW"],
+  ["REJECTED", "UNDER_REVIEW"],
 ];
 
 function includesTransition(
@@ -52,20 +61,34 @@ function includesTransition(
   return table.some(([a, b]) => a === from && b === to);
 }
 
+export function isReopenTransition(from: ApplicationStatus, to: ApplicationStatus): boolean {
+  return includesTransition(REOPEN_TRANSITIONS, from, to);
+}
+
 export function canTransition(
   from: ApplicationStatus,
   to: ApplicationStatus,
   actor: TransitionActor,
+  options?: { allowReopen?: boolean },
 ): boolean {
   if (from === to) return false;
+  if (options?.allowReopen && isReopenTransition(from, to)) {
+    return actor === "ADMIN" || actor === "STAFF";
+  }
   if (actor === "ADMIN") {
     return (
       includesTransition(FAMILY_TRANSITIONS, from, to) ||
-      includesTransition(STAFF_TRANSITIONS, from, to)
+      includesTransition(STAFF_TRANSITIONS, from, to) ||
+      (options?.allowReopen === true && includesTransition(REOPEN_TRANSITIONS, from, to))
     );
   }
   if (actor === "FAMILY") return includesTransition(FAMILY_TRANSITIONS, from, to);
-  if (actor === "STAFF") return includesTransition(STAFF_TRANSITIONS, from, to);
+  if (actor === "STAFF") {
+    return (
+      includesTransition(STAFF_TRANSITIONS, from, to) ||
+      (options?.allowReopen === true && includesTransition(REOPEN_TRANSITIONS, from, to))
+    );
+  }
   return false;
 }
 
@@ -73,8 +96,9 @@ export function assertTransition(
   from: ApplicationStatus,
   to: ApplicationStatus,
   actor: TransitionActor,
+  options?: { allowReopen?: boolean },
 ): void {
-  if (!canTransition(from, to, actor)) {
+  if (!canTransition(from, to, actor, options)) {
     throw new Error(`INVALID_TRANSITION:${from}->${to}:${actor}`);
   }
 }
@@ -95,5 +119,9 @@ export function isEditableDraft(status: ApplicationStatus): boolean {
 
 /** Staff queues never include family drafts. */
 export function staffVisibleStatuses(): ApplicationStatus[] {
-  return APPLICATION_STATUSES.filter((s) => s !== "DRAFT");
+  return APPLICATION_STATUSES.filter((s) => s !== "DRAFT" && s !== "WITHDRAWN");
+}
+
+export function allowedStaffTargets(from: ApplicationStatus): ApplicationStatus[] {
+  return STAFF_TRANSITIONS.filter(([a]) => a === from).map(([, b]) => b);
 }

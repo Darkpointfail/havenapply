@@ -188,11 +188,16 @@ async function main() {
     organizationId: string,
     siteId: string,
     permissions: StaffPermission[],
+    orgRole: "OWNER" | "EDITOR" | "VIEWER" = "EDITOR",
   ) {
     const existing = await prisma.staffMembership.findFirst({
       where: { userId, organizationId, siteId },
     });
     if (existing) {
+      await prisma.staffMembership.update({
+        where: { id: existing.id },
+        data: { orgRole },
+      });
       await prisma.staffMembershipPermission.deleteMany({ where: { membershipId: existing.id } });
       await prisma.staffMembershipPermission.createMany({
         data: permissions.map((permission) => ({ membershipId: existing.id, permission })),
@@ -204,6 +209,7 @@ async function main() {
         userId,
         organizationId,
         siteId,
+        orgRole,
         permissions: {
           create: permissions.map((permission) => ({ permission })),
         },
@@ -211,26 +217,55 @@ async function main() {
     });
   }
 
-  await ensureStaff(staffSite1.id, org.id, site1.id, [
-    "VIEW_APPLICATIONS",
-    "MANAGE_APPLICATIONS",
-    "MANAGE_DOCUMENTS",
-  ]);
-  await ensureStaff(staffOther.id, org.id, site2.id, [
-    "VIEW_APPLICATIONS",
-    "MANAGE_APPLICATIONS",
-  ]);
+  await ensureStaff(
+    staffSite1.id,
+    org.id,
+    site1.id,
+    ["VIEW_APPLICATIONS", "MANAGE_APPLICATIONS", "MANAGE_DOCUMENTS"],
+    "OWNER",
+  );
+  await ensureStaff(
+    staffOther.id,
+    org.id,
+    site2.id,
+    ["VIEW_APPLICATIONS", "MANAGE_APPLICATIONS"],
+    "OWNER",
+  );
+
+  // Read-only viewer on site1 for authz tests
+  const staffViewer = await upsertUser({
+    email: "staff.viewer@havenapply.local",
+    name: "Staff Viewer Site 1",
+    role: "STAFF",
+    passwordHash,
+  });
+  await ensureStaff(staffViewer.id, org.id, site1.id, ["VIEW_APPLICATIONS"], "VIEWER");
+
+  const staffEditor = await upsertUser({
+    email: "staff.editor@havenapply.local",
+    name: "Staff Editor Site 1",
+    role: "STAFF",
+    passwordHash,
+  });
+  await ensureStaff(
+    staffEditor.id,
+    org.id,
+    site1.id,
+    ["VIEW_APPLICATIONS", "MANAGE_APPLICATIONS"],
+    "EDITOR",
+  );
 
   // Attach legacy staff.dev to site1
   const legacyStaff = await prisma.user.findUniqueOrThrow({
     where: { email: "staff.dev@havenapply.local" },
   });
-  await ensureStaff(legacyStaff.id, org.id, site1.id, [
-    "VIEW_APPLICATIONS",
-    "MANAGE_APPLICATIONS",
-    "MANAGE_DOCUMENTS",
-    "MANAGE_STAFF",
-  ]);
+  await ensureStaff(
+    legacyStaff.id,
+    org.id,
+    site1.id,
+    ["VIEW_APPLICATIONS", "MANAGE_APPLICATIONS", "MANAGE_DOCUMENTS", "MANAGE_STAFF"],
+    "OWNER",
+  );
 
   const legacyFamily = await prisma.user.findUniqueOrThrow({
     where: { email: "family.dev@havenapply.local" },

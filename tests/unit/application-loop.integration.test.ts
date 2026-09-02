@@ -106,7 +106,7 @@ describe("application loop integration", () => {
     expect(history.filter((h) => h.toStatus === "SUBMITTED")).toHaveLength(1);
 
     const staffList = await listStaffApplications(staffSite1Id, "STAFF");
-    expect(staffList.some((a) => a.id === draft.id)).toBe(true);
+    expect(staffList.items.some((a) => a.id === draft.id)).toBe(true);
   });
 
   it("blocks other family from reading the application", async () => {
@@ -148,7 +148,7 @@ describe("application loop integration", () => {
     });
 
     const otherList = await listStaffApplications(staffOtherId, "STAFF");
-    expect(otherList.some((a) => a.id === draft.id)).toBe(false);
+    expect(otherList.items.some((a) => a.id === draft.id)).toBe(false);
   });
 
   it("rejects submit when site is inactive", async () => {

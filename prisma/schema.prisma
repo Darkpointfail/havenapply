@@ -27,6 +27,13 @@ enum StaffPermission {
   MANAGE_ORG
 }
 
+/// Facility-side membership role (distinct from CaregiverRole on family profiles).
+enum StaffOrgRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -48,6 +55,12 @@ enum DocumentStatus {
   AVAILABLE
   QUARANTINED
   DELETED
+}
+
+enum OutboxStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 /// Auth.js-compatible user. Global role is coarse; staff site access uses StaffMembership.
@@ -200,12 +213,14 @@ model ResidenceSite {
 }
 
 model StaffMembership {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   userId         String
   organizationId String
   /// Null = organization-wide access to all sites.
   siteId         String?
-  createdAt      DateTime @default(now())
+  /// OWNER/EDITOR may mutate admissions; VIEWER is read-only.
+  orgRole        StaffOrgRole @default(EDITOR)
+  createdAt      DateTime    @default(now())
 
   user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization ResidenceOrganization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -287,6 +302,8 @@ model Application {
   draftStep             Int      @default(1)
   /// Client-provided key making submit idempotent across retries.
   submitIdempotencyKey  String?  @unique
+  /// Optimistic concurrency token for status transitions.
+  version               Int      @default(1)
 
   family        FamilyProfile              @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
   site          ResidenceSite              @relation(fields: [siteId], references: [id], onDelete: Restrict)
@@ -304,14 +321,45 @@ model ApplicationStatusHistory {
   fromStatus      ApplicationStatus?
   toStatus        ApplicationStatus
   changedByUserId String?
-  /// Operational note only — never medical content.
+  /// Legacy short note (kept for older rows). Prefer internalNote / familyMessage.
   note            String?
+  /// Staff-only — never shown to family.
+  internalNote    String?
+  /// Message safe to show the family (and optionally email).
+  familyMessage   String?
+  /// Structured document checklist when toStatus = NEEDS_DOCUMENTS.
+  requestedDocuments Json?
+  waitlistPosition Int?
+  /// Acceptance next steps shown to family.
+  nextSteps       String?
+  /// True when reopening ACCEPTED/REJECTED → UNDER_REVIEW.
+  isReopen        Boolean            @default(false)
+  /// Client idempotency key for this transition (unique when set).
+  idempotencyKey  String?            @unique
   createdAt       DateTime           @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   changedBy   User?       @relation("StatusChanger", fields: [changedByUserId], references: [id], onDelete: SetNull)
 
   @@index([applicationId])
+}
+
+/// Transactional outbox for emails/notifications. Payload must never include secrets or documents.
+model OutboxEvent {
+  id             String       @id @default(cuid())
+  type           String
+  aggregateType  String
+  aggregateId    String
+  idempotencyKey String       @unique
+  payload        Json
+  status         OutboxStatus @default(PENDING)
+  attempts       Int          @default(0)
+  lastError      String?
+  createdAt      DateTime     @default(now())
+  processedAt    DateTime?
+
+  @@index([status, createdAt])
+  @@index([aggregateType, aggregateId])
 }
 
 /// Private application document. Object key is opaque and never client-controlled.

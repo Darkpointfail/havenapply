@@ -114,9 +114,18 @@ describe("permission isolation (integration)", () => {
   });
 
   it("staff site1 cannot see site2 applications", async () => {
-    const list = await listStaffApplications(staffSite1Id, "STAFF");
-    expect(list.some((a) => a.id === appA1Id)).toBe(true);
-    expect(list.some((a) => a.id === appB2Id)).toBe(false);
+    const list = await listStaffApplications(staffSite1Id, "STAFF", {
+      q: "HA-SEED-A1",
+      pageSize: 50,
+    });
+    expect(list.items.some((a) => a.id === appA1Id)).toBe(true);
+
+    const other = await listStaffApplications(staffSite1Id, "STAFF", {
+      q: "HA-SEED-B2",
+      pageSize: 50,
+    });
+    expect(other.items.some((a) => a.id === appB2Id)).toBe(false);
+    expect(other.total).toBe(0);
   });
 
   it("staff other site gets 404 on site1 application", async () => {

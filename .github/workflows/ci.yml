@@ -59,8 +59,9 @@ jobs:
             fi
             sleep 1
           done
-          docker run --rm --network host minio/mc:RELEASE.2025-04-16T18-13-26Z \
-            /bin/sh -c "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb --ignore-existing local/haven-private && mc anonymous set none local/haven-private"
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            -c "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb --ignore-existing local/haven-private && mc anonymous set none local/haven-private"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

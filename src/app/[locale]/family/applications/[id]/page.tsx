@@ -3,18 +3,26 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guards";
 import { createT, isLocale, statusLabel, type Locale } from "@/lib/i18n";
 import { getApplicationForUser } from "@/lib/applications";
+import { listApplicationDocuments } from "@/lib/documents";
 import { AuthzError } from "@/lib/authz";
+import { getCsrfToken } from "@/lib/csrf";
+import { DocumentUploadForm } from "@/components/DocumentUploadForm";
+import { DocumentList } from "@/components/DocumentList";
+import { uploadDocumentAction } from "@/app/actions/documents";
 
 export default async function ApplicationStatusPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ error?: string; uploaded?: string }>;
 }) {
   const { locale: raw, id } = await params;
   if (!isLocale(raw)) redirect("/fr");
   const locale = raw as Locale;
   const session = await requireRole("FAMILY", locale);
   const t = createT(locale);
+  const q = await searchParams;
 
   let app;
   try {
@@ -29,6 +37,13 @@ export default async function ApplicationStatusPage({
   if (app.status === "DRAFT") {
     redirect(`/${locale}/family/applications/${app.id}/edit`);
   }
+
+  const documents = await listApplicationDocuments({
+    userId: session.user.id,
+    role: session.user.role,
+    applicationId: app.id,
+  });
+  const csrfToken = await getCsrfToken();
 
   return (
     <section className="mx-auto max-w-xl space-y-6">
@@ -54,10 +69,48 @@ export default async function ApplicationStatusPage({
           </div>
         </dl>
 
+        <h2 className="mt-8 text-sm font-semibold">{t("documents")}</h2>
+        {q.uploaded ? (
+          <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {t("uploadSuccess")}: {q.uploaded}
+          </p>
+        ) : null}
+        <div className="mt-4">
+          <DocumentUploadForm
+            applicationId={app.id}
+            csrfToken={csrfToken}
+            action={uploadDocumentAction.bind(null, locale, app.id)}
+            labels={{
+              upload: t("uploadDocument"),
+              uploading: t("uploadingDocument"),
+              error: q.error || null,
+              allowedTypes: t("allowedTypes"),
+            }}
+          />
+        </div>
+        <DocumentList
+          documents={documents}
+          canDownload
+          canDelete
+          csrfToken={csrfToken}
+          locale={locale}
+          applicationId={app.id}
+          labels={{
+            empty: t("emptyDocuments"),
+            preview: t("previewDocument"),
+            download: t("downloadDocument"),
+            delete: t("deleteDocument"),
+            notRealScan: t("notRealScan"),
+          }}
+        />
+
         <h2 className="mt-8 text-sm font-semibold">{t("history")}</h2>
         <ol className="mt-3 space-y-2 text-sm">
           {app.statusHistory.map((entry) => (
-            <li key={entry.id} className="flex justify-between gap-3 border-b border-[var(--line)] py-2">
+            <li
+              key={entry.id}
+              className="flex justify-between gap-3 border-b border-[var(--line)] py-2"
+            >
               <span>
                 {entry.fromStatus
                   ? `${statusLabel(locale, entry.fromStatus)} → ${statusLabel(locale, entry.toStatus)}`

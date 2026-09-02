@@ -22,6 +22,18 @@ const envSchema = z
     STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
     STORAGE_FORCE_PATH_STYLE: boolish,
 
+    /** Max upload size in bytes (default 10 MiB). */
+    DOCUMENT_MAX_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
+    /** Comma-separated allowlist; magic bytes still validated. */
+    DOCUMENT_ALLOWED_MIME: z.string().optional(),
+    /** Signed download URL TTL in seconds (short-lived). */
+    DOCUMENT_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(60),
+    /** Days before soft-deleted objects may be hard-purged. */
+    DOCUMENT_PURGE_DELAY_DAYS: z.coerce.number().int().positive().default(30),
+    /** Optional ClamAV clamd host. Absent → explicit dev passthrough (not a real scan). */
+    CLAMAV_HOST: z.string().optional(),
+    CLAMAV_PORT: z.coerce.number().int().positive().optional(),
+
     EMAIL_DRIVER: z.enum(["smtp", "resend"]).default("smtp"),
     EMAIL_FROM: z.string().min(3),
     SMTP_HOST: z.string().optional(),

@@ -1,11 +1,14 @@
 import {
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getEnv } from "@/lib/env";
+import { contentDisposition } from "@/lib/document-files";
 
 export type StoredObject = {
   key: string;
@@ -27,10 +30,32 @@ function createClient() {
 }
 
 let client: S3Client | null = null;
+let bucketReady = false;
 
 function s3() {
   if (!client) client = createClient();
   return client;
+}
+
+/** Test helper — reset memoized S3 client after env changes. */
+export function resetStorageClient() {
+  client = null;
+  bucketReady = false;
+}
+
+export async function ensureBucket(): Promise<void> {
+  if (bucketReady) return;
+  const env = getEnv();
+  try {
+    await s3().send(new HeadBucketCommand({ Bucket: env.STORAGE_BUCKET }));
+  } catch {
+    try {
+      await s3().send(new CreateBucketCommand({ Bucket: env.STORAGE_BUCKET }));
+    } catch {
+      // Race with parallel creates — ignore if bucket now exists.
+    }
+  }
+  bucketReady = true;
 }
 
 export const storage = {
@@ -40,6 +65,7 @@ export const storage = {
     contentType: string;
   }): Promise<StoredObject> {
     const env = getEnv();
+    await ensureBucket();
     await s3().send(
       new PutObjectCommand({
         Bucket: env.STORAGE_BUCKET,
@@ -55,12 +81,32 @@ export const storage = {
     };
   },
 
-  async getSignedDownloadUrl(key: string, expiresInSeconds = 300): Promise<string> {
+  /**
+   * Short-lived signed GET URL. Files never sit on the app server disk.
+   * Content-Disposition is baked into the signature for safe download/preview.
+   */
+  async getSignedDownloadUrl(input: {
+    key: string;
+    fileName: string;
+    contentType: string;
+    disposition?: "inline" | "attachment";
+    expiresInSeconds?: number;
+  }): Promise<string> {
     const env = getEnv();
+    const expiresIn =
+      input.expiresInSeconds ?? env.DOCUMENT_SIGNED_URL_TTL_SECONDS ?? 60;
     return getSignedUrl(
       s3(),
-      new GetObjectCommand({ Bucket: env.STORAGE_BUCKET, Key: key }),
-      { expiresIn: expiresInSeconds },
+      new GetObjectCommand({
+        Bucket: env.STORAGE_BUCKET,
+        Key: input.key,
+        ResponseContentType: input.contentType,
+        ResponseContentDisposition: contentDisposition(
+          input.fileName,
+          input.disposition ?? "attachment",
+        ),
+      }),
+      { expiresIn },
     );
   },
 

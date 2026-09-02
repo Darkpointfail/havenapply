@@ -128,10 +128,13 @@ export async function assertCanAccessDocument(userId: string, documentId: string
       id: true,
       familyProfileId: true,
       applicationId: true,
+      status: true,
       application: { select: { siteId: true } },
     },
   });
-  if (!doc) throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
+  if (!doc || doc.status === "DELETED") {
+    throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
+  }
 
   if (role === "ADMIN") return doc;
 
@@ -142,6 +145,10 @@ export async function assertCanAccessDocument(userId: string, documentId: string
 
   if (role === "STAFF") {
     if (!doc.application?.siteId) throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
+    // Staff never sees non-AVAILABLE documents (uploading / quarantined).
+    if (doc.status !== "AVAILABLE") {
+      throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
+    }
     const sites = await listAccessibleSiteIds(userId);
     if (sites !== "ALL" && !sites.includes(doc.application.siteId)) {
       throw new AuthzError("DOCUMENT_NOT_FOUND", 404);

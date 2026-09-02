@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guards";
 import { createT, isLocale, statusLabel, type Locale } from "@/lib/i18n";
@@ -42,9 +43,17 @@ export default async function StaffDashboardPage({
                   </p>
                   <p className="opacity-60">{app.publicRef}</p>
                 </div>
-                <span className="rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium">
-                  {statusLabel(locale, app.status)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium">
+                    {statusLabel(locale, app.status)}
+                  </span>
+                  <Link
+                    href={`/${locale}/staff/applications/${app.id}`}
+                    className="underline opacity-80 hover:opacity-100"
+                  >
+                    {t("viewApplication")}
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

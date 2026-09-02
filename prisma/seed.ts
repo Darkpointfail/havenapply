@@ -322,15 +322,26 @@ async function main() {
 
   await prisma.document.upsert({
     where: { id: "seed-doc-a1" },
-    update: {},
+    update: {
+      originalFileName: "id.pdf",
+      contentType: "application/pdf",
+      status: "AVAILABLE",
+      scanAdapter: "dev-passthrough",
+      scanResult: "skipped_dev",
+      scannedAt: new Date(),
+    },
     create: {
       id: "seed-doc-a1",
       familyProfileId: profileA.id,
       applicationId: appA1.id,
       storageKey: "seed/family-a/doc.pdf",
-      fileName: "id.pdf",
+      originalFileName: "id.pdf",
       contentType: "application/pdf",
       sizeBytes: 1024,
+      status: "AVAILABLE",
+      scanAdapter: "dev-passthrough",
+      scanResult: "skipped_dev",
+      scannedAt: new Date(),
       uploadedByUserId: familyA.id,
     },
   });

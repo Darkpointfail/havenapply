@@ -43,6 +43,13 @@ enum AuthTokenPurpose {
   PASSWORD_RESET
 }
 
+enum DocumentStatus {
+  UPLOADING
+  AVAILABLE
+  QUARANTINED
+  DELETED
+}
+
 /// Auth.js-compatible user. Global role is coarse; staff site access uses StaffMembership.
 model User {
   id            String    @id @default(cuid())
@@ -307,23 +314,40 @@ model ApplicationStatusHistory {
   @@index([applicationId])
 }
 
+/// Private application document. Object key is opaque and never client-controlled.
+/// Soft-delete sets status=DELETED + deletedAt; object purge is deferred (purgeAfter).
 model Document {
-  id              String   @id @default(cuid())
-  familyProfileId String
-  applicationId   String?
-  storageKey      String
-  fileName        String
-  contentType     String
-  sizeBytes       Int
+  id               String         @id @default(cuid())
+  familyProfileId  String
+  applicationId    String?
+  /// Opaque server-generated object key (never derived from user filename).
+  storageKey       String         @unique
+  /// Sanitized original filename for display only.
+  originalFileName String
+  contentType      String
+  sizeBytes        Int
+  checksumSha256   String?
+  status           DocumentStatus @default(UPLOADING)
+  /// Scanner used: "clamav" | "dev-passthrough" — never claim real AV if passthrough.
+  scanAdapter      String?
+  /// clean | infected | skipped_dev | error
+  scanResult       String?
+  scannedAt        DateTime?
+  deletedAt        DateTime?
+  /// Earliest time the object may be hard-purged from storage after soft-delete.
+  purgeAfter       DateTime?
   uploadedByUserId String
-  createdAt       DateTime @default(now())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  family     FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
-  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  uploadedBy User          @relation("DocumentUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  family      FamilyProfile @relation(fields: [familyProfileId], references: [id], onDelete: Cascade)
+  application Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  uploadedBy  User          @relation("DocumentUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
 
   @@index([familyProfileId])
   @@index([applicationId])
+  @@index([status])
+  @@index([purgeAfter])
 }
 
 /// Security / ops audit trail. Never store secrets or medical content in metadata.

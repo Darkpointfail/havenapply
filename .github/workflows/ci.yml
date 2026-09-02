@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: haven
+          POSTGRES_PASSWORD: haven
+          POSTGRES_DB: havenapply
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haven -d havenapply"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      APP_URL: http://127.0.0.1:3000
+      AUTH_SECRET: ci-secret-at-least-16-chars-long
+      AUTH_TRUST_HOST: "true"
+      DATABASE_URL: postgresql://haven:haven@localhost:5432/havenapply?schema=public
+      STORAGE_DRIVER: minio
+      STORAGE_ENDPOINT: http://127.0.0.1:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: haven-private
+      STORAGE_ACCESS_KEY_ID: minioadmin
+      STORAGE_SECRET_ACCESS_KEY: minioadmin
+      STORAGE_FORCE_PATH_STYLE: "true"
+      EMAIL_DRIVER: smtp
+      EMAIL_FROM: "HavenApply <noreply@havenapply.local>"
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: "1025"
+      DEFAULT_LOCALE: fr
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Migrate + seed
+        run: npx prisma migrate deploy && npm run db:seed

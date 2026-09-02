@@ -1,63 +1,31 @@
-import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
-import Script from "next/script";
-import { SiteShell } from "@/components/layout/SiteShell";
-import { AppProviders } from "@/components/providers/AppProviders";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const GA_MEASUREMENT_ID = "G-F265QW7SF9";
-
-const outfit = Outfit({
-  variable: "--font-outfit",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: "swap",
 });
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: {
-    default: "HavenApply, Senior living admissions, made clear.",
-    template: "%s · HavenApply",
-  },
-  description:
-    "Senior living admissions, made clear. Build one profile, find the right communities, and apply with confidence.",
-  icons: {
-    // Prefer PNG (Safari) with versioned filenames to bust aggressive favicon caches.
-    icon: [
-      { url: "/brand/favicon-32-v6.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/favicon-48-v6.png", sizes: "48x48", type: "image/png" },
-      { url: "/brand/favicon-v6.ico", sizes: "any" },
-      { url: "/brand/icon-v6.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/brand/apple-icon-v6.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/brand/favicon-v6.ico"],
-  },
+  title: "HavenApply",
+  description: "Family ↔ residence admission applications",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="fr" className={`${outfit.variable} h-full`}>
-      <body className="flex min-h-full flex-col font-sans antialiased">
-        <AppProviders>
-          <SiteShell>{children}</SiteShell>
-        </AppProviders>
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+    <html lang="fr" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
       </body>
     </html>
   );

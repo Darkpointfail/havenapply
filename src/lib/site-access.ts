@@ -18,7 +18,8 @@ export function isSiteAccessPublicPath(pathname: string): boolean {
   return (
     pathname === SITE_ACCESS_PATH ||
     pathname === SITE_ACCESS_API_PATH ||
-    pathname.startsWith(`${SITE_ACCESS_API_PATH}/`)
+    pathname.startsWith(`${SITE_ACCESS_API_PATH}/`) ||
+    pathname === "/media"
   );
 }
 

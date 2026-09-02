@@ -137,7 +137,10 @@ test.describe("residence catalog E2E", () => {
     }
     expect(verifyUrl).toBeTruthy();
 
-    await page.goto(verifyUrl!);
+    const base = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
+    const localVerify = verifyUrl!.replace(/^https?:\/\/[^/]+/, base);
+    await page.goto(localVerify);
+    await page.getByTestId("verify-email-submit").click();
     await expect(page).toHaveURL(/family\/dashboard/);
 
     await page.goto(next);

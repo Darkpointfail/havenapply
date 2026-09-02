@@ -2,8 +2,6 @@ import { redirect } from "next/navigation";
 import { createT, isLocale, type Locale } from "@/lib/i18n";
 import { AuthCard } from "@/components/AuthCard";
 import { verifyAction } from "@/app/actions/auth";
-import { verifyEmail } from "@/lib/auth-actions";
-import { dashboardPathForRole } from "@/lib/paths";
 
 export default async function VerifyEmailPage({
   params,
@@ -18,18 +16,11 @@ export default async function VerifyEmailPage({
   const t = createT(locale);
   const q = await searchParams;
 
-  // Auto-verify when link is opened with token+email (GET).
-  if (q.token && q.email && !q.error) {
-    const result = await verifyEmail({ email: q.email, token: q.token });
-    if (result.ok) {
-      redirect(dashboardPathForRole(result.role, locale));
-    }
-  }
-
+  // Cookie session must be set in a Server Action — do not call verifyEmail during RSC render.
   return (
     <AuthCard title={t("verifyEmail")}>
       <p className="mb-4 text-sm opacity-70">{t("verifyEmailBody")}</p>
-      {q.error || (q.token && q.email) ? (
+      {q.error ? (
         <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           Token invalid or expired.
         </p>
@@ -40,6 +31,7 @@ export default async function VerifyEmailPage({
         <button
           type="submit"
           className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          data-testid="verify-email-submit"
         >
           {t("submit")}
         </button>

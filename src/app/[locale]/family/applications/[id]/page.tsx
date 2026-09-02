@@ -8,14 +8,22 @@ import { AuthzError } from "@/lib/authz";
 import { getCsrfToken } from "@/lib/csrf";
 import { DocumentUploadForm } from "@/components/DocumentUploadForm";
 import { DocumentList } from "@/components/DocumentList";
+import { FamilyDocumentsResponseForm } from "@/components/FamilyDocumentsResponseForm";
 import { uploadDocumentAction } from "@/app/actions/documents";
+import { familyDocumentsProvidedAction } from "@/app/actions/applications";
+import { isTerminalStatus } from "@/lib/application-status";
+
+function displayOrUnknown(value: string | number | null | undefined, fallback: string) {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value);
+}
 
 export default async function ApplicationStatusPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ error?: string; uploaded?: string }>;
+  searchParams: Promise<{ error?: string; uploaded?: string; ok?: string }>;
 }) {
   const { locale: raw, id } = await params;
   if (!isLocale(raw)) redirect("/fr");
@@ -44,6 +52,24 @@ export default async function ApplicationStatusPage({
     applicationId: app.id,
   });
   const csrfToken = await getCsrfToken();
+  const unknown = t("notProvided");
+  const canUpload = !isTerminalStatus(app.status);
+
+  const latestNeedsDocs = [...app.statusHistory]
+    .reverse()
+    .find((h) => h.toStatus === "NEEDS_DOCUMENTS");
+  const requestedDocs = Array.isArray(latestNeedsDocs?.requestedDocuments)
+    ? (latestNeedsDocs!.requestedDocuments as string[])
+    : [];
+
+  const errorKey = q.error
+    ? (`error${q.error}` as Parameters<typeof t>[0])
+    : null;
+  const errorMessage = errorKey
+    ? t(errorKey) !== errorKey
+      ? t(errorKey)
+      : t("errorGENERIC")
+    : null;
 
   return (
     <section className="mx-auto max-w-xl space-y-6">
@@ -54,20 +80,51 @@ export default async function ApplicationStatusPage({
           {app.site.name}
           {app.site.city ? ` · ${app.site.city}` : ""}
         </p>
-        <p className="mt-4 inline-flex rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium">
+        <p
+          className="mt-4 inline-flex rounded-full bg-[var(--fs-subtle,#eef3f0)] px-3 py-1 text-xs font-medium"
+          data-testid="family-app-status"
+        >
           {statusLabel(locale, app.status)}
         </p>
+
+        {q.ok ? (
+          <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {t("transitionOk")}
+          </p>
+        ) : null}
+        {errorMessage ? (
+          <p
+            className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+            data-testid="family-transition-error"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
 
         <dl className="mt-6 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="opacity-60">{t("residentPreferredName")}</dt>
-            <dd>{app.residentPreferredName}</dd>
+            <dd>{displayOrUnknown(app.residentPreferredName, unknown)}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="opacity-60">{t("contactEmail")}</dt>
-            <dd>{app.contactEmail}</dd>
+            <dd>{displayOrUnknown(app.contactEmail, unknown)}</dd>
           </div>
         </dl>
+
+        {app.status === "NEEDS_DOCUMENTS" && requestedDocs.length > 0 ? (
+          <div className="mt-6" data-testid="family-requested-docs">
+            <h2 className="text-sm font-semibold">{t("documentsRequestedTitle")}</h2>
+            {latestNeedsDocs?.familyMessage ? (
+              <p className="mt-2 text-sm opacity-80">{latestNeedsDocs.familyMessage}</p>
+            ) : null}
+            <ul className="mt-2 list-inside list-disc text-sm">
+              {requestedDocs.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <h2 className="mt-8 text-sm font-semibold">{t("documents")}</h2>
         {q.uploaded ? (
@@ -75,23 +132,25 @@ export default async function ApplicationStatusPage({
             {t("uploadSuccess")}: {q.uploaded}
           </p>
         ) : null}
-        <div className="mt-4">
-          <DocumentUploadForm
-            applicationId={app.id}
-            csrfToken={csrfToken}
-            action={uploadDocumentAction.bind(null, locale, app.id)}
-            labels={{
-              upload: t("uploadDocument"),
-              uploading: t("uploadingDocument"),
-              error: q.error || null,
-              allowedTypes: t("allowedTypes"),
-            }}
-          />
-        </div>
+        {canUpload ? (
+          <div className="mt-4">
+            <DocumentUploadForm
+              applicationId={app.id}
+              csrfToken={csrfToken}
+              action={uploadDocumentAction.bind(null, locale, app.id)}
+              labels={{
+                upload: t("uploadDocument"),
+                uploading: t("uploadingDocument"),
+                error: q.error && !errorMessage ? q.error : null,
+                allowedTypes: t("allowedTypes"),
+              }}
+            />
+          </div>
+        ) : null}
         <DocumentList
           documents={documents}
           canDownload
-          canDelete
+          canDelete={canUpload}
           csrfToken={csrfToken}
           locale={locale}
           applicationId={app.id}
@@ -104,23 +163,69 @@ export default async function ApplicationStatusPage({
           }}
         />
 
-        <h2 className="mt-8 text-sm font-semibold">{t("history")}</h2>
-        <ol className="mt-3 space-y-2 text-sm">
-          {app.statusHistory.map((entry) => (
-            <li
-              key={entry.id}
-              className="flex justify-between gap-3 border-b border-[var(--line)] py-2"
-            >
-              <span>
-                {entry.fromStatus
-                  ? `${statusLabel(locale, entry.fromStatus)} → ${statusLabel(locale, entry.toStatus)}`
-                  : statusLabel(locale, entry.toStatus)}
-              </span>
-              <time className="opacity-50" dateTime={entry.createdAt.toISOString()}>
-                {entry.createdAt.toLocaleDateString(locale)}
-              </time>
-            </li>
-          ))}
+        {app.status === "NEEDS_DOCUMENTS" ? (
+          <div className="mt-6">
+            <FamilyDocumentsResponseForm
+              expectedVersion={app.version}
+              csrfToken={csrfToken}
+              action={familyDocumentsProvidedAction.bind(null, locale, app.id)}
+              labels={{
+                title: t("documentsRespondTitle"),
+                help: t("documentsRespondHelp"),
+                message: t("documentsRespondMessage"),
+                submit: t("documentsRespondSubmit"),
+                submitting: t("documentsRespondSubmitting"),
+              }}
+            />
+          </div>
+        ) : null}
+
+        <h2 className="mt-8 text-sm font-semibold">{t("timeline")}</h2>
+        <ol className="mt-3 space-y-3 text-sm" data-testid="family-timeline">
+          {app.statusHistory.map((entry) => {
+            const docs = Array.isArray(entry.requestedDocuments)
+              ? (entry.requestedDocuments as string[])
+              : [];
+            return (
+              <li
+                key={entry.id}
+                className="border-b border-[var(--line)] py-2"
+                data-testid={`family-timeline-${entry.toStatus}`}
+              >
+                <div className="flex justify-between gap-3">
+                  <span>
+                    {entry.fromStatus
+                      ? `${statusLabel(locale, entry.fromStatus)} → ${statusLabel(locale, entry.toStatus)}`
+                      : statusLabel(locale, entry.toStatus)}
+                  </span>
+                  <time className="opacity-50" dateTime={entry.createdAt.toISOString()}>
+                    {entry.createdAt.toLocaleDateString(locale)}
+                  </time>
+                </div>
+                {/* Never expose internalNote to family */}
+                {entry.familyMessage ? (
+                  <p className="mt-1 text-xs opacity-80">{entry.familyMessage}</p>
+                ) : null}
+                {entry.nextSteps ? (
+                  <p className="mt-1 text-xs opacity-80">
+                    {t("nextSteps")}: {entry.nextSteps}
+                  </p>
+                ) : null}
+                {entry.waitlistPosition != null ? (
+                  <p className="mt-1 text-xs opacity-80">
+                    {t("waitlistPosition")}: {entry.waitlistPosition}
+                  </p>
+                ) : null}
+                {docs.length > 0 ? (
+                  <ul className="mt-1 list-inside list-disc text-xs opacity-70">
+                    {docs.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            );
+          })}
         </ol>
 
         <p className="mt-6 text-sm">

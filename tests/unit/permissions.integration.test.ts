@@ -115,8 +115,8 @@ describe("permission isolation (integration)", () => {
 
   it("staff site1 cannot see site2 applications", async () => {
     const list = await listStaffApplications(staffSite1Id, "STAFF");
-    expect(list.some((a) => a.id === appA1Id)).toBe(true);
-    expect(list.some((a) => a.id === appB2Id)).toBe(false);
+    expect(list.items.some((a) => a.id === appA1Id)).toBe(true);
+    expect(list.items.some((a) => a.id === appB2Id)).toBe(false);
   });
 
   it("staff other site gets 404 on site1 application", async () => {

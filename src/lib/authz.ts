@@ -1,4 +1,4 @@
-import { CaregiverRole, type Role, type StaffPermission } from "@prisma/client";
+import { CaregiverRole, StaffOrgRole, type Role, type StaffPermission } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export class AuthzError extends Error {
@@ -68,6 +68,29 @@ export async function listAccessibleSiteIds(userId: string): Promise<string[] | 
   return [...ids];
 }
 
+/**
+ * Resolve staff membership for a destination site from the server-side application.siteId
+ * (never trust client-supplied site/org ids).
+ */
+export async function getStaffMembershipForSite(userId: string, siteId: string) {
+  const site = await prisma.residenceSite.findUnique({
+    where: { id: siteId },
+    select: { id: true, organizationId: true },
+  });
+  if (!site) return null;
+
+  const memberships = await prisma.staffMembership.findMany({
+    where: {
+      userId,
+      organizationId: site.organizationId,
+      OR: [{ siteId: null }, { siteId: site.id }],
+    },
+  });
+  if (memberships.length === 0) return null;
+
+  return memberships.find((m) => m.siteId === site.id) ?? memberships[0]!;
+}
+
 export async function assertCanAccessApplication(
   userId: string,
   applicationId: string,
@@ -75,7 +98,7 @@ export async function assertCanAccessApplication(
 ) {
   const app = await prisma.application.findUnique({
     where: { id: applicationId },
-    select: { id: true, familyProfileId: true, siteId: true },
+    select: { id: true, familyProfileId: true, siteId: true, version: true, status: true },
   });
   if (!app) throw new AuthzError("APPLICATION_NOT_FOUND", 404);
 
@@ -87,14 +110,37 @@ export async function assertCanAccessApplication(
   }
 
   if (role === "STAFF") {
-    const sites = await listAccessibleSiteIds(userId);
-    if (sites !== "ALL" && !sites.includes(app.siteId)) {
-      throw new AuthzError("APPLICATION_NOT_FOUND", 404);
-    }
+    const membership = await getStaffMembershipForSite(userId, app.siteId);
+    if (!membership) throw new AuthzError("APPLICATION_NOT_FOUND", 404);
     return app;
   }
 
   throw new AuthzError("FORBIDDEN", 403);
+}
+
+/**
+ * OWNER/EDITOR of the destination facility may change admissions status.
+ * VIEWER may only consult. Never trust client siteId/organizationId.
+ */
+export async function assertCanMutateStaffApplication(userId: string, siteId: string) {
+  const membership = await getStaffMembershipForSite(userId, siteId);
+  if (!membership) throw new AuthzError("APPLICATION_NOT_FOUND", 404);
+  if (
+    membership.orgRole !== StaffOrgRole.OWNER &&
+    membership.orgRole !== StaffOrgRole.EDITOR
+  ) {
+    throw new AuthzError("FORBIDDEN", 403);
+  }
+  return membership;
+}
+
+/** OWNER only for explicit reopen of ACCEPTED/REJECTED. */
+export async function assertStaffOwnerForReopen(userId: string, siteId: string) {
+  const membership = await assertCanMutateStaffApplication(userId, siteId);
+  if (membership.orgRole !== StaffOrgRole.OWNER) {
+    throw new AuthzError("FORBIDDEN", 403);
+  }
+  return membership;
 }
 
 export async function assertStaffPermission(
@@ -145,14 +191,11 @@ export async function assertCanAccessDocument(userId: string, documentId: string
 
   if (role === "STAFF") {
     if (!doc.application?.siteId) throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
-    // Staff never sees non-AVAILABLE documents (uploading / quarantined).
     if (doc.status !== "AVAILABLE") {
       throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
     }
-    const sites = await listAccessibleSiteIds(userId);
-    if (sites !== "ALL" && !sites.includes(doc.application.siteId)) {
-      throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
-    }
+    const membership = await getStaffMembershipForSite(userId, doc.application.siteId);
+    if (!membership) throw new AuthzError("DOCUMENT_NOT_FOUND", 404);
     return doc;
   }
 

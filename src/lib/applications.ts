@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import {
   assertCanAccessApplication,
   assertCanMutateFamily,
-  assertStaffPermission,
+  assertCanMutateStaffApplication,
+  assertStaffOwnerForReopen,
   listAccessibleFamilyIds,
   listAccessibleSiteIds,
   AuthzError,
@@ -17,9 +18,11 @@ import {
 } from "@/lib/application-schema";
 import {
   assertTransition,
+  isReopenTransition,
   staffVisibleStatuses,
   transitionActorForRole,
 } from "@/lib/application-status";
+import { applicationStatusEmail, dispatchOutbox, enqueueOutbox } from "@/lib/outbox";
 
 export class ApplicationError extends Error {
   status: number;
@@ -87,29 +90,85 @@ export async function listFamilyApplications(userId: string, role: Role) {
   });
 }
 
-export async function listStaffApplications(userId: string, role: Role) {
+export async function listStaffApplications(
+  userId: string,
+  role: Role,
+  filters?: {
+    status?: ApplicationStatus | ApplicationStatus[];
+    siteId?: string;
+    q?: string;
+    from?: Date;
+    to?: Date;
+    page?: number;
+    pageSize?: number;
+  },
+) {
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(50, Math.max(1, filters?.pageSize ?? 20));
   const visible = staffVisibleStatuses();
+  const statusFilter = filters?.status
+    ? Array.isArray(filters.status)
+      ? filters.status
+      : [filters.status]
+    : visible;
+
+  const whereBase: {
+    status: { in: ApplicationStatus[] };
+    siteId?: string | { in: string[] };
+    createdAt?: { gte?: Date; lte?: Date };
+    OR?: Array<Record<string, unknown>>;
+  } = {
+    status: { in: statusFilter.filter((s) => visible.includes(s)) },
+  };
+
+  if (filters?.from || filters?.to) {
+    whereBase.createdAt = {};
+    if (filters.from) whereBase.createdAt.gte = filters.from;
+    if (filters.to) whereBase.createdAt.lte = filters.to;
+  }
+
+  if (filters?.q?.trim()) {
+    const q = filters.q.trim();
+    whereBase.OR = [
+      { publicRef: { contains: q, mode: "insensitive" } },
+      { residentPreferredName: { contains: q, mode: "insensitive" } },
+      { contactEmail: { contains: q, mode: "insensitive" } },
+      { family: { displayName: { contains: q, mode: "insensitive" } } },
+    ];
+  }
+
   if (role === "ADMIN") {
-    return prisma.application.findMany({
-      where: { status: { in: visible } },
+    if (filters?.siteId) whereBase.siteId = filters.siteId;
+  } else if (role === "STAFF") {
+    const sites = await listAccessibleSiteIds(userId);
+    if (sites === "ALL") {
+      if (filters?.siteId) whereBase.siteId = filters.siteId;
+    } else {
+      if (filters?.siteId) {
+        if (!sites.includes(filters.siteId)) {
+          return { items: [], total: 0, page, pageSize };
+        }
+        whereBase.siteId = filters.siteId;
+      } else {
+        whereBase.siteId = { in: sites };
+      }
+    }
+  } else {
+    throw new AuthzError("FORBIDDEN", 403);
+  }
+
+  const [total, items] = await Promise.all([
+    prisma.application.count({ where: whereBase }),
+    prisma.application.findMany({
+      where: whereBase,
       include: { site: true, family: true },
       orderBy: { updatedAt: "desc" },
-    });
-  }
-  if (role !== "STAFF") throw new AuthzError("FORBIDDEN", 403);
-  const sites = await listAccessibleSiteIds(userId);
-  if (sites === "ALL") {
-    return prisma.application.findMany({
-      where: { status: { in: visible } },
-      include: { site: true, family: true },
-      orderBy: { updatedAt: "desc" },
-    });
-  }
-  return prisma.application.findMany({
-    where: { siteId: { in: sites }, status: { in: visible } },
-    include: { site: true, family: true },
-    orderBy: { updatedAt: "desc" },
-  });
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  return { items, total, page, pageSize };
 }
 
 export async function getApplicationForUser(
@@ -375,6 +434,210 @@ export async function submitApplication(input: {
   return result;
 }
 
+/**
+ * Authoritative status transition with:
+ * - expected previous status + optimistic version
+ * - idempotency key
+ * - role/orgRole checks (never trust client site/org ids)
+ * - internal vs family-facing messages
+ * - transactional outbox notification
+ */
+export async function transitionApplicationStatus(input: {
+  userId: string;
+  role: Role;
+  applicationId: string;
+  expectedStatus: ApplicationStatus;
+  expectedVersion: number;
+  toStatus: ApplicationStatus;
+  idempotencyKey: string;
+  internalNote?: string | null;
+  familyMessage?: string | null;
+  requestedDocuments?: string[];
+  waitlistPosition?: number | null;
+  nextSteps?: string | null;
+  /** Required when reopening ACCEPTED/REJECTED. */
+  reopenReason?: string | null;
+  /** PLATFORM_ADMIN exceptional path — audited. */
+  platformAdminOverride?: boolean;
+  ipAddress?: string | null;
+  locale?: string;
+}) {
+  if (!input.idempotencyKey || input.idempotencyKey.length < 8) {
+    throw new ApplicationError("IDEMPOTENCY_KEY_REQUIRED", 400);
+  }
+
+  const existing = await prisma.applicationStatusHistory.findUnique({
+    where: { idempotencyKey: input.idempotencyKey },
+  });
+  if (existing) {
+    return prisma.application.findUniqueOrThrow({
+      where: { id: existing.applicationId },
+      include: { site: true, family: true, statusHistory: { orderBy: { createdAt: "asc" } } },
+    });
+  }
+
+  const access = await assertCanAccessApplication(
+    input.userId,
+    input.applicationId,
+    input.role,
+  );
+
+  const isReopen = isReopenTransition(input.expectedStatus, input.toStatus);
+  const actor = transitionActorForRole(input.role);
+
+  if (input.role === "STAFF") {
+    if (isReopen) {
+      await assertStaffOwnerForReopen(input.userId, access.siteId);
+    } else {
+      await assertCanMutateStaffApplication(input.userId, access.siteId);
+    }
+  } else if (input.role === "FAMILY") {
+    await assertCanMutateFamily(input.userId, access.familyProfileId, input.role);
+  } else if (input.role === "ADMIN") {
+    if (!input.platformAdminOverride && !isReopen) {
+      // ADMIN may act as staff without override for normal transitions.
+    }
+    if (input.platformAdminOverride) {
+      await writeAudit({
+        actorUserId: input.userId,
+        action: "application.platform_admin_override",
+        entityType: "Application",
+        entityId: input.applicationId,
+        metadata: { to: input.toStatus, expected: input.expectedStatus },
+        ipAddress: input.ipAddress,
+      });
+    }
+  } else {
+    throw new AuthzError("FORBIDDEN", 403);
+  }
+
+  // Validate motifs before locking
+  if (input.toStatus === "NEEDS_DOCUMENTS") {
+    if (!input.familyMessage?.trim()) {
+      throw new ApplicationError("FAMILY_MESSAGE_REQUIRED", 400);
+    }
+    if (!input.requestedDocuments?.length) {
+      throw new ApplicationError("REQUESTED_DOCUMENTS_REQUIRED", 400);
+    }
+  }
+  if (input.toStatus === "REJECTED") {
+    if (!input.internalNote?.trim()) {
+      throw new ApplicationError("INTERNAL_NOTE_REQUIRED", 400);
+    }
+    if (!input.familyMessage?.trim()) {
+      throw new ApplicationError("FAMILY_MESSAGE_REQUIRED", 400);
+    }
+  }
+  if (isReopen && !input.reopenReason?.trim()) {
+    throw new ApplicationError("REOPEN_REASON_REQUIRED", 400);
+  }
+
+  try {
+    assertTransition(input.expectedStatus, input.toStatus, actor, {
+      allowReopen: isReopen,
+    });
+  } catch {
+    throw new ApplicationError("INVALID_TRANSITION", 409);
+  }
+
+  const locale = input.locale === "en" ? "en" : "fr";
+  const outboxKey = `notify:${input.idempotencyKey}`;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const locked = await tx.application.updateMany({
+      where: {
+        id: input.applicationId,
+        status: input.expectedStatus,
+        version: input.expectedVersion,
+      },
+      data: {
+        status: input.toStatus,
+        version: { increment: 1 },
+        submittedAt:
+          input.toStatus === "SUBMITTED" ? new Date() : undefined,
+      },
+    });
+    if (locked.count !== 1) {
+      throw new ApplicationError("VERSION_CONFLICT", 409);
+    }
+
+    const next = await tx.application.findUniqueOrThrow({
+      where: { id: input.applicationId },
+      include: { site: true, family: true },
+    });
+
+    const familyMessage =
+      input.toStatus === "ACCEPTED"
+        ? input.familyMessage?.trim() || input.nextSteps?.trim() || null
+        : input.familyMessage?.trim() || null;
+
+    await tx.applicationStatusHistory.create({
+      data: {
+        applicationId: input.applicationId,
+        fromStatus: input.expectedStatus,
+        toStatus: input.toStatus,
+        changedByUserId: input.userId,
+        note: (input.internalNote || input.reopenReason || "").slice(0, 200) || null,
+        internalNote: (input.internalNote || input.reopenReason || null)?.slice(0, 2000) || null,
+        familyMessage: familyMessage?.slice(0, 2000) || null,
+        requestedDocuments: input.requestedDocuments ?? undefined,
+        waitlistPosition:
+          input.toStatus === "WAITLISTED" ? input.waitlistPosition ?? null : null,
+        nextSteps:
+          input.toStatus === "ACCEPTED" ? input.nextSteps?.slice(0, 2000) || null : null,
+        isReopen,
+        idempotencyKey: input.idempotencyKey,
+      },
+    });
+
+    const email = applicationStatusEmail({
+      publicRef: next.publicRef,
+      toStatus: input.toStatus,
+      locale,
+      familyMessage,
+      applicationId: next.id,
+    });
+    await enqueueOutbox(tx, {
+      type: "application.status_changed",
+      aggregateType: "Application",
+      aggregateId: next.id,
+      idempotencyKey: outboxKey,
+      payload: {
+        toUserId: next.family.ownerUserId,
+        subject: email.subject,
+        text: email.text,
+        applicationId: next.id,
+        publicRef: next.publicRef,
+        locale,
+      },
+    });
+
+    return next;
+  });
+
+  await writeAudit({
+    actorUserId: input.userId,
+    action: isReopen ? "application.status_reopened" : "application.status_changed",
+    entityType: "Application",
+    entityId: input.applicationId,
+    metadata: {
+      from: input.expectedStatus,
+      to: input.toStatus,
+      version: input.expectedVersion + 1,
+    },
+    ipAddress: input.ipAddress,
+  });
+
+  // Fire-and-forget dispatch after commit (still idempotent via outbox key).
+  void dispatchOutbox().catch(() => undefined);
+
+  return prisma.application.findUniqueOrThrow({
+    where: { id: updated.id },
+    include: { site: true, family: true, statusHistory: { orderBy: { createdAt: "asc" } } },
+  });
+}
+
+/** @deprecated Prefer transitionApplicationStatus — kept as thin alias for older callers. */
 export async function changeApplicationStatus(input: {
   userId: string;
   role: Role;
@@ -383,73 +646,26 @@ export async function changeApplicationStatus(input: {
   note?: string;
   ipAddress?: string | null;
 }) {
-  const app = await assertCanAccessApplication(
-    input.userId,
-    input.applicationId,
-    input.role,
-  );
-
-  const actor = transitionActorForRole(input.role);
-
-  if (input.role === "STAFF") {
-    const site = await prisma.residenceSite.findUniqueOrThrow({
-      where: { id: app.siteId },
-    });
-    await assertStaffPermission(
-      input.userId,
-      site.organizationId,
-      "MANAGE_APPLICATIONS",
-      site.id,
-    );
-  } else if (input.role === "FAMILY") {
-    await assertCanMutateFamily(input.userId, app.familyProfileId, input.role);
-  } else if (input.role !== "ADMIN") {
-    throw new AuthzError("FORBIDDEN", 403);
-  }
-
   const current = await prisma.application.findUniqueOrThrow({
     where: { id: input.applicationId },
   });
-
-  try {
-    assertTransition(current.status, input.toStatus, actor);
-  } catch {
-    throw new ApplicationError("INVALID_TRANSITION", 409);
-  }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const next = await tx.application.update({
-      where: { id: input.applicationId },
-      data: {
-        status: input.toStatus,
-        submittedAt:
-          input.toStatus === "SUBMITTED" && !current.submittedAt
-            ? new Date()
-            : current.submittedAt,
-      },
-    });
-    await tx.applicationStatusHistory.create({
-      data: {
-        applicationId: input.applicationId,
-        fromStatus: current.status,
-        toStatus: input.toStatus,
-        changedByUserId: input.userId,
-        note: input.note?.slice(0, 200) || null,
-      },
-    });
-    return next;
-  });
-
-  await writeAudit({
-    actorUserId: input.userId,
-    action: "application.status_changed",
-    entityType: "Application",
-    entityId: input.applicationId,
-    metadata: { from: current.status, to: input.toStatus },
+  return transitionApplicationStatus({
+    userId: input.userId,
+    role: input.role,
+    applicationId: input.applicationId,
+    expectedStatus: current.status,
+    expectedVersion: current.version,
+    toStatus: input.toStatus,
+    idempotencyKey: `legacy-${input.applicationId}-${input.toStatus}-${Date.now()}`,
+    internalNote: input.note,
+    familyMessage:
+      input.toStatus === "REJECTED" || input.toStatus === "NEEDS_DOCUMENTS"
+        ? input.note
+        : null,
+    requestedDocuments:
+      input.toStatus === "NEEDS_DOCUMENTS" ? ["document"] : undefined,
     ipAddress: input.ipAddress,
   });
-
-  return updated;
 }
 
 export async function validateApplicationForSubmit(applicationId: string) {

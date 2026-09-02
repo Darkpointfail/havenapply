@@ -1,0 +1,245 @@
+/* Get-started (Québec) scoped tokens */
+.gs {
+  --gs-ink: #121a17;
+  --gs-ink-body: #3c4b46;
+  --gs-ink-muted: #586863;
+  --gs-ink-faint: #8e9b96;
+  --gs-green: #0e9384;
+  --gs-green-light: #4fbfae;
+  --gs-black: #101815;
+  --gs-green-tint: #e2f3ef;
+  --gs-green-tint-2: #f1f8f6;
+  --gs-green-line: #c2dbd4;
+  --gs-surface: #ffffff;
+  --gs-canvas: #ecf2f0;
+  --gs-subtle: #f7faf9;
+  --gs-border: #dce6e2;
+  --gs-border-faint: #ecf2f0;
+  color: var(--gs-ink);
+  background: var(--gs-canvas);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+.gs * {
+  box-sizing: border-box;
+}
+
+.gs-header {
+  background: var(--gs-black);
+  color: #fff;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.gs-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 10px 40px;
+}
+
+.gs-main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 56px 40px 72px;
+  padding-left: max(40px, env(safe-area-inset-left));
+  padding-right: max(40px, env(safe-area-inset-right));
+  padding-bottom: max(72px, env(safe-area-inset-bottom));
+}
+
+.gs-eyebrow {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gs-ink-muted);
+}
+
+.gs-h1 {
+  margin: 14px 0 0;
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--gs-ink);
+  text-wrap: balance;
+}
+
+.gs-h2 {
+  margin: 0;
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--gs-ink);
+}
+
+.gs-lead {
+  margin: 14px 0 0;
+  max-width: 620px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--gs-ink-body);
+}
+
+.gs-role-card {
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  transition: border-color 140ms ease, background-color 140ms ease;
+  cursor: pointer;
+}
+
+.gs-role-card:hover {
+  border-color: var(--gs-green);
+}
+
+.gs-role-mark {
+  display: inline-flex;
+  height: 42px;
+  width: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.gs-role-title {
+  margin: 16px 0 0;
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--gs-ink);
+}
+
+.gs-form-card {
+  background: var(--gs-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: 14px;
+  padding: 32px 34px 34px;
+}
+
+.gs-field-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  color: var(--gs-ink-muted);
+}
+
+.gs-input {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-subtle);
+  padding: 12px 13px;
+  font: inherit;
+  /* 16px avoids iOS Safari auto-zoom on focus */
+  font-size: 16px;
+  color: var(--gs-ink);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.gs-input:focus {
+  border-color: var(--gs-green);
+  background: var(--gs-surface);
+}
+
+.gs-submit {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: var(--gs-green);
+  color: #fff;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.gs-submit:hover:not(:disabled) {
+  background: var(--gs-black);
+}
+
+.gs-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.gs-header-cta {
+  margin: 0;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.gs-header-cta a {
+  display: inline-block;
+  padding: 8px 0;
+  min-height: 44px;
+  line-height: 28px;
+}
+
+@media (max-width: 640px) {
+  .gs-header-cta-lead {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .gs-header-inner {
+    padding: 8px 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .gs-main {
+    padding: 28px 16px 48px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+  }
+
+  .gs-role-card {
+    padding: 22px 18px 20px;
+  }
+
+  .gs-form-card {
+    padding: 22px 18px 24px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .gs-main {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .gs-h1 {
+    font-size: 26px;
+  }
+
+  .gs-form-card,
+  .gs-role-card {
+    padding: 18px 14px 20px;
+  }
+}

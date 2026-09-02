@@ -1,117 +1,39 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { locales, isLocale, type Locale } from "@/lib/i18n";
-import { CSRF_COOKIE, CSRF_HEADER, createCsrfTokenValue } from "@/lib/csrf-constants";
-
-const PUBLIC_PREFIXES = [
-  "/sign-in",
-  "/sign-up",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-  "/check-email",
-  "/access-denied",
-  "/invite",
-  "/residences",
-  "/api/auth",
-];
-
-function stripLocale(pathname: string): { locale: Locale; path: string } {
-  const parts = pathname.split("/").filter(Boolean);
-  const maybe = parts[0] ?? "";
-  if (isLocale(maybe)) {
-    return { locale: maybe, path: "/" + parts.slice(1).join("/") };
-  }
-  return { locale: "fr", path: pathname || "/" };
-}
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  SITE_ACCESS_COOKIE,
+  SITE_ACCESS_COOKIE_VALUE,
+  SITE_ACCESS_PATH,
+  isSiteAccessPublicPath,
+  safeSiteNextPath,
+} from "@/lib/site-access";
+import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
-
-  // API routes are not locale-prefixed; enforce CSRF header injection only.
-  if (pathname.startsWith("/api/")) {
-    const isPublicApi = pathname.startsWith("/api/auth");
-    const sessionToken =
-      request.cookies.get("haven.session")?.value ||
-      request.cookies.get("__Secure-haven.session")?.value;
-
-    if (!isPublicApi && !sessionToken) {
-      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  if (!isSiteAccessPublicPath(pathname)) {
+    const unlocked =
+      request.cookies.get(SITE_ACCESS_COOKIE)?.value === SITE_ACCESS_COOKIE_VALUE;
+    if (!unlocked) {
+      const url = request.nextUrl.clone();
+      url.pathname = SITE_ACCESS_PATH;
+      url.search = "";
+      const next = safeSiteNextPath(`${pathname}${request.nextUrl.search}`);
+      if (next !== SITE_ACCESS_PATH) {
+        url.searchParams.set("next", next);
+      }
+      return NextResponse.redirect(url);
     }
-
-    const csrf = request.cookies.get(CSRF_COOKIE)?.value || createCsrfTokenValue();
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set(CSRF_HEADER, csrf);
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-    if (!request.cookies.get(CSRF_COOKIE)?.value) {
-      response.cookies.set(CSRF_COOKIE, csrf, {
-        httpOnly: false,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      });
-    }
-    return response;
   }
 
-  const parts = pathname.split("/").filter(Boolean);
-  if (!parts[0] || !isLocale(parts[0])) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/fr${pathname === "/" ? "" : pathname}`;
-    return NextResponse.redirect(url);
-  }
-
-  const { locale, path } = stripLocale(pathname);
-  const isPublic =
-    path === "/" ||
-    path === "" ||
-    PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
-
-  const sessionToken =
-    request.cookies.get("haven.session")?.value ||
-    request.cookies.get("__Secure-haven.session")?.value;
-
-  if (!isPublic && !sessionToken) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/sign-in`;
-    // Preserve query (e.g. siteClaim) so deep-link apply survives auth.
-    const nextTarget = `${pathname}${request.nextUrl.search || ""}`;
-    url.search = "";
-    url.searchParams.set("next", nextTarget);
-    return NextResponse.redirect(url);
-  }
-
-  const csrf = request.cookies.get(CSRF_COOKIE)?.value || createCsrfTokenValue();
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set(CSRF_HEADER, csrf);
-
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
-  response.headers.set("x-haven-locale", locale);
-
-  if (!request.cookies.get(CSRF_COOKIE)?.value) {
-    response.cookies.set(CSRF_COOKIE, csrf, {
-      httpOnly: false,
-      sameSite: "lax",
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
-    });
-  }
-
-  return response;
+  return updateSession(request);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|.*\\..*).*)"],
+  matcher: [
+    /*
+     * Match all request paths except static assets and images.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };
-
-void locales;

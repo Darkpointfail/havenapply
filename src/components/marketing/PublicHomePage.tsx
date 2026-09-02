@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { Logo } from "@/components/brand/Logo";
-import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { askAssistant, type AssistantTurn } from "@/data/assistant";
-import {
-  RPA_RESIDENCE_COUNT,
-  collectionPath,
-  privacyPath,
-  termsPath,
-} from "@/lib/marketing-meta";
-import type { Locale } from "@/lib/i18n";
-import { createT } from "@/lib/i18n";
+import { RPA_SOURCE } from "@/data/rpa-quebec";
+import { collectionPath, privacyPath, termsPath } from "@/content/legal";
+import { useAuth, homeForUser } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n/locale";
 import "./public-home.css";
 
 const sourceSerif = Source_Serif_4({
@@ -92,9 +89,9 @@ function TrackingVisual({ alt }: { alt: string }) {
   );
 }
 
-function ClaireHomeDemo({ locale }: { locale: Locale }) {
-  const t = createT(locale);
-  const claireHref = `/${locale}/sign-up`;
+function ClaireHomeDemo() {
+  const { t } = useI18n();
+  const claireHref = `/get-started?next=${encodeURIComponent("/family/dashboard?claire=1")}`;
   const hello = t("hp.claire.hello");
   const [messages, setMessages] = useState<AssistantTurn[]>([{ from: "claire", body: hello }]);
   const [input, setInput] = useState("");
@@ -214,18 +211,15 @@ function ClaireHomeDemo({ locale }: { locale: Locale }) {
   );
 }
 
-export function PublicHomePage({
-  locale,
-  signedIn = false,
-  accountHome,
-}: {
-  locale: Locale;
-  signedIn?: boolean;
-  accountHome: string;
-}) {
-  const t = createT(locale);
+export function PublicHomePage() {
+  const router = useRouter();
+  const { user, ready, signOut } = useAuth();
+  const { locale, t } = useI18n();
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const signedIn = ready && Boolean(user);
+  const accountHome = user ? homeForUser(user) : "/sign-in";
 
   const nav = useMemo(
     () =>
@@ -299,7 +293,13 @@ export function PublicHomePage({
     [locale, t],
   );
 
-  const residenceCount = `${(Math.floor(RPA_RESIDENCE_COUNT / 100) * 100).toLocaleString(
+  const onSignOut = () => {
+    signOut();
+    setMobileOpen(false);
+    router.replace("/sign-in?signedOut=1");
+  };
+
+  const residenceCount = `${(Math.floor(RPA_SOURCE.count / 100) * 100).toLocaleString(
     locale === "en" ? "en-CA" : "fr-CA",
   )}+`;
 
@@ -307,7 +307,7 @@ export function PublicHomePage({
     <div className={`hp ${sourceSerif.variable} ${publicSans.variable}`}>
       <header className="hp-header">
         <div className="hp-wrap flex h-[68px] items-center justify-between gap-4">
-          <Logo href={`/${locale}`} size="nav" className="!ml-0 !translate-y-0" />
+          <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
 
           <nav className="hp-desktop-nav flex items-center gap-7">
             {nav.map((item) => (
@@ -318,22 +318,22 @@ export function PublicHomePage({
           </nav>
 
           <div className="hp-desktop-nav flex items-center gap-3">
-            <LocaleSwitcher locale={locale} compact />
+            <LanguageSwitcher compact />
             {signedIn ? (
               <>
                 <Link href={accountHome} className="hp-btn-ghost">
                   {t("hp.nav.mySpace")}
                 </Link>
-                <button type="button" className="hp-btn-ghost" onClick={() => { window.location.href = `/${locale}/sign-in`; }}>
+                <button type="button" className="hp-btn-ghost" onClick={onSignOut}>
                   {t("hp.nav.signOut")}
                 </button>
               </>
             ) : (
               <>
-                <Link href={`/${locale}/sign-in`} className="hp-btn-ghost">
+                <Link href="/sign-in" className="hp-btn-ghost">
                   {t("hp.nav.signIn")}
                 </Link>
-                <Link href={`/${locale}/sign-up`} className="hp-btn hp-btn-primary">
+                <Link href="/get-started" className="hp-btn hp-btn-primary">
                   {t("hp.nav.start")}
                 </Link>
               </>
@@ -341,7 +341,7 @@ export function PublicHomePage({
           </div>
 
           <div className="hp-mobile-toggle items-center gap-2">
-            <LocaleSwitcher locale={locale} compact />
+            <LanguageSwitcher compact />
             <button
               type="button"
               className="hp-btn hp-btn-outline"
@@ -376,21 +376,21 @@ export function PublicHomePage({
                   >
                     {t("hp.nav.mySpace")}
                   </Link>
-                  <button type="button" className="hp-btn-ghost py-2 text-left" onClick={() => { window.location.href = `/${locale}/sign-in`; }}>
+                  <button type="button" className="hp-btn-ghost py-2 text-left" onClick={onSignOut}>
                     {t("hp.nav.signOut")}
                   </button>
                 </>
               ) : (
                 <>
                   <Link
-                    href={`/${locale}/sign-in`}
+                    href="/sign-in"
                     className="hp-btn-ghost py-2"
                     onClick={() => setMobileOpen(false)}
                   >
                     {t("hp.nav.signIn")}
                   </Link>
                   <Link
-                    href={`/${locale}/sign-up`}
+                    href="/get-started"
                     className="hp-btn hp-btn-primary w-full"
                     onClick={() => setMobileOpen(false)}
                   >
@@ -415,7 +415,7 @@ export function PublicHomePage({
             <h1 className="hp-h1 mt-6">{t("hp.hero.title")}</h1>
             <p className="hp-lead mt-6">{t("hp.hero.lead")}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href={`/${locale}/sign-up`} className="hp-btn hp-btn-primary">
+              <Link href="/get-started" className="hp-btn hp-btn-primary">
                 {t("hp.hero.ctaPrimary")}
               </Link>
               <a href="#comment" className="hp-btn hp-btn-outline">
@@ -510,14 +510,14 @@ export function PublicHomePage({
               ))}
             </ul>
             <Link
-              href={`/${locale}/sign-up`}
+              href={`/get-started?next=${encodeURIComponent("/family/dashboard?claire=1")}`}
               className="hp-btn hp-btn-primary mt-9 inline-flex"
             >
               {t("hp.claire.cta")}
             </Link>
           </div>
 
-          <ClaireHomeDemo locale={locale} />
+          <ClaireHomeDemo />
         </div>
       </section>
 
@@ -576,7 +576,7 @@ export function PublicHomePage({
               </p>
               <h2 className="hp-h2 mt-3 text-[var(--hp-ink)]">{t("hp.res.title")}</h2>
               <p className="hp-body mt-4">{t("hp.res.body")}</p>
-              <Link href={`/${locale}/sign-in`} className="hp-btn hp-btn-primary mt-7">
+              <Link href="/community/console" className="hp-btn hp-btn-primary mt-7">
                 {t("hp.res.cta")}
               </Link>
             </div>
@@ -637,7 +637,7 @@ export function PublicHomePage({
           <p className="mx-auto mt-5 max-w-xl text-[17.5px] leading-[1.6] text-white/85 hp-pretty">
             {t("hp.cta.lead")}
           </p>
-          <Link href={`/${locale}/sign-up`} className="hp-btn hp-btn-white mt-9">
+          <Link href="/get-started" className="hp-btn hp-btn-white mt-9">
             {t("hp.cta.button")}
           </Link>
         </div>
@@ -646,7 +646,7 @@ export function PublicHomePage({
       <footer style={{ background: "var(--hp-black-deep)" }}>
         <div className="hp-wrap flex flex-col gap-6 py-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <Logo href={`/${locale}`} size="nav" light className="!ml-0 !translate-y-0" />
+            <Logo href="/" size="nav" light className="!ml-0 !translate-y-0" />
             <span className="text-[14px] text-white/55">{t("hp.footer.tagline")}</span>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2">

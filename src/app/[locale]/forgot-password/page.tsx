@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requestPasswordReset } from "@/lib/auth-actions";
 import { createT, isLocale, type Locale } from "@/lib/i18n";
 import { AuthCard } from "@/components/AuthCard";
+import { getCsrfToken, CSRF_FIELD } from "@/lib/csrf";
+import { forgotAction } from "@/app/actions/auth";
 
 export default async function ForgotPasswordPage({
   params,
@@ -16,29 +17,18 @@ export default async function ForgotPasswordPage({
   const locale = raw as Locale;
   const t = createT(locale);
   const q = await searchParams;
-
-  async function action(formData: FormData) {
-    "use server";
-    await requestPasswordReset(String(formData.get("email") || ""));
-    redirect(`/${locale}/forgot-password?sent=1`);
-  }
+  const csrfToken = await getCsrfToken();
 
   return (
     <AuthCard title={t("forgotPassword")}>
       {q.sent ? (
-        <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {t("checkEmail")}
-        </p>
+        <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{t("checkEmail")}</p>
       ) : null}
-      <form action={action} className="space-y-4">
+      <form action={forgotAction.bind(null, locale)} className="space-y-4">
+        <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("email")}</span>
-          <input
-            name="email"
-            type="email"
-            required
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
-          />
+          <input name="email" type="email" required className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" />
         </label>
         <button
           type="submit"

@@ -40,8 +40,8 @@ export default async function ReviewApplicationPage({
 
   return (
     <section className="mx-auto max-w-xl space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("reviewTitle")}</h1>
+      <div className="ha-card">
+        <h1 className="ha-title">{t("reviewTitle")}</h1>
         <p className="mt-2 text-sm opacity-70">{t("reviewHelp")}</p>
         {q.error ? (
           <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

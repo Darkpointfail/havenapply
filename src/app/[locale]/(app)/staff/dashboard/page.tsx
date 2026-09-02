@@ -82,9 +82,9 @@ export default async function StaffDashboardPage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("staffDashboard")}</h1>
-        <p className="mt-2 text-sm opacity-70">
+      <div className="ha-card">
+        <h1 className="ha-title">{t("staffDashboard")}</h1>
+        <p className="ha-subtitle">
           {t("welcome")}, {session.user.name || session.user.email}
           {session.user.isDevAccount ? " · DEV" : ""}
         </p>
@@ -98,7 +98,7 @@ export default async function StaffDashboardPage({
         </p>
       </div>
 
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <h2 className="text-lg font-semibold">{t("applications")}</h2>
 
         <form
@@ -111,7 +111,7 @@ export default async function StaffDashboardPage({
             <input
               name="q"
               defaultValue={q.q || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
               data-testid="staff-filter-q"
             />
           </label>
@@ -120,7 +120,7 @@ export default async function StaffDashboardPage({
             <select
               name="status"
               defaultValue={q.status || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
               data-testid="staff-filter-status"
             >
               <option value="">{t("allStatuses")}</option>
@@ -136,7 +136,7 @@ export default async function StaffDashboardPage({
             <select
               name="siteId"
               defaultValue={q.siteId || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
               data-testid="staff-filter-site"
             >
               <option value="">{t("allSites")}</option>
@@ -154,7 +154,7 @@ export default async function StaffDashboardPage({
               type="date"
               name="from"
               defaultValue={q.from || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -163,19 +163,19 @@ export default async function StaffDashboardPage({
               type="date"
               name="to"
               defaultValue={q.to || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white"
+              className="ha-btn ha-btn-primary"
             >
               {t("applyFilters")}
             </button>
             <Link
               href={`/${locale}/staff/dashboard`}
-              className="rounded-full border border-[var(--line)] px-4 py-2 text-sm"
+              className="ha-btn ha-btn-secondary"
             >
               {t("clearFilters")}
             </Link>

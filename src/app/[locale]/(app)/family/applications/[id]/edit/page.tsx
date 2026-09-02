@@ -46,7 +46,7 @@ export default async function EditApplicationPage({
 
   return (
     <section className="mx-auto max-w-xl space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <p className="text-sm opacity-60">
           {app.publicRef} · {app.site.name}
         </p>

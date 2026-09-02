@@ -42,9 +42,9 @@ export default async function SignInPage({
     : `/${locale}/sign-up`;
 
   return (
-    <AuthCard title={t("signIn")}>
+    <AuthCard title={t("signIn")} locale={locale}>
       {errorMessage ? (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
+        <p className="mb-4 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">{errorMessage}</p>
       ) : null}
       <form action={loginAction.bind(null, locale)} className="space-y-4">
         <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
@@ -56,7 +56,7 @@ export default async function SignInPage({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+            className="ha-input"
           />
         </label>
         <label className="block text-sm">
@@ -67,12 +67,12 @@ export default async function SignInPage({
             required
             minLength={8}
             autoComplete="current-password"
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2"
+            className="ha-input"
           />
         </label>
         <button
           type="submit"
-          className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          className="ha-btn ha-btn-primary w-full"
         >
           {t("submit")}
         </button>

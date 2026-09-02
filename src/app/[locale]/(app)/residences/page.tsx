@@ -60,9 +60,9 @@ export default async function PublicCatalogPage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("catalogTitle")}</h1>
-        <p className="mt-2 text-sm opacity-70">{t("catalogHelp")}</p>
+      <div className="ha-card">
+        <h1 className="ha-title">{t("catalogTitle")}</h1>
+        <p className="ha-subtitle">{t("catalogHelp")}</p>
 
         <form
           method="get"
@@ -74,7 +74,7 @@ export default async function PublicCatalogPage({
             <input
               name="q"
               defaultValue={q.q || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -82,7 +82,7 @@ export default async function PublicCatalogPage({
             <input
               name="region"
               defaultValue={q.region || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -90,7 +90,7 @@ export default async function PublicCatalogPage({
             <input
               name="city"
               defaultValue={q.city || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -100,7 +100,7 @@ export default async function PublicCatalogPage({
               type="number"
               min="0"
               defaultValue={q.maxBudget || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -108,7 +108,7 @@ export default async function PublicCatalogPage({
             <input
               name="autonomy"
               defaultValue={q.autonomy || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <label className="block text-sm">
@@ -116,19 +116,19 @@ export default async function PublicCatalogPage({
             <input
               name="service"
               defaultValue={q.service || ""}
-              className="mt-1 w-full rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
+              className="ha-input mt-1"
             />
           </label>
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
             <button
               type="submit"
-              className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white"
+              className="ha-btn ha-btn-primary"
             >
               {t("applyFilters")}
             </button>
             <Link
               href={`/${locale}/residences`}
-              className="rounded-full border border-[var(--line)] px-4 py-2 text-sm"
+              className="ha-btn ha-btn-secondary"
             >
               {t("clearFilters")}
             </Link>

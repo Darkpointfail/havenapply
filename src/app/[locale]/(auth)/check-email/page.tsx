@@ -17,7 +17,7 @@ export default async function CheckEmailPage({
   const q = await searchParams;
 
   return (
-    <AuthCard title={t("checkEmailTitle")}>
+    <AuthCard title={t("checkEmailTitle")} locale={locale}>
       <p className="text-sm leading-relaxed opacity-80">{t("checkEmailBody")}</p>
       {q.email ? <p className="mt-3 text-sm font-medium">{q.email}</p> : null}
       <p className="mt-6 text-sm opacity-70">

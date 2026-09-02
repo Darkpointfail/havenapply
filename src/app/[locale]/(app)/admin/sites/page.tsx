@@ -70,10 +70,10 @@ export default async function AdminSitesPage({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("adminSites")}</h1>
+            <h1 className="ha-title">{t("adminSites")}</h1>
             <p className="mt-2 text-sm opacity-70">
               <Link href={`/${locale}/admin`} className="underline">
                 {t("adminConsole")}

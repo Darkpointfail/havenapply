@@ -83,7 +83,7 @@ export default async function StaffApplicationPage({
 
   return (
     <section className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
+      <div className="ha-card">
         <p className="text-sm opacity-60">{t("referenceNumber")}</p>
         <h1 className="mt-1 font-mono text-2xl font-semibold tracking-tight">{app.publicRef}</h1>
         <p className="mt-3 text-sm">

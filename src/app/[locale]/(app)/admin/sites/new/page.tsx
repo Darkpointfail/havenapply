@@ -28,8 +28,8 @@ export default async function NewSitePage({
 
   return (
     <section className="mx-auto max-w-xl space-y-6">
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("createSite")}</h1>
+      <div className="ha-card">
+        <h1 className="ha-title">{t("createSite")}</h1>
         <p className="mt-2 text-sm opacity-70">
           <Link href={`/${locale}/admin/sites`} className="underline">
             {t("adminSites")}

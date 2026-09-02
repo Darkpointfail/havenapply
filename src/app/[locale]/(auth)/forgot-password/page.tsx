@@ -20,7 +20,7 @@ export default async function ForgotPasswordPage({
   const csrfToken = await getCsrfToken();
 
   return (
-    <AuthCard title={t("forgotPassword")}>
+    <AuthCard title={t("forgotPassword")} locale={locale}>
       {q.sent ? (
         <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{t("checkEmail")}</p>
       ) : null}
@@ -28,11 +28,11 @@ export default async function ForgotPasswordPage({
         <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
         <label className="block text-sm">
           <span className="mb-1 block opacity-70">{t("email")}</span>
-          <input name="email" type="email" required className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2" />
+          <input name="email" type="email" required className="ha-input" />
         </label>
         <button
           type="submit"
-          className="w-full rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white"
+          className="ha-btn ha-btn-primary w-full"
         >
           {t("sendReset")}
         </button>

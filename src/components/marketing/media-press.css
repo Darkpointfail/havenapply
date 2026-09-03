@@ -43,6 +43,10 @@
   text-decoration: none;
 }
 
+.pr a.pr-btn {
+  color: var(--pr-btn-text);
+}
+
 .pr-wrap {
   width: min(100% - (var(--pr-gutter) * 2), var(--pr-max));
   margin-inline: auto;
@@ -235,12 +239,12 @@
 
 .pr-hero h1 {
   font-family: var(--pr-serif);
-  font-size: clamp(42px, 4.4vw, 66px);
+  font-size: clamp(36px, 4.2vw, 58px);
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: -0.025em;
   color: var(--pr-ink);
-  max-width: 16ch;
+  max-width: 18ch;
   text-wrap: balance;
   margin: 0 0 22px;
 }
@@ -250,9 +254,36 @@
   font-size: 19px;
   line-height: 1.55;
   color: var(--pr-body);
-  max-width: 46ch;
+  max-width: 52ch;
   text-wrap: pretty;
-  margin: 0 0 28px;
+  margin: 0 0 18px;
+}
+
+.pr-brand-line {
+  font-family: var(--pr-serif);
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--pr-ink);
+  max-width: 36ch;
+  margin: 8px 0 22px;
+}
+
+.pr-interview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  margin: 0 0 12px;
+  font-size: 14.5px;
+}
+
+.pr-interview-label {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--pr-muted);
 }
 
 .pr-hero-actions {
@@ -260,6 +291,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 18px 22px;
+  margin-top: 8px;
 }
 
 .pr-btn {
@@ -275,11 +307,13 @@
   border-radius: 2px;
   border: 0;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.pr-btn:hover {
+.pr-btn:hover,
+.pr a.pr-btn:hover {
   background: var(--pr-green);
+  color: var(--pr-btn-text);
 }
 
 .pr-text-link {
@@ -404,19 +438,20 @@
 }
 
 .pr-release-col {
-  max-width: 66ch;
-  margin-inline: auto;
+  max-width: none;
+  width: 100%;
 }
 
 .pr-release-col h2 {
   font-family: var(--pr-serif);
-  font-size: 40px;
+  font-size: clamp(28px, 3.4vw, 40px);
   font-weight: 600;
   line-height: 1.14;
   letter-spacing: -0.02em;
   color: var(--pr-ink);
   margin: 0 0 20px;
   text-wrap: balance;
+  max-width: 28ch;
 }
 
 .pr-release-dek {
@@ -440,10 +475,73 @@
   font-size: 19px;
   line-height: 1.78;
   color: var(--pr-body);
+  max-width: 72ch;
 }
 
 .pr-release-body p {
   margin: 0 0 24px;
+}
+
+.pr-release-body h3 {
+  font-family: var(--pr-serif);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--pr-ink);
+  margin: 36px 0 16px;
+  text-wrap: balance;
+}
+
+.pr-list {
+  margin: 0 0 24px;
+  padding-left: 1.2em;
+}
+
+.pr-list li {
+  margin-bottom: 8px;
+}
+
+.pr-list li::marker {
+  color: var(--pr-green);
+}
+
+.pr-ext-link {
+  margin: 0 0 24px;
+}
+
+.pr-release-meta-list {
+  margin: 28px 0 0;
+  max-width: 42ch;
+}
+
+.pr-release-meta-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 12px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--pr-rule-soft);
+  font-family: var(--pr-sans);
+  font-size: 14.5px;
+}
+
+.pr-release-meta-row dt {
+  color: var(--pr-muted);
+  margin: 0;
+}
+
+.pr-release-meta-row dd {
+  margin: 0;
+  color: var(--pr-ink);
+}
+
+.pr-release-meta-row a {
+  border-bottom: 1px solid var(--pr-link-rule);
+}
+
+.pr-release-meta-row a:hover {
+  color: var(--pr-green);
+  border-bottom-color: var(--pr-green);
 }
 
 .pr-dateline {
@@ -479,37 +577,21 @@
   color: var(--pr-muted-2);
 }
 
-.pr-about {
-  margin-top: 36px;
-  padding-top: 28px;
-  border-top: 1px solid var(--pr-rule);
-}
-
-.pr-about .pr-label {
-  margin-bottom: 12px;
-}
-
-.pr-about-body {
-  font-family: var(--pr-serif);
-  font-size: 16.5px;
-  line-height: 1.65;
-  color: var(--pr-body);
-  margin: 0 0 14px;
-}
-
-.pr-about-contact {
-  font-size: 14.5px;
-  color: var(--pr-body-2);
-  margin: 0 0 28px;
-}
-
 .pr-end-mark {
   text-align: center;
   font-family: var(--pr-sans);
   font-size: 14px;
   letter-spacing: 0.2em;
   color: var(--pr-muted);
-  margin: 0;
+  margin: 40px 0 0;
+}
+
+.pr-feature .pr-label {
+  margin-bottom: 18px;
+}
+
+.pr-feature .pr-release-col h2 {
+  max-width: 24ch;
 }
 
 /* —— Numbers —— */
@@ -519,8 +601,12 @@
   gap: 0;
 }
 
+.pr-numbers-grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .pr-number {
-  padding: 8px 28px;
+  padding: 8px 22px;
   border-right: 1px solid var(--pr-rule);
 }
 
@@ -535,12 +621,12 @@
 
 .pr-number-value {
   font-family: var(--pr-serif);
-  font-size: 60px;
+  font-size: clamp(34px, 4vw, 48px);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--pr-ink);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .pr-number-value--accent {
@@ -559,19 +645,70 @@
   font-size: 13px;
   color: var(--pr-muted);
   margin: 0;
-}
-
-.pr-numbers-foot {
-  font-family: var(--pr-serif);
-  font-size: 18px;
-  line-height: 1.5;
-  color: var(--pr-body);
-  margin: 40px 0 0;
-  max-width: 62ch;
+  max-width: 28ch;
+  line-height: 1.45;
 }
 
 .pr-numbers .pr-label {
   margin-bottom: 36px;
+}
+
+/* —— FAQ —— */
+.pr-faq .pr-label {
+  margin-bottom: 12px;
+}
+
+.pr-faq h2 {
+  font-family: var(--pr-serif);
+  font-size: clamp(28px, 3.2vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--pr-ink);
+  margin: 0 0 28px;
+  max-width: 22ch;
+}
+
+.pr-faq-list {
+  max-width: 72ch;
+  border-top: 1px solid var(--pr-rule);
+}
+
+.pr-faq-item {
+  border-bottom: 1px solid var(--pr-rule);
+  padding-block: 16px;
+}
+
+.pr-faq-item summary {
+  cursor: pointer;
+  font-family: var(--pr-sans);
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--pr-ink);
+  list-style: none;
+}
+
+.pr-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.pr-faq-item summary::after {
+  content: "+";
+  float: right;
+  color: var(--pr-muted);
+  font-weight: 500;
+}
+
+.pr-faq-item[open] summary::after {
+  content: "–";
+}
+
+.pr-faq-item p {
+  margin: 12px 0 4px;
+  font-family: var(--pr-serif);
+  font-size: 17.5px;
+  line-height: 1.65;
+  color: var(--pr-body);
+  max-width: 60ch;
 }
 
 /* —— Kit —— */
@@ -592,7 +729,22 @@
   font-weight: 600;
   color: var(--pr-ink);
   letter-spacing: -0.02em;
-  margin: 0 0 28px;
+  margin: 0 0 20px;
+}
+
+.pr-kit-brandline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--pr-rule);
+}
+
+.pr-kit-brandline .pr-brand-line {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 24px;
 }
 
 .pr-logo-tiles {
@@ -721,6 +873,29 @@
   margin: 0;
 }
 
+.pr-resources {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--pr-rule);
+}
+
+.pr-resources h3 {
+  font-family: var(--pr-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pr-ink);
+  margin: 0 0 14px;
+}
+
+.pr-resources .pr-list {
+  font-family: var(--pr-sans);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--pr-body-2);
+}
+
 /* —— Contact —— */
 .pr-contact-grid {
   display: grid;
@@ -826,8 +1001,14 @@
     display: none;
   }
 
-  .pr-numbers-grid {
+  .pr-numbers-grid,
+  .pr-numbers-grid--4 {
     grid-template-columns: 1fr;
+  }
+
+  .pr-release-meta-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .pr-number {
@@ -884,7 +1065,9 @@
   .pr-header,
   .pr-todo,
   .pr-hero,
+  .pr-feature,
   .pr-numbers,
+  .pr-faq,
   .pr-kit,
   .pr-contact,
   .pr-footer,

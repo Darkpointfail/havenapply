@@ -9,6 +9,7 @@ import {
   press,
   pressAssets,
   showTodo,
+  type PressBlock,
   type PressLocale,
 } from "@/data/press";
 import { useLocale } from "@/lib/i18n/locale";
@@ -46,6 +47,70 @@ function withPlaceholders(text: string): ReactNode {
     ) : (
       part
     ),
+  );
+}
+
+function PressBlocks({ blocks }: { blocks: PressBlock[] }) {
+  return (
+    <>
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case "p":
+            return <p key={index}>{withPlaceholders(block.text)}</p>;
+          case "h3":
+            return <h3 key={index}>{block.text}</h3>;
+          case "ul":
+            return (
+              <ul key={index} className="pr-list">
+                {block.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            );
+          case "quote":
+            return (
+              <figure key={index} className="pr-quote">
+                <blockquote>{block.text}</blockquote>
+                <figcaption>{withPlaceholders(block.attribution)}</figcaption>
+              </figure>
+            );
+          case "link":
+            return (
+              <p key={index} className="pr-ext-link">
+                <a
+                  className="pr-text-link"
+                  href={block.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {block.label}
+                </a>
+              </p>
+            );
+          case "meta":
+            return (
+              <dl key={index} className="pr-release-meta-list">
+                {block.rows.map((row) => (
+                  <div className="pr-release-meta-row" key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>
+                      {row.href ? (
+                        <a href={row.href} rel="noopener noreferrer">
+                          {row.value}
+                        </a>
+                      ) : (
+                        row.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            );
+          default:
+            return null;
+        }
+      })}
+    </>
   );
 }
 
@@ -90,10 +155,6 @@ export function MediaPressRoom() {
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
-
-  const releaseHref = `#${copy.anchors.release}`;
-  const numbersHref = `#${copy.anchors.numbers}`;
-  const brandHref = `#${copy.anchors.brand}`;
 
   return (
     <div className={`pr ${sourceSerif.variable} ${publicSans.variable}`}>
@@ -154,19 +215,43 @@ export function MediaPressRoom() {
           <div className="pr-hero-copy">
             <p className="pr-label">{copy.hero.eyebrow}</p>
             <h1 id="pr-hero-title">{copy.hero.title}</h1>
-            <p className="pr-hero-lead">{copy.hero.lead}</p>
-            <div className="pr-hero-actions">
-              <a className="pr-btn" href={releaseHref}>
-                {copy.hero.ctaRead}
+            {copy.hero.paragraphs.map((paragraph) => (
+              <p className="pr-hero-lead" key={paragraph.slice(0, 48)}>
+                {paragraph}
+              </p>
+            ))}
+            <p className="pr-brand-line">{copy.hero.brandLine}</p>
+            <p className="pr-interview">
+              <span className="pr-interview-label">{copy.hero.interviewLabel}</span>
+              <a className="pr-text-link" href={pressAssets.mailto}>
+                {copy.header.email}
               </a>
-              <a className="pr-text-link" href={numbersHref}>
+            </p>
+            <p className="pr-ext-link">
+              <a
+                className="pr-text-link"
+                href={pressAssets.rqraHome}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {copy.hero.rqraLinkLabel}
+              </a>
+            </p>
+            <div className="pr-hero-actions">
+              <a className="pr-btn" href={`#${copy.anchors.release}`}>
+                {copy.hero.ctaRelease}
+              </a>
+              <a className="pr-text-link" href={`#${copy.anchors.feature}`}>
+                {copy.hero.ctaFeature}
+              </a>
+              <a className="pr-text-link" href={`#${copy.anchors.numbers}`}>
                 {copy.hero.ctaNumbers}
               </a>
-              <a className="pr-text-link" href={brandHref}>
-                {copy.hero.ctaKit}
+              <a className="pr-text-link" href={`#${copy.anchors.faq}`}>
+                {copy.hero.ctaFaq}
               </a>
-              <a className="pr-text-link" href={pressAssets.mailto}>
-                {copy.hero.ctaInterview}
+              <a className="pr-text-link" href={`#${copy.anchors.brand}`}>
+                {copy.hero.ctaKit}
               </a>
             </div>
           </div>
@@ -202,35 +287,37 @@ export function MediaPressRoom() {
         <div className="pr-wrap">
           <div className="pr-release-meta">
             <p className="pr-label">{copy.release.sectionLabel}</p>
-            <p className="pr-release-meta-right">
-              {withPlaceholders(copy.release.forImmediate)}
-            </p>
+            <p className="pr-release-meta-right">{copy.release.forImmediate}</p>
           </div>
           <article className="pr-release-col">
             <h2 id="pr-release-title">{copy.release.title}</h2>
-            <p className="pr-release-dek">{withPlaceholders(copy.release.dek)}</p>
+            <p className="pr-release-dek">{copy.release.dek}</p>
             <hr className="pr-release-rule" />
             <div className="pr-release-body">
               <p>
                 <span className="pr-dateline">
                   {withPlaceholders(copy.release.dateline)}{" "}
                 </span>
-                {withPlaceholders(copy.release.paragraphs[0])}
+                {copy.release.lead}
               </p>
-              <p>{withPlaceholders(copy.release.paragraphs[1])}</p>
-              <p>{withPlaceholders(copy.release.paragraphs[2])}</p>
-              <figure className="pr-quote">
-                <blockquote>{copy.release.quote.text}</blockquote>
-                <figcaption>{withPlaceholders(copy.release.quote.attribution)}</figcaption>
-              </figure>
-              <p>{withPlaceholders(copy.release.paragraphs[3])}</p>
-              <p>{withPlaceholders(copy.release.paragraphs[4])}</p>
+              <PressBlocks blocks={copy.release.blocks} />
             </div>
-            <div className="pr-about">
-              <p className="pr-label">{copy.release.about.label}</p>
-              <p className="pr-about-body">{copy.release.about.body}</p>
-              <p className="pr-about-contact">{copy.release.about.contact}</p>
-              <p className="pr-end-mark">{copy.release.endMark}</p>
+            <p className="pr-end-mark">{copy.release.endMark}</p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id={copy.anchors.feature}
+        className="pr-section pr-feature"
+        aria-labelledby="pr-feature-title"
+      >
+        <div className="pr-wrap">
+          <p className="pr-label">{copy.feature.sectionLabel}</p>
+          <article className="pr-release-col">
+            <h2 id="pr-feature-title">{copy.feature.title}</h2>
+            <div className="pr-release-body">
+              <PressBlocks blocks={copy.feature.blocks} />
             </div>
           </article>
         </div>
@@ -238,16 +325,16 @@ export function MediaPressRoom() {
 
       <section
         id={copy.anchors.numbers}
-        className="pr-section pr-numbers"
+        className="pr-section pr-section--band pr-numbers"
         aria-labelledby="pr-numbers-label"
       >
         <div className="pr-wrap">
           <p className="pr-label" id="pr-numbers-label">
             {copy.numbers.sectionLabel}
           </p>
-          <div className="pr-numbers-grid">
+          <div className="pr-numbers-grid pr-numbers-grid--4">
             {copy.numbers.items.map((item) => (
-              <div className="pr-number" key={item.value}>
+              <div className="pr-number" key={item.description}>
                 <p
                   className={
                     item.accent
@@ -258,11 +345,29 @@ export function MediaPressRoom() {
                   {item.value}
                 </p>
                 <p className="pr-number-desc">{item.description}</p>
-                <p className="pr-number-source">{item.source}</p>
+                <p className="pr-number-source">{item.detail}</p>
               </div>
             ))}
           </div>
-          <p className="pr-numbers-foot">{withPlaceholders(copy.numbers.footnote)}</p>
+        </div>
+      </section>
+
+      <section
+        id={copy.anchors.faq}
+        className="pr-section pr-faq"
+        aria-labelledby="pr-faq-title"
+      >
+        <div className="pr-wrap">
+          <p className="pr-label">{copy.faq.sectionLabel}</p>
+          <h2 id="pr-faq-title">{copy.faq.title}</h2>
+          <div className="pr-faq-list">
+            {copy.faq.items.map((item) => (
+              <details key={item.q} className="pr-faq-item">
+                <summary>{item.q}</summary>
+                <p>{withPlaceholders(item.a)}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -274,6 +379,10 @@ export function MediaPressRoom() {
         <div className="pr-wrap">
           <p className="pr-label">{copy.kit.sectionLabel}</p>
           <h2 id="pr-kit-title">{copy.kit.title}</h2>
+          <p className="pr-kit-brandline">
+            <span className="pr-label">{copy.kit.brandLineLabel}</span>
+            <span className="pr-brand-line">{copy.kit.brandLine}</span>
+          </p>
           <div className="pr-kit-grid">
             <div>
               <div className="pr-logo-tiles">
@@ -300,6 +409,14 @@ export function MediaPressRoom() {
               >
                 {copy.kit.download}
               </a>
+              <div className="pr-resources">
+                <h3>{copy.kit.resourcesLabel}</h3>
+                <ul className="pr-list">
+                  {copy.kit.resources.map((item) => (
+                    <li key={item}>{withPlaceholders(item)}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="pr-kit-panel">
               <div className="pr-kit-block">
@@ -337,7 +454,7 @@ export function MediaPressRoom() {
           <div>
             <p className="pr-label">{copy.contact.sectionLabel}</p>
             <h2 id="pr-contact-title">{copy.contact.title}</h2>
-            <p className="pr-contact-body">{copy.contact.body}</p>
+            <p className="pr-contact-body">{withPlaceholders(copy.contact.body)}</p>
             <a className="pr-btn" href={pressAssets.mailto}>
               {copy.contact.cta}
             </a>

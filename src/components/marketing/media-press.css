@@ -43,6 +43,10 @@
   text-decoration: none;
 }
 
+.pr a.pr-btn {
+  color: var(--pr-btn-text);
+}
+
 .pr-wrap {
   width: min(100% - (var(--pr-gutter) * 2), var(--pr-max));
   margin-inline: auto;
@@ -275,11 +279,13 @@
   border-radius: 2px;
   border: 0;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.pr-btn:hover {
+.pr-btn:hover,
+.pr a.pr-btn:hover {
   background: var(--pr-green);
+  color: var(--pr-btn-text);
 }
 
 .pr-text-link {
@@ -404,8 +410,8 @@
 }
 
 .pr-release-col {
-  max-width: 66ch;
-  margin-inline: auto;
+  max-width: none;
+  width: 100%;
 }
 
 .pr-release-col h2 {

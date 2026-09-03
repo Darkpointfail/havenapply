@@ -35,6 +35,12 @@ export const pressEditorialPending = {
   responseSlaHours: null as number | null,
 } as const;
 
+/** Dates de publication de l'espace presse (ISO). Mettre à jour à chaque révision éditoriale. */
+export const pressPublication = {
+  publishedISO: "2026-09-03",
+  updatedISO: "2026-09-03",
+} as const;
+
 export const pressAssets = {
   logoPng: "/media/havenapply-logo.png",
   /** Capture d'accueil (existe). Autres captures absentes → non listées en production. */
@@ -105,18 +111,62 @@ export type PressCopy = {
     langFr: string;
     langEn: string;
     langAria: string;
+    navAria: string;
+    nav: {
+      front: string;
+      article: string;
+      release: string;
+      facts: string;
+      resources: string;
+      contact: string;
+    };
   };
   hero: {
-    eyebrow: string;
+    category: string;
     title: string;
     lead: string;
+    byline: string;
+    publishedPrefix: string;
+    updatedPrefix: string;
+    readingPrefix: string;
+    readingUnit: string;
     ctaRelease: string;
-    ctaFeature: string;
-    ctaFacts: string;
     ctaInterview: string;
     captureAlt: string;
     captureCaption: string;
     captureCredit: string;
+  };
+  disclosure: string;
+  summary: {
+    sectionLabel: string;
+    title: string;
+    paragraphs: string[];
+  };
+  kinds: {
+    article: string;
+    release: string;
+    rqra: string;
+    registry: string;
+    statement: string;
+  };
+  share: {
+    label: string;
+    copyLink: string;
+    copyTitle: string;
+    print: string;
+    openRelease: string;
+    email: string;
+    copiedLink: string;
+    copiedTitle: string;
+  };
+  sidebar: {
+    briefTitle: string;
+    contactTitle: string;
+    releaseCta: string;
+  };
+  alsoRead: {
+    title: string;
+    items: Array<{ label: string; href: string }>;
   };
   release: {
     sectionLabel: string;
@@ -130,6 +180,7 @@ export type PressCopy = {
   feature: {
     sectionLabel: string;
     title: string;
+    dek: string;
     blocks: PressBlock[];
   };
   facts: {
@@ -138,23 +189,20 @@ export type PressCopy = {
     items: Array<{
       title: string;
       body: string;
+      kind?: "rqra" | "registry" | "statement";
       sourceLabel?: string;
       sourceHref?: string;
     }>;
-  };
-  ai: {
-    sectionLabel: string;
-    title: string;
-    brandLine: string;
-    canTitle: string;
-    can: string[];
-    cannotTitle: string;
-    cannot: string[];
   };
   faq: {
     sectionLabel: string;
     title: string;
     items: PressFaqItem[];
+  };
+  sources: {
+    sectionLabel: string;
+    title: string;
+    items: Array<{ label: string; href: string; note: string }>;
   };
   kit: {
     sectionLabel: string;
@@ -163,15 +211,6 @@ export type PressCopy = {
     brandLine: string;
     logoLightAlt: string;
     usage: string;
-    colorsLabel: string;
-    colors: Array<{ name: string; hex: string }>;
-    typeLabel: string;
-    serifName: string;
-    serifCaption: string;
-    sansName: string;
-    sansCaption: string;
-    brandLabel: string;
-    brandRule: string;
     downloadsLabel: string;
     downloads: Array<{
       id: string;
@@ -202,32 +241,19 @@ export type PressCopy = {
     siteLink: string;
   };
   anchors: {
+    front: string;
+    summary: string;
     release: string;
     feature: string;
     facts: string;
-    ai: string;
     faq: string;
-    brand: string;
+    resources: string;
     contact: string;
   };
 };
 
 const founderAttributionFr = "Tom Grosse, cofondateur de HavenApply";
 const founderAttributionEn = "Tom Grosse, cofounder of HavenApply";
-
-const colorsFr = [
-  { name: "Vert HavenApply", hex: "#0E9384" },
-  { name: "Encre", hex: "#101815" },
-  { name: "Fond clair", hex: "#F1F7F5" },
-  { name: "Terracotta", hex: "#A6572B" },
-];
-
-const colorsEn = [
-  { name: "HavenApply green", hex: "#0E9384" },
-  { name: "Ink", hex: "#101815" },
-  { name: "Light ground", hex: "#F1F7F5" },
-  { name: "Terracotta", hex: "#A6572B" },
-];
 
 const pressFr: PressCopy = {
   meta: {
@@ -243,18 +269,71 @@ const pressFr: PressCopy = {
     langFr: "Français",
     langEn: "English",
     langAria: "Choisir la langue",
+    navAria: "Rubriques de l'espace presse",
+    nav: {
+      front: "À la une",
+      article: "Article",
+      release: "Communiqué",
+      facts: "Faits",
+      resources: "Ressources",
+      contact: "Contact",
+    },
   },
   hero: {
-    eyebrow: "Espace presse · Montréal",
-    title: "Un seul dossier. Plusieurs résidences. Des demandes d'admission entièrement en ligne.",
-    lead: "HavenApply permet aux familles québécoises de préparer une seule demande et de la déposer en ligne auprès de plusieurs résidences privées pour aînés. Toutes les RPA actives du Québec sont accessibles dès le lancement, et le service est gratuit pour les familles.",
+    category: "Innovation · Habitation pour aînés",
+    title: "HavenApply met les demandes d'admission en résidence pour aînés en ligne",
+    lead: "La plateforme québécoise permet aux familles de remplir un seul dossier et de déposer des demandes auprès de plusieurs RPA. Gratuite pour les familles, elle utilise l'intelligence artificielle pour les accompagner pendant leurs démarches.",
+    byline: "Par l'équipe HavenApply",
+    publishedPrefix: "Publié le",
+    updatedPrefix: "Mis à jour le",
+    readingPrefix: "Lecture",
+    readingUnit: "min",
     ctaRelease: "Lire le communiqué",
-    ctaFeature: "Lire l'article de fond",
-    ctaFacts: "Voir les faits essentiels",
     ctaInterview: "Demander une entrevue",
     captureAlt: "Capture de la page d'accueil de HavenApply",
-    captureCaption: "La page d'accueil de HavenApply.",
+    captureCaption: "Interface de HavenApply : un dossier unique pour déposer des demandes d'admission auprès de plusieurs résidences privées pour aînés.",
     captureCredit: "HavenApply",
+  },
+  disclosure:
+    "Ce contenu présente l'annonce et le fonctionnement de HavenApply à l'intention des médias.",
+  summary: {
+    sectionLabel: "L'essentiel",
+    title: "Ce que change HavenApply",
+    paragraphs: [
+      "Une famille prépare un seul dossier, puis peut déposer des demandes d'admission en ligne auprès de plusieurs résidences privées pour aînés.",
+      "Toutes les RPA actives du registre public québécois sont accessibles dès le lancement. Le service est gratuit pour les familles.",
+      "HavenApply a conclu une entente à titre de fournisseur du RQRA. L'intelligence artificielle accompagne les démarches sans poser de diagnostic ni décider à la place des familles ou des résidences.",
+    ],
+  },
+  kinds: {
+    article: "Article de présentation publié par HavenApply",
+    release: "Communiqué de presse",
+    rqra: "Données provenant du RQRA",
+    registry: "Données provenant du registre public",
+    statement: "Déclaration de HavenApply",
+  },
+  share: {
+    label: "Actions",
+    copyLink: "Copier le lien",
+    copyTitle: "Copier le titre",
+    print: "Imprimer",
+    openRelease: "Voir le communiqué",
+    email: "Écrire au contact média",
+    copiedLink: "Lien copié",
+    copiedTitle: "Titre copié",
+  },
+  sidebar: {
+    briefTitle: "En bref",
+    contactTitle: "Contact média",
+    releaseCta: "Lire le communiqué",
+  },
+  alsoRead: {
+    title: "À lire aussi",
+    items: [
+      { label: "Communiqué de presse officiel", href: "#communique" },
+      { label: "Faits essentiels et sources", href: "#faits" },
+      { label: "Questions fréquentes pour les journalistes", href: "#faq" },
+    ],
   },
   release: {
     sectionLabel: "Communiqué de presse · Pour diffusion immédiate",
@@ -388,6 +467,7 @@ const pressFr: PressCopy = {
     sectionLabel: "Article de fond",
     title:
       "Quand l'intelligence artificielle aide une famille à trouver une résidence pour un parent",
+    dek: "Appels, formulaires répétés, urgence familiale : comment un dossier unique et un accompagnement borné par l'IA simplifient les demandes d'admission en RPA.",
     blocks: [
       {
         type: "p",
@@ -474,54 +554,39 @@ const pressFr: PressCopy = {
       {
         title: "Un dossier unique",
         body: "Une famille prépare ses renseignements une seule fois.",
+        kind: "statement",
       },
       {
         title: "Plusieurs demandes en ligne",
         body: "Le même dossier peut servir à entreprendre des démarches auprès de plusieurs RPA.",
+        kind: "statement",
       },
       {
         title: "Toutes les RPA actives",
         body: "Les établissements figurant au registre public québécois sont accessibles dès le lancement.",
+        kind: "registry",
         sourceLabel: "Registre officiel des RPA",
         sourceHref: pressAssets.rpaRegistry,
       },
       {
         title: "Gratuit pour les familles",
         body: "Aucun abonnement familial n'est nécessaire pour utiliser le parcours.",
+        kind: "statement",
       },
       {
         title: "Près de 800 membres",
         body: "Le RQRA indique représenter près de 800 membres, gestionnaires et propriétaires de RPA.",
+        kind: "rqra",
         sourceLabel: "RQRA",
         sourceHref: pressAssets.rqraHome,
       },
       {
         title: "Environ 108 000 unités",
         body: "Les membres du RQRA comptent environ 108 000 unités locatives au Québec.",
+        kind: "rqra",
         sourceLabel: "RQRA",
         sourceHref: pressAssets.rqraHome,
       },
-    ],
-  },
-  ai: {
-    sectionLabel: "Intelligence artificielle",
-    title: "Comment fonctionne l'accompagnement",
-    brandLine: "L'intelligence artificielle au service des familles, jamais à leur place.",
-    canTitle: "Ce que l'IA peut faire",
-    can: [
-      "Expliquer les étapes",
-      "Reformuler une question complexe",
-      "Aider à organiser les renseignements",
-      "Repérer des informations manquantes",
-      "Accompagner l'utilisateur pendant le dossier",
-    ],
-    cannotTitle: "Ce que l'IA ne fait pas",
-    cannot: [
-      "Poser un diagnostic",
-      "Fournir une recommandation médicale",
-      "Déterminer l'admissibilité",
-      "Choisir à la place de la famille",
-      "Accepter ou refuser une demande",
     ],
   },
   faq: {
@@ -570,6 +635,37 @@ const pressFr: PressCopy = {
       },
     ],
   },
+  sources: {
+    sectionLabel: "Sources et documents",
+    title: "Documents utiles aux journalistes",
+    items: [
+      {
+        label: "RQRA",
+        href: pressAssets.rqraHome,
+        note: "Portrait du regroupement et données membres.",
+      },
+      {
+        label: "Programme des fournisseurs et partenaires du RQRA",
+        href: pressAssets.rqraProgram,
+        note: "Cadre du statut de fournisseur.",
+      },
+      {
+        label: "Registre officiel des RPA",
+        href: pressAssets.rpaRegistry,
+        note: "Liste publique des résidences autorisées.",
+      },
+      {
+        label: "Enquête TVA Nouvelles (31 août 2026)",
+        href: pressAssets.tvaArticle,
+        note: "Contexte sur les coûts de systèmes informatiques vieillissants du réseau — domaine distinct de HavenApply.",
+      },
+      {
+        label: "Politique de confidentialité HavenApply",
+        href: pressAssets.privacyFr,
+        note: "Pratiques décrites par HavenApply.",
+      },
+    ],
+  },
   kit: {
     sectionLabel: "Kit média",
     title: "Identité et fichiers disponibles",
@@ -578,16 +674,6 @@ const pressFr: PressCopy = {
     logoLightAlt: "Logo HavenApply sur fond clair",
     usage:
       "Zone de dégagement égale à la hauteur du symbole. Pas de déformation, pas de recoloration, pas de forme ajoutée.",
-    colorsLabel: "Couleurs",
-    colors: colorsFr,
-    typeLabel: "Typographie",
-    serifName: "Source Serif 4",
-    serifCaption: "Titres et texte long",
-    sansName: "Public Sans",
-    sansCaption: "Interface et étiquettes",
-    brandLabel: "Nom de la marque",
-    brandRule:
-      "S'écrit HavenApply, en un mot, H et A majuscules ; jamais « Haven Apply » ni « HAVENAPPLY ».",
     downloadsLabel: "Téléchargements",
     downloads: [
       {
@@ -633,12 +719,13 @@ const pressFr: PressCopy = {
     siteLink: "havenapply.com",
   },
   anchors: {
+    front: "une",
+    summary: "essentiel",
     release: "communique",
     feature: "article",
     facts: "faits",
-    ai: "ia",
     faq: "faq",
-    brand: "kit",
+    resources: "ressources",
     contact: "contact",
   },
 };
@@ -657,18 +744,71 @@ const pressEn: PressCopy = {
     langFr: "Français",
     langEn: "English",
     langAria: "Choose language",
+    navAria: "Press room sections",
+    nav: {
+      front: "Top story",
+      article: "Feature",
+      release: "Release",
+      facts: "Facts",
+      resources: "Resources",
+      contact: "Contact",
+    },
   },
   hero: {
-    eyebrow: "Press room · Montreal",
-    title: "One application. Multiple residences. Senior-living admissions brought online.",
-    lead: "HavenApply helps Quebec families prepare a single application and submit it online to multiple private seniors' residences (RPAs). Every active RPA in Quebec is available from launch, and the service is free for families.",
+    category: "Innovation · Senior housing",
+    title: "HavenApply brings seniors' residence admission applications online",
+    lead: "The Quebec platform lets families complete one file and submit applications to multiple private seniors' residences (RPAs). Free for families, it uses artificial intelligence to guide them through the process.",
+    byline: "By the HavenApply team",
+    publishedPrefix: "Published",
+    updatedPrefix: "Updated",
+    readingPrefix: "Reading time",
+    readingUnit: "min",
     ctaRelease: "Read the release",
-    ctaFeature: "Read the feature article",
-    ctaFacts: "See the key facts",
     ctaInterview: "Request an interview",
     captureAlt: "Screenshot of the HavenApply homepage",
-    captureCaption: "The HavenApply homepage.",
+    captureCaption: "HavenApply's interface: one file to submit admission applications to multiple private seniors' residences.",
     captureCredit: "HavenApply",
+  },
+  disclosure:
+    "This content presents HavenApply's announcement and how the product works, for media use.",
+  summary: {
+    sectionLabel: "The essentials",
+    title: "What HavenApply changes",
+    paragraphs: [
+      "A family prepares one file, then can submit admission applications online to multiple private seniors' residences.",
+      "Every active RPA in Quebec's public registry is available from launch. The service is free for families.",
+      "HavenApply has entered into an agreement as a supplier of the RQRA. Artificial intelligence supports the process without diagnosing or deciding for families or residences.",
+    ],
+  },
+  kinds: {
+    article: "Presentation article published by HavenApply",
+    release: "Press release",
+    rqra: "Data from the RQRA",
+    registry: "Data from the public registry",
+    statement: "HavenApply statement",
+  },
+  share: {
+    label: "Actions",
+    copyLink: "Copy link",
+    copyTitle: "Copy title",
+    print: "Print",
+    openRelease: "Open the release",
+    email: "Email media contact",
+    copiedLink: "Link copied",
+    copiedTitle: "Title copied",
+  },
+  sidebar: {
+    briefTitle: "In brief",
+    contactTitle: "Media contact",
+    releaseCta: "Read the release",
+  },
+  alsoRead: {
+    title: "Related",
+    items: [
+      { label: "Official press release", href: "#release" },
+      { label: "Key facts and sources", href: "#facts" },
+      { label: "FAQ for journalists", href: "#faq" },
+    ],
   },
   release: {
     sectionLabel: "Press release · For immediate release",
@@ -802,6 +942,7 @@ const pressEn: PressCopy = {
     sectionLabel: "Feature article",
     title:
       "When artificial intelligence helps a family find a residence for a parent",
+    dek: "Urgent searches, repeated forms, caregiver load: how one file and carefully bounded AI guidance simplify RPA admission applications.",
     blocks: [
       {
         type: "p",
@@ -888,54 +1029,39 @@ const pressEn: PressCopy = {
       {
         title: "One file",
         body: "A family prepares their information once.",
+        kind: "statement",
       },
       {
         title: "Multiple online applications",
         body: "The same file can support outreach to several RPAs.",
+        kind: "statement",
       },
       {
         title: "Every active RPA",
         body: "Facilities listed in Quebec's public registry are available from launch.",
+        kind: "registry",
         sourceLabel: "Official RPA registry",
         sourceHref: pressAssets.rpaRegistry,
       },
       {
         title: "Free for families",
         body: "No family subscription is required to use the journey.",
+        kind: "statement",
       },
       {
         title: "Nearly 800 members",
         body: "The RQRA states that it represents nearly 800 members—managers and owners of RPAs.",
+        kind: "rqra",
         sourceLabel: "RQRA",
         sourceHref: pressAssets.rqraHome,
       },
       {
         title: "About 108,000 units",
         body: "RQRA members account for about 108,000 rental units in Quebec.",
+        kind: "rqra",
         sourceLabel: "RQRA",
         sourceHref: pressAssets.rqraHome,
       },
-    ],
-  },
-  ai: {
-    sectionLabel: "Artificial intelligence",
-    title: "How guidance works",
-    brandLine: "Artificial intelligence in service of families—never in their place.",
-    canTitle: "What the AI can do",
-    can: [
-      "Explain the steps",
-      "Rephrase a complex question",
-      "Help organize information",
-      "Flag missing details",
-      "Guide the user through the file",
-    ],
-    cannotTitle: "What the AI does not do",
-    cannot: [
-      "Make a diagnosis",
-      "Provide a medical recommendation",
-      "Determine eligibility",
-      "Choose on the family's behalf",
-      "Accept or refuse an application",
     ],
   },
   faq: {
@@ -984,6 +1110,37 @@ const pressEn: PressCopy = {
       },
     ],
   },
+  sources: {
+    sectionLabel: "Sources and documents",
+    title: "Documents for journalists",
+    items: [
+      {
+        label: "RQRA",
+        href: pressAssets.rqraHome,
+        note: "About the association and membership figures.",
+      },
+      {
+        label: "RQRA supplier and partner program",
+        href: pressAssets.rqraProgram,
+        note: "Framework for supplier status.",
+      },
+      {
+        label: "Official RPA registry",
+        href: pressAssets.rpaRegistry,
+        note: "Public list of authorized residences.",
+      },
+      {
+        label: "TVA Nouvelles investigation (August 31, 2026)",
+        href: pressAssets.tvaArticle,
+        note: "Context on aging health-network HR systems — a different domain from HavenApply.",
+      },
+      {
+        label: "HavenApply privacy policy",
+        href: pressAssets.privacyEn,
+        note: "Practices described by HavenApply.",
+      },
+    ],
+  },
   kit: {
     sectionLabel: "Media kit",
     title: "Identity and available files",
@@ -992,16 +1149,6 @@ const pressEn: PressCopy = {
     logoLightAlt: "HavenApply logo on light background",
     usage:
       "Clear space equal to the height of the symbol. No distortion, no recoloring, no added shapes.",
-    colorsLabel: "Colors",
-    colors: colorsEn,
-    typeLabel: "Typography",
-    serifName: "Source Serif 4",
-    serifCaption: "Headlines and long-form text",
-    sansName: "Public Sans",
-    sansCaption: "Interface and labels",
-    brandLabel: "Brand name",
-    brandRule:
-      "Written as HavenApply, one word, capital H and A; never “Haven Apply” or “HAVENAPPLY”.",
     downloadsLabel: "Downloads",
     downloads: [
       {
@@ -1047,12 +1194,13 @@ const pressEn: PressCopy = {
     siteLink: "havenapply.com",
   },
   anchors: {
+    front: "top",
+    summary: "essentials",
     release: "release",
     feature: "feature",
     facts: "facts",
-    ai: "ai",
     faq: "faq",
-    brand: "brand",
+    resources: "resources",
     contact: "contact",
   },
 };

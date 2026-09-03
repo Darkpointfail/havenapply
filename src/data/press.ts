@@ -44,7 +44,8 @@ export const pressPublication = {
 export const pressAssets = {
   logoPng: "/media/havenapply-logo.png",
   /** Capture d'accueil (existe). Autres captures absentes → non listées en production. */
-  homepageCapture: "/media/homepage-capture.png",
+  /** Capture réelle de `/`. Renommer à chaque nouvelle prise pour éviter le cache CDN. */
+  homepageCapture: "/media/homepage-2026-09.png",
   ogImage: "/home/hero.jpg",
   email: "hello@havenapply.com",
   mailto: "mailto:hello@havenapply.com",

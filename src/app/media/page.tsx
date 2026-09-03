@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { MediaPressRoom } from "@/components/marketing/MediaPressRoom";
-import { press, pressAssets, type PressLocale } from "@/data/press";
+import {
+  PRESS_SITE_ORIGIN,
+  press,
+  pressAssets,
+  type PressLocale,
+} from "@/data/press";
 
 type MediaSearchParams = Promise<{ lang?: string | string[] }>;
 
@@ -18,6 +23,9 @@ export async function generateMetadata({
   const params = await searchParams;
   const locale = localeFromSearchParams(params.lang);
   const meta = press[locale].meta;
+  const canonical =
+    locale === "en" ? pressAssets.mediaUrlEn : pressAssets.mediaUrl;
+  const ogImage = `${PRESS_SITE_ORIGIN}${pressAssets.ogImage}`;
 
   return {
     title: {
@@ -25,20 +33,24 @@ export async function generateMetadata({
     },
     description: meta.description,
     alternates: {
-      canonical: locale === "en" ? "/media?lang=en" : "/media",
+      canonical,
       languages: {
-        fr: "/media",
-        en: "/media?lang=en",
+        fr: pressAssets.mediaUrl,
+        en: pressAssets.mediaUrlEn,
+        "x-default": pressAssets.mediaUrl,
       },
     },
     openGraph: {
+      type: "website",
+      siteName: "HavenApply",
       title: meta.title,
       description: meta.description,
       locale: locale === "en" ? "en_CA" : "fr_CA",
-      url: locale === "en" ? "/media?lang=en" : "/media",
+      alternateLocale: locale === "en" ? ["fr_CA"] : ["en_CA"],
+      url: canonical,
       images: [
         {
-          url: pressAssets.ogImage,
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: meta.ogAlt,
@@ -49,7 +61,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: meta.title,
       description: meta.description,
-      images: [pressAssets.ogImage],
+      images: [ogImage],
     },
     robots: {
       index: true,

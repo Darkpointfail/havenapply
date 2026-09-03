@@ -266,6 +266,11 @@
 
 .pr-hero-figure {
   margin: 0 0 22px;
+  max-width: 620px;
+}
+
+.pr-article-figure {
+  max-width: var(--pr-read);
 }
 
 .pr-hero-figure img,

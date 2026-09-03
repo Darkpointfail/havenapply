@@ -233,7 +233,6 @@ export function MediaPressRoom() {
               priority
               unoptimized
             />
-            <span className="pr-brand-name">{copy.header.brand}</span>
             <span className="pr-brand-label">{copy.header.label}</span>
           </Link>
           <div className="pr-header-right">

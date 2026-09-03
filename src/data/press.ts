@@ -25,7 +25,7 @@ export const pressEditorialPending = {
   paidRankingPolicy:
     "Confirmer juridiquement qu'aucun placement payant n'existe ni n'est prévu ; formulation actuelle basée sur le code de matching familial.",
   mediaPhone: "NUMÉRO MÉDIAS À FOURNIR",
-  founderPortrait: "Portrait de Tom Grosse à fournir",
+  founderPortrait: "Portrait du cofondateur à fournir (prénom seulement en public)",
   pressPdf: "Communiqué PDF / Word à fournir",
   familyJourneyCapture: "Capture du parcours familial à fournir",
   aiAssistantCapture: "Capture de l'assistant IA à fournir",
@@ -252,8 +252,9 @@ export type PressCopy = {
   };
 };
 
-const founderAttributionFr = "Tom Grosse, cofondateur de HavenApply";
-const founderAttributionEn = "Tom Grosse, cofounder of HavenApply";
+/** La marque parle en premier ; le cofondateur n'est cité que par son prénom. */
+const founderAttributionFr = "Tom, cofondateur de HavenApply";
+const founderAttributionEn = "Tom, cofounder of HavenApply";
 
 const pressFr: PressCopy = {
   meta: {
@@ -699,12 +700,12 @@ const pressFr: PressCopy = {
   contact: {
     sectionLabel: "Contact média",
     title: "Entrevues et demandes de presse",
-    name: "Tom Grosse",
-    role: "Cofondateur, HavenApply",
+    name: "Relations médias, HavenApply",
+    role: "Tom, cofondateur",
     city: "Montréal, Québec",
     languages: "Français et anglais",
     email: "hello@havenapply.com",
-    body: "Disponible pour entrevues et démonstrations, à Montréal ou à distance. Mise en relation avec une famille ou une résidence uniquement avec leur accord préalable.",
+    body: "Écrivez à l'adresse média de HavenApply pour une entrevue ou une démonstration, à Montréal ou à distance. Mise en relation avec une famille ou une résidence uniquement avec leur accord préalable.",
     ctaInterview: "Demander une entrevue",
     ctaDemo: "Demander une démonstration",
     siteLabel: "Visiter havenapply.com",
@@ -1174,12 +1175,12 @@ const pressEn: PressCopy = {
   contact: {
     sectionLabel: "Media contact",
     title: "Interviews and press requests",
-    name: "Tom Grosse",
-    role: "Cofounder, HavenApply",
+    name: "Media relations, HavenApply",
+    role: "Tom, cofounder",
     city: "Montreal, Quebec",
     languages: "French and English",
     email: "hello@havenapply.com",
-    body: "Available for interviews and demos, in Montreal or remotely. Introductions to a family or residence only with their prior consent.",
+    body: "Email HavenApply's media address for an interview or a demo, in Montreal or remotely. Introductions to a family or residence only with their prior consent.",
     ctaInterview: "Request an interview",
     ctaDemo: "Request a demo",
     siteLabel: "Visit havenapply.com",

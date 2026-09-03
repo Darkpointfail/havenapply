@@ -1,38 +1,79 @@
 /**
- * Contenu textuel de l'espace presse public `/media`.
- * Aucune chaîne éditoriale ne doit être codée dans le JSX.
+ * Contenu éditorial de l'espace presse public `/media`.
+ * Aucune chaîne publiée ne doit être codée dans le JSX.
  * Structure bilingue : press.fr / press.en (mêmes clés).
  *
- * Libellé RQRA : « fournisseur » (pas « partenaire ») — conforme au programme
+ * Libellé RQRA : « fournisseur » — conforme au programme
  * des fournisseurs et partenaires du RQRA.
  */
 
 export type PressLocale = "fr" | "en";
 
+/** Base absolue pour canonical / Open Graph. */
+export const PRESS_SITE_ORIGIN = "https://havenapply.com";
+
 /**
- * Bandeau interne « À compléter ».
- * Passer à `false` avant la mise en ligne publique.
+ * Réponses ou faits encore à valider en interne.
+ * Ne jamais afficher ce contenu tel quel sur la page publique.
  */
-export const showTodo = true;
+export const pressEditorialPending = {
+  launchDate: "DATE DE LANCEMENT À CONFIRMER",
+  residenceWithoutAccountDelivery:
+    "Préciser le canal exact (courriel, dossier à récupérer, etc.) lorsqu'une RPA n'a pas encore de console HavenApply.",
+  recommendationCriteriaDetail:
+    "Valider la formulation publique exacte des pondérations (emplacement, budget, autonomie, services, disponibilité déclarée).",
+  paidRankingPolicy:
+    "Confirmer juridiquement qu'aucun placement payant n'existe ni n'est prévu ; formulation actuelle basée sur le code de matching familial.",
+  mediaPhone: "NUMÉRO MÉDIAS À FOURNIR",
+  founderPortrait: "Portrait de Tom Grosse à fournir",
+  pressPdf: "Communiqué PDF / Word à fournir",
+  familyJourneyCapture: "Capture du parcours familial à fournir",
+  aiAssistantCapture: "Capture de l'assistant IA à fournir",
+  residenceConsoleCapture: "Capture de la console résidences à fournir",
+  whiteLogo: "Version blanche du logo à fournir",
+  logoSvg: "Logo SVG à fournir",
+  responseSlaHours: null as number | null,
+} as const;
 
 export const pressAssets = {
-  logo: "/media/havenapply-logo.png",
+  logoPng: "/media/havenapply-logo.png",
+  /** Capture d'accueil (existe). Autres captures absentes → non listées en production. */
   homepageCapture: "/media/homepage-capture.png",
   ogImage: "/home/hero.jpg",
   email: "hello@havenapply.com",
   mailto: "mailto:hello@havenapply.com",
-  siteUrl: "https://havenapply.com",
+  mailtoInterview:
+    "mailto:hello@havenapply.com?subject=Demande%20d%27entrevue%20%E2%80%94%20HavenApply",
+  mailtoDemo:
+    "mailto:hello@havenapply.com?subject=Demande%20de%20d%C3%A9monstration%20%E2%80%94%20HavenApply",
+  siteUrl: `${PRESS_SITE_ORIGIN}/`,
+  mediaUrl: `${PRESS_SITE_ORIGIN}/media`,
+  mediaUrlEn: `${PRESS_SITE_ORIGIN}/media?lang=en`,
   siteHost: "havenapply.com",
-  mediaUrl: "https://havenapply.com/media",
-  rqraProgram:
-    "https://www.rqra.qc.ca/collaborateurs/demande-d-adhesion",
+  privacyFr: "/confidentialite",
+  privacyEn: "/privacy",
   rqraHome: "https://www.rqra.qc.ca/",
+  rqraProgram: "https://www.rqra.qc.ca/collaborateurs/demande-d-adhesion",
   rpaRegistry: "https://k10.pub.msss.rtss.qc.ca/",
   tvaArticle:
     "https://www.tvanouvelles.ca/2026/08/31/fiasco-informatique--sante-quebec-a-englouti-500-m-pour-maintenir-des-systemes-desuets",
 } as const;
 
-export type PressInlineLink = { label: string; href: string };
+/** Ressources téléchargeables réellement présentes dans le dépôt. */
+export const pressDownloads = [
+  {
+    id: "logo-png",
+    href: pressAssets.logoPng,
+    filename: "havenapply-logo.png",
+    available: true,
+  },
+  {
+    id: "homepage-capture",
+    href: pressAssets.homepageCapture,
+    filename: "havenapply-homepage.png",
+    available: true,
+  },
+] as const;
 
 export type PressBlock =
   | { type: "p"; text: string }
@@ -40,7 +81,16 @@ export type PressBlock =
   | { type: "ul"; items: string[] }
   | { type: "quote"; text: string; attribution: string }
   | { type: "link"; label: string; href: string }
-  | { type: "meta"; rows: Array<{ label: string; value: string; href?: string }> };
+  | {
+      type: "meta";
+      rows: Array<{ label: string; value: string; href?: string }>;
+    };
+
+export type PressFaqItem = {
+  q: string;
+  /** Réponse publiable uniquement. */
+  a: string;
+};
 
 export type PressCopy = {
   meta: {
@@ -56,28 +106,20 @@ export type PressCopy = {
     langEn: string;
     langAria: string;
   };
-  todo: {
-    label: string;
-    body: string;
-  };
   hero: {
     eyebrow: string;
     title: string;
-    paragraphs: string[];
-    brandLine: string;
-    interviewLabel: string;
+    lead: string;
     ctaRelease: string;
     ctaFeature: string;
-    ctaNumbers: string;
-    ctaFaq: string;
-    ctaKit: string;
+    ctaFacts: string;
+    ctaInterview: string;
     captureAlt: string;
     captureCaption: string;
-    rqraLinkLabel: string;
+    captureCredit: string;
   };
   release: {
     sectionLabel: string;
-    forImmediate: string;
     title: string;
     dek: string;
     dateline: string;
@@ -90,19 +132,29 @@ export type PressCopy = {
     title: string;
     blocks: PressBlock[];
   };
-  numbers: {
+  facts: {
     sectionLabel: string;
+    title: string;
     items: Array<{
-      value: string;
-      description: string;
-      detail: string;
-      accent?: boolean;
+      title: string;
+      body: string;
+      sourceLabel?: string;
+      sourceHref?: string;
     }>;
+  };
+  ai: {
+    sectionLabel: string;
+    title: string;
+    brandLine: string;
+    canTitle: string;
+    can: string[];
+    cannotTitle: string;
+    cannot: string[];
   };
   faq: {
     sectionLabel: string;
     title: string;
-    items: Array<{ q: string; a: string }>;
+    items: PressFaqItem[];
   };
   kit: {
     sectionLabel: string;
@@ -110,9 +162,7 @@ export type PressCopy = {
     brandLineLabel: string;
     brandLine: string;
     logoLightAlt: string;
-    logoDarkPlaceholder: string;
     usage: string;
-    download: string;
     colorsLabel: string;
     colors: Array<{ name: string; hex: string }>;
     typeLabel: string;
@@ -122,14 +172,29 @@ export type PressCopy = {
     sansCaption: string;
     brandLabel: string;
     brandRule: string;
-    resourcesLabel: string;
-    resources: string[];
+    downloadsLabel: string;
+    downloads: Array<{
+      id: string;
+      label: string;
+      href: string;
+      filename: string;
+      alt: string;
+      caption: string;
+      credit: string;
+    }>;
   };
   contact: {
     sectionLabel: string;
     title: string;
+    name: string;
+    role: string;
+    city: string;
+    languages: string;
+    email: string;
     body: string;
-    cta: string;
+    ctaInterview: string;
+    ctaDemo: string;
+    siteLabel: string;
     defs: Array<{ label: string; value: string }>;
   };
   footer: {
@@ -139,11 +204,16 @@ export type PressCopy = {
   anchors: {
     release: string;
     feature: string;
-    numbers: string;
+    facts: string;
+    ai: string;
     faq: string;
     brand: string;
+    contact: string;
   };
 };
+
+const founderAttributionFr = "Tom Grosse, cofondateur de HavenApply";
+const founderAttributionEn = "Tom Grosse, cofounder of HavenApply";
 
 const colorsFr = [
   { name: "Vert HavenApply", hex: "#0E9384" },
@@ -159,46 +229,12 @@ const colorsEn = [
   { name: "Terracotta", hex: "#A6572B" },
 ];
 
-const resourcesFr = [
-  "Logo HavenApply en PNG et SVG",
-  "Version blanche du logo",
-  "Sceau de fournisseur RQRA, selon les conditions d'utilisation",
-  "Portrait professionnel du fondateur",
-  "Photo de l'équipe",
-  "Captures d'écran de l'assistant IA",
-  "Capture du dossier familial",
-  "Capture de la console des résidences",
-  "Communiqué téléchargeable en PDF et Word",
-  "Courte biographie du fondateur",
-  "Numéro de téléphone réservé aux médias",
-  "Citation autorisée d'un représentant du RQRA",
-  "Témoignage autorisé d'une famille",
-  "Témoignage d'une résidence utilisant la plateforme",
-];
-
-const resourcesEn = [
-  "HavenApply logo in PNG and SVG",
-  "White logo version",
-  "RQRA supplier seal, subject to usage terms",
-  "Professional founder portrait",
-  "Team photo",
-  "AI assistant screenshots",
-  "Family file screenshot",
-  "Residence console screenshot",
-  "Press release downloadable as PDF and Word",
-  "Short founder biography",
-  "Media-only phone number",
-  "Authorized quote from an RQRA representative",
-  "Authorized family testimonial",
-  "Testimonial from a residence using the platform",
-];
-
 const pressFr: PressCopy = {
   meta: {
-    title: "Espace presse — HavenApply",
+    title: "Espace presse — HavenApply met les demandes d'admission en RPA en ligne",
     description:
-      "Communiqué, article de fond et ressources médias : HavenApply, fournisseur du RQRA, utilise l'IA pour simplifier l'admission en résidence pour aînés.",
-    ogAlt: "Capture de la page d'accueil HavenApply",
+      "HavenApply permet aux familles de préparer un dossier unique et de déposer des demandes d'admission en ligne auprès de plusieurs résidences pour aînés au Québec.",
+    ogAlt: "Page d'accueil de HavenApply",
   },
   header: {
     brand: "HavenApply",
@@ -208,171 +244,120 @@ const pressFr: PressCopy = {
     langEn: "English",
     langAria: "Choisir la langue",
   },
-  todo: {
-    label: "À compléter",
-    body: "Avant diffusion : date de lancement, nom de famille du cofondateur, modèle économique résidence (FAQ), critères de recommandation (FAQ), version blanche du logo, sceau fournisseur RQRA, portrait, captures, PDF/Word du communiqué, téléphone médias, citations et témoignages autorisés.",
-  },
   hero: {
     eyebrow: "Espace presse · Montréal",
-    title: "Une technologie de nouvelle génération pour accompagner toutes les générations",
-    paragraphs: [
-      "HavenApply utilise l'intelligence artificielle pour simplifier l'une des décisions les plus humaines et difficiles qu'une famille puisse prendre : trouver une résidence adaptée pour un parent ou un proche.",
-      "Gratuite pour les familles, la plateforme permet de préparer un dossier unique, de découvrir des résidences correspondant aux besoins de la personne et d'entreprendre des démarches auprès de toutes les RPA actives du Québec.",
-      "HavenApply vient également de conclure une entente à titre de fournisseur du Regroupement québécois des résidences pour aînés (RQRA), qui représente près de 800 membres et environ 108\u00a0000 unités locatives à travers la province.",
-    ],
-    brandLine: "L'intelligence artificielle au service des familles, jamais à leur place.",
-    interviewLabel: "Demandes d'entrevue",
+    title: "Un seul dossier. Plusieurs résidences. Des demandes d'admission entièrement en ligne.",
+    lead: "HavenApply permet aux familles québécoises de préparer une seule demande et de la déposer en ligne auprès de plusieurs résidences privées pour aînés. Toutes les RPA actives du Québec sont accessibles dès le lancement, et le service est gratuit pour les familles.",
     ctaRelease: "Lire le communiqué",
-    ctaFeature: "Article de fond",
-    ctaNumbers: "Le problème en chiffres",
-    ctaFaq: "Questions des journalistes",
-    ctaKit: "Kit média",
+    ctaFeature: "Lire l'article de fond",
+    ctaFacts: "Voir les faits essentiels",
+    ctaInterview: "Demander une entrevue",
     captureAlt: "Capture de la page d'accueil de HavenApply",
-    captureCaption:
-      "La page d'accueil de HavenApply. Capture disponible en haute résolution sur demande.",
-    rqraLinkLabel: "Portrait du RQRA",
+    captureCaption: "La page d'accueil de HavenApply.",
+    captureCredit: "HavenApply",
   },
   release: {
-    sectionLabel: "Communiqué de presse",
-    forImmediate: "Pour diffusion immédiate",
+    sectionLabel: "Communiqué de presse · Pour diffusion immédiate",
     title:
-      "HavenApply conclut une entente avec le RQRA et mise sur l'IA pour simplifier l'admission en résidence pour aînés",
-    dek: "Gratuite pour les familles, la plateforme québécoise réunit les RPA de la province et accompagne les utilisateurs à chaque étape de leurs démarches",
-    dateline: "MONTRÉAL, [date de lancement] —",
-    lead:
-      "HavenApply annonce aujourd'hui le lancement de sa plateforme québécoise de recherche et de demande d'admission en résidence privée pour aînés ainsi que la conclusion d'une entente à titre de fournisseur du Regroupement québécois des résidences pour aînés (RQRA).",
+      "HavenApply conclut une entente avec le RQRA et met les demandes d'admission en RPA en ligne",
+    dek: "Gratuite pour les familles, la plateforme québécoise permet de constituer un seul dossier et de déposer des demandes auprès de plusieurs résidences.",
+    dateline: "MONTRÉAL —",
+    lead: "HavenApply annonce le lancement de sa plateforme québécoise de recherche et de demande d'admission en résidence privée pour aînés, ainsi que la conclusion d'une entente à titre de fournisseur du Regroupement québécois des résidences pour aînés (RQRA).",
     blocks: [
       {
         type: "p",
-        text: "Cette entente fait suite à une présentation de HavenApply auprès du RQRA et à l'acceptation de l'entreprise au sein de son réseau de fournisseurs. Le RQRA représente près de 800 membres, gestionnaires et propriétaires de résidences comptant environ 108\u00a0000 unités locatives au Québec.",
+        text: "HavenApply est une entreprise technologique indépendante, basée à Montréal. Elle n'appartient pas au RQRA. L'entente lui permet d'intervenir dans le cadre du programme de fournisseurs du regroupement, qui indique représenter près de 800 membres, gestionnaires et propriétaires de RPA, comptant environ 108\u00a0000 unités locatives au Québec.",
       },
       {
-        type: "p",
-        text: "Dès son lancement, HavenApply permet aux familles de découvrir l'ensemble des RPA actives répertoriées au Québec et d'amorcer leurs démarches à partir d'une seule plateforme.",
+        type: "link",
+        label: "RQRA — portrait du regroupement",
+        href: pressAssets.rqraHome,
+      },
+      {
+        type: "link",
+        label: "Programme des fournisseurs et partenaires du RQRA",
+        href: pressAssets.rqraProgram,
       },
       {
         type: "h3",
-        text: "Une recherche qui devient rapidement un travail à temps partiel",
+        text: "Le problème des demandes répétées",
       },
       {
         type: "p",
-        text: "Trouver une résidence adaptée ne consiste pas uniquement à consulter une liste d'établissements. Les familles doivent comprendre les différents niveaux de soins, vérifier les services offerts, comparer les coûts, contacter plusieurs résidences et répéter les mêmes renseignements à chaque nouvelle démarche.",
+        text: "Chercher une résidence adaptée demande souvent de comprendre les niveaux d'assistance, de comparer les services et les coûts, puis de reprendre les mêmes renseignements auprès de plusieurs établissements. Cette démarche survient fréquemment après une hospitalisation, une perte d'autonomie ou l'épuisement d'un proche aidant.",
       },
       {
         type: "p",
-        text: "Cette recherche survient souvent à la suite d'une hospitalisation, d'une perte d'autonomie ou d'un épuisement du proche aidant. La famille doit alors prendre une décision importante dans un environnement fragmenté, avec peu de temps et beaucoup d'incertitude.",
-      },
-      {
-        type: "p",
-        text: "Le Québec possède un registre public permettant de rechercher les RPA autorisées par Santé Québec. HavenApply s'appuie sur ces données publiques et ajoute une couche d'accompagnement : préparation du dossier, compréhension des besoins, recommandations et gestion des démarches.",
+        text: "Le Québec dispose d'un registre public des RPA autorisées par Santé Québec. HavenApply s'appuie sur ces données publiques et y ajoute un parcours pour préparer le dossier, clarifier les besoins et entreprendre des démarches.",
       },
       {
         type: "link",
         label: "Registre officiel des RPA",
         href: pressAssets.rpaRegistry,
       },
-      { type: "h3", text: "Un dossier préparé une fois" },
       {
-        type: "p",
-        text: "Avec HavenApply, une famille peut réunir au même endroit :",
-      },
-      {
-        type: "ul",
-        items: [
-          "Le profil de la personne qui cherche une résidence",
-          "Ses préférences géographiques et financières",
-          "Ses besoins d'assistance et de soins",
-          "Les renseignements nécessaires aux démarches",
-          "Les documents pertinents",
-          "Les résidences contactées",
-          "L'état d'avancement de chaque démarche",
-        ],
+        type: "h3",
+        text: "Un dossier unique, des demandes en ligne auprès de plusieurs RPA",
       },
       {
         type: "p",
-        text: "Le dossier est préparé une seule fois et peut ensuite servir auprès de plusieurs établissements. La famille conserve le contrôle sur les résidences qu'elle souhaite contacter et les renseignements qu'elle choisit de transmettre.",
+        text: "Avec HavenApply, une famille prépare une seule fois le profil de la personne, ses préférences, ses besoins d'assistance, les documents utiles et les renseignements nécessaires aux démarches. Ce dossier peut ensuite servir à déposer des demandes d'admission en ligne auprès de plusieurs résidences.",
       },
       {
         type: "p",
-        text: "Le service est offert gratuitement aux familles, en français et en anglais.",
+        text: "Dès le lancement, toutes les RPA actives figurant au registre public québécois sont accessibles dans HavenApply. Une résidence qui apparaît dans le parcours n'utilise pas nécessairement déjà la console professionnelle HavenApply. Chaque établissement demeure libre de choisir les outils qu'il emploie.",
+      },
+      {
+        type: "p",
+        text: "Le service est gratuit pour les familles, en français et en anglais. HavenApply facilite l'accès à l'information et aux demandes; la plateforme ne crée pas de nouvelles places ni de nouvelles unités.",
       },
       {
         type: "h3",
-        text: "L'intelligence artificielle au service des familles",
+        text: "Un accompagnement par l'intelligence artificielle, avec des limites claires",
       },
       {
         type: "p",
-        text: "HavenApply intègre un assistant utilisant l'intelligence artificielle pour guider les utilisateurs pendant leurs démarches.",
-      },
-      {
-        type: "p",
-        text: "L'assistant peut expliquer les différentes étapes, aider à préciser les besoins de la personne, signaler des renseignements manquants, simplifier certains termes et préparer la famille à communiquer avec une résidence.",
-      },
-      {
-        type: "p",
-        text: "Il ne pose aucun diagnostic médical, ne décide pas à la place de la famille et ne prend aucune décision d'admission. Les résidences demeurent entièrement responsables de l'évaluation des demandes qu'elles reçoivent.",
+        text: "HavenApply intègre un assistant qui utilise l'intelligence artificielle pour expliquer les étapes, aider à organiser les renseignements et repérer des éléments manquants. L'IA ne pose aucun diagnostic médical, ne détermine pas l'admissibilité, ne choisit pas une résidence à la place de la famille et ne prend aucune décision d'admission. Cette décision appartient toujours à la résidence.",
       },
       {
         type: "quote",
         text: "On présente souvent l'intelligence artificielle comme une technologie complexe ou impersonnelle. Nous voulons démontrer qu'elle peut faire exactement l'inverse : expliquer, rassurer et accompagner les familles dans une transition profondément humaine.",
-        attribution: "Tom [nom de famille], cofondateur de HavenApply",
-      },
-      {
-        type: "p",
-        text: "La plateforme a été conçue pour être utilisable par différentes générations. Son interface privilégie un langage simple, des étapes progressives et une navigation claire. Un enfant, un proche aidant ou une personne aînée peut préparer le dossier, seul ou avec l'aide de son entourage.",
+        attribution: founderAttributionFr,
       },
       {
         type: "quote",
-        text: "La technologie ne doit jamais remplacer la famille, le conseiller ou le personnel de la résidence. Elle doit enlever les obstacles administratifs pour permettre à chacun de consacrer plus de temps à la personne.",
-        attribution: "Tom [nom de famille], cofondateur de HavenApply",
-      },
-      { type: "h3", text: "Une solution pour les résidences également" },
-      {
-        type: "p",
-        text: "Les résidences qui utilisent HavenApply disposent d'une console leur permettant de recevoir des dossiers structurés, d'en vérifier le contenu, de suivre les demandes et de communiquer avec les familles.",
+        text: "La technologie ne doit jamais remplacer la famille, le conseiller ou le personnel de la résidence. Elle doit retirer les obstacles administratifs pour permettre à chacun de consacrer plus de temps à la personne.",
+        attribution: founderAttributionFr,
       },
       {
-        type: "p",
-        text: "L'objectif n'est pas d'automatiser la décision d'admission, mais de réduire les renseignements incomplets, les communications répétitives et les tâches administratives entourant le premier contact.",
+        type: "h3",
+        text: "Une console pour les résidences",
       },
       {
         type: "p",
-        text: "Le statut de fournisseur du RQRA permettra à HavenApply de présenter sa solution aux gestionnaires et propriétaires membres du regroupement et de poursuivre son développement au contact des réalités opérationnelles du secteur.",
-      },
-      { type: "h3", text: "Une nouvelle génération de solutions québécoises" },
-      {
-        type: "p",
-        text: "Le lancement de HavenApply survient au moment où le coût des systèmes informatiques vieillissants retient fortement l'attention au Québec.",
+        text: "Les résidences qui utilisent HavenApply disposent d'une console pour recevoir des dossiers structurés, en vérifier le contenu, suivre les demandes et communiquer avec les familles. L'objectif n'est pas d'automatiser la décision d'admission, mais de réduire les renseignements incomplets et les échanges répétitifs au premier contact.",
       },
       {
-        type: "p",
-        text: "Selon une enquête publiée par TVA Nouvelles le 31 août 2026, près de 500 millions de dollars auraient été consacrés depuis 2023 au maintien d'anciens systèmes de gestion des ressources humaines du réseau de la santé.",
+        type: "h3",
+        text: "Mise en contexte : moderniser sans confondre les outils",
       },
       {
         type: "p",
-        text: "Ces systèmes n'ont pas la même fonction que HavenApply, qui est une plateforme indépendante destinée aux familles et aux RPA. Cette situation illustre néanmoins un enjeu plus large : les coûts financiers et humains associés à des parcours reposant sur des technologies fragmentées ou vieillissantes.",
+        text: "Le lancement de HavenApply survient alors que le coût des systèmes informatiques vieillissants retient l'attention au Québec. Selon une enquête de TVA Nouvelles publiée le 31 août 2026, près de 500 millions de dollars auraient été consacrés depuis 2023 au maintien d'anciens systèmes de gestion des ressources humaines du réseau de la santé.",
       },
       {
         type: "p",
-        text: "Pendant que le réseau public poursuit ses grands chantiers de transformation, de nouvelles entreprises québécoises développent des solutions ciblées pouvant être déployées plus rapidement et offertes directement à la population.",
-      },
-      {
-        type: "p",
-        text: "HavenApply en est un exemple : une solution spécialisée dans le parcours vers les RPA, gratuite pour les familles et construite autour d'une utilisation concrète de l'intelligence artificielle.",
+        text: "Ces systèmes n'ont pas la même fonction que HavenApply, plateforme indépendante destinée aux familles et aux RPA. HavenApply ne les remplace pas et n'est ni financée, ni utilisée, ni recommandée par Santé Québec du seul fait de cette actualité. L'exemple illustre toutefois le coût humain et financier de parcours numériques fragmentés ou vieillissants, tandis que des outils ciblés peuvent s'attaquer à un moment précis du parcours.",
       },
       {
         type: "link",
-        label: "Consulter l'enquête sur les systèmes informatiques du réseau",
+        label: "Enquête TVA Nouvelles sur les systèmes informatiques du réseau",
         href: pressAssets.tvaArticle,
       },
       { type: "h3", text: "À propos de HavenApply" },
       {
         type: "p",
-        text: "HavenApply est une entreprise technologique québécoise qui simplifie la recherche et les démarches d'admission en résidence privée pour aînés.",
-      },
-      {
-        type: "p",
-        text: "Sa plateforme bilingue permet aux familles de préparer un dossier unique, de trouver des résidences correspondant aux besoins de leur proche et de gérer leurs démarches à partir d'un même endroit. HavenApply utilise l'intelligence artificielle pour expliquer, organiser et accompagner—sans remplacer le jugement humain.",
+        text: "HavenApply est une entreprise technologique québécoise qui simplifie la recherche et les démarches d'admission en résidence privée pour aînés. Sa plateforme bilingue permet aux familles de préparer un dossier unique, de trouver des résidences correspondant aux besoins de leur proche et de déposer des demandes en ligne. L'intelligence artificielle y sert d'accompagnement; elle ne remplace pas le jugement humain.",
       },
       {
         type: "p",
@@ -387,7 +372,11 @@ const pressFr: PressCopy = {
             value: "havenapply.com/media",
             href: pressAssets.mediaUrl,
           },
-          { label: "Contact média", value: "hello@havenapply.com", href: pressAssets.mailto },
+          {
+            label: "Contact média",
+            value: "hello@havenapply.com",
+            href: pressAssets.mailto,
+          },
           { label: "Siège", value: "Montréal, Québec" },
           { label: "Entrevues", value: "français et anglais" },
         ],
@@ -402,24 +391,35 @@ const pressFr: PressCopy = {
     blocks: [
       {
         type: "p",
-        text: "Lorsqu'un parent perd son autonomie, la famille ne dispose pas toujours de plusieurs mois pour comprendre le fonctionnement des résidences privées pour aînés.",
+        text: "Lorsqu'un parent perd son autonomie, la famille n'a pas toujours plusieurs mois pour comprendre le fonctionnement des résidences privées pour aînés. Il faut évaluer le niveau d'assistance, comparer les services, comprendre les coûts, vérifier les disponibilités et reprendre souvent les mêmes renseignements d'un établissement à l'autre.",
       },
       {
         type: "p",
-        text: "Il faut déterminer le niveau d'assistance nécessaire, comparer les services, comprendre les coûts, visiter des établissements et vérifier les disponibilités. À cela s'ajoutent les appels, les formulaires, les documents et les mêmes renseignements répétés à plusieurs interlocuteurs.",
+        text: "Pour une famille déjà préoccupée par la santé d'un proche, cette recherche peut vite devenir une charge supplémentaire. C'est le moment précis auquel s'attaque HavenApply.",
+      },
+      {
+        type: "h3",
+        text: "Une recherche qui devient un travail à temps partiel",
       },
       {
         type: "p",
-        text: "Pour une famille déjà préoccupée par la santé d'un proche, la recherche d'une résidence peut rapidement devenir une charge supplémentaire.",
-      },
-      { type: "p", text: "C'est le problème auquel s'attaque HavenApply." },
-      {
-        type: "p",
-        text: "La plateforme québécoise permet de préparer un seul dossier regroupant les besoins, les préférences et les renseignements pertinents de la personne. Ce dossier peut ensuite être utilisé pour entreprendre des démarches auprès de plusieurs résidences.",
+        text: "Les appels, les formulaires et les documents s'accumulent. Chaque résidence demande ses propres précisions. Les proches aidants passent d'un interlocuteur à l'autre en répétant le profil, les besoins et les préférences de la personne.",
       },
       {
         type: "p",
-        text: "Toutes les RPA actives du Québec sont accessibles dans la plateforme dès son lancement. Les établissements qui utilisent directement HavenApply peuvent également recevoir et traiter les dossiers dans leur propre console.",
+        text: "HavenApply ne crée pas de nouvelles places. Elle vise à réduire le travail administratif autour de la recherche et des demandes, pour que le temps restant serve davantage aux échanges humains avec les résidences.",
+      },
+      {
+        type: "h3",
+        text: "Préparer le dossier une seule fois",
+      },
+      {
+        type: "p",
+        text: "La plateforme permet de rassembler au même endroit le profil de la personne, ses préférences, ses besoins d'assistance, les documents utiles et l'état des démarches. Ce dossier unique peut ensuite servir à déposer des demandes d'admission en ligne auprès de plusieurs RPA.",
+      },
+      {
+        type: "p",
+        text: "Toutes les RPA actives du registre public québécois sont accessibles dans HavenApply dès le lancement. Les établissements qui utilisent la console professionnelle peuvent y recevoir et suivre les dossiers. Les autres demeurent visibles dans le parcours; leur adoption de la console dépend de leur inscription individuelle.",
       },
       {
         type: "h3",
@@ -427,19 +427,11 @@ const pressFr: PressCopy = {
       },
       {
         type: "p",
-        text: "L'intelligence artificielle occupe une place centrale dans HavenApply, mais son rôle est volontairement limité.",
+        text: "L'intelligence artificielle occupe une place utile dans HavenApply, mais volontairement limitée. Elle explique les étapes, aide à organiser les renseignements et peut signaler qu'un élément important semble manquer.",
       },
       {
         type: "p",
-        text: "Elle accompagne l'utilisateur, explique les étapes et l'aide à organiser son dossier. Elle peut, par exemple, signaler qu'un renseignement important semble manquer ou aider la famille à mieux définir les besoins quotidiens de la personne.",
-      },
-      {
-        type: "p",
-        text: "Elle ne recommande pas un traitement médical, n'évalue pas l'admissibilité clinique et ne décide jamais si une personne doit être acceptée dans une résidence.",
-      },
-      {
-        type: "p",
-        text: "Cette distinction est essentielle. Dans un domaine aussi sensible, l'intelligence artificielle doit soutenir le jugement humain, pas s'y substituer.",
+        text: "Elle ne recommande pas de traitement médical, n'évalue pas l'admissibilité clinique et ne décide jamais si une personne doit être acceptée dans une résidence. Dans un domaine aussi sensible, l'outil doit soutenir le jugement humain, non s'y substituer.",
       },
       {
         type: "h3",
@@ -447,166 +439,216 @@ const pressFr: PressCopy = {
       },
       {
         type: "p",
-        text: "Les nouvelles technologies sont souvent développées pour les utilisateurs qui les comprennent déjà. HavenApply adopte l'approche inverse : réduire le vocabulaire technique, diviser les démarches en étapes simples et permettre à plusieurs membres d'une famille de participer.",
+        text: "HavenApply privilégie un langage simple, des étapes progressives et une navigation claire. Une personne aînée peut utiliser la plateforme elle-même. Un enfant ou un proche aidant peut aussi l'accompagner dans la préparation du dossier.",
       },
       {
         type: "p",
-        text: "La personne aînée peut utiliser la plateforme elle-même. Un enfant ou un proche aidant peut également l'accompagner dans la préparation du dossier.",
-      },
-      {
-        type: "p",
-        text: "L'objectif n'est pas de retirer les interactions humaines du parcours. Il est de réduire le temps perdu avant ces interactions et de permettre aux familles d'arriver mieux préparées lorsqu'elles parlent avec une résidence.",
-      },
-      { type: "h3", text: "Une reconnaissance du secteur" },
-      {
-        type: "p",
-        text: "HavenApply a récemment conclu une entente à titre de fournisseur du RQRA, un regroupement représentant près de 800 membres et environ 108\u00a0000 unités locatives au Québec.",
-      },
-      {
-        type: "p",
-        text: "Pour la jeune entreprise montréalaise, cette reconnaissance ouvre un dialogue direct avec les gestionnaires de RPA et confirme la pertinence d'un outil consacré au parcours d'admission.",
-      },
-      {
-        type: "p",
-        text: "La plateforme demeure gratuite pour les familles. Son développement repose sur la collaboration avec les résidences qui souhaitent moderniser la réception et le suivi de leurs demandes.",
+        text: "L'objectif n'est pas de retirer les interactions humaines. Il est de réduire le temps perdu avant ces interactions, pour que les familles arrivent mieux préparées lorsqu'elles parlent avec une résidence.",
       },
       {
         type: "h3",
-        text: "Moderniser sans construire un autre système lourd",
+        text: "Une reconnaissance du secteur des RPA",
       },
       {
         type: "p",
-        text: "Cette arrivée se produit dans un contexte où les dépenses informatiques du réseau public font l'objet d'importantes critiques.",
+        text: "HavenApply a conclu une entente à titre de fournisseur du RQRA, regroupement qui indique représenter près de 800 membres et environ 108\u00a0000 unités locatives au Québec. Cette reconnaissance ouvre un dialogue avec les gestionnaires de RPA. Elle ne signifie pas que toutes les résidences membres ont adopté, approuvé ou recommandé la plateforme.",
+      },
+      {
+        type: "h3",
+        text: "Moderniser un parcours précis, sans construire un autre système lourd",
       },
       {
         type: "p",
-        text: "Les quelque 500\u00a0M$ rapportés récemment concernent de vieux systèmes de ressources humaines—notamment un domaine différent de celui de HavenApply. La comparaison ne porte donc pas sur deux produits concurrents.",
+        text: "Les débats récents sur les coûts liés à d'anciens systèmes de ressources humaines du réseau public concernent un domaine différent. HavenApply n'est pas un substitut à ces infrastructures. L'exemple rappelle toutefois qu'il existe deux réalités de modernisation : remplacer des systèmes institutionnels complexes, et intervenir sur un problème précis avec un outil plus léger.",
       },
       {
         type: "p",
-        text: "Elle révèle toutefois deux réalités de la transformation numérique. D'un côté, les institutions doivent remplacer des infrastructures complexes utilisées depuis plusieurs décennies. De l'autre, de petites entreprises peuvent intervenir sur un problème précis avec des outils plus légers et rapidement accessibles.",
-      },
-      {
-        type: "p",
-        text: "HavenApply appartient à cette seconde catégorie. Plutôt que de remplacer les systèmes médicaux ou administratifs du gouvernement, l'entreprise souhaite simplifier un moment particulier : celui où une famille commence à chercher une résidence et ne sait pas par où commencer.",
+        text: "HavenApply appartient à cette seconde catégorie. Elle vise le moment où une famille commence à chercher une résidence et ne sait pas par où commencer — pour lui rendre du temps, de la clarté et un dossier prêt à être transmis.",
       },
     ],
   },
-  numbers: {
-    sectionLabel: "Le problème en chiffres",
+  facts: {
+    sectionLabel: "Faits essentiels",
+    title: "Ce qu'il faut retenir",
     items: [
       {
-        value: "≈\u00a0800",
-        description: "membres",
-        detail:
-          "Le RQRA rassemble près de 800 membres, gestionnaires et propriétaires de RPA à travers le Québec.",
+        title: "Un dossier unique",
+        body: "Une famille prépare ses renseignements une seule fois.",
       },
       {
-        value: "≈\u00a0108\u00a0000",
-        description: "unités locatives",
-        detail:
-          "Les membres du regroupement représentent près de 108\u00a0000 unités locatives.",
+        title: "Plusieurs demandes en ligne",
+        body: "Le même dossier peut servir à entreprendre des démarches auprès de plusieurs RPA.",
       },
       {
-        value: "Toutes",
-        description: "les RPA actives",
-        detail:
-          "HavenApply rend accessibles dès son lancement les RPA actives figurant dans le registre public québécois.",
-        accent: true,
+        title: "Toutes les RPA actives",
+        body: "Les établissements figurant au registre public québécois sont accessibles dès le lancement.",
+        sourceLabel: "Registre officiel des RPA",
+        sourceHref: pressAssets.rpaRegistry,
       },
       {
-        value: "0\u00a0$",
-        description: "pour les familles",
-        detail:
-          "Aucun abonnement ni paiement n'est demandé à une famille pour préparer son dossier et utiliser le parcours de recherche.",
-        accent: true,
+        title: "Gratuit pour les familles",
+        body: "Aucun abonnement familial n'est nécessaire pour utiliser le parcours.",
       },
+      {
+        title: "Près de 800 membres",
+        body: "Le RQRA indique représenter près de 800 membres, gestionnaires et propriétaires de RPA.",
+        sourceLabel: "RQRA",
+        sourceHref: pressAssets.rqraHome,
+      },
+      {
+        title: "Environ 108 000 unités",
+        body: "Les membres du RQRA comptent environ 108 000 unités locatives au Québec.",
+        sourceLabel: "RQRA",
+        sourceHref: pressAssets.rqraHome,
+      },
+    ],
+  },
+  ai: {
+    sectionLabel: "Intelligence artificielle",
+    title: "Comment fonctionne l'accompagnement",
+    brandLine: "L'intelligence artificielle au service des familles, jamais à leur place.",
+    canTitle: "Ce que l'IA peut faire",
+    can: [
+      "Expliquer les étapes",
+      "Reformuler une question complexe",
+      "Aider à organiser les renseignements",
+      "Repérer des informations manquantes",
+      "Accompagner l'utilisateur pendant le dossier",
+    ],
+    cannotTitle: "Ce que l'IA ne fait pas",
+    cannot: [
+      "Poser un diagnostic",
+      "Fournir une recommandation médicale",
+      "Déterminer l'admissibilité",
+      "Choisir à la place de la famille",
+      "Accepter ou refuser une demande",
     ],
   },
   faq: {
-    sectionLabel: "Questions fréquentes",
-    title: "Questions fréquentes des journalistes",
+    sectionLabel: "FAQ presse",
+    title: "Questions fréquentes pour les journalistes",
     items: [
       {
         q: "HavenApply appartient-elle au RQRA?",
         a: "Non. HavenApply est une entreprise indépendante ayant conclu une entente à titre de fournisseur du RQRA.",
       },
       {
-        q: "Le RQRA recommande-t-il HavenApply à toutes ses résidences?",
-        a: "HavenApply est reconnu dans le cadre du programme de fournisseurs du RQRA. Chaque résidence demeure libre de choisir les outils et fournisseurs qu'elle utilise.",
+        q: "Que signifie le statut de fournisseur du RQRA?",
+        a: "HavenApply est reconnue dans le cadre du programme de fournisseurs du RQRA. Ce statut ouvre une relation de collaboration et de visibilité auprès des membres. Il ne signifie pas que le RQRA a certifié, approuvé, cautionné ou recommandé HavenApply à l'ensemble de ses résidences.",
       },
       {
         q: "Toutes les résidences utilisent-elles déjà HavenApply?",
-        a: "Toutes les RPA actives sont accessibles dans le parcours de recherche dès le lancement. Leur utilisation de la console professionnelle HavenApply dépend de leur inscription individuelle.",
+        a: "Toutes les RPA actives figurant au registre public sont accessibles dans le parcours de recherche dès le lancement. L'utilisation de la console professionnelle HavenApply dépend de l'inscription individuelle de chaque résidence.",
       },
       {
-        q: "Comment HavenApply utilise-t-elle l'intelligence artificielle?",
-        a: "L'IA explique les étapes, aide à organiser les renseignements et accompagne l'utilisateur. Elle ne pose aucun diagnostic et ne prend aucune décision d'admission.",
+        q: "Les familles peuvent-elles réellement déposer leurs demandes en ligne?",
+        a: "Oui. Les familles préparent un dossier unique et peuvent déposer des demandes d'admission en ligne auprès de plusieurs résidences à partir de HavenApply.",
       },
       {
-        q: "Le service est-il réellement gratuit?",
-        a: "Oui, HavenApply est gratuit pour les familles. [Préciser ici comment les résidences paient ou paieront HavenApply.]",
+        q: "Comment une résidence reçoit-elle une demande si elle n'a pas encore de compte?",
+        a: "Les résidences qui utilisent la console HavenApply y reçoivent et suivent les dossiers structurés. Pour le détail du traitement lorsqu'une résidence n'a pas encore de compte, écrivez à hello@havenapply.com.",
       },
       {
         q: "Comment les résidences sont-elles recommandées?",
-        a: "[Préciser les critères : emplacement, budget, niveau d'autonomie, services, disponibilité déclarée, etc. Indiquer clairement si le paiement d'une résidence influence ou non son classement.]",
+        a: "Les suggestions s'appuient sur les renseignements du dossier, notamment le secteur, le budget et les besoins exprimés. Pour une description détaillée des critères, contactez hello@havenapply.com.",
+      },
+      {
+        q: "Une résidence peut-elle payer pour améliorer son classement?",
+        a: "Dans le parcours familial actuel, aucun mécanisme de placement payant n'améliore le rang d'une résidence. Pour toute précision commerciale, contactez hello@havenapply.com.",
+      },
+      {
+        q: "Comment HavenApply utilise-t-elle l'intelligence artificielle?",
+        a: "L'IA explique les étapes, aide à organiser les renseignements et repère des éléments manquants. Elle ne pose aucun diagnostic, ne détermine pas l'admissibilité et ne prend aucune décision d'admission.",
+      },
+      {
+        q: "Le service est-il réellement gratuit pour les familles?",
+        a: "Oui. HavenApply est gratuit pour les familles. Aucun abonnement familial n'est requis pour préparer le dossier et utiliser le parcours de recherche et de demande.",
+      },
+      {
+        q: "Comment les renseignements personnels sont-ils protégés?",
+        a: "HavenApply décrit ses pratiques dans sa politique de confidentialité (authentification, contrôle d'accès, chiffrement en transit HTTPS). Les familles peuvent exercer leurs droits via privacy@havenapply.com. Détails : havenapply.com/confidentialite",
       },
     ],
   },
   kit: {
     sectionLabel: "Kit média",
-    title: "Identité et ressources pour la presse",
+    title: "Identité et fichiers disponibles",
     brandLineLabel: "Formule de marque",
     brandLine: "L'intelligence artificielle au service des familles, jamais à leur place.",
     logoLightAlt: "Logo HavenApply sur fond clair",
-    logoDarkPlaceholder: "[version renversée (blanc) à fournir]",
     usage:
-      "Zone de dégagement égale à la hauteur du symbole. Pas de déformation, pas de recoloration, pas de forme ajoutée. Version renversée obligatoire sur fond foncé.",
-    download: "Télécharger le logo (PNG)",
+      "Zone de dégagement égale à la hauteur du symbole. Pas de déformation, pas de recoloration, pas de forme ajoutée.",
     colorsLabel: "Couleurs",
     colors: colorsFr,
     typeLabel: "Typographie",
     serifName: "Source Serif 4",
     serifCaption: "Titres et texte long",
     sansName: "Public Sans",
-    sansCaption: "Interface, étiquettes, chiffres",
+    sansCaption: "Interface et étiquettes",
     brandLabel: "Nom de la marque",
     brandRule:
       "S'écrit HavenApply, en un mot, H et A majuscules ; jamais « Haven Apply » ni « HAVENAPPLY ».",
-    resourcesLabel: "Ressources à ajouter au kit",
-    resources: resourcesFr,
+    downloadsLabel: "Téléchargements",
+    downloads: [
+      {
+        id: "logo-png",
+        label: "Logo HavenApply (PNG)",
+        href: pressAssets.logoPng,
+        filename: "havenapply-logo.png",
+        alt: "Logo HavenApply",
+        caption: "Logo couleur sur fond transparent.",
+        credit: "HavenApply",
+      },
+      {
+        id: "homepage-capture",
+        label: "Capture de la page d'accueil",
+        href: pressAssets.homepageCapture,
+        filename: "havenapply-homepage.png",
+        alt: "Capture de la page d'accueil HavenApply",
+        caption: "Page d'accueil havenapply.com.",
+        credit: "HavenApply",
+      },
+    ],
   },
   contact: {
     sectionLabel: "Contact média",
     title: "Entrevues et demandes de presse",
-    body: "Tom [nom de famille], cofondateur, est disponible en français et en anglais, à Montréal ou à distance. Nous pouvons organiser une démonstration de la plateforme ou, avec leur accord, une mise en relation avec une famille ou une résidence.",
-    cta: "Écrire à hello@havenapply.com",
+    name: "Tom Grosse",
+    role: "Cofondateur, HavenApply",
+    city: "Montréal, Québec",
+    languages: "Français et anglais",
+    email: "hello@havenapply.com",
+    body: "Disponible pour entrevues et démonstrations, à Montréal ou à distance. Mise en relation avec une famille ou une résidence uniquement avec leur accord préalable.",
+    ctaInterview: "Demander une entrevue",
+    ctaDemo: "Demander une démonstration",
+    siteLabel: "Visiter havenapply.com",
     defs: [
       { label: "Courriel", value: "hello@havenapply.com" },
       { label: "Siège", value: "Montréal, Québec" },
-      { label: "Langues d'entrevue", value: "Français, anglais" },
-      { label: "Délai de réponse", value: "Moins de 24 h en semaine" },
+      { label: "Langues", value: "Français, anglais" },
     ],
   },
   footer: {
-    updated: "Espace presse — dernière mise à jour le [date]",
+    updated: "Espace presse HavenApply",
     siteLink: "havenapply.com",
   },
   anchors: {
     release: "communique",
     feature: "article",
-    numbers: "chiffres",
+    facts: "faits",
+    ai: "ia",
     faq: "faq",
     brand: "kit",
+    contact: "contact",
   },
 };
 
 const pressEn: PressCopy = {
   meta: {
-    title: "Press room — HavenApply",
+    title: "Press room — HavenApply brings seniors' residence applications online",
     description:
-      "Press release, feature article and media resources: HavenApply, an RQRA supplier, uses AI to simplify seniors' residence admissions.",
-    ogAlt: "Screenshot of the HavenApply homepage",
+      "HavenApply lets families prepare one file and submit admission applications online to multiple private seniors' residences in Quebec.",
+    ogAlt: "HavenApply homepage",
   },
   header: {
     brand: "HavenApply",
@@ -616,171 +658,120 @@ const pressEn: PressCopy = {
     langEn: "English",
     langAria: "Choose language",
   },
-  todo: {
-    label: "To complete",
-    body: "Before release: launch date, cofounder's last name, residence pricing model (FAQ), recommendation criteria (FAQ), white logo, RQRA supplier seal, portrait, screenshots, PDF/Word release, media phone line, authorized quotes and testimonials.",
-  },
   hero: {
     eyebrow: "Press room · Montreal",
-    title: "Next-generation technology to support every generation",
-    paragraphs: [
-      "HavenApply uses artificial intelligence to simplify one of the most human—and difficult—decisions a family can face: finding the right residence for a parent or loved one.",
-      "Free for families, the platform lets users prepare a single file, discover residences that match the person's needs, and start applications with every active private seniors' residence (RPA) in Quebec.",
-      "HavenApply has also entered into an agreement as a supplier of the Regroupement québécois des résidences pour aînés (RQRA), which represents nearly 800 members and about 108,000 rental units across the province.",
-    ],
-    brandLine: "Artificial intelligence in service of families—never in their place.",
-    interviewLabel: "Interview requests",
+    title: "One application. Multiple residences. Senior-living admissions brought online.",
+    lead: "HavenApply helps Quebec families prepare a single application and submit it online to multiple private seniors' residences (RPAs). Every active RPA in Quebec is available from launch, and the service is free for families.",
     ctaRelease: "Read the release",
-    ctaFeature: "Feature article",
-    ctaNumbers: "The problem in numbers",
-    ctaFaq: "Journalist FAQ",
-    ctaKit: "Media kit",
+    ctaFeature: "Read the feature article",
+    ctaFacts: "See the key facts",
+    ctaInterview: "Request an interview",
     captureAlt: "Screenshot of the HavenApply homepage",
-    captureCaption:
-      "The HavenApply homepage. High-resolution capture available on request.",
-    rqraLinkLabel: "About the RQRA",
+    captureCaption: "The HavenApply homepage.",
+    captureCredit: "HavenApply",
   },
   release: {
-    sectionLabel: "Press release",
-    forImmediate: "For immediate release",
+    sectionLabel: "Press release · For immediate release",
     title:
-      "HavenApply enters into an agreement with the RQRA and uses AI to simplify seniors' residence admissions",
-    dek: "Free for families, the Quebec platform brings together the province's RPAs and supports users at every step of the process",
-    dateline: "MONTREAL, [launch date] —",
-    lead:
-      "HavenApply today announces the launch of its Quebec platform for searching and applying to private seniors' residences, as well as an agreement as a supplier of the Regroupement québécois des résidences pour aînés (RQRA).",
+      "HavenApply enters into an agreement with the RQRA and brings seniors' residence applications online",
+    dek: "Free for families, the Quebec platform lets users build one file and submit applications to multiple residences.",
+    dateline: "MONTREAL —",
+    lead: "HavenApply is launching its Quebec platform for searching and applying to private seniors' residences (RPAs), and has entered into an agreement as a supplier of the Regroupement québécois des résidences pour aînés (RQRA).",
     blocks: [
       {
         type: "p",
-        text: "The agreement follows a presentation of HavenApply to the RQRA and the company's acceptance into its supplier network. The RQRA represents nearly 800 members—managers and owners of residences accounting for about 108,000 rental units in Quebec.",
+        text: "HavenApply is an independent technology company based in Montreal. It is not owned by the RQRA. The agreement places HavenApply within the association's supplier program. The RQRA states that it represents nearly 800 members—managers and owners of RPAs—accounting for about 108,000 rental units in Quebec.",
       },
       {
-        type: "p",
-        text: "From launch, HavenApply lets families discover all active RPAs listed in Quebec and begin their process from a single platform.",
+        type: "link",
+        label: "RQRA — about the association",
+        href: pressAssets.rqraHome,
+      },
+      {
+        type: "link",
+        label: "RQRA supplier and partner program",
+        href: pressAssets.rqraProgram,
       },
       {
         type: "h3",
-        text: "A search that quickly becomes a part-time job",
+        text: "Repeated applications, repeated information",
       },
       {
         type: "p",
-        text: "Finding the right residence is not just browsing a list of facilities. Families must understand care levels, verify services, compare costs, contact several residences and repeat the same information with every new outreach.",
+        text: "Finding a suitable residence often means understanding care levels, comparing services and costs, then providing the same information to several facilities. The search frequently follows a hospitalization, a loss of autonomy or caregiver burnout.",
       },
       {
         type: "p",
-        text: "That search often follows a hospitalization, a loss of autonomy or caregiver burnout. The family then has to make a major decision in a fragmented landscape, with little time and a great deal of uncertainty.",
-      },
-      {
-        type: "p",
-        text: "Quebec maintains a public registry of RPAs authorized by Santé Québec. HavenApply builds on those public data and adds a guidance layer: preparing the file, clarifying needs, recommendations and managing outreach.",
+        text: "Quebec maintains a public registry of RPAs authorized by Santé Québec. HavenApply builds on those public data and adds a journey to prepare the file, clarify needs and start applications.",
       },
       {
         type: "link",
         label: "Official RPA registry",
         href: pressAssets.rpaRegistry,
       },
-      { type: "h3", text: "One file, prepared once" },
       {
-        type: "p",
-        text: "With HavenApply, a family can bring together in one place:",
-      },
-      {
-        type: "ul",
-        items: [
-          "The profile of the person looking for a residence",
-          "Geographic and financial preferences",
-          "Assistance and care needs",
-          "Information required for applications",
-          "Relevant documents",
-          "Residences contacted",
-          "Status of each application",
-        ],
+        type: "h3",
+        text: "One file, online applications to multiple RPAs",
       },
       {
         type: "p",
-        text: "The file is prepared once and can then be used with several facilities. The family keeps control over which residences to contact and which information to share.",
+        text: "With HavenApply, a family prepares once the person's profile, preferences, assistance needs, useful documents and information required for applications. That file can then support online admission applications to several residences.",
       },
       {
         type: "p",
-        text: "The service is free for families, in French and English.",
+        text: "From launch, every active RPA listed in Quebec's public registry is available in HavenApply. Appearing in the journey does not mean a residence already uses the HavenApply professional console. Each facility remains free to choose its tools.",
+      },
+      {
+        type: "p",
+        text: "The service is free for families, in French and English. HavenApply makes information and applications easier to manage; it does not create new places or new units.",
       },
       {
         type: "h3",
-        text: "Artificial intelligence in service of families",
+        text: "AI guidance, with explicit limits",
       },
       {
         type: "p",
-        text: "HavenApply includes an assistant that uses artificial intelligence to guide users through the process.",
-      },
-      {
-        type: "p",
-        text: "The assistant can explain each step, help clarify the person's needs, flag missing information, simplify certain terms and prepare the family to speak with a residence.",
-      },
-      {
-        type: "p",
-        text: "It does not make medical diagnoses, decide on the family's behalf or take any admission decision. Residences remain fully responsible for evaluating the applications they receive.",
+        text: "HavenApply includes an assistant that uses artificial intelligence to explain steps, help organize information and flag missing details. The AI does not make medical diagnoses, determine eligibility, choose a residence for the family or take any admission decision. That decision always belongs to the residence.",
       },
       {
         type: "quote",
         text: "Artificial intelligence is often presented as complex or impersonal. We want to show it can do the opposite: explain, reassure and accompany families through a deeply human transition.",
-        attribution: "Tom [last name], cofounder of HavenApply",
-      },
-      {
-        type: "p",
-        text: "The platform was designed to work across generations. Its interface favors plain language, progressive steps and clear navigation. An adult child, a caregiver or an older adult can prepare the file alone or with help from family.",
+        attribution: founderAttributionEn,
       },
       {
         type: "quote",
-        text: "Technology should never replace the family, the advisor or residence staff. It should remove administrative barriers so everyone can spend more time with the person who needs care.",
-        attribution: "Tom [last name], cofounder of HavenApply",
-      },
-      { type: "h3", text: "A solution for residences too" },
-      {
-        type: "p",
-        text: "Residences that use HavenApply get a console to receive structured files, review their contents, track applications and communicate with families.",
+        text: "Technology should never replace the family, the advisor or residence staff. It should remove administrative barriers so everyone can spend more time with the person.",
+        attribution: founderAttributionEn,
       },
       {
-        type: "p",
-        text: "The goal is not to automate the admission decision, but to reduce incomplete information, repetitive outreach and the administrative work around first contact.",
+        type: "h3",
+        text: "A console for residences",
       },
       {
         type: "p",
-        text: "RQRA supplier status will let HavenApply present its solution to member managers and owners and keep developing it in contact with the sector's day-to-day realities.",
-      },
-      { type: "h3", text: "A new generation of Quebec solutions" },
-      {
-        type: "p",
-        text: "HavenApply's launch comes as the cost of aging IT systems is drawing intense attention in Quebec.",
+        text: "Residences that use HavenApply get a console to receive structured files, review their contents, track applications and communicate with families. The goal is not to automate the admission decision, but to reduce incomplete information and repetitive first-contact work.",
       },
       {
-        type: "p",
-        text: "According to a TVA Nouvelles investigation published on August 31, 2026, nearly $500 million has reportedly been spent since 2023 maintaining legacy human-resources systems in the health network.",
+        type: "h3",
+        text: "Context: modernizing without confusing the tools",
       },
       {
         type: "p",
-        text: "Those systems do not serve the same purpose as HavenApply, an independent platform for families and RPAs. The situation still illustrates a broader issue: the financial and human costs of journeys built on fragmented or aging technology.",
+        text: "HavenApply's launch comes as the cost of aging IT systems draws attention in Quebec. According to a TVA Nouvelles investigation published on August 31, 2026, nearly $500 million has reportedly been spent since 2023 maintaining legacy human-resources systems in the health network.",
       },
       {
         type: "p",
-        text: "While the public network continues its large transformation projects, new Quebec companies are building focused solutions that can be deployed faster and offered directly to the public.",
-      },
-      {
-        type: "p",
-        text: "HavenApply is one example: a solution specialized in the path to RPAs, free for families and built around a practical use of artificial intelligence.",
+        text: "Those systems do not serve the same purpose as HavenApply, an independent platform for families and RPAs. HavenApply does not replace them and is not funded, used or recommended by Santé Québec merely because of that news. The example still illustrates the human and financial cost of fragmented or aging digital journeys, while focused tools can address a precise moment in the path.",
       },
       {
         type: "link",
-        label: "Read the investigation on the network's IT systems",
+        label: "TVA Nouvelles investigation on the network's IT systems",
         href: pressAssets.tvaArticle,
       },
       { type: "h3", text: "About HavenApply" },
       {
         type: "p",
-        text: "HavenApply is a Quebec technology company that simplifies searching for and applying to private seniors' residences.",
-      },
-      {
-        type: "p",
-        text: "Its bilingual platform lets families prepare a single file, find residences that match their loved one's needs and manage outreach from one place. HavenApply uses artificial intelligence to explain, organize and guide—without replacing human judgment.",
+        text: "HavenApply is a Quebec technology company that simplifies searching for and applying to private seniors' residences. Its bilingual platform lets families prepare one file, find residences that match their loved one's needs and submit applications online. Artificial intelligence provides guidance; it does not replace human judgment.",
       },
       {
         type: "p",
@@ -795,7 +786,11 @@ const pressEn: PressCopy = {
             value: "havenapply.com/media",
             href: pressAssets.mediaUrl,
           },
-          { label: "Media contact", value: "hello@havenapply.com", href: pressAssets.mailto },
+          {
+            label: "Media contact",
+            value: "hello@havenapply.com",
+            href: pressAssets.mailto,
+          },
           { label: "Headquarters", value: "Montreal, Quebec" },
           { label: "Interviews", value: "French and English" },
         ],
@@ -810,24 +805,35 @@ const pressEn: PressCopy = {
     blocks: [
       {
         type: "p",
-        text: "When a parent loses autonomy, a family does not always have months to learn how private seniors' residences work.",
+        text: "When a parent loses autonomy, a family does not always have months to learn how private seniors' residences work. They must assess the level of assistance, compare services, understand costs, check availability and often repeat the same information from one facility to the next.",
       },
       {
         type: "p",
-        text: "They must determine the level of assistance needed, compare services, understand costs, visit facilities and check availability. On top of that come calls, forms, documents and the same information repeated to several contacts.",
+        text: "For a family already worried about a loved one's health, that search can quickly become another burden. That is the moment HavenApply sets out to address.",
+      },
+      {
+        type: "h3",
+        text: "A search that turns into a part-time job",
       },
       {
         type: "p",
-        text: "For a family already worried about a loved one's health, the residence search can quickly become another burden.",
-      },
-      { type: "p", text: "That is the problem HavenApply sets out to solve." },
-      {
-        type: "p",
-        text: "The Quebec platform lets families prepare a single file that gathers needs, preferences and relevant information. That file can then support outreach to several residences.",
+        text: "Calls, forms and documents pile up. Each residence asks for its own details. Caregivers move from one contact to another, repeating the person's profile, needs and preferences.",
       },
       {
         type: "p",
-        text: "Every active RPA in Quebec is available in the platform from launch. Facilities that use HavenApply directly can also receive and process files in their own console.",
+        text: "HavenApply does not create new places. It aims to reduce the administrative work around the search and applications, so remaining time can go to human conversations with residences.",
+      },
+      {
+        type: "h3",
+        text: "Prepare the file once",
+      },
+      {
+        type: "p",
+        text: "The platform brings together the person's profile, preferences, assistance needs, useful documents and application status. That single file can then support online admission applications to several RPAs.",
+      },
+      {
+        type: "p",
+        text: "Every active RPA in Quebec's public registry is available in HavenApply from launch. Facilities that use the professional console can receive and track files there. Others remain visible in the journey; console adoption depends on each residence's individual signup.",
       },
       {
         type: "h3",
@@ -835,19 +841,11 @@ const pressEn: PressCopy = {
       },
       {
         type: "p",
-        text: "Artificial intelligence sits at the center of HavenApply, but its role is deliberately limited.",
+        text: "Artificial intelligence plays a useful but deliberately limited role in HavenApply. It explains steps, helps organize information and can flag that something important seems missing.",
       },
       {
         type: "p",
-        text: "It accompanies the user, explains steps and helps organize the file. It can, for example, flag that important information seems missing or help the family better define the person's daily needs.",
-      },
-      {
-        type: "p",
-        text: "It does not recommend a medical treatment, assess clinical eligibility or ever decide whether someone should be accepted into a residence.",
-      },
-      {
-        type: "p",
-        text: "That distinction matters. In a field this sensitive, artificial intelligence must support human judgment—not replace it.",
+        text: "It does not recommend a medical treatment, assess clinical eligibility or ever decide whether someone should be accepted into a residence. In a field this sensitive, the tool must support human judgment—not replace it.",
       },
       {
         type: "h3",
@@ -855,156 +853,207 @@ const pressEn: PressCopy = {
       },
       {
         type: "p",
-        text: "New technologies are often built for people who already understand them. HavenApply takes the opposite approach: reduce technical vocabulary, break the process into simple steps and let several family members take part.",
+        text: "HavenApply favors plain language, progressive steps and clear navigation. An older adult can use the platform themselves. An adult child or caregiver can also help prepare the file.",
       },
       {
         type: "p",
-        text: "An older adult can use the platform themselves. An adult child or caregiver can also help prepare the file.",
-      },
-      {
-        type: "p",
-        text: "The goal is not to remove human interaction from the journey. It is to reduce time lost before those interactions and help families arrive better prepared when they speak with a residence.",
-      },
-      { type: "h3", text: "Recognition from the sector" },
-      {
-        type: "p",
-        text: "HavenApply recently entered into an agreement as a supplier of the RQRA, an association representing nearly 800 members and about 108,000 rental units in Quebec.",
-      },
-      {
-        type: "p",
-        text: "For the young Montreal company, that recognition opens a direct dialogue with RPA managers and confirms the relevance of a tool dedicated to the admissions journey.",
-      },
-      {
-        type: "p",
-        text: "The platform remains free for families. Its development rests on collaboration with residences that want to modernize how they receive and track applications.",
+        text: "The goal is not to remove human interaction. It is to reduce time lost before those interactions, so families arrive better prepared when they speak with a residence.",
       },
       {
         type: "h3",
-        text: "Modernizing without building another heavy system",
+        text: "Recognition from the RPA sector",
       },
       {
         type: "p",
-        text: "This arrival comes amid sharp criticism of public-network IT spending.",
+        text: "HavenApply has entered into an agreement as a supplier of the RQRA, which states that it represents nearly 800 members and about 108,000 rental units in Quebec. That recognition opens a dialogue with RPA managers. It does not mean every member residence has adopted, approved or recommended the platform.",
+      },
+      {
+        type: "h3",
+        text: "Modernizing a precise journey, without building another heavy system",
       },
       {
         type: "p",
-        text: "The roughly $500 million recently reported concerns old human-resources systems—a different domain from HavenApply's. The comparison is therefore not between two competing products.",
+        text: "Recent debates about costs tied to legacy public-network human-resources systems concern a different domain. HavenApply is not a substitute for that infrastructure. The example still points to two modernization realities: replacing complex institutional systems, and addressing a precise problem with a lighter tool.",
       },
       {
         type: "p",
-        text: "It does reveal two realities of digital transformation. On one side, institutions must replace complex infrastructure used for decades. On the other, smaller companies can address a precise problem with lighter tools that are quickly available.",
-      },
-      {
-        type: "p",
-        text: "HavenApply belongs to that second category. Rather than replacing government medical or administrative systems, the company aims to simplify a particular moment: when a family starts looking for a residence and does not know where to begin.",
+        text: "HavenApply belongs to that second category. It focuses on the moment a family starts looking for a residence and does not know where to begin—to return time, clarity and a file ready to send.",
       },
     ],
   },
-  numbers: {
-    sectionLabel: "The problem in numbers",
+  facts: {
+    sectionLabel: "Key facts",
+    title: "What to remember",
     items: [
       {
-        value: "≈ 800",
-        description: "members",
-        detail:
-          "The RQRA brings together nearly 800 members—managers and owners of RPAs across Quebec.",
+        title: "One file",
+        body: "A family prepares their information once.",
       },
       {
-        value: "≈ 108,000",
-        description: "rental units",
-        detail: "Association members represent nearly 108,000 rental units.",
+        title: "Multiple online applications",
+        body: "The same file can support outreach to several RPAs.",
       },
       {
-        value: "All",
-        description: "active RPAs",
-        detail:
-          "From launch, HavenApply makes available the active RPAs listed in Quebec's public registry.",
-        accent: true,
+        title: "Every active RPA",
+        body: "Facilities listed in Quebec's public registry are available from launch.",
+        sourceLabel: "Official RPA registry",
+        sourceHref: pressAssets.rpaRegistry,
       },
       {
-        value: "$0",
-        description: "for families",
-        detail:
-          "No subscription or payment is required for a family to prepare a file and use the search journey.",
-        accent: true,
+        title: "Free for families",
+        body: "No family subscription is required to use the journey.",
       },
+      {
+        title: "Nearly 800 members",
+        body: "The RQRA states that it represents nearly 800 members—managers and owners of RPAs.",
+        sourceLabel: "RQRA",
+        sourceHref: pressAssets.rqraHome,
+      },
+      {
+        title: "About 108,000 units",
+        body: "RQRA members account for about 108,000 rental units in Quebec.",
+        sourceLabel: "RQRA",
+        sourceHref: pressAssets.rqraHome,
+      },
+    ],
+  },
+  ai: {
+    sectionLabel: "Artificial intelligence",
+    title: "How guidance works",
+    brandLine: "Artificial intelligence in service of families—never in their place.",
+    canTitle: "What the AI can do",
+    can: [
+      "Explain the steps",
+      "Rephrase a complex question",
+      "Help organize information",
+      "Flag missing details",
+      "Guide the user through the file",
+    ],
+    cannotTitle: "What the AI does not do",
+    cannot: [
+      "Make a diagnosis",
+      "Provide a medical recommendation",
+      "Determine eligibility",
+      "Choose on the family's behalf",
+      "Accept or refuse an application",
     ],
   },
   faq: {
-    sectionLabel: "FAQ",
-    title: "Frequently asked questions from journalists",
+    sectionLabel: "Press FAQ",
+    title: "Frequently asked questions for journalists",
     items: [
       {
         q: "Does the RQRA own HavenApply?",
         a: "No. HavenApply is an independent company that entered into an agreement as a supplier of the RQRA.",
       },
       {
-        q: "Does the RQRA recommend HavenApply to all of its residences?",
-        a: "HavenApply is recognized under the RQRA supplier program. Each residence remains free to choose the tools and suppliers it uses.",
+        q: "What does RQRA supplier status mean?",
+        a: "HavenApply is recognized under the RQRA supplier program. That status supports collaboration and visibility with members. It does not mean the RQRA has certified, approved, endorsed or recommended HavenApply to all of its residences.",
       },
       {
         q: "Do all residences already use HavenApply?",
-        a: "All active RPAs are available in the search journey from launch. Use of the HavenApply professional console depends on each residence's individual signup.",
+        a: "Every active RPA in the public registry is available in the search journey from launch. Use of the HavenApply professional console depends on each residence's individual signup.",
       },
       {
-        q: "How does HavenApply use artificial intelligence?",
-        a: "The AI explains steps, helps organize information and accompanies the user. It does not make diagnoses or take admission decisions.",
+        q: "Can families really submit applications online?",
+        a: "Yes. Families prepare one file and can submit admission applications online to multiple residences through HavenApply.",
       },
       {
-        q: "Is the service truly free?",
-        a: "Yes, HavenApply is free for families. [Add a transparent sentence on how residences pay or will pay HavenApply.]",
+        q: "How does a residence receive an application if it does not yet have an account?",
+        a: "Residences that use the HavenApply console receive and track structured files there. For details on handling when a residence does not yet have an account, email hello@havenapply.com.",
       },
       {
         q: "How are residences recommended?",
-        a: "[Add real criteria: location, budget, autonomy level, services, declared availability, and others. State clearly whether a residence's payment influences ranking.]",
+        a: "Suggestions draw on information in the file, including area, budget and expressed needs. For a detailed description of criteria, contact hello@havenapply.com.",
+      },
+      {
+        q: "Can a residence pay to improve its ranking?",
+        a: "In the current family journey, no paid-placement mechanism improves a residence's rank. For commercial details, contact hello@havenapply.com.",
+      },
+      {
+        q: "How does HavenApply use artificial intelligence?",
+        a: "The AI explains steps, helps organize information and flags missing details. It does not make diagnoses, determine eligibility or take admission decisions.",
+      },
+      {
+        q: "Is the service truly free for families?",
+        a: "Yes. HavenApply is free for families. No family subscription is required to prepare a file and use the search and application journey.",
+      },
+      {
+        q: "How is personal information protected?",
+        a: "HavenApply describes its practices in its privacy policy (authentication, access control, HTTPS encryption in transit). Families can exercise their rights via privacy@havenapply.com. Details: havenapply.com/privacy",
       },
     ],
   },
   kit: {
     sectionLabel: "Media kit",
-    title: "Identity and resources for the press",
+    title: "Identity and available files",
     brandLineLabel: "Brand line",
     brandLine: "Artificial intelligence in service of families—never in their place.",
     logoLightAlt: "HavenApply logo on light background",
-    logoDarkPlaceholder: "[reversed (white) version to provide]",
     usage:
-      "Clear space equal to the height of the symbol. No distortion, no recoloring, no added shapes. Reversed version required on dark backgrounds.",
-    download: "Download logo (PNG)",
+      "Clear space equal to the height of the symbol. No distortion, no recoloring, no added shapes.",
     colorsLabel: "Colors",
     colors: colorsEn,
     typeLabel: "Typography",
     serifName: "Source Serif 4",
     serifCaption: "Headlines and long-form text",
     sansName: "Public Sans",
-    sansCaption: "Interface, labels, figures",
+    sansCaption: "Interface and labels",
     brandLabel: "Brand name",
     brandRule:
       "Written as HavenApply, one word, capital H and A; never “Haven Apply” or “HAVENAPPLY”.",
-    resourcesLabel: "Resources to add to the kit",
-    resources: resourcesEn,
+    downloadsLabel: "Downloads",
+    downloads: [
+      {
+        id: "logo-png",
+        label: "HavenApply logo (PNG)",
+        href: pressAssets.logoPng,
+        filename: "havenapply-logo.png",
+        alt: "HavenApply logo",
+        caption: "Color logo on transparent background.",
+        credit: "HavenApply",
+      },
+      {
+        id: "homepage-capture",
+        label: "Homepage screenshot",
+        href: pressAssets.homepageCapture,
+        filename: "havenapply-homepage.png",
+        alt: "HavenApply homepage screenshot",
+        caption: "havenapply.com homepage.",
+        credit: "HavenApply",
+      },
+    ],
   },
   contact: {
     sectionLabel: "Media contact",
     title: "Interviews and press requests",
-    body: "Tom [last name], cofounder, is available in French and English, in Montreal or remotely. We can arrange a product demonstration or, with their consent, an introduction to a family or residence.",
-    cta: "Email hello@havenapply.com",
+    name: "Tom Grosse",
+    role: "Cofounder, HavenApply",
+    city: "Montreal, Quebec",
+    languages: "French and English",
+    email: "hello@havenapply.com",
+    body: "Available for interviews and demos, in Montreal or remotely. Introductions to a family or residence only with their prior consent.",
+    ctaInterview: "Request an interview",
+    ctaDemo: "Request a demo",
+    siteLabel: "Visit havenapply.com",
     defs: [
       { label: "Email", value: "hello@havenapply.com" },
       { label: "Headquarters", value: "Montreal, Quebec" },
-      { label: "Interview languages", value: "French, English" },
-      { label: "Response time", value: "Under 24 h on weekdays" },
+      { label: "Languages", value: "French, English" },
     ],
   },
   footer: {
-    updated: "Press room — last updated [date]",
+    updated: "HavenApply press room",
     siteLink: "havenapply.com",
   },
   anchors: {
     release: "release",
     feature: "feature",
-    numbers: "numbers",
+    facts: "facts",
+    ai: "ai",
     faq: "faq",
     brand: "brand",
+    contact: "contact",
   },
 };
 

@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Public_Sans, Source_Serif_4 } from "next/font/google";
 import {
   press,
   pressAssets,
-  showTodo,
   type PressBlock,
   type PressLocale,
 } from "@/data/press";
@@ -35,28 +34,13 @@ function resolvePressLocale(param: string | null, siteLocale: string): PressLoca
   return siteLocale === "en" ? "en" : "fr";
 }
 
-/** Surligne les passages entre crochets (éléments à compléter). */
-function withPlaceholders(text: string): ReactNode {
-  const parts = text.split(/(\[[^\]]+\])/g);
-  if (parts.length === 1) return text;
-  return parts.map((part, i) =>
-    part.startsWith("[") && part.endsWith("]") ? (
-      <span key={i} className="pr-todo-mark">
-        {part}
-      </span>
-    ) : (
-      part
-    ),
-  );
-}
-
 function PressBlocks({ blocks }: { blocks: PressBlock[] }) {
   return (
     <>
       {blocks.map((block, index) => {
         switch (block.type) {
           case "p":
-            return <p key={index}>{withPlaceholders(block.text)}</p>;
+            return <p key={index}>{block.text}</p>;
           case "h3":
             return <h3 key={index}>{block.text}</h3>;
           case "ul":
@@ -71,7 +55,7 @@ function PressBlocks({ blocks }: { blocks: PressBlock[] }) {
             return (
               <figure key={index} className="pr-quote">
                 <blockquote>{block.text}</blockquote>
-                <figcaption>{withPlaceholders(block.attribution)}</figcaption>
+                <figcaption>{block.attribution}</figcaption>
               </figure>
             );
           case "link":
@@ -112,6 +96,22 @@ function PressBlocks({ blocks }: { blocks: PressBlock[] }) {
       })}
     </>
   );
+}
+
+function interviewMailto(locale: PressLocale) {
+  const subject =
+    locale === "en"
+      ? "Interview request — HavenApply"
+      : "Demande d'entrevue — HavenApply";
+  return `mailto:hello@havenapply.com?subject=${encodeURIComponent(subject)}`;
+}
+
+function demoMailto(locale: PressLocale) {
+  const subject =
+    locale === "en"
+      ? "Demo request — HavenApply"
+      : "Demande de démonstration — HavenApply";
+  return `mailto:hello@havenapply.com?subject=${encodeURIComponent(subject)}`;
 }
 
 export function MediaPressRoom() {
@@ -163,7 +163,7 @@ export function MediaPressRoom() {
           <Link href="/" className="pr-brand" aria-label={copy.header.brand}>
             <span className="pr-brand-mark" aria-hidden>
               <Image
-                src={pressAssets.logo}
+                src={pressAssets.logoPng}
                 alt=""
                 width={875}
                 height={199}
@@ -201,42 +201,12 @@ export function MediaPressRoom() {
         </div>
       </header>
 
-      {showTodo ? (
-        <aside className="pr-todo" aria-label={copy.todo.label}>
-          <div className="pr-wrap pr-todo-inner">
-            <span className="pr-todo-label">{copy.todo.label}</span>
-            <p className="pr-todo-body">{copy.todo.body}</p>
-          </div>
-        </aside>
-      ) : null}
-
       <section className="pr-section" aria-labelledby="pr-hero-title">
         <div className="pr-wrap pr-hero">
           <div className="pr-hero-copy">
             <p className="pr-label">{copy.hero.eyebrow}</p>
             <h1 id="pr-hero-title">{copy.hero.title}</h1>
-            {copy.hero.paragraphs.map((paragraph) => (
-              <p className="pr-hero-lead" key={paragraph.slice(0, 48)}>
-                {paragraph}
-              </p>
-            ))}
-            <p className="pr-brand-line">{copy.hero.brandLine}</p>
-            <p className="pr-interview">
-              <span className="pr-interview-label">{copy.hero.interviewLabel}</span>
-              <a className="pr-text-link" href={pressAssets.mailto}>
-                {copy.header.email}
-              </a>
-            </p>
-            <p className="pr-ext-link">
-              <a
-                className="pr-text-link"
-                href={pressAssets.rqraHome}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {copy.hero.rqraLinkLabel}
-              </a>
-            </p>
+            <p className="pr-hero-lead">{copy.hero.lead}</p>
             <div className="pr-hero-actions">
               <a className="pr-btn" href={`#${copy.anchors.release}`}>
                 {copy.hero.ctaRelease}
@@ -244,14 +214,11 @@ export function MediaPressRoom() {
               <a className="pr-text-link" href={`#${copy.anchors.feature}`}>
                 {copy.hero.ctaFeature}
               </a>
-              <a className="pr-text-link" href={`#${copy.anchors.numbers}`}>
-                {copy.hero.ctaNumbers}
+              <a className="pr-text-link" href={`#${copy.anchors.facts}`}>
+                {copy.hero.ctaFacts}
               </a>
-              <a className="pr-text-link" href={`#${copy.anchors.faq}`}>
-                {copy.hero.ctaFaq}
-              </a>
-              <a className="pr-text-link" href={`#${copy.anchors.brand}`}>
-                {copy.hero.ctaKit}
+              <a className="pr-text-link" href={interviewMailto(activeLocale)}>
+                {copy.hero.ctaInterview}
               </a>
             </div>
           </div>
@@ -266,7 +233,7 @@ export function MediaPressRoom() {
                 <div className="pr-browser-url">{pressAssets.siteHost}</div>
               </div>
               <div className="pr-browser-viewport">
-                {/* eslint-disable-next-line @next/next/no-img-element -- capture must drive its own height for scroll animation */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- capture height drives scroll animation */}
                 <img
                   className="pr-browser-scroll"
                   src={pressAssets.homepageCapture}
@@ -274,7 +241,10 @@ export function MediaPressRoom() {
                 />
               </div>
             </div>
-            <p className="pr-capture-caption">{copy.hero.captureCaption}</p>
+            <p className="pr-capture-caption">
+              {copy.hero.captureCaption}{" "}
+              <span className="pr-credit">{copy.hero.captureCredit}</span>
+            </p>
           </div>
         </div>
       </section>
@@ -285,19 +255,14 @@ export function MediaPressRoom() {
         aria-labelledby="pr-release-title"
       >
         <div className="pr-wrap">
-          <div className="pr-release-meta">
-            <p className="pr-label">{copy.release.sectionLabel}</p>
-            <p className="pr-release-meta-right">{copy.release.forImmediate}</p>
-          </div>
+          <p className="pr-label pr-release-kicker">{copy.release.sectionLabel}</p>
           <article className="pr-release-col">
             <h2 id="pr-release-title">{copy.release.title}</h2>
             <p className="pr-release-dek">{copy.release.dek}</p>
             <hr className="pr-release-rule" />
             <div className="pr-release-body">
               <p>
-                <span className="pr-dateline">
-                  {withPlaceholders(copy.release.dateline)}{" "}
-                </span>
+                <span className="pr-dateline">{copy.release.dateline} </span>
                 {copy.release.lead}
               </p>
               <PressBlocks blocks={copy.release.blocks} />
@@ -324,37 +289,67 @@ export function MediaPressRoom() {
       </section>
 
       <section
-        id={copy.anchors.numbers}
-        className="pr-section pr-section--band pr-numbers"
-        aria-labelledby="pr-numbers-label"
+        id={copy.anchors.facts}
+        className="pr-section pr-section--band pr-facts"
+        aria-labelledby="pr-facts-title"
       >
         <div className="pr-wrap">
-          <p className="pr-label" id="pr-numbers-label">
-            {copy.numbers.sectionLabel}
-          </p>
-          <div className="pr-numbers-grid pr-numbers-grid--4">
-            {copy.numbers.items.map((item) => (
-              <div className="pr-number" key={item.description}>
-                <p
-                  className={
-                    item.accent
-                      ? "pr-number-value pr-number-value--accent"
-                      : "pr-number-value"
-                  }
-                >
-                  {item.value}
-                </p>
-                <p className="pr-number-desc">{item.description}</p>
-                <p className="pr-number-source">{item.detail}</p>
-              </div>
+          <p className="pr-label">{copy.facts.sectionLabel}</p>
+          <h2 id="pr-facts-title">{copy.facts.title}</h2>
+          <div className="pr-facts-grid">
+            {copy.facts.items.map((item) => (
+              <article className="pr-fact" key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                {item.sourceHref && item.sourceLabel ? (
+                  <a
+                    className="pr-fact-source"
+                    href={item.sourceHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.sourceLabel}
+                  </a>
+                ) : null}
+              </article>
             ))}
           </div>
         </div>
       </section>
 
       <section
+        id={copy.anchors.ai}
+        className="pr-section pr-ai"
+        aria-labelledby="pr-ai-title"
+      >
+        <div className="pr-wrap">
+          <p className="pr-label">{copy.ai.sectionLabel}</p>
+          <h2 id="pr-ai-title">{copy.ai.title}</h2>
+          <p className="pr-brand-line">{copy.ai.brandLine}</p>
+          <div className="pr-ai-grid">
+            <div className="pr-ai-col">
+              <h3>{copy.ai.canTitle}</h3>
+              <ul className="pr-list">
+                {copy.ai.can.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="pr-ai-col pr-ai-col--limits">
+              <h3>{copy.ai.cannotTitle}</h3>
+              <ul className="pr-list">
+                {copy.ai.cannot.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
         id={copy.anchors.faq}
-        className="pr-section pr-faq"
+        className="pr-section pr-section--band pr-faq"
         aria-labelledby="pr-faq-title"
       >
         <div className="pr-wrap">
@@ -364,7 +359,7 @@ export function MediaPressRoom() {
             {copy.faq.items.map((item) => (
               <details key={item.q} className="pr-faq-item">
                 <summary>{item.q}</summary>
-                <p>{withPlaceholders(item.a)}</p>
+                <p>{item.a}</p>
               </details>
             ))}
           </div>
@@ -373,7 +368,7 @@ export function MediaPressRoom() {
 
       <section
         id={copy.anchors.brand}
-        className="pr-section pr-section--band pr-kit"
+        className="pr-section pr-kit"
         aria-labelledby="pr-kit-title"
       >
         <div className="pr-wrap">
@@ -388,32 +383,31 @@ export function MediaPressRoom() {
               <div className="pr-logo-tiles">
                 <div className="pr-logo-tile pr-logo-tile--light">
                   <Image
-                    src={pressAssets.logo}
+                    src={pressAssets.logoPng}
                     alt={copy.kit.logoLightAlt}
                     width={200}
                     height={46}
                     unoptimized
                   />
                 </div>
-                <div className="pr-logo-tile pr-logo-tile--dark">
-                  <span className="pr-logo-dark-ph">
-                    {withPlaceholders(copy.kit.logoDarkPlaceholder)}
-                  </span>
-                </div>
               </div>
               <p className="pr-kit-usage">{copy.kit.usage}</p>
-              <a
-                className="pr-text-link"
-                href={pressAssets.logo}
-                download="havenapply-logo.png"
-              >
-                {copy.kit.download}
-              </a>
-              <div className="pr-resources">
-                <h3>{copy.kit.resourcesLabel}</h3>
-                <ul className="pr-list">
-                  {copy.kit.resources.map((item) => (
-                    <li key={item}>{withPlaceholders(item)}</li>
+              <div className="pr-downloads">
+                <h3>{copy.kit.downloadsLabel}</h3>
+                <ul className="pr-download-list">
+                  {copy.kit.downloads.map((file) => (
+                    <li key={file.id}>
+                      <a
+                        className="pr-text-link"
+                        href={file.href}
+                        download={file.filename}
+                      >
+                        {file.label}
+                      </a>
+                      <span className="pr-download-meta">
+                        {file.caption} · {file.credit}
+                      </span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -449,15 +443,36 @@ export function MediaPressRoom() {
         </div>
       </section>
 
-      <section className="pr-section pr-contact" aria-labelledby="pr-contact-title">
+      <section
+        id={copy.anchors.contact}
+        className="pr-section pr-section--band pr-contact"
+        aria-labelledby="pr-contact-title"
+      >
         <div className="pr-wrap pr-contact-grid">
           <div>
             <p className="pr-label">{copy.contact.sectionLabel}</p>
             <h2 id="pr-contact-title">{copy.contact.title}</h2>
-            <p className="pr-contact-body">{withPlaceholders(copy.contact.body)}</p>
-            <a className="pr-btn" href={pressAssets.mailto}>
-              {copy.contact.cta}
-            </a>
+            <p className="pr-contact-person">
+              <strong>{copy.contact.name}</strong>
+              <br />
+              {copy.contact.role}
+              <br />
+              {copy.contact.city}
+              <br />
+              {copy.contact.languages}
+            </p>
+            <p className="pr-contact-body">{copy.contact.body}</p>
+            <div className="pr-contact-actions">
+              <a className="pr-btn" href={interviewMailto(activeLocale)}>
+                {copy.contact.ctaInterview}
+              </a>
+              <a className="pr-btn pr-btn--ghost" href={demoMailto(activeLocale)}>
+                {copy.contact.ctaDemo}
+              </a>
+              <a className="pr-text-link" href={pressAssets.siteUrl}>
+                {copy.contact.siteLabel}
+              </a>
+            </div>
           </div>
           <dl className="pr-defs">
             {copy.contact.defs.map((row) => (
@@ -480,13 +495,13 @@ export function MediaPressRoom() {
         <div className="pr-wrap pr-footer-inner">
           <div className="pr-footer-left">
             <Image
-              src={pressAssets.logo}
+              src={pressAssets.logoPng}
               alt={copy.header.brand}
               width={110}
               height={22}
               unoptimized
             />
-            <p className="pr-footer-meta">{withPlaceholders(copy.footer.updated)}</p>
+            <p className="pr-footer-meta">{copy.footer.updated}</p>
           </div>
           <a className="pr-text-link" href={pressAssets.siteUrl} rel="noopener noreferrer">
             {copy.footer.siteLink}

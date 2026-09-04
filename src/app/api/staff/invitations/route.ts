@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { enforceRateLimit } from "@/lib/security/auth-service";
 import { newToken } from "@/lib/security/password";
@@ -6,9 +7,23 @@ import {
   hashToken,
   recordAuditEvent,
 } from "@/lib/security/identity-store";
-import { requestFingerprint, requireCsrf, requireStaff, scopeToSite } from "@/lib/security/guards";
+import { requireCsrf, requireStaff, scopeToSite } from "@/lib/security/guards";
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 72; // 72 h
+
+/**
+ * With no mail transport yet, an operator holding the deployment secret can
+ * read the invitation token back to deliver it out of band. Audited, and
+ * unavailable unless `HAVEN_BOOTSTRAP_TOKEN` is configured.
+ */
+function operatorTokenMatches(provided: string | null): boolean {
+  const expected = process.env.HAVEN_BOOTSTRAP_TOKEN;
+  if (!expected || !provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 const ROLES = ["admin", "manager", "coordinator", "readonly"] as const;
 
 /**
@@ -70,9 +85,22 @@ export async function POST(request: Request) {
     metadata: { siteId, role, invitationId: invitation.id },
   });
 
-  // Returned only outside production; a mail transport delivers it otherwise.
-  const devToken = process.env.NODE_ENV === "production" ? undefined : token;
-  await requestFingerprint();
+  const operator = operatorTokenMatches(request.headers.get("x-haven-bootstrap-token"));
+  if (operator) {
+    await recordAuditEvent({
+      event: "staff.invitation_token_read",
+      outcome: "success",
+      actorId: auth.principal.userId,
+      metadata: { invitationId: invitation.id, siteId },
+    });
+  }
 
-  return jsonOk({ invitationId: invitation.id, expiresAt: invitation.expiresAt, token: devToken }, 201);
+  // Withheld in production unless an operator collects it for out-of-band
+  // delivery; a mail transport will make this unnecessary.
+  const exposedToken = operator || process.env.NODE_ENV !== "production" ? token : undefined;
+
+  return jsonOk(
+    { invitationId: invitation.id, expiresAt: invitation.expiresAt, token: exposedToken },
+    201,
+  );
 }

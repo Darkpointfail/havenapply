@@ -15,10 +15,10 @@ export const CSRF_COOKIE = "haven_csrf";
 export const CSRF_HEADER = "x-haven-csrf";
 
 /** Readable by the browser on purpose: the header must be set from JS. */
-export function csrfCookieOptions() {
+export function csrfCookieOptions(secure = true) {
   return {
     httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "strict" as const,
     path: "/",
     maxAge: 60 * 60 * 8,

@@ -184,46 +184,102 @@ migration surface (RLS enabled on all 13 identity/tenancy tables, required
 policies present, no client insert path), and cross-tenant behaviour is proven
 against the repository in `tenancy.test.ts`.
 
-## Build
+## Build — root cause
 
-`npm run build` still fails, and it is **not** caused by this milestone:
+`npm run build` failed with
+`TypeError: Cannot read properties of null (reading 'useContext')` on a varying
+set of statically prerendered pages. It was **not** a framework bug.
 
-- it fails identically on a clean checkout of `main`;
-- the failing page moves between `/_global-error` and `/_not-found` from run to
-  run, with `TypeError: Cannot read properties of null (reading 'useContext')`;
-- `next build --debug-prerender` succeeds (exit 0), which points at the
-  minified server bundle;
-- adding explicit `global-error.tsx` and `not-found.tsx` removed two of the
-  failures; `serverMinification: false` and `cpus: 1` both made it worse
-  (6+ pages failing), so they were reverted.
+**Cause: `NODE_ENV=development` was exported in the shell running the build.**
+Next warns about it in the log (`You are using a non-standard "NODE_ENV" value
+in your environment`). With that value, `next build` prerenders against React's
+development runtime while the rest of the pipeline expects the production one,
+and the React dispatcher is null during static generation.
 
-Open framework issue, tracked here rather than papered over.
+Reduction that got there:
+
+| Step | Command | Result |
+| --- | --- | --- |
+| duplicate React? | `npm ls react react-dom next` | single deduped `react@19.2.4` — not it |
+| stale cache? | `rm -rf .next && npm run build` | still fails, and **21** pages fail, not 1 |
+| providers? | root layout without `AppProviders`/`SiteShell` | still 21 failures — not it |
+| layout at all? | bare `html/body` root layout | still 21 failures — not it |
+| minimal repro outside the repo | scratch app on the same `node_modules` | surfaced the `NODE_ENV` warning |
+| hypothesis test | `NODE_ENV=production npm run build` | **exit 0, zero prerender errors** |
+
+Fix, narrow and testable: the build script pins the value.
+
+```json
+"build": "NODE_ENV=production next build"
+```
+
+`next build` only defaults `NODE_ENV` when it is unset, so an inherited value
+silently won this fight. Pinning it makes the build correct regardless of the
+shell.
+
+No workaround was kept: the `global-error.tsx` / `not-found.tsx` pages and the
+`staticGenerationRetryCount`, `serverMinification` and `cpus` experiments were
+all reverted once the cause was known.
+
+Reproduce the failure on purpose:
+
+```bash
+rm -rf .next && NODE_ENV=development npx next build   # fails
+rm -rf .next && npm run build                          # exit 0
+```
+
+## End-to-end evidence
+
+`npm run test:e2e` — Playwright, system Chrome channel, one isolated browser
+context per account, asserting server status codes rather than hidden UI.
+
+| Scenario | Assertions |
+| --- | --- |
+| family reads only its own file | family B gets `404` on A's application and an empty list |
+| staff reads only its own sites | site A staff sees the application; site B staff does not |
+| family cannot reach staff data | `GET /api/admissions/residence` → `403`; staff status change → `403` |
+| no cross-site read or write | `GET`/`POST` on A from B → `404`; `?siteId=A` from B → `403` |
+| tampered cookie | `/api/auth/me` → `null`, protected route → `401` |
+| revoked session | already-open context drops to `401` right after sign-out |
+| password reset | both devices → `401`, old password `401`, new password `200` |
+| rate limiting | eight bad passwords from one client → `401` then `429` |
+
+Operator-only endpoints exist because no mail transport is wired yet:
+`/api/staff/bootstrap` (first site admin), plus token retrieval on
+`verify-email`, `password-reset` and `staff/invitations`. All require
+`HAVEN_BOOTSTRAP_TOKEN`, are unavailable when it is unset, and are audited.
+They must be removed once transactional email lands.
+
+## Client heuristics removed
+
+The residence console no longer guesses anything:
+
+- the staff role comes from `siteRoles` returned by `GET /api/auth/me`; there is
+  no `admin` fallback and no lookup by demo email — an account with no matching
+  membership is `readonly`;
+- the residence is `siteIds[0]` from the same response;
+  `resolveCommunityResidenceId` (organisation/email substring matching) is gone
+  from the store, and an account with no membership simply gets no workspace.
+
+The client may still hide elements for UX; nothing it computes can create or
+widen a permission, because every route re-derives the principal and the scope.
 
 ## Remaining work
 
-The exit criterion is not met yet. Before enabling the admissions flag in a
-pilot:
+Not blocking the exit criteria, but open before a pilot:
 
-1. **Client role gating still lives in the browser.** ~90 components gate on
-   `useAuth().user.role`, and the community console still derives its team role
-   client-side (defaulting to `admin`). Server APIs are safe, but the UI trusts
-   local state.
-2. **Identity in localStorage.** `haven-accounts-v1`, `haven-auth`,
-   `haven-open-*`, `haven-community-portal-v10` (team roles) and
-   `haven-households-v1` (invite tokens) still exist. Local sign-in now goes
-   through the server first, but the prototype account store is still consulted
-   afterwards for profile data.
-3. **Email delivery.** Verification and reset tokens are generated, hashed and
-   expired correctly, but no transactional provider sends them; outside
-   production the token is returned in the response for testing.
-4. **Supabase parity.** Sign-in, registration and reset are implemented for the
-   local backend. In Supabase mode the guards read `auth.getUser()`, but the
-   credential lifecycle still belongs to Supabase Auth and the staff membership
-   table must be provisioned there.
-5. **RLS.** `0010` tightens admissions policies; the identity tables introduced
-   here are file-backed and have no SQL equivalent yet.
-6. **E2E with two browser contexts.** Not delivered: Playwright is not in the
-   dependency set and adding a browser runtime was out of scope for this pass.
-   Cross-tenant isolation is covered at the repository boundary instead.
-7. **`/api/admissions/seed`** is still unauthenticated, guarded only by
+1. **Client role gating.** ~90 components still branch on
+   `useAuth().user.role`. That role now comes from the server, and every route
+   re-checks it, so these are display decisions — but they are not a security
+   boundary and should not be treated as one.
+2. **Prototype account store.** `haven-accounts-v1` still holds profile data
+   used by the local sign-in path after the server has authenticated. It no
+   longer decides identity, role or scope.
+3. **Email delivery.** No transactional provider. Verification, reset and
+   invitation tokens are hashed, expiring and single-use, but must currently be
+   collected through the audited operator endpoints.
+4. **Supabase parity.** The credential lifecycle is implemented for the local
+   backend; in Supabase mode the guards read `auth.getUser()` and the
+   membership table must be provisioned there.
+5. **`/api/admissions/seed`** remains unauthenticated behind
    `NODE_ENV !== "production"`.

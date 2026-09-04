@@ -6,6 +6,7 @@ import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { verifyCredentials } from "@/lib/security/auth-service";
 import { SESSION_COOKIE, issueSession, sessionCookieOptions } from "@/lib/security/session";
 import { CSRF_COOKIE, csrfCookieOptions, issueCsrfToken } from "@/lib/security/csrf";
+import { isSecureRequest } from "@/lib/security/request-security";
 
 /**
  * The only place a session is created in local mode.
@@ -43,10 +44,11 @@ export async function POST(request: Request) {
     role: result.data.role,
   });
 
+  const secure = isSecureRequest(request);
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, sessionCookieOptions());
+  jar.set(SESSION_COOKIE, token, sessionCookieOptions(undefined, secure));
   // Fresh CSRF token per session.
-  jar.set(CSRF_COOKIE, issueCsrfToken(), csrfCookieOptions());
+  jar.set(CSRF_COOKIE, issueCsrfToken(), csrfCookieOptions(secure));
 
   return jsonOk({
     user: {

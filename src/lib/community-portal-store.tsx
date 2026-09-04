@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { isFacilityRole } from "@/lib/auth-store";
 import type { ApplicationStatus } from "@/data/applications";
+import { fetchServerIdentity } from "@/lib/family/client-api";
 import {
   admissionsEnabled,
   apiChangeAdmissionStatus,
@@ -28,7 +29,6 @@ import {
   communityRoleHas,
   computeDashboardStats,
   notifyCommunityProfileChanged,
-  resolveCommunityResidenceId,
   seedCommunityWorkspace,
   type AvailabilityUnit,
   type CommunityPermission,
@@ -194,6 +194,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   const { user, ready: authReady } = useAuth();
   const [workspace, setWorkspace] = useState<CommunityWorkspace | null>(null);
   const [ready, setReady] = useState(false);
+  const [serverScope, setServerScope] = useState<{
+    siteIds: string[];
+    siteRoles: { siteId: string; role: string }[];
+  } | null>(null);
   const workspaceRef = useRef<CommunityWorkspace | null>(null);
   useEffect(() => {
     workspaceRef.current = workspace;
@@ -208,9 +212,23 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
-    const residenceId = resolveCommunityResidenceId(user.organization, user.email);
 
     const load = async () => {
+      // Scope comes from the server: which sites this account is a member of.
+      const identity = await fetchServerIdentity();
+      if (cancelled) return;
+      const siteIds = identity?.siteIds ?? [];
+      const siteRoles = identity?.siteRoles ?? [];
+      setServerScope({ siteIds, siteRoles });
+
+      const residenceId = siteIds[0];
+      if (!residenceId) {
+        // No membership, no workspace. Nothing is inferred from the address.
+        setWorkspace(null);
+        setReady(true);
+        return;
+      }
+
       // Workspace shell (profile, team, availability) stays local for now; the
       // applications list comes from the server and never from a demo seed.
       const map = readMap();
@@ -279,20 +297,15 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   }, [authReady, user, persist]);
 
   const myRole: CommunityTeamRole = useMemo(() => {
-    if (!user || !workspace) return "readonly";
-    const email = user.email.toLowerCase();
-    const member = workspace.team.find((t) => t.email.toLowerCase() === email);
-    if (member) return member.role;
-    // Demo / open-access community owners default to admin
-    if (
-      email === "community@demo.haven" ||
-      email === "demo.admissions@havenapply.local"
-    ) {
-      return "admin";
-    }
-    // Signed-in facility account not on the seed team = org owner
-    return "admin";
-  }, [user, workspace]);
+    if (!user || !workspace || !serverScope) return "readonly";
+    // The membership row is the only source of a staff role. No fallback to
+    // admin, no lookup by email: the server already answered.
+    const granted = serverScope.siteRoles.find((r) => r.siteId === workspace.residenceId);
+    const role = granted?.role;
+    return role === "admin" || role === "manager" || role === "coordinator" || role === "readonly"
+      ? (role as CommunityTeamRole)
+      : "readonly";
+  }, [user, workspace, serverScope]);
 
   const can = useCallback(
     (permission: CommunityPermission) => communityRoleHas(myRole, permission),

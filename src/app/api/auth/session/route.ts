@@ -50,6 +50,6 @@ export async function DELETE(request: Request) {
   }
 
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, "", { ...sessionCookieOptions(0), maxAge: 0 });
+  jar.set(SESSION_COOKIE, "", { ...sessionCookieOptions(0, true), maxAge: 0 });
   return NextResponse.json({ ok: true });
 }

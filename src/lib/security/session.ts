@@ -46,10 +46,10 @@ export function decodeSessionToken(token: string | undefined | null): string | n
   return jti;
 }
 
-export function sessionCookieOptions(maxAgeSeconds = SESSION_TTL_MS / 1000) {
+export function sessionCookieOptions(maxAgeSeconds = SESSION_TTL_MS / 1000, secure = true) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "strict" as const,
     path: "/",
     maxAge: maxAgeSeconds,

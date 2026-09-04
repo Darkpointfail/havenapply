@@ -1,4 +1,5 @@
 import { requireFamilyUser, jsonError, jsonOk } from "@/lib/family/authz";
+import { requireCsrf } from "@/lib/security/guards";
 import {
   executeDeletion,
   getRightsLog,
@@ -18,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 

@@ -2,8 +2,12 @@ import { requireFamilyUser, jsonError, jsonOk } from "@/lib/family/authz";
 import { patchSenior } from "@/lib/family/repository";
 import { validateSeniorPatchSafe } from "@/lib/family/validation";
 import type { SeniorProfile } from "@/lib/senior-profile";
+import { requireCsrf } from "@/lib/security/guards";
 
 export async function PATCH(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 

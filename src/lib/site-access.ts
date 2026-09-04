@@ -1,18 +1,37 @@
 /** Soft site-wide password gate (staging / early access). */
 
+import { siteAccessPassword, siteAccessSecret } from "@/lib/security/env";
+
 export const SITE_ACCESS_COOKIE = "haven_site_access";
-
-/** Bump to invalidate existing unlock cookies when the password policy changes. */
-export const SITE_ACCESS_COOKIE_VALUE = "gate-v5-havenapply2026";
-
-export const SITE_ACCESS_PASSWORD =
-  process.env.SITE_ACCESS_PASSWORD || "HavenApply2026";
 
 export const SITE_ACCESS_PATH = "/site-access";
 export const SITE_ACCESS_API_PATH = "/api/site-access";
 
 /** Reject absurd payloads before any comparison. */
 export const SITE_ACCESS_PASSWORD_MAX_LENGTH = 128;
+
+/**
+ * The unlock cookie value is derived from the configured secret, so rotating
+ * the secret invalidates every issued cookie. No literal is shipped in the
+ * repository.
+ */
+export async function siteAccessCookieValue(): Promise<string | null> {
+  const secret = siteAccessSecret();
+  if (!secret) return null;
+  // Web Crypto so the same helper works in the Edge middleware runtime.
+  const data = new TextEncoder().encode(`site-access:${secret}`);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Buffer.from(digest).toString("base64url");
+}
+
+/** The gate is inert when no password is configured. */
+export function siteAccessEnabled(): boolean {
+  return siteAccessPassword() !== null;
+}
+
+export function configuredSitePassword(): string | null {
+  return siteAccessPassword();
+}
 
 export function isSiteAccessPublicPath(pathname: string): boolean {
   return (

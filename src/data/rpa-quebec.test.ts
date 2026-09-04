@@ -13,11 +13,11 @@ describe("RPA Québec catalog", () => {
     const sample = RESIDENCES.find((r) => r.city.includes("Québec")) ?? RESIDENCES[0];
     expect(sample.id).toMatch(/^rpa-/);
     expect(sample.name.length).toBeGreaterThan(2);
-    expect(sample.price).toBe("Sur demande");
+    expect(sample.price).toBe("On request");
     expect(sample.location.address.length).toBeGreaterThan(5);
     expect(sample.unitRows.length).toBeGreaterThan(0);
     expect(sample.facts?.length).toBeGreaterThan(0);
-    expect(sample.facts?.some((f) => f.label === "Sécurité" || f.label === "Capacité")).toBe(
+    expect(sample.facts?.some((f) => f.label === "Safety features" || f.label === "Capacity")).toBe(
       true,
     );
   });
@@ -25,9 +25,9 @@ describe("RPA Québec catalog", () => {
   it("exposes enriched staffing and age facts when present in the extract", () => {
     const withNursing = RESIDENCES.find((r) => r.hasNursingStaff);
     expect(withNursing).toBeTruthy();
-    expect(withNursing!.care.some((c) => c.label === "Soins infirmiers" && c.offered)).toBe(true);
+    expect(withNursing!.care.some((c) => c.label === "Nursing care" && c.offered)).toBe(true);
 
-    const withAge = RESIDENCES.find((r) => r.facts?.some((f) => f.label === "Profil d'âge"));
+    const withAge = RESIDENCES.find((r) => r.facts?.some((f) => f.label === "Age profile"));
     expect(withAge).toBeTruthy();
   });
 

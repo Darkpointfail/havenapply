@@ -9,14 +9,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname } from "next/navigation";
 import {
   confirmEmailToken,
-  ensureSeedAccounts,
   homeForRole,
   homeForUser,
   markOnboardingComplete as markOnboardingCompleteStore,
-  readSession,
+  parseUserRole,
   requestPasswordReset,
   resendConfirmation,
   resetPasswordWithToken,
@@ -39,9 +37,6 @@ import {
   DEMO_FAMILY_USER,
   DEMO_PROFESSIONAL_USER,
   clearOpenAccessSessions,
-  demoUserForPath,
-  hasOpenFamilySession,
-  isFamilyAccountRequiredPath,
   markOpenCommunitySession,
   markOpenFamilySession,
   markOpenProfessionalSession,
@@ -60,7 +55,8 @@ import {
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
-import { syncFamilySession } from "@/lib/family/client-api";
+import { fetchServerIdentity, serverSignIn, serverSignOut } from "@/lib/family/client-api";
+import { AUTH_MESSAGES } from "@/lib/auth-messages";
 
 export type { SessionUser, UserRole };
 export type AuthUser = SessionUser;
@@ -112,30 +108,12 @@ function useRemoteAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname() || "/";
   // Never auto-mint a portal session on first paint — user must sign in.
   const [user, setUser] = useState<SessionUser | null>(null);
   const [ready, setReady] = useState(false);
   const remote = useRemoteAuth();
 
   useEffect(() => {
-    if (!AUTH_OPEN_ACCESS) return;
-
-    // Do not mint a demo family session just by opening apply/messages while logged out.
-    if (isFamilyAccountRequiredPath(pathname) && !hasOpenFamilySession()) {
-      setUser(null);
-      setReady(true);
-      return;
-    }
-
-    // Restore an existing open-access session only — visiting a portal never auto-logs in.
-    setUser(demoUserForPath(pathname, { useStoredSession: true }));
-    setReady(true);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (AUTH_OPEN_ACCESS) return;
-
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
 
@@ -145,7 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const sessionUser = await getSupabaseSessionUser();
           if (!cancelled) {
             setUser(sessionUser);
-            if (sessionUser?.role === "family") void syncFamilySession(sessionUser);
           }
         } catch {
           if (!cancelled) setUser(null);
@@ -163,11 +140,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await ensureSeedAccounts();
+      // Local backend: the server owns identity. localStorage is never
+      // consulted for who the user is, their role, or their scope.
+      const identity = await fetchServerIdentity();
       if (cancelled) return;
-      const session = readSession();
-      setUser(session);
-      if (session?.role === "family") void syncFamilySession(session);
+      if (!identity) {
+        setUser(null);
+        setReady(true);
+        return;
+      }
+      const role = parseUserRole(identity.role);
+      const [firstName = "", ...rest] = (identity.name || identity.email).split(" ");
+      setUser(
+        role
+          ? {
+              id: identity.id,
+              email: identity.email,
+              firstName,
+              lastName: rest.join(" "),
+              name: identity.name || identity.email,
+              role,
+              emailConfirmed: true,
+              onboardingCompleted: true,
+            }
+          : null,
+      );
       setReady(true);
     })();
 
@@ -184,14 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await signUpWithRoleSupabase(input);
         if (result.ok && !result.pendingConfirmation && !result.needsManualSignIn) {
           setUser(result.data);
-          if (result.data.role === "family") void syncFamilySession(result.data);
         }
         return result;
       }
       const result = await signUpWithRoleAccount(input);
       if (result.ok) {
         setUser(result.data);
-        if (result.data.role === "family") void syncFamilySession(result.data);
       }
       return result;
     },
@@ -234,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await signInSupabase(input);
         if (result.ok) {
           setUser(result.data);
-          if (result.data.role === "family") void syncFamilySession(result.data);
         }
         return result;
       }
@@ -260,12 +254,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(demo);
         return { ok: true as const, data: demo };
       }
-      const result = await signInAccount(input);
-      if (result.ok) {
-        setUser(result.data);
-        if (result.data.role === "family") void syncFamilySession(result.data);
+      // Local backend: the server verifies the password and issues the session.
+      const server = await serverSignIn({
+        email: input.email,
+        password: input.password,
+        expectedRole: input.expectedRole,
+      });
+      if (!server.ok) return { ok: false as const, error: server.error };
+
+      // The session now exists server-side, so the signed-in user must come
+      // from the server too: a stale prototype account cannot contradict it.
+      const identity = await fetchServerIdentity();
+      if (!identity) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
       }
-      return result;
+      const role = parseUserRole(identity.role);
+      if (!role) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
+      }
+      const [firstName = "", ...rest] = (identity.name || identity.email).split(" ");
+      const signedIn: SessionUser = {
+        id: identity.id,
+        email: identity.email,
+        firstName,
+        lastName: rest.join(" "),
+        name: identity.name || identity.email,
+        role,
+        emailConfirmed: true,
+        onboardingCompleted: true,
+      };
+      // Keep the local profile store in step when it knows this account.
+      void signInAccount(input);
+      setUser(signedIn);
+      return { ok: true as const, data: signedIn };
     },
     [remote],
   );
@@ -273,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearOpenAccessSessions();
     setUser(null);
-    void syncFamilySession(null);
+    void serverSignOut();
     if (remote) {
       void signOutSupabase();
       return;

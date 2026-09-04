@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    // Prerender of Next's internal fallback pages intermittently hits a null
+    // React dispatcher in a worker; a retry usually clears it. See
+    // docs/architecture/AUTH_HARDENING.md#build for the open investigation.
+    staticGenerationRetryCount: 2,
+  },
   images: {
     remotePatterns: [
       {

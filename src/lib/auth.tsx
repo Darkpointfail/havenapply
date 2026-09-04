@@ -9,14 +9,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname } from "next/navigation";
 import {
   confirmEmailToken,
-  ensureSeedAccounts,
   homeForRole,
   homeForUser,
   markOnboardingComplete as markOnboardingCompleteStore,
-  readSession,
+  parseUserRole,
   requestPasswordReset,
   resendConfirmation,
   resetPasswordWithToken,
@@ -39,9 +37,6 @@ import {
   DEMO_FAMILY_USER,
   DEMO_PROFESSIONAL_USER,
   clearOpenAccessSessions,
-  demoUserForPath,
-  hasOpenFamilySession,
-  isFamilyAccountRequiredPath,
   markOpenCommunitySession,
   markOpenFamilySession,
   markOpenProfessionalSession,
@@ -60,7 +55,7 @@ import {
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
-import { serverSignIn, serverSignOut } from "@/lib/family/client-api";
+import { fetchServerIdentity, serverSignIn, serverSignOut } from "@/lib/family/client-api";
 
 export type { SessionUser, UserRole };
 export type AuthUser = SessionUser;
@@ -112,30 +107,12 @@ function useRemoteAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname() || "/";
   // Never auto-mint a portal session on first paint — user must sign in.
   const [user, setUser] = useState<SessionUser | null>(null);
   const [ready, setReady] = useState(false);
   const remote = useRemoteAuth();
 
   useEffect(() => {
-    if (!AUTH_OPEN_ACCESS) return;
-
-    // Do not mint a demo family session just by opening apply/messages while logged out.
-    if (isFamilyAccountRequiredPath(pathname) && !hasOpenFamilySession()) {
-      setUser(null);
-      setReady(true);
-      return;
-    }
-
-    // Restore an existing open-access session only — visiting a portal never auto-logs in.
-    setUser(demoUserForPath(pathname, { useStoredSession: true }));
-    setReady(true);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (AUTH_OPEN_ACCESS) return;
-
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
 
@@ -162,10 +139,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await ensureSeedAccounts();
+      // Local backend: the server owns identity. localStorage is never
+      // consulted for who the user is, their role, or their scope.
+      const identity = await fetchServerIdentity();
       if (cancelled) return;
-      const session = readSession();
-      setUser(session);
+      if (!identity) {
+        setUser(null);
+        setReady(true);
+        return;
+      }
+      const role = parseUserRole(identity.role);
+      const [firstName = "", ...rest] = (identity.name || identity.email).split(" ");
+      setUser(
+        role
+          ? {
+              id: identity.id,
+              email: identity.email,
+              firstName,
+              lastName: rest.join(" "),
+              name: identity.name || identity.email,
+              role,
+              emailConfirmed: true,
+              onboardingCompleted: true,
+            }
+          : null,
+      );
       setReady(true);
     })();
 

@@ -140,6 +140,65 @@ Must be **false or unset** in production: `NEXT_PUBLIC_AUTH_OPEN_ACCESS`,
 
 ---
 
+## Identity source
+
+`GET /api/auth/me` is the only identity the browser gets. It returns the role
+and, for staff, the site scope, all resolved from the session record and
+`staff_memberships`. `AuthProvider` calls it on mount; `readSession()` — which
+read `haven-auth` from localStorage — is gone from the auth path.
+
+`NEXT_PUBLIC_AUTH_OPEN_ACCESS` no longer exists as a switch: `AUTH_OPEN_ACCESS`
+is a hard `false`. `HAVEN_ALLOW_CLIENT_SESSION_MINT` and the
+`clientSessionMintEnabled()` gate are deleted along with the staff session
+endpoint, so no environment variable can bring client-minted sessions back.
+
+Static tests enforce all of this (`identity-source.test.ts`).
+
+## Site access gate — scope
+
+`SITE_ACCESS_PASSWORD` is a **staging shutter, not authentication**. Scope:
+
+- it only decides whether the marketing shell is reachable before login;
+- it grants no read of personal data: every family and admissions route still
+  requires an individual verified session;
+- it is inert unless the variable is set, and the unlock cookie is derived from
+  the secret, so rotating the secret logs everyone out of the gate;
+- `/media` and the gate itself stay public.
+
+It must be removed the day the site goes public. It is not a security control
+and must never be presented as one.
+
+## RLS
+
+`0011_identity_rls.sql` adds `auth_sessions`, `staff_memberships`,
+`staff_invitations`, `security_audit_log`, `auth_rate_limits`, the
+`is_site_staff` / `is_site_admin` helpers (security definer, pinned
+`search_path`), and re-scopes `applications` select/update to the owning family
+or the targeted site.
+
+Sessions, audit rows and rate-limit rows have **no insert policy**: only the
+service role writes them.
+
+CI cannot run SQL — no Supabase instance — so `rls-policies.test.ts` asserts the
+migration surface (RLS enabled on all 13 identity/tenancy tables, required
+policies present, no client insert path), and cross-tenant behaviour is proven
+against the repository in `tenancy.test.ts`.
+
+## Build
+
+`npm run build` still fails, and it is **not** caused by this milestone:
+
+- it fails identically on a clean checkout of `main`;
+- the failing page moves between `/_global-error` and `/_not-found` from run to
+  run, with `TypeError: Cannot read properties of null (reading 'useContext')`;
+- `next build --debug-prerender` succeeds (exit 0), which points at the
+  minified server bundle;
+- adding explicit `global-error.tsx` and `not-found.tsx` removed two of the
+  failures; `serverMinification: false` and `cpus: 1` both made it worse
+  (6+ pages failing), so they were reverted.
+
+Open framework issue, tracked here rather than papered over.
+
 ## Remaining work
 
 The exit criterion is not met yet. Before enabling the admissions flag in a

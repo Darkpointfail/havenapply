@@ -78,19 +78,27 @@ export async function serverSignOut() {
   }).catch(() => undefined);
 }
 
-/** Ask the server who the caller is. The browser never asserts an identity. */
-export async function fetchServerSession(): Promise<{
+export type ServerIdentity = {
   id: string;
   email: string;
   name: string;
   role: string;
-} | null> {
+  siteIds?: string[];
+  siteRoles?: { siteId: string; role: string }[];
+};
+
+/**
+ * Ask the server who the caller is.
+ * This is the only identity source for the browser: nothing is read from
+ * localStorage and nothing is asserted by the client.
+ */
+export async function fetchServerIdentity(): Promise<ServerIdentity | null> {
   try {
-    const res = await fetch("/api/auth/session", {
+    const res = await fetch("/api/auth/me", {
       credentials: "same-origin",
       cache: "no-store",
     });
-    const json = (await res.json()) as { user?: { id: string; email: string; name: string; role: string } | null };
+    const json = (await res.json()) as { user?: ServerIdentity | null };
     return json.user ?? null;
   } catch {
     return null;

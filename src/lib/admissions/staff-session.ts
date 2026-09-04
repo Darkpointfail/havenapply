@@ -3,8 +3,8 @@
  * staff member belongs to server-side. The client never states which site it
  * may read: only the membership store answers that.
  *
- * Minting is gated by `clientSessionMintEnabled()` — see
- * docs/architecture/ADMISSIONS_SERVER_FLOW.md#trust-boundaries
+ * Retained only for signature verification of already-issued cookies; nothing
+ * mints one any more — staff identity comes from the verified session.
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -13,18 +14,19 @@ import { useAuth } from "@/lib/auth";
 import { isFacilityRole } from "@/lib/auth-store";
 import type { ApplicationStatus } from "@/data/applications";
 import {
-  COMMUNITY_ADMISSIONS_EVENT,
-  decisionKindFromStatus,
-  ensureApplicationNotifications,
-  mergeSharedIntoCommunityApps,
-  sharedIdFromCommunityAppId,
-  updateSharedFromCommunity,
-} from "@/lib/admissions-bridge";
+  admissionsEnabled,
+  apiChangeAdmissionStatus,
+  apiListResidenceAdmissions,
+} from "@/lib/admissions/client-api";
+import {
+  admissionRecordToCommunityApplication,
+  applicationIdFromCommunityAppId,
+} from "@/lib/admissions/mapping";
+import { isAdmissionStatus } from "@/lib/admissions/types";
 import {
   COMMUNITY_PORTAL_STORAGE_KEY as STORAGE_KEY,
   communityRoleHas,
   computeDashboardStats,
-  ensureDemoApplications,
   notifyCommunityProfileChanged,
   resolveCommunityResidenceId,
   seedCommunityWorkspace,
@@ -125,10 +127,7 @@ type PortalContextValue = {
 };
 
 function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
-  const notifications = ensureApplicationNotifications(
-    ws.residenceId,
-    Array.isArray(ws.notifications) ? ws.notifications : [],
-  );
+  const notifications = Array.isArray(ws.notifications) ? ws.notifications : [];
   return {
     ...ws,
     profile: {
@@ -141,6 +140,41 @@ function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
 }
 
 const PortalContext = createContext<PortalContextValue | null>(null);
+
+/**
+ * Applications targeting this staff member's sites, as decided by the server.
+ * `prior` only carries staff-side annotations (notes, assignee, checklists);
+ * it can never introduce an application the server did not return.
+ */
+async function fetchServerApplications(
+  prior: CommunityWorkspace["applications"],
+): Promise<CommunityWorkspace["applications"]> {
+  const res = await apiListResidenceAdmissions();
+  const records = res?.ok && Array.isArray(res.applications) ? res.applications : [];
+  const priorById = new Map(prior.map((app) => [app.id, app]));
+
+  return records.map((record) => {
+    const mapped = admissionRecordToCommunityApplication(
+      record,
+      priorById.get(`capp-shared-${record.id}`),
+    );
+    return scrubDemoNamesDeep({
+      ...mapped,
+      seniorName: canonicalSeniorName(mapped.seniorName),
+      careNeeds: Array.isArray(mapped.careNeeds) ? mapped.careNeeds : [],
+      medicalHighlights: Array.isArray(mapped.medicalHighlights) ? mapped.medicalHighlights : [],
+      documents: Array.isArray(mapped.documents) ? mapped.documents : [],
+      auditLog: Array.isArray(mapped.auditLog) ? mapped.auditLog : [],
+      internalNotes: Array.isArray(mapped.internalNotes) ? mapped.internalNotes : [],
+      family: mapped.family || {
+        name: "Family contact",
+        email: "family@example.com",
+        phone: "",
+        relationship: "Family",
+      },
+    });
+  });
+}
 
 function readMap(): Record<string, CommunityWorkspace> {
   try {
@@ -160,6 +194,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   const { user, ready: authReady } = useAuth();
   const [workspace, setWorkspace] = useState<CommunityWorkspace | null>(null);
   const [ready, setReady] = useState(false);
+  const workspaceRef = useRef<CommunityWorkspace | null>(null);
+  useEffect(() => {
+    workspaceRef.current = workspace;
+  }, [workspace]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -169,42 +207,37 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let cancelled = false;
     const residenceId = resolveCommunityResidenceId(user.organization, user.email);
-    const map = readMap();
-    let ws = map[residenceId];
-    if (!ws || !Array.isArray(ws.applications) || ws.applications.length === 0) {
-      ws = seedCommunityWorkspace(residenceId);
-    } else {
-      // Older workspaces may be missing later demo dossiers (e.g. Helen Brooks).
-      ws = ensureDemoApplications(ws);
-    }
-    // Merge live family submissions into intake list
-    const mergedApps = mergeSharedIntoCommunityApps(residenceId, ws.applications).map((app) =>
-      scrubDemoNamesDeep({
-        ...app,
-        seniorName: canonicalSeniorName(app.seniorName),
-        careNeeds: Array.isArray(app.careNeeds) ? app.careNeeds : [],
-        medicalHighlights: Array.isArray(app.medicalHighlights) ? app.medicalHighlights : [],
-        documents: Array.isArray(app.documents) ? app.documents : [],
-        auditLog: Array.isArray(app.auditLog) ? app.auditLog : [],
-        internalNotes: Array.isArray(app.internalNotes) ? app.internalNotes : [],
-        family: app.family || {
-          name: "Family contact",
-          email: "family@example.com",
-          phone: "",
-          relationship: "Family",
-        },
-      }),
-    );
-    ws = normalizeWorkspace({
-      ...ws,
-      applications: mergedApps,
-      updatedAt: new Date().toISOString(),
-    });
-    map[residenceId] = ws;
-    writeMap(map);
-    setWorkspace(ws);
-    setReady(true);
+
+    const load = async () => {
+      // Workspace shell (profile, team, availability) stays local for now; the
+      // applications list comes from the server and never from a demo seed.
+      const map = readMap();
+      const shell = map[residenceId] ?? seedCommunityWorkspace(residenceId);
+      const prior = Array.isArray(shell.applications) ? shell.applications : [];
+
+      const applications = admissionsEnabled()
+        ? await fetchServerApplications(prior)
+        : prior;
+      if (cancelled) return;
+
+      const ws = normalizeWorkspace({
+        ...shell,
+        applications,
+        updatedAt: new Date().toISOString(),
+      });
+      const nextMap = readMap();
+      nextMap[residenceId] = ws;
+      writeMap(nextMap);
+      setWorkspace(ws);
+      setReady(true);
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [authReady, user]);
 
   const persist = useCallback(
@@ -221,23 +254,27 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // Refresh shared applications when community returns to the tab or a family submits
+  // Refetch from the server when staff come back to the tab: a submission made
+  // on another machine has no way to notify this one.
   useEffect(() => {
     if (!authReady || !user || !isFacilityRole(user.role)) return;
+    if (!admissionsEnabled()) return;
     const refresh = () => {
-      persist((ws) =>
-        normalizeWorkspace({
-          ...ws,
-          applications: mergeSharedIntoCommunityApps(ws.residenceId, ws.applications),
-          updatedAt: new Date().toISOString(),
-        }),
-      );
+      void (async () => {
+        const current = workspaceRef.current;
+        const applications = await fetchServerApplications(current?.applications ?? []);
+        persist((ws) =>
+          normalizeWorkspace({
+            ...ws,
+            applications,
+            updatedAt: new Date().toISOString(),
+          }),
+        );
+      })();
     };
     window.addEventListener("focus", refresh);
-    window.addEventListener(COMMUNITY_ADMISSIONS_EVENT, refresh);
     return () => {
       window.removeEventListener("focus", refresh);
-      window.removeEventListener(COMMUNITY_ADMISSIONS_EVENT, refresh);
     };
   }, [authReady, user, persist]);
 
@@ -325,9 +362,6 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         app: CommunityWorkspace["applications"][0],
       ) => CommunityWorkspace["applications"][0],
       auditAction: string,
-      bridgePatch?: (
-        next: CommunityWorkspace["applications"][0],
-      ) => Parameters<typeof updateSharedFromCommunity>[1] | null,
     ) => {
       if (!can(permission)) return { ok: false, error: "You don’t have permission for this action." };
       if (!workspace?.applications.some((a) => a.id === appId)) {
@@ -350,22 +384,13 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
               },
             ],
           };
-          const sharedKey =
-            sharedIdFromCommunityAppId(appId) ||
-            (appId.startsWith("capp-shared-") ? appId : null);
-          if (sharedKey && bridgePatch) {
-            const patch = bridgePatch(enriched);
-            if (patch) updateSharedFromCommunity(sharedKey, patch);
-          } else if (sharedKey) {
-            updateSharedFromCommunity(sharedKey, {
-              status: enriched.status,
-              infoRequest: enriched.infoRequest,
-              documentRequest: enriched.documentRequest,
-              tourProposal: enriched.tourProposal,
-              assessmentProposal: enriched.assessmentProposal,
+          // Persist the transition server-side: the family reads its status
+          // from the same source of truth, from any device.
+          const serverId = applicationIdFromCommunityAppId(appId);
+          if (serverId && admissionsEnabled() && isAdmissionStatus(enriched.status)) {
+            void apiChangeAdmissionStatus(serverId, enriched.status, {
+              note: auditAction,
               waitlistPosition: enriched.waitlistPosition,
-              decisionKind: decisionKindFromStatus(enriched.status),
-              decisionNote: auditAction,
             });
           }
           return enriched;

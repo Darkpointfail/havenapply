@@ -30,7 +30,6 @@ import {
   apiReplaceDocument,
   apiSyncApplications,
   fetchFamilyBundle,
-  syncFamilySession,
   documentPreviewUrl,
 } from "@/lib/family/client-api";
 import { bundleToFamilyData } from "@/lib/family/map-bundle";
@@ -58,10 +57,11 @@ import {
 } from "@/lib/family-applications";
 import { normalizeApplicationStatus } from "@/data/applications";
 import {
-  getSharedByFamilyAppId,
-  markSharedWithdrawn,
-  publishFamilyApplication,
-} from "@/lib/admissions-bridge";
+  admissionsEnabled,
+  apiSubmitAdmission,
+  apiWithdrawAdmission,
+} from "@/lib/admissions/client-api";
+import { admissionInputFromFamilyApplication } from "@/lib/admissions/mapping";
 import { isResidenceAcceptingApplications } from "@/lib/community-portal";
 import { ensureApplicationPublicRef, ensureDossierPublicRef, ensurePersonPublicRef } from "@/lib/public-refs";
 import {
@@ -303,7 +303,14 @@ function attachDocsToApp(
   });
 }
 
-function publishToCommunity(data: FamilyData, submitted: FamilyApplication) {
+/**
+ * Send the submission to the admissions server, which is the source of truth
+ * read by the targeted residence. Fire-and-forget: the local optimistic state
+ * is unchanged, so the UI renders exactly as before.
+ */
+function publishToServer(data: FamilyData, submitted: FamilyApplication) {
+  if (!admissionsEnabled()) return;
+
   const careNeeds = [
     ...data.careNeeds.mobility.slice(0, 2).map((m) => `Mobility: ${m}`),
     ...data.careNeeds.cognition.slice(0, 2).map((c) => `Cognition: ${c}`),
@@ -314,62 +321,21 @@ function publishToCommunity(data: FamilyData, submitted: FamilyApplication) {
     .filter((s) => ["conditions", "allergies", "medications"].includes(s.id))
     .flatMap((s) => s.items)
     .slice(0, 5);
-  const ageNum =
-    Number(seniorAge(data.senior)) || Number(data.person.age) || 0;
+  const ageNum = Number(seniorAge(data.senior)) || Number(data.person.age) || 0;
 
-  publishFamilyApplication(submitted, {
+  const input = admissionInputFromFamilyApplication(submitted, {
     seniorName: seniorDisplayName(data.senior) || data.person.name || "Senior",
     seniorAge: ageNum,
     relationship: data.senior.relationship || data.person.relationship || "Family",
-    careNeeds: careNeeds.length ? careNeeds : undefined,
-    medicalHighlights: medical.length ? medical : undefined,
+    careNeeds,
+    medicalHighlights: medical,
     seniorPhotoUrl: data.senior.photoDataUrl || data.residentDossier?.photoDataUrl || null,
     documentMeta: data.documents
       .filter((d) => submitted.attachedDocumentIds.includes(d.id))
-      .map((d) => ({ id: d.id, name: d.name, category: d.category })),
+      .map((d) => ({ id: d.id, name: d.name, category: d.category, shared: true })),
   });
-}
 
-function syncAppsFromSharedBridge(apps: FamilyApplication[]): FamilyApplication[] {
-  return apps.map((a) => {
-    if (a.status === "draft" || a.status === "ready") return a;
-    const shared = getSharedByFamilyAppId(a.id);
-    if (!shared) return a;
-    if (shared.withdrawn) return withdrawFamilyApp(a);
-    if (shared.decisionKind && shared.decisionKind !== a.communityDecision?.kind) {
-      return applyCommunityDecision(
-        a,
-        shared.decisionKind,
-        shared.decisionNote || shared.documentRequest || shared.infoRequest || "",
-      );
-    }
-    if (shared.status && shared.status !== a.status && shared.decisionKind) {
-      return { ...a, status: shared.status };
-    }
-    let next = a;
-    if (shared.documentRequest && shared.documentRequest !== a.requestedDocuments.join(" · ")) {
-      next = {
-        ...next,
-        requestedDocuments: shared.documentRequest.split("·").map((s) => s.trim()).filter(Boolean),
-        status: "more_info",
-      };
-    }
-    if (shared.tourProposal && shared.tourProposal !== a.upcomingAppointment) {
-      next = {
-        ...next,
-        upcomingAppointment: shared.tourProposal,
-        status: "tour_requested",
-      };
-    }
-    if (shared.waitlistPosition != null && shared.waitlistPosition !== a.waitingPosition) {
-      next = {
-        ...next,
-        waitingPosition: shared.waitlistPosition,
-        status: "waitlisted",
-      };
-    }
-    return next;
-  });
+  void apiSubmitAdmission(input);
 }
 
 function computeCompleteness(data: FamilyData) {
@@ -522,7 +488,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         setReady(true);
         return;
       }
-      await syncFamilySession(user);
+      // The session already exists server-side; the browser never asserts one.
       const result = await fetchFamilyBundle();
       if (cancelled) return;
       if (!result.ok) {
@@ -1144,7 +1110,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           personRef: app.personRef || prev.personRef || null,
           dossierRef: app.dossierRef || prev.dossierRef || null,
         });
-        publishToCommunity(prev, submitted);
+        publishToServer(prev, submitted);
         result = submitted;
 
         const others = prev.applications.filter(
@@ -1210,7 +1176,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
             personRef: app.personRef || prev.personRef || null,
             dossierRef: app.dossierRef || prev.dossierRef || null,
           });
-          publishToCommunity({ ...working, applications, documents }, submitted);
+          publishToServer({ ...working, applications, documents }, submitted);
           results.push(submitted);
           applications = applications.filter(
             (a) =>
@@ -1248,7 +1214,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
 
   const withdrawApplication = useCallback(
     (applicationId: string) => {
-      markSharedWithdrawn(applicationId);
+      if (admissionsEnabled()) void apiWithdrawAdmission(applicationId);
       persist((prev) => {
         const applications = prev.applications.map((a) =>
           a.id === applicationId ? withdrawFamilyApp(a) : a,

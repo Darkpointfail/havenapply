@@ -1,60 +1,36 @@
-import { cookies } from "next/headers";
 import type { SessionUser } from "@/lib/auth-store";
-import {
-  FAMILY_SESSION_COOKIE,
-  sessionUserFromPayload,
-  usesLocalFamilySession,
-  verifyFamilySessionToken,
-} from "@/lib/family/session";
-import { isSupabaseBackend } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
-import { sessionFromSupabaseUser } from "@/lib/auth-supabase";
+import { requireFamily } from "@/lib/security/guards";
 
 export type AuthzFailure = { ok: false; status: number; error: string };
 export type AuthzOk = { ok: true; user: SessionUser };
 export type AuthzResult = AuthzOk | AuthzFailure;
 
 /**
- * Resolve the authenticated user for family APIs.
- * Never trusts body/query user ids — only session cookie or Supabase auth.
+ * Family identity for the family APIs.
+ *
+ * Delegates to the central guard: the session id in the cookie is resolved
+ * against a server record, and the role is read from the credential row —
+ * never from anything the browser sent.
  */
 export async function requireFamilyUser(): Promise<AuthzResult> {
-  if (isSupabaseBackend()) {
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        return { ok: false, status: 401, error: "Session expired. Please sign in again." };
-      }
-      const sessionUser = sessionFromSupabaseUser(user);
-      if (!sessionUser) {
-        return { ok: false, status: 403, error: "Access reserved for family accounts." };
-      }
-      if (sessionUser.role !== "family") {
-        return { ok: false, status: 403, error: "Access reserved for family accounts." };
-      }
-      return { ok: true, user: sessionUser };
-    } catch {
-      return { ok: false, status: 401, error: "Session expired. Please sign in again." };
-    }
-  }
+  const guard = await requireFamily();
+  if (!guard.ok) return guard;
 
-  if (!usesLocalFamilySession()) {
-    return { ok: false, status: 503, error: "Authentication unavailable." };
-  }
-
-  const jar = await cookies();
-  const token = jar.get(FAMILY_SESSION_COOKIE)?.value;
-  const payload = verifyFamilySessionToken(token);
-  if (!payload) {
-    return { ok: false, status: 401, error: "Session expired. Please sign in again." };
-  }
-  if (payload.role !== "family") {
-    return { ok: false, status: 403, error: "Access reserved for family accounts." };
-  }
-  return { ok: true, user: sessionUserFromPayload(payload) };
+  const { principal } = guard;
+  const [firstName = "", ...rest] = principal.displayName.split(" ");
+  return {
+    ok: true,
+    user: {
+      id: principal.userId,
+      email: principal.email,
+      firstName,
+      lastName: rest.join(" "),
+      name: principal.displayName,
+      role: principal.role,
+      emailConfirmed: true,
+      onboardingCompleted: true,
+    },
+  };
 }
 
 export function jsonError(error: string, status: number) {

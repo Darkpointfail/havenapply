@@ -122,3 +122,8 @@ Edge Functions use the **service role** only after explicit AuthZ checks mirrori
 5. Viewer family member cannot submit applications.  
 6. Platform admin reads are written to `audit_logs`.  
 7. Anon cannot list `applications` or `documents`.
+
+Cases 1, 2, 4, 5 and 7 are executed against PostgreSQL by `npm run test:rls`,
+alongside the rest of the surface: all 95 policies are exercised, for read,
+create, update and delete separately. See [RLS_TESTING.md](./RLS_TESTING.md)
+for the procedure, the role matrix and the divergences it uncovered.

@@ -32,9 +32,12 @@ comment on column public.applications.is_seed is
   'True for explicitly seeded development data. Never set in production.';
 
 -- Idempotency is scoped to the owning family so two families cannot collide.
+-- The index is deliberately not partial: `on conflict (family_id,
+-- client_request_id)` cannot infer a partial index, and NULL keys stay
+-- distinct anyway, so drafts without a request id are unaffected.
+drop index if exists public.applications_family_client_request_idx;
 create unique index if not exists applications_family_client_request_idx
-  on public.applications (family_id, client_request_id)
-  where client_request_id is not null;
+  on public.applications (family_id, client_request_id);
 
 -- ---------------------------------------------------------------------------
 -- Intake switch per community (an inactive residence refuses new applications)
@@ -81,6 +84,12 @@ drop policy if exists site_admissions_settings_select on public.site_admissions_
 create policy site_admissions_settings_select on public.site_admissions_settings
   for select using (true);
 
+-- `paused_reason` carries an internal note. RLS cannot scope a single column,
+-- so the switch stays world-readable while the reason needs a session: the
+-- table grant is replaced by a column grant for `anon`.
+revoke select on public.site_admissions_settings from anon;
+grant select (community_id, is_active, updated_at) on public.site_admissions_settings to anon;
+
 drop policy if exists site_admissions_settings_write on public.site_admissions_settings;
 create policy site_admissions_settings_write on public.site_admissions_settings
   for all
@@ -93,7 +102,44 @@ drop policy if exists admissions_audit_log_select on public.admissions_audit_log
 create policy admissions_audit_log_select on public.admissions_audit_log
   for select using (public.can_read_application(application_id));
 
--- No insert/update/delete policy on purpose: only the service role bypasses RLS.
+-- No insert/update/delete policy on purpose: the trail is append-only and is
+-- written through `record_admissions_event` below, never by a direct insert.
+
+create or replace function public.record_admissions_event(
+  p_application_id uuid,
+  p_actor_type text,
+  p_actor_label text,
+  p_action text,
+  p_metadata jsonb default '{}'::jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if not public.can_read_application(p_application_id) then
+    raise exception 'Not authorised for this application.' using errcode = '42501';
+  end if;
+
+  insert into public.admissions_audit_log
+    (application_id, actor_type, actor_id, actor_label, action, metadata)
+  values
+    (p_application_id, p_actor_type, auth.uid(), p_actor_label, p_action,
+     coalesce(p_metadata, '{}'::jsonb))
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+comment on function public.record_admissions_event(uuid, text, text, text, jsonb) is
+  'Append one audit entry for an application the caller may read. The actor is taken from the session, never from the argument list.';
+
+grant execute on function public.record_admissions_event(uuid, text, text, text, jsonb)
+  to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Tighten status history: history is append-only and never client-written.
@@ -117,7 +163,7 @@ as $$
       select 1 from public.communities c
       where c.id = p_community_id
         and c.deleted_at is null
-        and c.status = 'active'
+        and c.status = 'verified'
     )
     and coalesce(
       (select s.is_active from public.site_admissions_settings s where s.community_id = p_community_id),

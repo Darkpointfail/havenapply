@@ -1,10 +1,10 @@
 /**
  * Static verification of the RLS surface.
  *
- * No Supabase instance runs in CI, so these tests assert the migrations
- * themselves: every table holding identity, tenancy or personal data must have
- * row level security enabled and carry a policy that scopes reads to the owner
- * or to staff of the target site. Behavioural cross-tenant coverage lives in
+ * These tests read the migrations, so they run anywhere, with or without a
+ * database. They are the cheap guard, not the proof: the policies are actually
+ * executed against PostgreSQL in `tests/rls/rls-live.test.ts` (`npm run
+ * test:rls`). Behavioural cross-tenant coverage of the store lives in
  * `src/lib/admissions/tenancy.test.ts`.
  */
 
@@ -70,7 +70,20 @@ describe("row level security", () => {
   it("scopes applications to the owning family or the targeted site", () => {
     expect(sql).toMatch(/applications_select[\s\S]*?is_family_member\(family_id\)/);
     expect(sql).toMatch(/applications_select[\s\S]*?is_site_staff\(community_id\)/);
-    expect(sql).toMatch(/applications_update_staff[\s\S]*?is_site_staff\(community_id\)/);
+  });
+
+  it("reserves an application write to the staff roles allowed to decide", () => {
+    expect(sql).toMatch(/applications_update_staff[\s\S]*?is_site_decider\(community_id\)/);
+    expect(sql).toMatch(/function public\.is_site_decider[\s\S]*?'admin', 'manager', 'coordinator'/);
+  });
+
+  it("appends the admissions audit through a definer function, never a direct insert", () => {
+    expect(sql).not.toMatch(
+      /create policy \w+ on public\.admissions_audit_log\s+for insert/,
+    );
+    expect(sql).toMatch(
+      /function public\.record_admissions_event[\s\S]*?can_read_application\(p_application_id\)/,
+    );
   });
 
   it("refuses an application targeting a site that is not accepting", () => {
@@ -78,7 +91,7 @@ describe("row level security", () => {
   });
 
   it("keeps membership helpers security definer with a pinned search_path", () => {
-    for (const fn of ["is_site_staff", "is_site_admin"]) {
+    for (const fn of ["is_site_staff", "is_site_admin", "is_site_decider"]) {
       const definition = sql.slice(sql.indexOf(`function public.${fn}(`));
       expect(definition.slice(0, 400)).toContain("security definer");
       expect(definition.slice(0, 400)).toContain("set search_path = public");

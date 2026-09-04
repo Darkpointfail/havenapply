@@ -112,6 +112,26 @@ as $$
   );
 $$;
 
+-- Deciding on an application is a narrower right than seeing it: `readonly`
+-- may look at the queue and nothing else. Mirrors `requireDecidingRole` in
+-- src/lib/security/guards.ts so a direct SQL call cannot outrank the API.
+create or replace function public.is_site_decider(p_community_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.staff_memberships m
+    where m.community_id = p_community_id
+      and m.user_id = auth.uid()
+      and m.status = 'active'
+      and m.role in ('admin', 'manager', 'coordinator')
+  );
+$$;
+
 create or replace function public.is_site_admin(p_community_id uuid)
 returns boolean
 language sql
@@ -187,7 +207,61 @@ create policy security_audit_log_select on public.security_audit_log
 
 -- ---------------------------------------------------------------------------
 -- Admissions: align staff access with staff_memberships
+--
+-- 0006 scoped every application-adjacent surface through `is_community_staff`,
+-- which reads the legacy `community_team_members`. A residence whose team lives
+-- in `staff_memberships` would see the application row and nothing attached to
+-- it: no shared document, no status history, no audit. The helpers below accept
+-- both models so the two can coexist while the legacy one is retired.
 -- ---------------------------------------------------------------------------
+create or replace function public.can_read_application(p_application_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.applications a
+    where a.id = p_application_id
+      and (
+        public.is_family_member(a.family_id)
+        or public.is_site_staff(a.community_id)
+        or public.is_community_staff(a.community_id)
+      )
+  );
+$$;
+
+-- Shared documents follow the same rule: an explicit, unrevoked share to a site
+-- the caller staffs. The family's unshared vault stays out of reach.
+drop policy if exists documents_select on public.documents;
+create policy documents_select on public.documents
+  for select using (
+    public.is_family_member(family_id)
+    or exists (
+      select 1 from public.document_access da
+      where da.document_id = documents.id
+        and da.revoked_at is null
+        and (public.is_site_staff(da.community_id) or public.is_community_staff(da.community_id))
+    )
+  );
+
+drop policy if exists document_access_logs_select on public.document_access_logs;
+create policy document_access_logs_select on public.document_access_logs
+  for select using (
+    exists (
+      select 1 from public.documents d
+      where d.id = document_id and (
+        public.is_family_member(d.family_id)
+        or exists (
+          select 1 from public.document_access da
+          where da.document_id = d.id and da.revoked_at is null
+            and (public.is_site_staff(da.community_id) or public.is_community_staff(da.community_id))
+        )
+      )
+    )
+  );
+
 drop policy if exists applications_select on public.applications;
 create policy applications_select on public.applications
   for select using (
@@ -200,5 +274,5 @@ create policy applications_select on public.applications
 drop policy if exists applications_update_staff on public.applications;
 create policy applications_update_staff on public.applications
   for update
-  using (public.is_site_staff(community_id) or public.is_platform_admin())
-  with check (public.is_site_staff(community_id) or public.is_platform_admin());
+  using (public.is_site_decider(community_id) or public.is_platform_admin())
+  with check (public.is_site_decider(community_id) or public.is_platform_admin());

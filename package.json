@@ -14,7 +14,10 @@
     "rpa:build": "python3 scripts/build-rpa-quebec.py",
     "test:e2e": "playwright test",
     "test:rls": "bash scripts/rls/run.sh",
-    "rls:db": "bash scripts/rls/local-db.sh"
+    "rls:db": "bash scripts/rls/local-db.sh",
+    "test:identity": "bash scripts/supabase-stack/run.sh",
+    "supabase:stack": "node scripts/supabase-stack/stack.mjs",
+    "identity:migrate": "node scripts/identity/migrate-legacy.mjs"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",

@@ -1,11 +1,8 @@
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { enforceRateLimit } from "@/lib/security/auth-service";
 import { newToken } from "@/lib/security/password";
-import {
-  createInvitation,
-  hashToken,
-  recordAuditEvent,
-} from "@/lib/security/identity-store";
+import { hashToken } from "@/lib/security/identity-store";
+import { createInvitation, recordAuditEvent } from "@/lib/security/identity-repository";
 import { requireCsrf, requireStaff, scopeToSite } from "@/lib/security/guards";
 import { operatorTokenMatches } from "@/lib/security/operator";
 

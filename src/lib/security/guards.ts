@@ -7,16 +7,15 @@
  */
 
 import { cookies, headers } from "next/headers";
-import type { SessionUser, UserRole } from "@/lib/auth-store";
-import { isSupabaseBackend } from "@/lib/supabase/config";
+import type { UserRole } from "@/lib/auth-store";
 import { createClient } from "@/lib/supabase/server";
-import { sessionFromSupabaseUser } from "@/lib/auth-supabase";
+import { findCredentialById, type StaffMembershipRecord } from "@/lib/security/identity-store";
 import {
-  findCredentialById,
-  listMembershipsByUser,
+  isSupabaseIdentity,
+  listMembershipsForSession,
   recordAuditEvent,
-  type StaffMembershipRecord,
-} from "@/lib/security/identity-store";
+} from "@/lib/security/identity-repository";
+import { resolveSessionIdentity } from "@/lib/security/identity-supabase";
 import { SESSION_COOKIE, resolveSession } from "@/lib/security/session";
 import { CSRF_COOKIE, verifyCsrf } from "@/lib/security/csrf";
 
@@ -45,20 +44,31 @@ const UNAUTHENTICATED: GuardFailure = {
 
 /** Resolve the caller with no role expectation. */
 export async function currentPrincipal(): Promise<Principal | null> {
-  if (isSupabaseBackend()) {
+  if (isSupabaseIdentity()) {
     try {
       const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return null;
-      const sessionUser: SessionUser | null = sessionFromSupabaseUser(user);
-      if (!sessionUser) return null;
+
+      // The role comes from `app_identities`, keyed on the verified
+      // `auth.users` id. It is deliberately not read from `user_metadata`:
+      // an account holder can rewrite that with one client call, which would
+      // turn a family sign-up into an administrator.
+      const identity = await resolveSessionIdentity();
+      if (!identity || identity.userId !== user.id) return null;
+
+      const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const firstName = typeof metadata.first_name === "string" ? metadata.first_name : "";
+      const lastName = typeof metadata.last_name === "string" ? metadata.last_name : "";
+
       return {
-        userId: sessionUser.id,
-        email: sessionUser.email,
-        displayName: sessionUser.name || sessionUser.email,
-        role: sessionUser.role,
+        userId: identity.userId,
+        email: user.email ?? "",
+        // Display only. Nothing downstream branches on it.
+        displayName: `${firstName} ${lastName}`.trim() || user.email || "Haven user",
+        role: identity.appRole,
         sessionId: null,
       };
     } catch {
@@ -124,7 +134,7 @@ export async function requireStaff(): Promise<GuardResult<StaffPrincipal>> {
     return { ok: false, status: 403, error: "Access reserved for residence accounts." };
   }
 
-  const memberships = await listMembershipsByUser(principal.userId);
+  const memberships = await listMembershipsForSession(principal.userId);
   const siteIds = [...new Set(memberships.map((m) => m.siteId))];
   if (siteIds.length === 0) {
     return { ok: false, status: 403, error: "No residence is linked to this account." };

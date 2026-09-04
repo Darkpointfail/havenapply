@@ -210,7 +210,7 @@ live("adaptateur Supabase des admissions contre PostgreSQL", () => {
           "select count(*)::int as n from public.application_status_history where application_id = $1",
           [IDS.appA],
         );
-        expect(after.rows[0].n).toBe(before.rows[0].n + 1);
+        expect(after.rows[0].n).toBe((before.rows[0] as { n: number }).n + 1);
 
         const event = await session.attempt(
           "select public.record_admissions_event($1, 'staff', $2, 'status.under_review') as id",

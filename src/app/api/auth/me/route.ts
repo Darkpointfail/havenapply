@@ -1,6 +1,6 @@
 import { jsonOk } from "@/lib/family/authz";
 import { currentPrincipal } from "@/lib/security/guards";
-import { listMembershipsByUser } from "@/lib/security/identity-store";
+import { listMembershipsForSession } from "@/lib/security/identity-repository";
 
 /**
  * The single source of identity for the browser.
@@ -15,7 +15,7 @@ export async function GET() {
 
   const memberships =
     principal.role === "facility" || principal.role === "community"
-      ? await listMembershipsByUser(principal.userId)
+      ? await listMembershipsForSession(principal.userId)
       : [];
 
   return jsonOk({

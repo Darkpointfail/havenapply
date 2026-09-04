@@ -44,6 +44,9 @@ const PUBLIC_READ_EXPECTATIONS: Record<string, number> = {
   // Intake switch is deliberately world-readable so a residence page can say
   // "not accepting applications" without a session.
   site_admissions_settings: 2,
+  // -1 is a refusal rather than an empty result: the grant is withheld from
+  // `anon` altogether, so the identity table denies before RLS is consulted.
+  app_identities: -1,
 };
 
 /** RLS on, no policy at all: reachable only through the service role. */

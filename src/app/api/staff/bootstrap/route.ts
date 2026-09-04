@@ -1,11 +1,11 @@
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { enforceRateLimit } from "@/lib/security/auth-service";
+import { findCredentialByEmail, updateCredential } from "@/lib/security/identity-store";
 import {
-  findCredentialByEmail,
+  isSupabaseIdentity,
   recordAuditEvent,
-  updateCredential,
   upsertMembership,
-} from "@/lib/security/identity-store";
+} from "@/lib/security/identity-repository";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { operatorEndpointsEnabled, operatorTokenMatches } from "@/lib/security/operator";
 
@@ -19,6 +19,8 @@ import { operatorEndpointsEnabled, operatorTokenMatches } from "@/lib/security/o
  * create credentials. Designating a site administrator also moves that account
  * to the staff role, which is the point of the operation.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(request: Request) {
   if (!operatorEndpointsEnabled()) {
     return jsonError("Not found.", 404);
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
     return jsonError("Not found.", 404);
   }
 
-  let body: { email?: unknown; siteId?: unknown };
+  let body: { email?: unknown; userId?: unknown; siteId?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -48,7 +50,35 @@ export async function POST(request: Request) {
 
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const siteId = typeof body.siteId === "string" ? body.siteId.trim() : "";
-  if (!email || !siteId) return jsonError("email and siteId are required.", 400);
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+  if (!siteId) return jsonError("siteId is required.", 400);
+
+  // In Supabase mode the operator names the account by its auth.users id, read
+  // from the dashboard. Resolving an address to an account is exactly the kind
+  // of matching that must not happen while serving a request.
+  if (isSupabaseIdentity()) {
+    if (!UUID.test(userId)) {
+      return jsonError("userId must be the Supabase auth.users identifier.", 400);
+    }
+
+    const membership = await upsertMembership({
+      userId,
+      email: "",
+      siteId,
+      role: "admin",
+    });
+
+    await recordAuditEvent({
+      event: "staff.bootstrap",
+      outcome: "success",
+      actorId: userId,
+      metadata: { siteId, membershipId: membership.id, backend: "supabase" },
+    });
+
+    return jsonOk({ siteId, role: membership.role }, 201);
+  }
+
+  if (!email) return jsonError("email and siteId are required.", 400);
 
   const credential = await findCredentialByEmail(email);
   if (!credential) return jsonError("No account for this address.", 404);

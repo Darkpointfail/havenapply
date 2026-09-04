@@ -48,3 +48,6 @@ test-results/
 .data/
 test-results/
 playwright-report/
+
+# Local Supabase test stack credentials
+.supabase-stack/

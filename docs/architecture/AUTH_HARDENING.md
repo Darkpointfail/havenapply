@@ -264,6 +264,25 @@ The residence console no longer guesses anything:
 The client may still hide elements for UX; nothing it computes can create or
 widen a permission, because every route re-derives the principal and the scope.
 
+## Review findings and fixes
+
+A dedicated security review of the branch produced five actionable findings.
+All are fixed in the branch:
+
+| Finding | Severity | Fix |
+| --- | --- | --- |
+| 15 cookie-authenticated mutations had no CSRF check, contradicting the documented policy | medium | `requireCsrf` added to every family, admissions, seed and sign-up mutation; `route-coverage.test.ts` now fails the build if a new one is missing |
+| Any membership, including `readonly`, could change an application status by calling the API directly | medium | `requireDecidingRole` on the status route; `readonly` gets `403`, covered by an E2E case |
+| Sign-in could leave an orphan session: the cookie was issued before the client consulted the prototype account store, which could then fail | medium | the signed-in user now comes from `GET /api/auth/me`; if the server cannot confirm it, the session is revoked immediately |
+| `/api/admissions/seed` was unauthenticated behind `NODE_ENV` | medium | requires the operator token and CSRF |
+| Reset, verification and invitation tokens were returned whenever `NODE_ENV !== "production"` | medium | tokens are returned only to an operator presenting the secret; a non-production flag is not a trust boundary on a shared preview host |
+
+Operator capabilities were also tightened: they now live in one module
+(`src/lib/security/operator.ts`) and, in production, additionally require
+`HAVEN_OPERATOR_ENDPOINTS=enabled`, so a leaked staging secret cannot be
+replayed. Dead code with weak secret fallbacks (`admissions/staff-session.ts`)
+is deleted.
+
 ## Remaining work
 
 Not blocking the exit criteria, but open before a pilot:

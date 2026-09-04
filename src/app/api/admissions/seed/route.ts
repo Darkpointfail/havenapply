@@ -3,6 +3,8 @@ import { admissionsSeedAllowed } from "@/lib/admissions/config";
 import { isSupabaseBackend } from "@/lib/supabase/config";
 import { seedAdmissionsForDev } from "@/lib/admissions/seed";
 import { readJson } from "@/lib/admissions/validation";
+import { operatorTokenMatches } from "@/lib/security/operator";
+import { requireCsrf } from "@/lib/security/guards";
 
 /**
  * Explicit development provisioning: registers a site and its staff so the
@@ -11,6 +13,12 @@ import { readJson } from "@/lib/admissions/validation";
 export async function POST(request: Request) {
   if (!admissionsSeedAllowed()) {
     return jsonError("Seeding is disabled in production.", 403);
+  }
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
+  if (!operatorTokenMatches(request.headers.get("x-haven-bootstrap-token"))) {
+    return jsonError("Not found.", 404);
   }
   if (isSupabaseBackend()) {
     return jsonError("Seed the Supabase project with SQL fixtures instead.", 400);

@@ -1,12 +1,17 @@
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { requireStaffActor, resolveStaffSiteScope } from "@/lib/admissions/authz";
+import { requireDecidingRole } from "@/lib/security/guards";
 import { changeStatus } from "@/lib/admissions/repository";
 import { decisionKindForStatus } from "@/lib/admissions/mapping";
 import { isAdmissionStatus } from "@/lib/admissions/types";
 import { readJson } from "@/lib/admissions/validation";
+import { requireCsrf } from "@/lib/security/guards";
 
 /** Staff transition. Writes one status event and one audit entry. */
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const { id } = await ctx.params;
 
   const auth = await requireStaffActor();
@@ -28,6 +33,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     typeof body?.siteId === "string" ? body.siteId : null,
   );
   if (!scope.ok) return jsonError(scope.error, scope.status);
+
+  const decision = requireDecidingRole(
+    {
+      ...auth.actor,
+      role: "facility",
+      sessionId: null,
+    },
+    scope.siteIds[0],
+  );
+  if (!decision.ok) return jsonError(decision.error, decision.status);
 
   const result = await changeStatus({
     applicationId: id,

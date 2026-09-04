@@ -1,26 +1,12 @@
-import { timingSafeEqual } from "node:crypto";
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { verifyEmailToken } from "@/lib/security/auth-service";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
+import { operatorTokenMatches } from "@/lib/security/operator";
 import {
   findCredentialByEmail,
   recordAuditEvent,
   updateCredential,
 } from "@/lib/security/identity-store";
-
-/**
- * Operator override, for support cases where the confirmation mail cannot be
- * delivered. Requires the deployment bootstrap secret, is audited, and is
- * unavailable unless `HAVEN_BOOTSTRAP_TOKEN` is configured.
- */
-function operatorTokenMatches(provided: string | null): boolean {
-  const expected = process.env.HAVEN_BOOTSTRAP_TOKEN;
-  if (!expected || !provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 
 export async function POST(request: Request) {
   const csrf = await requireCsrf(request);

@@ -2,12 +2,16 @@ import { jsonError, jsonOk } from "@/lib/family/authz";
 import { requireFamilyActor } from "@/lib/admissions/authz";
 import { submitApplication } from "@/lib/admissions/repository";
 import { parseSubmitInput, readJson } from "@/lib/admissions/validation";
+import { requireCsrf } from "@/lib/security/guards";
 
 /**
  * Idempotent submission. Replaying the same `clientRequestId` for the same
  * family returns the existing record with 200 instead of creating a duplicate.
  */
 export async function POST(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyActor();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 

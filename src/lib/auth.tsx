@@ -56,6 +56,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
 import { fetchServerIdentity, serverSignIn, serverSignOut } from "@/lib/family/client-api";
+import { AUTH_MESSAGES } from "@/lib/auth-messages";
 
 export type { SessionUser, UserRole };
 export type AuthUser = SessionUser;
@@ -261,9 +262,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!server.ok) return { ok: false as const, error: server.error };
 
-      const result = await signInAccount(input);
-      if (result.ok) setUser(result.data);
-      return result;
+      // The session now exists server-side, so the signed-in user must come
+      // from the server too: a stale prototype account cannot contradict it.
+      const identity = await fetchServerIdentity();
+      if (!identity) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
+      }
+      const role = parseUserRole(identity.role);
+      if (!role) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
+      }
+      const [firstName = "", ...rest] = (identity.name || identity.email).split(" ");
+      const signedIn: SessionUser = {
+        id: identity.id,
+        email: identity.email,
+        firstName,
+        lastName: rest.join(" "),
+        name: identity.name || identity.email,
+        role,
+        emailConfirmed: true,
+        onboardingCompleted: true,
+      };
+      // Keep the local profile store in step when it knows this account.
+      void signInAccount(input);
+      setUser(signedIn);
+      return { ok: true as const, data: signedIn };
     },
     [remote],
   );

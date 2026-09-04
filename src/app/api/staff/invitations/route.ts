@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { enforceRateLimit } from "@/lib/security/auth-service";
 import { newToken } from "@/lib/security/password";
@@ -8,6 +7,7 @@ import {
   recordAuditEvent,
 } from "@/lib/security/identity-store";
 import { requireCsrf, requireStaff, scopeToSite } from "@/lib/security/guards";
+import { operatorTokenMatches } from "@/lib/security/operator";
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 72; // 72 h
 
@@ -16,14 +16,6 @@ const INVITATION_TTL_MS = 1000 * 60 * 60 * 72; // 72 h
  * read the invitation token back to deliver it out of band. Audited, and
  * unavailable unless `HAVEN_BOOTSTRAP_TOKEN` is configured.
  */
-function operatorTokenMatches(provided: string | null): boolean {
-  const expected = process.env.HAVEN_BOOTSTRAP_TOKEN;
-  if (!expected || !provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 const ROLES = ["admin", "manager", "coordinator", "readonly"] as const;
 
 /**
@@ -97,7 +89,7 @@ export async function POST(request: Request) {
 
   // Withheld in production unless an operator collects it for out-of-band
   // delivery; a mail transport will make this unnecessary.
-  const exposedToken = operator || process.env.NODE_ENV !== "production" ? token : undefined;
+  const exposedToken = operator ? token : undefined;
 
   return jsonOk(
     { invitationId: invitation.id, expiresAt: invitation.expiresAt, token: exposedToken },

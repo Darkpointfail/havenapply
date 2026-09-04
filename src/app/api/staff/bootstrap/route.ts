@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { enforceRateLimit } from "@/lib/security/auth-service";
 import {
@@ -8,6 +7,7 @@ import {
   upsertMembership,
 } from "@/lib/security/identity-store";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
+import { operatorEndpointsEnabled, operatorTokenMatches } from "@/lib/security/operator";
 
 /**
  * Grant the first staff membership on a site.
@@ -19,18 +19,9 @@ import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
  * create credentials. Designating a site administrator also moves that account
  * to the staff role, which is the point of the operation.
  */
-function tokenMatches(provided: string | null): boolean {
-  const expected = process.env.HAVEN_BOOTSTRAP_TOKEN;
-  if (!expected || !provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
-
 export async function POST(request: Request) {
-  if (!process.env.HAVEN_BOOTSTRAP_TOKEN) {
-    return jsonError("Bootstrap is not enabled on this deployment.", 404);
+  if (!operatorEndpointsEnabled()) {
+    return jsonError("Not found.", 404);
   }
 
   const csrfCheck = await requireCsrf(request);
@@ -39,7 +30,7 @@ export async function POST(request: Request) {
   const throttled = await enforceRateLimit("invite", await requestFingerprint());
   if (throttled) return jsonError(throttled.error, throttled.status);
 
-  if (!tokenMatches(request.headers.get("x-haven-bootstrap-token"))) {
+  if (!operatorTokenMatches(request.headers.get("x-haven-bootstrap-token"))) {
     await recordAuditEvent({
       event: "staff.bootstrap",
       outcome: "failure",

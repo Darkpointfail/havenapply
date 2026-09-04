@@ -39,10 +39,7 @@ export async function POST(request: Request) {
   });
   if (!result.ok) return jsonError(result.error, result.status);
 
-  // The token is handed to the mail transport, never to the browser, once a
-  // real provider is wired. Until then it is exposed only outside production.
-  const devToken =
-    process.env.NODE_ENV === "production" ? undefined : result.data.verificationToken;
-
-  return jsonOk({ userId: result.data.userId, verificationToken: devToken }, 201);
+  // The token belongs in the confirmation mail. Until a transport exists an
+  // operator can read it back through /api/auth/verify-email.
+  return jsonOk({ userId: result.data.userId }, 201);
 }

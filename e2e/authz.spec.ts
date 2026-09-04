@@ -71,20 +71,18 @@ async function registerAndVerify(api: APIRequestContext, email: string) {
     lastName: "User",
   });
   expect(registered.status(), await registered.text()).toBe(201);
-  const body = (await registered.json()) as { userId: string; verificationToken?: string };
+  const body = (await registered.json()) as { userId: string };
 
-  // Production withholds the token (it belongs in the confirmation mail), so
-  // the suite confirms the address through the audited operator override.
-  const verified = body.verificationToken
-    ? await post(api, "/api/auth/verify-email", { token: body.verificationToken })
-    : await api.post("/api/auth/verify-email", {
-        data: { email },
-        headers: {
-          "x-haven-csrf": await csrf(api),
-          origin: ORIGIN,
-          "x-haven-bootstrap-token": process.env.HAVEN_BOOTSTRAP_TOKEN ?? "e2e-bootstrap-token",
-        },
-      });
+  // The token belongs in the confirmation mail, so the suite confirms the
+  // address through the audited operator override.
+  const verified = await api.post("/api/auth/verify-email", {
+    data: { email },
+    headers: {
+      "x-haven-csrf": await csrf(api),
+      origin: ORIGIN,
+      "x-haven-bootstrap-token": process.env.HAVEN_BOOTSTRAP_TOKEN ?? "e2e-bootstrap-token",
+    },
+  });
   expect(verified.status(), await verified.text()).toBe(200);
   return body.userId;
 }
@@ -115,9 +113,10 @@ async function staffSession(
   admin: APIRequestContext,
   email: string,
   siteId: string,
+  role: "admin" | "manager" | "coordinator" | "readonly" = "admin",
 ): Promise<Session> {
   const invited = await admin.post("/api/staff/invitations", {
-    data: { email, siteId, role: "admin" },
+    data: { email, siteId, role },
     headers: {
       "x-haven-csrf": await csrf(admin),
       origin: ORIGIN,
@@ -270,6 +269,35 @@ test.describe("authorization across isolated browser contexts", () => {
     expect(statuses).toContain(401);
     expect(statuses).toContain(429);
     await family.context.close();
+  });
+
+  test("a readonly staff member cannot decide", async ({ browser, baseURL }) => {
+    const operator = await playwrightRequest.newContext({
+      baseURL,
+      extraHTTPHeaders: { "x-forwarded-for": nextClientIp() },
+    });
+    const adminEmail = email("ro.admin");
+    await registerAndVerify(operator, adminEmail);
+    await signIn(operator, adminEmail);
+    expect((await bootstrapMembership(operator, adminEmail, SITE_A)).status()).toBe(201);
+
+    const family = await familySession(browser, email("ro.family"));
+    const submitted = await post(family.api, "/api/admissions/submit", {
+      clientRequestId: `ro-${Date.now()}`,
+      siteId: SITE_A,
+      senior: { name: "Readonly Case", age: 80, relationship: "Enfant" },
+      familyContact: { name: "Famille", email: family.email, relationship: "Enfant" },
+    });
+    expect(submitted.status()).toBe(201);
+    const id = ((await submitted.json()) as { application: { id: string } }).application.id;
+
+    const viewer = await staffSession(browser, operator, email("ro.viewer"), SITE_A, "readonly");
+    expect((await viewer.api.get("/api/admissions/residence")).status()).toBe(200);
+
+    const denied = await post(viewer.api, `/api/admissions/${id}/status`, { status: "approved" });
+    expect(denied.status()).toBe(403);
+
+    await Promise.all([family.context.close(), viewer.context.close(), operator.dispose()]);
   });
 
   test("a tampered cookie is refused", async ({ browser }) => {

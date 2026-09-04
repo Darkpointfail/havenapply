@@ -6,6 +6,7 @@ import {
   type SignupRole,
 } from "@/lib/auth-store";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireCsrf } from "@/lib/security/guards";
 
 type Body = {
   role?: SignupRole;
@@ -24,6 +25,11 @@ function isSignupRole(value: unknown): value is SignupRole {
 }
 
 export async function POST(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) {
+    return NextResponse.json({ ok: false, error: csrfCheck.error }, { status: csrfCheck.status });
+  }
+
   let body: Body;
   try {
     body = (await request.json()) as Body;

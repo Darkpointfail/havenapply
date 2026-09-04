@@ -32,6 +32,7 @@ export default defineConfig({
       // The staging gate must stay out of the way of these tests.
       SITE_ACCESS_PASSWORD: "",
       HAVEN_BOOTSTRAP_TOKEN: "e2e-bootstrap-token",
+      HAVEN_OPERATOR_ENDPOINTS: "enabled",
     },
   },
 });

@@ -1,9 +1,13 @@
 import { jsonError, jsonOk } from "@/lib/family/authz";
 import { requireFamilyActor } from "@/lib/admissions/authz";
 import { withdraw } from "@/lib/admissions/repository";
+import { requireCsrf } from "@/lib/security/guards";
 
 /** The owning family withdraws its application. */
-export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const { id } = await ctx.params;
 
   const auth = await requireFamilyActor();

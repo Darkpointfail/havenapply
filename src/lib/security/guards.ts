@@ -133,6 +133,26 @@ export async function requireStaff(): Promise<GuardResult<StaffPrincipal>> {
   return { ok: true, principal: { ...principal, siteIds, memberships } };
 }
 
+/** Roles allowed to move an application forward. `readonly` may only look. */
+const DECIDING_ROLES = new Set(["admin", "manager", "coordinator"]);
+
+/**
+ * A membership grants visibility; deciding requires a role that carries it.
+ * The UI hides the controls, but that is not what stops a direct API call.
+ */
+export function requireDecidingRole(
+  principal: StaffPrincipal,
+  siteId: string,
+): { ok: true } | GuardFailure {
+  const membership = principal.memberships.find(
+    (m) => m.siteId === siteId && m.status === "active",
+  );
+  if (!membership || !DECIDING_ROLES.has(membership.role)) {
+    return { ok: false, status: 403, error: "Your role cannot change an application." };
+  }
+  return { ok: true };
+}
+
 /** Narrow a staff principal to one site; widening is refused. */
 export function scopeToSite(
   principal: StaffPrincipal,

@@ -115,9 +115,23 @@ than duplicating it:
   which only has platform-wide `audit_logs`);
 - adds `site_admissions_settings.is_active` so an inactive residence can refuse
   intake;
-- tightens RLS: staff read/write only through `is_community_staff(community_id)`,
-  family read/write only through `is_family_member(family_id)`, audit and history
-  readable through `can_read_application`, insertable by the service role only.
+- tightens RLS: staff read through `is_site_staff` or the legacy
+  `is_community_staff`, staff write only through `is_site_decider` (a
+  `readonly` membership may look and nothing else), family read/write through
+  `is_family_member`, audit and history readable through
+  `can_read_application`;
+- appends the audit through `record_admissions_event`, a security-definer
+  function that re-checks `can_read_application` and takes the actor from the
+  session. The table itself has no insert policy.
+
+`npm run test:rls` executes these policies, and
+`tests/rls/supabase-parity.test.ts` replays each adapter query as SQL under the
+principal that issues it. See [RLS_TESTING.md](./RLS_TESTING.md).
+
+Staff memberships now resolve in Supabase mode: the scope comes from
+`staff_memberships`, keyed on the verified `auth.users` id, and the role from
+`app_identities` rather than from editable metadata. See
+[IDENTITY_PARITY.md](./IDENTITY_PARITY.md).
 
 Documents are shared as **metadata only** in this milestone. Staff download
 requires signed URLs and access logs, which are out of scope here.
@@ -133,7 +147,8 @@ browser (family)                browser (staff)
 ────────────────────── server boundary ──────────────────────
 requireFamilyActor()            requireStaffActor()
   → familyUserId from session     → userId from session
-                                  → siteIds from membership store
+                                  → siteIds from staff_memberships,
+                                    role from app_identities
   ▼                                 ▼
 repository (tenant filter applied here, never in the client)
   ▼

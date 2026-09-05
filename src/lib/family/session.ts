@@ -7,16 +7,19 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { SessionUser, UserRole } from "@/lib/auth-store";
 import { parseUserRole } from "@/lib/auth-store";
 import { isSupabaseBackend } from "@/lib/supabase/config";
+import { requireSessionSecret } from "@/lib/security/env";
 
 export const FAMILY_SESSION_COOKIE = "haven-family-session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
 
+/**
+ * One signing secret for the whole application. This cookie used to fall back
+ * to the Supabase service-role key and then to a literal in the repository:
+ * the first couples session integrity to a high-privilege credential, the
+ * second is not a secret at all.
+ */
 function sessionSecret() {
-  return (
-    process.env.HAVEN_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "haven-local-dev-session-secret-change-me"
-  );
+  return requireSessionSecret();
 }
 
 function b64url(buf: Buffer | string) {

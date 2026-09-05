@@ -15,7 +15,6 @@ import {
   verifyPassword,
 } from "@/lib/security/password";
 import {
-  consumeRateLimit,
   createCredential,
   findCredentialByEmail,
   hashLookup,
@@ -25,6 +24,10 @@ import {
   updateCredential,
   type CredentialRecord,
 } from "@/lib/security/identity-store";
+import {
+  assertLocalIdentity,
+  consumeRateLimit,
+} from "@/lib/security/identity-repository";
 
 export const VERIFICATION_TTL_MS = 1000 * 60 * 60 * 24; // 24 h
 export const RESET_TTL_MS = 1000 * 60 * 30; // 30 min
@@ -81,6 +84,7 @@ export type RegisterInput = {
 export async function registerAccount(
   input: RegisterInput,
 ): Promise<ServiceResult<{ userId: string; verificationToken: string | null }>> {
+  assertLocalIdentity("Account registration");
   const throttled = await limit("signUp", input.fingerprint);
   if (throttled) return throttled;
 
@@ -143,6 +147,7 @@ export type SignInInput = {
 export async function verifyCredentials(
   input: SignInInput,
 ): Promise<ServiceResult<CredentialRecord>> {
+  assertLocalIdentity("Credential verification");
   const email = normalizeEmail(input.email);
   const throttleKey = email ?? input.fingerprint;
 
@@ -232,6 +237,7 @@ export async function verifyEmailToken(
   token: unknown,
   fingerprint: string,
 ): Promise<ServiceResult<{ userId: string }>> {
+  assertLocalIdentity("Email verification");
   const throttled = await limit("verify", fingerprint);
   if (throttled) return throttled;
 
@@ -294,6 +300,7 @@ export async function requestPasswordReset(
   email: unknown,
   fingerprint: string,
 ): Promise<ServiceResult<{ token: string | null }>> {
+  assertLocalIdentity("Password reset");
   const throttled = await limit("reset", fingerprint);
   if (throttled) return throttled;
 
@@ -333,6 +340,7 @@ export async function completePasswordReset(input: {
   password: unknown;
   fingerprint: string;
 }): Promise<ServiceResult<{ userId: string }>> {
+  assertLocalIdentity("Password reset");
   const throttled = await limit("reset", input.fingerprint);
   if (throttled) return throttled;
 

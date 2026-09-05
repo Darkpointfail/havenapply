@@ -46,7 +46,11 @@ describe("identity source", () => {
 
   it("derives staff site scope from memberships, never from the request", async () => {
     const guards = await read("lib/security/guards.ts");
-    expect(guards).toContain("listMembershipsByUser");
+    expect(guards).toContain("listMembershipsForSession");
+    // And the role is read from the identity table, not from metadata the
+    // account holder can rewrite.
+    expect(guards).toContain("resolveSessionIdentity");
+    expect(guards).not.toContain("sessionFromSupabaseUser");
     const residence = await read("app/api/admissions/residence/route.ts");
     expect(residence).toContain("scope.siteIds");
     // The requested site is only ever used to narrow, through scopeToSite.

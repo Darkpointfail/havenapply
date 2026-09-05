@@ -47,6 +47,8 @@ describe("client bundle safety", () => {
     const forbidden = [
       "@/lib/supabase/admin",
       "@/lib/security/identity-store",
+      "@/lib/security/identity-repository",
+      "@/lib/security/identity-supabase",
       "@/lib/security/auth-service",
       "@/lib/security/session",
       "@/lib/security/guards",

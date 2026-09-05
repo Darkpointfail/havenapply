@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { currentPrincipal, requireCsrf } from "@/lib/security/guards";
-import { recordAuditEvent, revokeSession } from "@/lib/security/identity-store";
+import { revokeSession } from "@/lib/security/identity-store";
+import { isSupabaseIdentity, recordAuditEvent } from "@/lib/security/identity-repository";
+import { createClient } from "@/lib/supabase/server";
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/security/session";
 
 /**
@@ -40,6 +42,22 @@ export async function DELETE(request: Request) {
   if (!csrf.ok) return NextResponse.json({ ok: false, error: csrf.error }, { status: csrf.status });
 
   const principal = await currentPrincipal();
+
+  if (isSupabaseIdentity()) {
+    // Supabase revokes the refresh token and clears its own cookies; there is
+    // no second session record to keep in step.
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    if (principal) {
+      await recordAuditEvent({
+        event: "auth.sign_out",
+        outcome: "success",
+        actorId: principal.userId,
+      });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   if (principal?.sessionId) {
     await revokeSession(principal.sessionId);
     await recordAuditEvent({

@@ -12,7 +12,14 @@
     "test:family": "vitest run src/lib/family",
     "cms:build": "node scripts/build-cms-nursing-homes.mjs",
     "rpa:build": "python3 scripts/build-rpa-quebec.py",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:rls": "bash scripts/rls/run.sh",
+    "rls:db": "bash scripts/rls/local-db.sh",
+    "test:identity": "bash scripts/supabase-stack/run.sh",
+    "supabase:stack": "node scripts/supabase-stack/stack.mjs",
+    "identity:migrate": "node scripts/identity/migrate-legacy.mjs",
+    "test:e2e:supabase": "playwright test --config playwright.supabase.config.ts",
+    "identity:upgrade-check": "node scripts/identity/upgrade-check.mjs"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
@@ -30,10 +37,12 @@
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.43",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"

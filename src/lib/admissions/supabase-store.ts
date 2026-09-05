@@ -6,9 +6,11 @@
  * depth: every query here is also tenant-filtered explicitly so a policy gap
  * cannot silently widen access.
  *
- * NOTE: this adapter is not exercised by CI — no Supabase instance runs in the
- * test environment. The local store implements the same contract and is what
- * the tests and E2E cover. See docs/architecture/ADMISSIONS_SERVER_FLOW.md.
+ * The shape of every query here is checked against a real PostgreSQL schema by
+ * tests/rls/supabase-parity.test.ts; the policies those queries run under are
+ * exercised by tests/rls/rls-live.test.ts. Behaviour under PostgREST itself is
+ * still covered by the local store, which implements the same contract.
+ * See docs/architecture/ADMISSIONS_SERVER_FLOW.md.
  */
 
 import { createClient } from "@/lib/supabase/server";
@@ -113,6 +115,11 @@ async function sb() {
   return createClient();
 }
 
+/**
+ * A residence is open to applications when it is published and has not paused
+ * intake. `verified` is the published state in `community_status`; there is no
+ * `active` member in that enum.
+ */
 export async function getSite(siteId: string): Promise<ResidenceSite | null> {
   const client = await sb();
   const { data } = await client
@@ -130,14 +137,20 @@ export async function getSite(siteId: string): Promise<ResidenceSite | null> {
 
   const row = data as Row;
   const active =
-    row.status === "active" && !row.deleted_at && (settings?.is_active ?? true) !== false;
+    row.status === "verified" && !row.deleted_at && (settings?.is_active ?? true) !== false;
   return { id: str(row.id), name: str(row.name), isActive: Boolean(active) };
 }
 
+/**
+ * Site scope comes from `staff_memberships` (0011), the table whose roles match
+ * the guards. The legacy `community_team_members` vocabulary (`org_admin`,
+ * `admissions_manager`, …) does not, and reading it here would silently demote
+ * every manager to a role the guards refuse.
+ */
 export async function listMembershipsForUser(userId: string): Promise<StaffMembership[]> {
   const client = await sb();
   const { data } = await client
-    .from("community_team_members")
+    .from("staff_memberships")
     .select("id, user_id, community_id, role, status")
     .eq("user_id", userId)
     .eq("status", "active");
@@ -162,8 +175,75 @@ async function familyIdFor(userId: string): Promise<string | null> {
     .from("family_members")
     .select("family_id")
     .eq("user_id", userId)
+    .eq("invitation_status", "accepted")
+    .limit(1);
+  const row = (data ?? [])[0] as Row | undefined;
+  return row ? str(row.family_id) : null;
+}
+
+/** `applications.organization_id` is not null and must match the community. */
+async function organizationIdFor(siteId: string): Promise<string | null> {
+  const client = await sb();
+  const { data } = await client
+    .from("communities")
+    .select("organization_id")
+    .eq("id", siteId)
     .maybeSingle();
-  return data ? str((data as Row).family_id) : null;
+  return data ? str((data as Row).organization_id) : null;
+}
+
+/**
+ * `applications.senior_id` is not null: the denormalized payload is a snapshot,
+ * not a substitute for the record. Reuse the family's senior of that name when
+ * there is one, otherwise open a minimal record.
+ */
+async function seniorIdFor(familyId: string, name: string): Promise<string | null> {
+  const client = await sb();
+  const [firstName, ...rest] = name.trim().split(/\s+/);
+  const lastName = rest.join(" ");
+
+  const { data: existing } = await client
+    .from("seniors")
+    .select("id, first_name, last_name")
+    .eq("family_id", familyId);
+
+  const match = (existing ?? []).find((row) => {
+    const r = row as Row;
+    return (
+      `${str(r.first_name)} ${str(r.last_name)}`.trim().toLowerCase() ===
+      name.trim().toLowerCase()
+    );
+  });
+  if (match) return str((match as Row).id);
+
+  const { data: created } = await client
+    .from("seniors")
+    .insert({ family_id: familyId, first_name: firstName ?? "", last_name: lastName })
+    .select("id")
+    .single();
+  return created ? str((created as Row).id) : null;
+}
+
+/**
+ * The audit trail has no insert policy on purpose. `record_admissions_event`
+ * (0010) is the only way in: it is security definer, it re-checks that the
+ * caller may read the application and it takes the actor from the session.
+ */
+async function recordEvent(args: {
+  applicationId: string;
+  actorType: "family" | "staff" | "system";
+  actorLabel: string;
+  action: string;
+  metadata?: Record<string, unknown>;
+}): Promise<void> {
+  const client = await sb();
+  await client.rpc("record_admissions_event", {
+    p_application_id: args.applicationId,
+    p_actor_type: args.actorType,
+    p_actor_label: args.actorLabel,
+    p_action: args.action,
+    p_metadata: args.metadata ?? {},
+  });
 }
 
 export async function submitApplication(args: {
@@ -179,6 +259,12 @@ export async function submitApplication(args: {
 
   const familyId = await familyIdFor(args.familyUserId);
   if (!familyId) return { ok: false, status: 403, error: "No family record for this account." };
+
+  const organizationId = await organizationIdFor(site.id);
+  if (!organizationId) return { ok: false, status: 409, error: "Unknown residence." };
+
+  const seniorId = await seniorIdFor(familyId, args.input.senior?.name ?? "");
+  if (!seniorId) return { ok: false, status: 500, error: "Unable to submit application." };
 
   const client = await sb();
 
@@ -203,7 +289,10 @@ export async function submitApplication(args: {
       {
         ...(existing ? { id: (existing as Row).id } : {}),
         family_id: familyId,
+        senior_id: seniorId,
         community_id: site.id,
+        organization_id: organizationId,
+        submitted_by: args.familyUserId,
         client_request_id: args.input.clientRequestId,
         status: "submitted",
         submitted_at: now,
@@ -223,11 +312,10 @@ export async function submitApplication(args: {
   const record = rowToRecord(data as Row);
 
   // `on_application_status_change` (0007) writes application_status_history.
-  await client.from("admissions_audit_log").insert({
-    application_id: record.id,
-    actor_type: "family",
-    actor_id: args.familyUserId,
-    actor_label: args.familyEmail,
+  await recordEvent({
+    applicationId: record.id,
+    actorType: "family",
+    actorLabel: args.familyEmail,
     action: "application.submitted",
     metadata: { siteId: record.siteId },
   });
@@ -370,11 +458,10 @@ export async function changeStatus(args: {
     return { ok: false, status: 500, error: error?.message || "Unable to update status." };
   }
 
-  await client.from("admissions_audit_log").insert({
-    application_id: args.applicationId,
-    actor_type: "staff",
-    actor_id: args.actorId,
-    actor_label: args.actorLabel,
+  await recordEvent({
+    applicationId: args.applicationId,
+    actorType: "staff",
+    actorLabel: args.actorLabel,
     action: `status.${args.toStatus}`,
     metadata: { fromStatus: record.status, note: args.note ?? null },
   });
@@ -400,13 +487,11 @@ export async function withdraw(args: {
 
   if (error || !data) return { ok: false, status: 404, error: "Application not found." };
 
-  await client.from("admissions_audit_log").insert({
-    application_id: args.applicationId,
-    actor_type: "family",
-    actor_id: args.familyUserId,
-    actor_label: "",
+  await recordEvent({
+    applicationId: args.applicationId,
+    actorType: "family",
+    actorLabel: "",
     action: "application.withdrawn",
-    metadata: {},
   });
 
   return { ok: true, data: rowToRecord(data as Row) };
@@ -423,6 +508,12 @@ export async function saveDraft(args: {
   const familyId = await familyIdFor(args.familyUserId);
   if (!familyId) return { ok: false, status: 403, error: "No family record for this account." };
 
+  const organizationId = await organizationIdFor(site.id);
+  if (!organizationId) return { ok: false, status: 409, error: "Unknown residence." };
+
+  const seniorId = await seniorIdFor(familyId, args.input.senior?.name ?? "");
+  if (!seniorId) return { ok: false, status: 500, error: "Unable to save draft." };
+
   const client = await sb();
   const now = new Date().toISOString();
   const { data, error } = await client
@@ -430,7 +521,10 @@ export async function saveDraft(args: {
     .upsert(
       {
         family_id: familyId,
+        senior_id: seniorId,
         community_id: site.id,
+        organization_id: organizationId,
+        submitted_by: args.familyUserId,
         client_request_id: args.input.clientRequestId,
         status: "draft",
         desired_move_in: args.input.desiredMoveIn ?? null,

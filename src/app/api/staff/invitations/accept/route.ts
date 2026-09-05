@@ -4,10 +4,14 @@ import {
   consumeInvitation,
   findCredentialByEmail,
   hashToken,
-  recordAuditEvent,
   upsertMembership,
 } from "@/lib/security/identity-store";
-import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
+import {
+  isSupabaseIdentity,
+  recordAuditEvent,
+} from "@/lib/security/identity-repository";
+import { acceptInvitation } from "@/lib/security/identity-supabase";
+import { currentPrincipal, requestFingerprint, requireCsrf } from "@/lib/security/guards";
 
 /**
  * Accept a staff invitation: consumes the single-use token, then creates the
@@ -28,7 +32,32 @@ export async function POST(request: Request) {
     return jsonError("Invalid invitation link.", 400);
   }
 
-  const consumed = await consumeInvitation(hashToken(body.token));
+  const tokenHash = hashToken(body.token);
+
+  // In Supabase mode the invitee signs in with Supabase Auth first; the
+  // database then spends the token and grants the membership in one statement,
+  // to the account in the session. Nothing in the request names the recipient.
+  if (isSupabaseIdentity()) {
+    const principal = await currentPrincipal();
+    if (!principal) {
+      return jsonError("Sign in with your Supabase account before accepting.", 401);
+    }
+
+    const accepted = await acceptInvitation(tokenHash);
+    if (!accepted.ok) {
+      await recordAuditEvent({
+        event: "staff.invitation_accept",
+        outcome: "failure",
+        actorId: principal.userId,
+        metadata: { reason: accepted.error },
+      });
+      return jsonError(accepted.error, 400);
+    }
+
+    return jsonOk({ siteId: accepted.siteId, role: accepted.role });
+  }
+
+  const consumed = await consumeInvitation(tokenHash);
   if (!consumed.ok) {
     await recordAuditEvent({
       event: "staff.invitation_accept",

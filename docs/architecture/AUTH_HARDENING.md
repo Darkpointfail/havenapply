@@ -172,17 +172,19 @@ and must never be presented as one.
 
 `0011_identity_rls.sql` adds `auth_sessions`, `staff_memberships`,
 `staff_invitations`, `security_audit_log`, `auth_rate_limits`, the
-`is_site_staff` / `is_site_admin` helpers (security definer, pinned
-`search_path`), and re-scopes `applications` select/update to the owning family
-or the targeted site.
+`is_site_staff` / `is_site_admin` / `is_site_decider` helpers (security definer,
+pinned `search_path`), and re-scopes `applications` select/update to the owning
+family or the targeted site.
 
 Sessions, audit rows and rate-limit rows have **no insert policy**: only the
 service role writes them.
 
-CI cannot run SQL — no Supabase instance — so `rls-policies.test.ts` asserts the
-migration surface (RLS enabled on all 13 identity/tenancy tables, required
-policies present, no client insert path), and cross-tenant behaviour is proven
-against the repository in `tenancy.test.ts`.
+`rls-policies.test.ts` asserts the migration surface and `tenancy.test.ts`
+proves cross-tenant behaviour against the repository. Neither is the proof:
+`npm run test:rls` boots an ephemeral Supabase Postgres, applies every
+migration from an empty database and executes all 95 policies as `anon` and
+`authenticated`. It found five defects this static pass had missed — see
+[RLS_TESTING.md](./RLS_TESTING.md).
 
 ## Build — root cause
 
@@ -297,8 +299,14 @@ Not blocking the exit criteria, but open before a pilot:
 3. **Email delivery.** No transactional provider. Verification, reset and
    invitation tokens are hashed, expiring and single-use, but must currently be
    collected through the audited operator endpoints.
-4. **Supabase parity.** The credential lifecycle is implemented for the local
-   backend; in Supabase mode the guards read `auth.getUser()` and the
-   membership table must be provisioned there.
+4. **Supabase parity.** Done. Sign-in, sign-out and registration go through
+   Supabase Auth from the server, and identity is anchored on the verified
+   `auth.users` id: the role comes from `app_identities`, the scope from
+   `staff_memberships`, neither from `user_metadata` nor from a file. The
+   credential lifecycle — password hashing, reset, email verification — stays
+   local-only and refuses loudly in Supabase mode, where GoTrue owns it. See
+   `IDENTITY_PARITY.md`. One gap remains, documented there: the
+   `@supabase/ssr` session cookie is not `HttpOnly`, because the browser client
+   still refreshes the same session.
 5. **`/api/admissions/seed`** remains unauthenticated behind
    `NODE_ENV !== "production"`.

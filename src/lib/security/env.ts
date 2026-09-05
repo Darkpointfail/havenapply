@@ -84,6 +84,14 @@ export function validateSecurityEnv(): EnvIssue[] {
     });
   }
 
+  // The service-role key bypasses row level security. Anything prefixed
+  // NEXT_PUBLIC_ is inlined into the browser bundle at build time.
+  for (const name of Object.keys(process.env)) {
+    if (name.startsWith("NEXT_PUBLIC_") && /SERVICE_ROLE/.test(name)) {
+      issues.push({ name, problem: "service-role material must never be public" });
+    }
+  }
+
   if (process.env.NEXT_PUBLIC_DATA_BACKEND === "supabase") {
     if (!readSecret("NEXT_PUBLIC_SUPABASE_URL")) {
       issues.push({ name: "NEXT_PUBLIC_SUPABASE_URL", problem: "missing" });

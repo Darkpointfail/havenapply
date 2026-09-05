@@ -59,8 +59,10 @@ function parseAppRole(value: unknown): UserRole | null {
  * The row is selected by `auth.uid()` through row level security, so a token
  * belonging to one account cannot read another's role.
  */
-export async function resolveSessionIdentity(): Promise<SupabaseIdentity | null> {
-  const supabase = await createClient();
+export async function resolveSessionIdentity(
+  client?: Awaited<ReturnType<typeof createClient>>,
+): Promise<SupabaseIdentity | null> {
+  const supabase = client ?? (await createClient());
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -271,8 +273,13 @@ export async function consumeRateLimit(
   });
 
   if (error || !data) {
-    // A counter that cannot be read must not become a way to remove the limit.
-    return { allowed: false, remaining: 0, retryAfterSeconds: Math.ceil(windowMs / 1000) };
+    // Failing open would turn an outage into an unthrottled credential
+    // endpoint. Failing closed *quietly* is almost as bad: it answers "too many
+    // attempts" to a caller who made one, and sends whoever debugs it looking
+    // for a rate limit that was never reached.
+    throw new Error(
+      `The rate-limit counter is unavailable: ${error?.message ?? "no response from Supabase"}`,
+    );
   }
 
   const row = Array.isArray(data) ? data[0] : data;

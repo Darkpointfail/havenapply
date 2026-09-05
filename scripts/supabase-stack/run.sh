@@ -17,11 +17,15 @@ KEEP="${HAVEN_KEEP_STACK:-0}"
 GATEWAY_PID=""
 
 cleanup() {
-  [ -n "${GATEWAY_PID}" ] && kill "${GATEWAY_PID}" 2>/dev/null || true
   if [ "${KEEP}" != "1" ]; then
+    [ -n "${GATEWAY_PID}" ] && kill "${GATEWAY_PID}" 2>/dev/null || true
     node scripts/supabase-stack/stack.mjs down
   else
+    # The router is a plain process, not a container: killing it would leave a
+    # stack that looks up and answers nothing.
     echo "stack kept at $(node -e 'console.log(require("./.supabase-stack/env.json").url)')" >&2
+    echo "router still running as pid ${GATEWAY_PID}" >&2
+    disown "${GATEWAY_PID}" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT

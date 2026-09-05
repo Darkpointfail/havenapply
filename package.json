@@ -17,7 +17,9 @@
     "rls:db": "bash scripts/rls/local-db.sh",
     "test:identity": "bash scripts/supabase-stack/run.sh",
     "supabase:stack": "node scripts/supabase-stack/stack.mjs",
-    "identity:migrate": "node scripts/identity/migrate-legacy.mjs"
+    "identity:migrate": "node scripts/identity/migrate-legacy.mjs",
+    "test:e2e:supabase": "playwright test --config playwright.supabase.config.ts",
+    "identity:upgrade-check": "node scripts/identity/upgrade-check.mjs"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",

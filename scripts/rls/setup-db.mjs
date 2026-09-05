@@ -21,8 +21,17 @@ const ROOT = process.cwd();
 const MIGRATIONS_DIR = path.join(ROOT, "supabase", "migrations");
 const FIXTURES = path.join(ROOT, "tests", "rls", "fixtures.sql");
 
-export async function applyMigrations(client) {
-  const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
+/**
+ * `upTo` stops after the named migration, so an upgrade can be rehearsed the
+ * way a deployment meets it: an existing database, then the new file alone.
+ */
+export async function applyMigrations(client, upTo = null) {
+  let files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
+  if (upTo) {
+    const stop = files.findIndex((f) => f.startsWith(upTo));
+    if (stop < 0) throw new Error(`no migration starts with ${upTo}`);
+    files = files.slice(0, stop + 1);
+  }
   const applied = [];
   for (const file of files) {
     const sql = await readFile(path.join(MIGRATIONS_DIR, file), "utf8");
@@ -89,7 +98,8 @@ async function main() {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
-    const applied = await applyMigrations(client);
+    const upToArg = process.argv.find((a) => a.startsWith("--up-to="));
+    const applied = await applyMigrations(client, upToArg?.split("=")[1] ?? null);
     console.log(`applied ${applied.length} migrations: ${applied.join(", ")}`);
     if (!process.argv.includes("--migrate-only")) {
       await ensureTestLoginRole(client);

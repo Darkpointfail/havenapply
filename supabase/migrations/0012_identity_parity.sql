@@ -70,6 +70,34 @@ create trigger on_auth_user_created_app_identity
   for each row execute function public.handle_new_app_identity();
 
 -- ---------------------------------------------------------------------------
+-- Accounts that already existed
+--
+-- The trigger only fires on new sign-ups, so without this every account made
+-- before today would authenticate successfully and then resolve no role, which
+-- is a lockout rather than a refusal. The role is derived from tables the
+-- server controls — memberships and platform roles — and never from
+-- `user_metadata`, which is exactly what this migration exists to stop trusting.
+-- ---------------------------------------------------------------------------
+insert into public.app_identities (user_id, app_role)
+select
+  u.id,
+  case
+    when exists (select 1 from public.platform_roles p where p.user_id = u.id)
+      then 'internal'
+    when exists (
+      select 1 from public.staff_memberships m
+       where m.user_id = u.id and m.status = 'active'
+    ) then 'facility'
+    when exists (
+      select 1 from public.community_team_members t
+       where t.user_id = u.id and t.status = 'active'
+    ) then 'facility'
+    else 'family'
+  end
+from auth.users u
+on conflict (user_id) do nothing;
+
+-- ---------------------------------------------------------------------------
 -- Role of the caller, taken from the session
 -- ---------------------------------------------------------------------------
 create or replace function public.app_role()

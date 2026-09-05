@@ -10,6 +10,10 @@ const PORT = Number(process.env.E2E_PORT ?? 3210);
 
 export default defineConfig({
   testDir: "./e2e",
+  // The Supabase journeys need their own server and their own backend; they
+  // run from playwright.supabase.config.ts.
+  testIgnore: /supabase-identity\.spec\.ts/,
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,

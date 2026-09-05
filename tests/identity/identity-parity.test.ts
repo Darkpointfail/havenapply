@@ -30,7 +30,6 @@ import {
   stackEnv,
   uniqueEmail,
   updateOwnMetadata,
-  type Account,
 } from "./harness";
 
 const run = promisify(execFile);

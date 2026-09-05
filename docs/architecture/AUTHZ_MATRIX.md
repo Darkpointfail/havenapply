@@ -7,6 +7,14 @@ backed by a row below.
 Guards live in `src/lib/security/guards.ts`:
 `requireFamily`, `requireStaff`, `requireAdmin`, `scopeToSite`, `requireCsrf`.
 
+Where the role and the scope come from depends on the backend, and on nothing
+else. In local mode the role is read from the credential record and the scope
+from the filesystem membership list. In Supabase mode both come from the
+database, keyed on the `auth.users` id that GoTrue verified: the role from
+`app_identities`, the scope from `staff_memberships`. Neither is ever read from
+`user_metadata`, from a request body, or from a query parameter. See
+`IDENTITY_PARITY.md`.
+
 Legend for **Scope**: what the caller can reach *after* the guard runs.
 `self` = the authenticated principal only. `own family` = rows owned by the
 principal's family. `member sites` = only sites present in
@@ -18,14 +26,14 @@ principal's family. `member sites` = only sites present in
 | --- | --- | --- | --- | --- | --- | --- |
 | `/api/auth/csrf` | GET | anonymous | — | — | n/a | — |
 | `/api/auth/me` | GET | any signed in | self | `currentPrincipal` | n/a | — |
-| `/api/auth/sign-in` | POST | anonymous | — | `verifyCredentials` | yes | per account + per origin |
-| `/api/auth/register` | POST | anonymous | family only | role forced to `family` | yes | per origin |
+| `/api/auth/sign-in` | POST | anonymous | — | local: `verifyCredentials`; Supabase: `signInWithPassword`, then role from `app_identities` | yes | per account + per origin |
+| `/api/auth/register` | POST | anonymous | family only | role forced to `family`; in Supabase mode the trigger sets it, not the payload | yes | per origin |
 | `/api/auth/verify-email` | POST | anonymous | token holder | single-use hashed token | yes | per origin |
 | `/api/auth/password-reset` | POST | anonymous | — | always 200, no enumeration | yes | per origin |
 | `/api/auth/password-reset` | PUT | anonymous | token holder | single-use, expiring, revokes sessions | yes | per origin |
 | `/api/auth/session` | GET | any | self | `currentPrincipal` | n/a | — |
 | `/api/auth/session` | POST | — | — | **removed** — returns 410 | n/a | — |
-| `/api/auth/session` | DELETE | any signed in | self | `currentPrincipal` + revoke | yes | — |
+| `/api/auth/session` | DELETE | any signed in | self | local: revoke the session record; Supabase: `auth.signOut` | yes | — |
 | `/api/auth/sign-up` | POST | anonymous | Supabase mode | Supabase admin API | — | — |
 
 ## Family data
@@ -67,7 +75,8 @@ The owner id always comes from the session; a body or query id can only select
 | Route | Method | Role | Scope | Guard |
 | --- | --- | --- | --- | --- |
 | `/api/staff/invitations` | POST | STAFF admin | one member site | `requireStaff` + `scopeToSite` + site-admin check |
-| `/api/staff/invitations/accept` | POST | anonymous | invited site only | single-use hashed token |
+| `/api/staff/invitations/accept` | POST | local: anonymous; Supabase: any signed in | invited site only | single-use hashed token. In Supabase mode `accept_staff_invitation()` spends the token and grants the membership in one statement, to the account in the session |
+| `/api/staff/bootstrap` | POST | operator secret | one site | `HAVEN_BOOTSTRAP_TOKEN`. Names the account by `userId` in Supabase mode: resolving an address to an account is not something a request does |
 
 ## Public
 

@@ -299,8 +299,14 @@ Not blocking the exit criteria, but open before a pilot:
 3. **Email delivery.** No transactional provider. Verification, reset and
    invitation tokens are hashed, expiring and single-use, but must currently be
    collected through the audited operator endpoints.
-4. **Supabase parity.** The credential lifecycle is implemented for the local
-   backend; in Supabase mode the guards read `auth.getUser()` and the
-   membership table must be provisioned there.
+4. **Supabase parity.** Done. Sign-in, sign-out and registration go through
+   Supabase Auth from the server, and identity is anchored on the verified
+   `auth.users` id: the role comes from `app_identities`, the scope from
+   `staff_memberships`, neither from `user_metadata` nor from a file. The
+   credential lifecycle — password hashing, reset, email verification — stays
+   local-only and refuses loudly in Supabase mode, where GoTrue owns it. See
+   `IDENTITY_PARITY.md`. One gap remains, documented there: the
+   `@supabase/ssr` session cookie is not `HttpOnly`, because the browser client
+   still refreshes the same session.
 5. **`/api/admissions/seed`** remains unauthenticated behind
    `NODE_ENV !== "production"`.

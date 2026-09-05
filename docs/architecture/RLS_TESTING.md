@@ -133,18 +133,41 @@ insertions, cible `on conflict` non inférable, périmètre du personnel lu dans
 la table au vocabulaire de rôles incompatible, audit écrit par une insertion
 refusée. Les cinq points sont corrigés et testés.
 
-### Écart restant, non traité ici
+### Écart d'identité, comblé depuis
 
-`src/lib/security/identity-store.ts` reste adossé au système de fichiers. En
-mode Supabase, `requireStaff` lit donc des adhésions absentes et refuse tout
-compte de résidence, alors même que les tables `staff_memberships`,
-`staff_invitations`, `security_audit_log` et `auth_rate_limits` existent et sont
-testées ici. Combler l'écart demande un chantier à part entière : les
-identifiants internes ont la forme `usr_<uuid>` et ne peuvent pas servir de clé
-étrangère vers `profiles.id`, si bien que le portage suppose de rattacher
-l'identité applicative aux comptes Supabase Auth, puis de déplacer sessions,
-invitations, limites de débit et audit. Tant que ce n'est pas fait, le mode
-Supabase est utilisable côté famille et pas côté résidence.
+Cette section signalait que `src/lib/security/identity-store.ts` restait adossé
+au système de fichiers, si bien qu'en mode Supabase `requireStaff` lisait des
+adhésions absentes et refusait tout compte de résidence.
+
+C'est fait. L'identité est désormais ancrée sur `auth.users.id` par la table
+`app_identities`, le rôle est lu dans la base et non dans `user_metadata`, et le
+périmètre vient de `staff_memberships` sous la sécurité au niveau des lignes.
+Voir `IDENTITY_PARITY.md` pour la conception, la migration des comptes existants
+et le comportement si une correspondance manque.
+
+## Suite d'identité, contre GoTrue et PostgREST
+
+Le harnais de `tests/rls` usurpe un principal en posant des revendications JWT
+dans une transaction. C'est fidèle pour les politiques, et insuffisant pour
+l'identité : cela suppose déjà connu l'UUID que l'on veut vérifier.
+`tests/identity` passe donc par le réseau.
+
+```bash
+npm run test:identity        # pile complète, base vide, 24 cas
+npm run test:e2e:supabase    # les mêmes parcours à travers l'application
+npm run identity:upgrade-check   # migration d'une base existante, puis retour arrière
+```
+
+`scripts/supabase-stack/stack.mjs` monte Postgres, GoTrue et PostgREST derrière
+un routeur d'une trentaine de lignes qui les présente sur une seule origine,
+comme le fait Kong. La CLI Supabase n'est pas utilisée : son conteneur de
+migration Realtime n'aboutit pas sur cet hôte, et l'application ne parle qu'à ces
+deux services. Ce que voit l'application est donc réel — des jetons émis par
+GoTrue contre de vraies lignes `auth.users`, et la sécurité au niveau des lignes
+appliquée par PostgREST.
+
+Les identifiants sont générés à chaque démarrage et écrits dans
+`.supabase-stack/`, ignoré par git. Rien ne pointe vers un projet distant.
 
 ## Base de test distante
 

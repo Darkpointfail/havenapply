@@ -4,6 +4,7 @@ Canonical backend / data architecture for HavenApply (US senior-living common ap
 
 | Doc | Contents |
 | --- | --- |
+| [AUDIT_UTILISABILITE_B2C_B2B.md](./AUDIT_UTILISABILITE_B2C_B2B.md) | **FR** — audit d’utilisabilité famille / résidence : blocages prouvés par exécution + plan d’exécution |
 | [AUDIT_ORGANISATION_IDENTITES.md](./AUDIT_ORGANISATION_IDENTITES.md) | **FR · Notion** — audit + architecture d’organisation (P/D/A/R, refs `HA-*`, écarts prototype) |
 | [DATA_MODEL.md](./DATA_MODEL.md) | Domains, ERD, enums, conventions, `organizations → communities` |
 | [BACKEND.md](./BACKEND.md) | Edge Functions, outbox, Realtime, jobs |

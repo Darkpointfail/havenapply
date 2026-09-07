@@ -1,19 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   SITE_ACCESS_COOKIE,
-  SITE_ACCESS_COOKIE_VALUE,
   SITE_ACCESS_PATH,
   isSiteAccessPublicPath,
   safeSiteNextPath,
+  siteAccessCookieValue,
+  siteAccessEnabled,
 } from "@/lib/site-access";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!isSiteAccessPublicPath(pathname)) {
-    const unlocked =
-      request.cookies.get(SITE_ACCESS_COOKIE)?.value === SITE_ACCESS_COOKIE_VALUE;
+  // The gate only exists when a password is configured; there is no built-in
+  // shared password any more.
+  if (siteAccessEnabled() && !isSiteAccessPublicPath(pathname)) {
+    const expected = await siteAccessCookieValue();
+    const unlocked = Boolean(expected) && request.cookies.get(SITE_ACCESS_COOKIE)?.value === expected;
     if (!unlocked) {
       const url = request.nextUrl.clone();
       url.pathname = SITE_ACCESS_PATH;

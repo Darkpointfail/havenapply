@@ -1,11 +1,14 @@
 import type { SessionUser } from "@/lib/auth-store";
 
 /**
- * When true: skip real accounts and open portals with demo sessions.
- * Keep false in production so Supabase Auth is used (visible in the dashboard).
- * Override locally with NEXT_PUBLIC_AUTH_OPEN_ACCESS=true if needed.
+ * Permanently disabled.
+ *
+ * This used to open every portal with a demo session when
+ * NEXT_PUBLIC_AUTH_OPEN_ACCESS was set. No environment variable can bring it
+ * back: identity now comes from a verified server session only. The demo user
+ * objects below are kept for fixtures and are never signed in.
  */
-export const AUTH_OPEN_ACCESS = process.env.NEXT_PUBLIC_AUTH_OPEN_ACCESS === "true";
+export const AUTH_OPEN_ACCESS = false as const;
 
 export const DEMO_FAMILY_USER: SessionUser = {
   id: "demo_family",

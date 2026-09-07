@@ -21,16 +21,88 @@ async function parse<T>(res: Response): Promise<ApiOk<T> | ApiFail> {
   return { ok: true, ...(json as T) };
 }
 
-export async function syncFamilySession(user: unknown | null) {
-  if (!user) {
-    await fetch("/api/auth/session", { method: "DELETE" }).catch(() => undefined);
-    return;
+/** Mutations must carry the double-submit CSRF header. */
+export async function csrfHeaders(): Promise<Record<string, string>> {
+  if (typeof document === "undefined") return {};
+  const fromCookie = document.cookie.match(/(?:^|;\s*)haven_csrf=([^;]+)/);
+  if (fromCookie) return { "x-haven-csrf": decodeURIComponent(fromCookie[1]) };
+  try {
+    const res = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+    const json = (await res.json()) as { csrfToken?: string };
+    return json.csrfToken ? { "x-haven-csrf": json.csrfToken } : {};
+  } catch {
+    return {};
   }
-  await fetch("/api/auth/session", {
+}
+
+/**
+ * Sign in against the server, which verifies the password and issues a
+ * revocable session cookie. Replaces the removed client-minted session.
+ */
+export async function serverSignIn(input: {
+  email: string;
+  password: string;
+  expectedRole?: string;
+}): Promise<ApiOk<{ user: Record<string, unknown> }> | ApiFail> {
+  const res = await fetch("/api/auth/sign-in", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user }),
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
+    body: JSON.stringify(input),
+  });
+  return parse(res);
+}
+
+export async function serverRegister(input: {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}): Promise<ApiOk<{ userId: string; verificationToken?: string }> | ApiFail> {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
+    body: JSON.stringify({ ...input, role: "family" }),
+  });
+  return parse(res);
+}
+
+/** Sign out: the server revokes the session record before clearing the cookie. */
+export async function serverSignOut() {
+  await fetch("/api/auth/session", {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: await csrfHeaders(),
   }).catch(() => undefined);
+}
+
+export type ServerIdentity = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  siteIds?: string[];
+  siteRoles?: { siteId: string; role: string }[];
+};
+
+/**
+ * Ask the server who the caller is.
+ * This is the only identity source for the browser: nothing is read from
+ * localStorage and nothing is asserted by the client.
+ */
+export async function fetchServerIdentity(): Promise<ServerIdentity | null> {
+  try {
+    const res = await fetch("/api/auth/me", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    const json = (await res.json()) as { user?: ServerIdentity | null };
+    return json.user ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchFamilyBundle(): Promise<ApiOk<{ bundle: FamilyBundle }> | ApiFail> {

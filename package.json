@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:auth": "node scripts/test-auth.mjs",
     "test:family": "vitest run src/lib/family",
     "cms:build": "node scripts/build-cms-nursing-homes.mjs",
-    "rpa:build": "python3 scripts/build-rpa-quebec.py"
+    "rpa:build": "python3 scripts/build-rpa-quebec.py",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
@@ -26,6 +27,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.43",
     "@types/react": "^19",

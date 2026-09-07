@@ -2,6 +2,7 @@ import { requireFamilyUser, jsonError, jsonOk } from "@/lib/family/authz";
 import { uploadDocument, removeDocument, replaceDocumentFile } from "@/lib/family/repository";
 import { validateUploadMeta } from "@/lib/family/validation";
 import type { DocCategoryId } from "@/lib/document-vault";
+import { requireCsrf } from "@/lib/security/guards";
 
 export async function GET() {
   const auth = await requireFamilyUser();
@@ -12,6 +13,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 
@@ -50,6 +54,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 
@@ -64,6 +71,9 @@ export async function DELETE(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 

@@ -68,7 +68,7 @@ describe("session tokens", () => {
 
 describe("validation", () => {
   it("rejects invalid email and postal code", () => {
-    expect(validateApplicantPatch({ email: "not-an-email" })).toMatch(/courriel/i);
+    expect(validateApplicantPatch({ email: "not-an-email" })).toMatch(/email/i);
     expect(validateSeniorPatchSafe({ zip: "12345" })).toMatch(/postal/i);
     expect(validateSeniorPatchSafe({ zip: "H2X 1Y4" })).toBeNull();
   });
@@ -80,14 +80,14 @@ describe("validation", () => {
         sizeBytes: 100,
         originalFilename: "x.exe",
       }),
-    ).toMatch(/Type de fichier/i);
+    ).toMatch(/file type/i);
     expect(
       validateUploadMeta({
         mimeType: "application/pdf",
         sizeBytes: MAX_DOC_UPLOAD_BYTES + 1,
         originalFilename: "big.pdf",
       }),
-    ).toMatch(/10 Mo/i);
+    ).toMatch(/10 MB/i);
   });
 });
 
@@ -282,6 +282,6 @@ describe("local family store persistence", () => {
         sizeBytes: 0,
         originalFilename: "empty.pdf",
       }),
-    ).toMatch(/vide/i);
+    ).toMatch(/empty/i);
   });
 });

@@ -1,8 +1,12 @@
 import { requireFamilyUser, jsonError, jsonOk } from "@/lib/family/authz";
 import { persistApplications } from "@/lib/family/repository";
 import type { FamilyApplication } from "@/lib/family-applications";
+import { requireCsrf } from "@/lib/security/guards";
 
 export async function PUT(request: Request) {
+  const csrfCheck = await requireCsrf(request);
+  if (!csrfCheck.ok) return jsonError(csrfCheck.error, csrfCheck.status);
+
   const auth = await requireFamilyUser();
   if (!auth.ok) return jsonError(auth.error, auth.status);
 

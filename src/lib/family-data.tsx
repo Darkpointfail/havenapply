@@ -330,6 +330,8 @@ function publishToServer(data: FamilyData, submitted: FamilyApplication) {
     careNeeds,
     medicalHighlights: medical,
     seniorPhotoUrl: data.senior.photoDataUrl || data.residentDossier?.photoDataUrl || null,
+    residentDossier: data.residentDossier,
+    completionPercent: computeCompleteness(data),
     documentMeta: data.documents
       .filter((d) => submitted.attachedDocumentIds.includes(d.id))
       .map((d) => ({ id: d.id, name: d.name, category: d.category, shared: true })),

@@ -161,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               name: identity.name || identity.email,
               role,
               emailConfirmed: true,
+              communityStatus: isFacilityRole(role) ? "verified" : undefined,
               onboardingCompleted: true,
             }
           : null,
@@ -283,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: identity.name || identity.email,
         role,
         emailConfirmed: true,
+        communityStatus: isFacilityRole(role) ? "verified" : undefined,
         onboardingCompleted: true,
       };
       // Keep the local profile store in step when it knows this account.

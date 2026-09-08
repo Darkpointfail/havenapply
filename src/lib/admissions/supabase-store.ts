@@ -70,6 +70,10 @@ function rowToRecord(row: Row): AdmissionApplicationRecord {
       phone: str(contact.phone),
       relationship: str(contact.relationship),
     },
+    dossierSnapshot:
+      payload.dossierSnapshot && typeof payload.dossierSnapshot === "object"
+        ? (payload.dossierSnapshot as AdmissionApplicationRecord["dossierSnapshot"])
+        : null,
     desiredMoveIn: (row.desired_move_in as string | null) ?? null,
     waitlistPosition:
       typeof payload.waitlistPosition === "number" ? payload.waitlistPosition : null,
@@ -104,6 +108,7 @@ function payloadFromInput(input: AdmissionSubmitInput, familyEmail: string, site
       phone: input.familyContact?.phone ?? "",
       relationship: input.familyContact?.relationship ?? "",
     },
+    dossierSnapshot: input.dossierSnapshot ?? null,
     waitlistPosition: null,
     decision: null,
   };

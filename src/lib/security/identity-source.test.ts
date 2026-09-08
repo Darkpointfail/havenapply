@@ -17,6 +17,7 @@ describe("identity source", () => {
   it("restores the signed-in user from the server, not from localStorage", async () => {
     const auth = await read("lib/auth.tsx");
     expect(auth).toContain("fetchServerIdentity");
+    expect(auth).toContain('communityStatus: isFacilityRole(role) ? "verified" : undefined');
     // `readSession()` read `haven-auth` from localStorage.
     expect(auth).not.toMatch(/\breadSession\(/);
   });

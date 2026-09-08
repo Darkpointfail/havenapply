@@ -137,6 +137,7 @@ function applyInput(
       phone: input.familyContact?.phone?.trim() ?? record.familyContact.phone,
       relationship: input.familyContact?.relationship?.trim() || record.familyContact.relationship,
     },
+    dossierSnapshot: input.dossierSnapshot ?? record.dossierSnapshot,
     desiredMoveIn: input.desiredMoveIn ?? record.desiredMoveIn,
     updatedAt: nowIso(),
   };
@@ -171,6 +172,7 @@ function blankRecord(args: {
       phone: "",
       relationship: "",
     },
+    dossierSnapshot: null,
     desiredMoveIn: null,
     waitlistPosition: null,
     decision: null,

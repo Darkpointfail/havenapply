@@ -224,6 +224,8 @@ export type ClientDossier = {
   insuranceSecondary?: string;
   pathologies: PathologyEntry[];
   medications: MedicationEntry[];
+  /** Verbatim family-supplied list when medications are not yet structured. */
+  medicationNotes?: string;
   allergies: { substance: string; reaction: string; severity?: string }[];
   previousFacilities: PreviousFacility[];
   hospitalizations?: string[];
@@ -273,8 +275,32 @@ export type CommunityApplication = {
   emergencyContact?: {
     name: string;
     phone: string;
+    email?: string;
     relationship: string;
   };
+  secondaryContact?: {
+    name: string;
+    phone: string;
+    email?: string;
+    relationship: string;
+  };
+  dossierCompleteness?: {
+    percent: number;
+    missingItems: string[];
+    missingDocuments: string[];
+  };
+  dossierLastUpdated?: string | null;
+  housingPreferences?: {
+    communityTypes: string[];
+    preferredCities: string;
+    roomPreference: string;
+    specialPreferences: string[];
+    specialPreferencesNotes: string;
+    budgetMin: string;
+    budgetMax: string;
+  };
+  communicationPreference?: string;
+  decisionAuthority?: string;
   paymentMethod?: string;
   moveInRequested?: string;
   status: ApplicationStatus;

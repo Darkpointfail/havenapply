@@ -49,6 +49,60 @@ export type AdmissionFamilyContact = {
   relationship: string;
 };
 
+/**
+ * Consent-gated dossier snapshot shared with one target residence.
+ *
+ * This is deliberately an allow-list: identifiers used for insurance,
+ * government programs and banking never belong in the admissions payload.
+ */
+export type AdmissionDossierSnapshot = {
+  updatedAt: string | null;
+  completeness: {
+    percent: number;
+    missingItems: string[];
+    missingDocuments: string[];
+  };
+  context: {
+    currentAddress: string;
+    currentLivingSituation: string;
+    primaryLanguage: string;
+    referralSource: string;
+  };
+  housing: {
+    communityTypes: string[];
+    preferredCities: string;
+    roomPreference: string;
+    specialPreferences: string[];
+    specialPreferencesNotes: string;
+    budgetMin: string;
+    budgetMax: string;
+  };
+  autonomy: {
+    level: string;
+    mobility: string;
+    mobilityDevices: string[];
+    adls: Record<string, string>;
+    continence: string;
+    memoryCognition: string[];
+    nutrition: string[];
+    specialCareNeeds: string;
+  };
+  clinical: {
+    diagnoses: string;
+    medicalConditions: string;
+    currentMedications: string;
+    allergies: string;
+    medicationAllergies: string;
+    pharmacy: string;
+    physician: string;
+    physicianPhone: string;
+  };
+  emergencyContact: AdmissionFamilyContact | null;
+  secondaryContact: AdmissionFamilyContact | null;
+  communicationPreference: string;
+  decisionAuthority: string;
+};
+
 export type AdmissionDecision = {
   kind: string;
   note: string | null;
@@ -76,6 +130,7 @@ export type AdmissionApplicationRecord = {
   /** Metadata only — file bytes are not shared with staff in this milestone. */
   documents: AdmissionDocumentMeta[];
   familyContact: AdmissionFamilyContact;
+  dossierSnapshot: AdmissionDossierSnapshot | null;
   desiredMoveIn: string | null;
   waitlistPosition: number | null;
   decision: AdmissionDecision;
@@ -145,6 +200,7 @@ export type AdmissionSubmitInput = {
   medicalHighlights?: string[];
   documents?: AdmissionDocumentMeta[];
   familyContact?: Partial<AdmissionFamilyContact>;
+  dossierSnapshot?: AdmissionDossierSnapshot | null;
   desiredMoveIn?: string | null;
 };
 

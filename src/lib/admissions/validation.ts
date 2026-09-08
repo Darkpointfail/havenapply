@@ -3,7 +3,10 @@
  * Rejects anything the client is not allowed to state, and caps sizes.
  */
 
-import type { AdmissionSubmitInput } from "@/lib/admissions/types";
+import type {
+  AdmissionDossierSnapshot,
+  AdmissionSubmitInput,
+} from "@/lib/admissions/types";
 
 const MAX_TEXT = 2000;
 const MAX_LIST = 40;
@@ -24,6 +27,85 @@ function stringList(value: unknown): string[] | undefined {
     .map((v) => v.trim())
     .filter(Boolean)
     .slice(0, MAX_LIST);
+}
+
+function dossierSnapshot(value: unknown): AdmissionDossierSnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const completeness = (raw.completeness ?? {}) as Record<string, unknown>;
+  const context = (raw.context ?? {}) as Record<string, unknown>;
+  const housing = (raw.housing ?? {}) as Record<string, unknown>;
+  const autonomy = (raw.autonomy ?? {}) as Record<string, unknown>;
+  const clinical = (raw.clinical ?? {}) as Record<string, unknown>;
+  const contact = (candidate: unknown) => {
+    if (!candidate || typeof candidate !== "object") return null;
+    const row = candidate as Record<string, unknown>;
+    return {
+      name: text(row.name, 200) ?? "",
+      email: (text(row.email, 320) ?? "").toLowerCase(),
+      phone: text(row.phone, 60) ?? "",
+      relationship: text(row.relationship, 120) ?? "",
+    };
+  };
+  const adls =
+    autonomy.adls && typeof autonomy.adls === "object"
+      ? Object.fromEntries(
+          Object.entries(autonomy.adls as Record<string, unknown>)
+            .slice(0, 20)
+            .map(([key, entry]) => [key.slice(0, 80), text(entry, 160) ?? ""]),
+        )
+      : {};
+
+  return {
+    updatedAt: text(raw.updatedAt, 64) ?? null,
+    completeness: {
+      percent:
+        typeof completeness.percent === "number" && Number.isFinite(completeness.percent)
+          ? Math.max(0, Math.min(100, Math.round(completeness.percent)))
+          : 0,
+      missingItems: stringList(completeness.missingItems) ?? [],
+      missingDocuments: stringList(completeness.missingDocuments) ?? [],
+    },
+    context: {
+      currentAddress: text(context.currentAddress, 500) ?? "",
+      currentLivingSituation: text(context.currentLivingSituation, 300) ?? "",
+      primaryLanguage: text(context.primaryLanguage, 120) ?? "",
+      referralSource: text(context.referralSource, 120) ?? "",
+    },
+    housing: {
+      communityTypes: stringList(housing.communityTypes) ?? [],
+      preferredCities: text(housing.preferredCities, 500) ?? "",
+      roomPreference: text(housing.roomPreference, 160) ?? "",
+      specialPreferences: stringList(housing.specialPreferences) ?? [],
+      specialPreferencesNotes: text(housing.specialPreferencesNotes, 1000) ?? "",
+      budgetMin: text(housing.budgetMin, 80) ?? "",
+      budgetMax: text(housing.budgetMax, 80) ?? "",
+    },
+    autonomy: {
+      level: text(autonomy.level, 160) ?? "",
+      mobility: text(autonomy.mobility, 160) ?? "",
+      mobilityDevices: stringList(autonomy.mobilityDevices) ?? [],
+      adls,
+      continence: text(autonomy.continence, 160) ?? "",
+      memoryCognition: stringList(autonomy.memoryCognition) ?? [],
+      nutrition: stringList(autonomy.nutrition) ?? [],
+      specialCareNeeds: text(autonomy.specialCareNeeds, MAX_TEXT) ?? "",
+    },
+    clinical: {
+      diagnoses: text(clinical.diagnoses, MAX_TEXT) ?? "",
+      medicalConditions: text(clinical.medicalConditions, MAX_TEXT) ?? "",
+      currentMedications: text(clinical.currentMedications, MAX_TEXT) ?? "",
+      allergies: text(clinical.allergies, MAX_TEXT) ?? "",
+      medicationAllergies: text(clinical.medicationAllergies, MAX_TEXT) ?? "",
+      pharmacy: text(clinical.pharmacy, 300) ?? "",
+      physician: text(clinical.physician, 300) ?? "",
+      physicianPhone: text(clinical.physicianPhone, 60) ?? "",
+    },
+    emergencyContact: contact(raw.emergencyContact),
+    secondaryContact: contact(raw.secondaryContact),
+    communicationPreference: text(raw.communicationPreference, 200) ?? "",
+    decisionAuthority: text(raw.decisionAuthority, 200) ?? "",
+  };
 }
 
 export function parseSubmitInput(body: unknown): ValidationResult<AdmissionSubmitInput> {
@@ -72,6 +154,7 @@ export function parseSubmitInput(body: unknown): ValidationResult<AdmissionSubmi
         phone: text(contact.phone, 60) ?? "",
         relationship: text(contact.relationship, 120) ?? "",
       },
+      dossierSnapshot: dossierSnapshot(raw.dossierSnapshot),
       desiredMoveIn: text(raw.desiredMoveIn, 120) ?? null,
     },
   };

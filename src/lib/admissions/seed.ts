@@ -68,6 +68,7 @@ function seedApplication(args: {
       phone: "",
       relationship: "Enfant",
     },
+    dossierSnapshot: null,
     desiredMoveIn: null,
     waitlistPosition: null,
     decision: null,

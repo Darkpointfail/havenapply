@@ -252,7 +252,11 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       setReady(true);
     };
 
-    void load();
+    void load().catch(() => {
+      if (cancelled) return;
+      setWorkspace(null);
+      setReady(true);
+    });
     return () => {
       cancelled = true;
     };

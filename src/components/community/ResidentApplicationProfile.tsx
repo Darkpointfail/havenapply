@@ -313,10 +313,31 @@ export function ResidentApplicationProfile() {
     };
   }, [app]);
 
-  if (!ready || !workspace) {
+  if (!ready) {
     return (
       <div className="rc-console flex min-h-screen items-center justify-center">
         Chargement du dossier…
+      </div>
+    );
+  }
+
+  if (!workspace) {
+    return (
+      <div className="rc-console rp-load-error">
+        <div className="rp-card">
+          <h1>Impossible de charger le dossier</h1>
+          <p>
+            Vérifiez que votre compte possède un accès actif à cette résidence, puis réessayez.
+          </p>
+          <div>
+            <button className="rp-button rp-button--primary" onClick={() => window.location.reload()}>
+              Réessayer
+            </button>
+            <button className="rp-button rp-button--outline" onClick={() => router.push("/community/dashboard")}>
+              Retour aux demandes
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

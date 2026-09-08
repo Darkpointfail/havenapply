@@ -31,6 +31,7 @@ async function call<T>(input: RequestInfo, init?: RequestInit): Promise<Envelope
     const res = await fetch(input, {
       credentials: "same-origin",
       ...init,
+      signal: init?.signal ?? AbortSignal.timeout(10_000),
       headers: { "Content-Type": "application/json", ...extra, ...(init?.headers ?? {}) },
     });
     const json = (await res.json()) as Envelope<T>;

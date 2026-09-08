@@ -97,6 +97,7 @@ export async function fetchServerIdentity(): Promise<ServerIdentity | null> {
     const res = await fetch("/api/auth/me", {
       credentials: "same-origin",
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
     const json = (await res.json()) as { user?: ServerIdentity | null };
     return json.user ?? null;

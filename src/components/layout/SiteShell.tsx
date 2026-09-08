@@ -40,6 +40,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const isCommunityConsoleUi =
     pathname === "/community/dashboard" ||
     pathname.startsWith("/community/console") ||
+    pathname.startsWith("/community/applications/") ||
     pathname === "/community/profile";
   const isCommunity = pathname.startsWith("/community") || pathname.startsWith("/admin");
   const isProfessional = isProfessionalPortalPath(pathname);

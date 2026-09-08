@@ -347,9 +347,106 @@ function AccountMenu() {
   );
 }
 
-export function ResidenceConsole() {
+export function ResidenceConsoleShell({
+  activeView,
+  activeCount,
+  title,
+  subtitle,
+  search,
+  onSearch,
+  onNavigate,
+  children,
+}: {
+  activeView: ConsoleView;
+  activeCount: number;
+  title: string;
+  subtitle: string;
+  search?: string;
+  onSearch?: (value: string) => void;
+  onNavigate: (view: ConsoleView) => void;
+  children: React.ReactNode;
+}) {
+  const t = useT();
   const { user } = useAuth();
+
+  return (
+    <div className="rc-console flex min-h-screen w-full">
+      <aside className="sticky top-0 flex h-screen w-[262px] shrink-0 flex-col bg-[var(--rc-black)] text-white">
+        <div className="flex items-center gap-3 px-5 pb-6 pt-7">
+          <div>
+            <Logo
+              href="/community/dashboard"
+              size="nav"
+              light
+              className="!ml-0 !translate-y-0"
+            />
+            <p
+              className="mt-1.5 text-[12px] font-semibold uppercase tracking-[0.1em]"
+              style={{ color: "#8E9B96" }}
+            >
+              {t("Residence console")}
+            </p>
+          </div>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-1 px-3" aria-label={t("Residence console")}>
+          {NAV.map((item) => {
+            const active =
+              activeView === item.id || (item.id === "demandes" && activeView === "dossier");
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                className="flex items-center gap-3 rounded-[7px] px-[14px] py-[11px] text-left text-[14.5px] transition-colors"
+                style={{
+                  background: active ? "var(--rc-black-soft)" : "transparent",
+                  color: active ? "#fff" : "#C5D2CD",
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ background: "currentColor" }}
+                  aria-hidden
+                />
+                <span className="flex-1">{t(item.label)}</span>
+                {item.badge ? (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--rc-terra)] px-1.5 text-[11px] font-semibold text-white">
+                    {activeCount}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto border-t border-white/10 px-5 py-5">
+          <p className="rc-label" style={{ color: "#8E9B96" }}>
+            {t("Residence")}
+          </p>
+          <p className="mt-1.5 text-[14px] font-medium leading-snug text-white">
+            {user?.organization?.trim() || RESIDENCE.name}
+          </p>
+          <AccountMenu />
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <ViewHeader
+          title={title}
+          subtitle={subtitle}
+          search={search}
+          onSearch={onSearch}
+        />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function ResidenceConsole() {
   const portal = useCommunityPortal();
+  const router = useRouter();
   const t = useT();
   const [view, setView] = useState<ConsoleView>("demandes");
   const [filter, setFilter] = useState<FilterId>("All");
@@ -422,9 +519,7 @@ export function ResidenceConsole() {
   }, [demandes, filter, search]);
 
   const openDossier = (id: string) => {
-    setSelId(id);
-    setAccepting(false);
-    setView("dossier");
+    router.push(`/community/applications/${encodeURIComponent(id)}`);
   };
 
   const acceptWithUrgence = (demandeId: string, urgence: UrgenceLevel) => {
@@ -497,92 +592,19 @@ export function ResidenceConsole() {
   const meta = titles[view];
 
   return (
-    <div className="rc-console flex min-h-screen w-full">
-      {/* Sidebar */}
-      <aside className="sticky top-0 flex h-screen w-[262px] shrink-0 flex-col bg-[var(--rc-black)] text-white">
-        <div className="flex items-center gap-3 px-5 pb-6 pt-7">
-          <div>
-            <Logo
-              href="/community/dashboard"
-              size="nav"
-              light
-              className="!ml-0 !translate-y-0"
-            />
-            <p
-              className="mt-1.5 text-[12px] font-semibold uppercase tracking-[0.1em]"
-              style={{ color: "#8E9B96" }}
-            >
-              {t("Residence console")}
-            </p>
-          </div>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-1 px-3">
-          {NAV.map((item) => {
-            const active =
-              view === item.id || (item.id === "demandes" && view === "dossier");
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setView(item.id);
-                  setAccepting(false);
-                  if (item.id !== "dossier") setSelId(null);
-                }}
-                className="flex items-center gap-3 rounded-[7px] text-left text-[14.5px] transition-colors"
-                style={{
-                  padding: "11px 14px",
-                  background: active ? "var(--rc-black-soft)" : "transparent",
-                  color: active ? "#fff" : "#C5D2CD",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = "var(--rc-black-soft)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span
-                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: "currentColor" }}
-                />
-                <span className="flex-1">{t(item.label)}</span>
-                {item.badge ? (
-                  <span
-                    className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white"
-                    style={{ background: "var(--rc-terra)" }}
-                  >
-                    {activeCount}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto border-t border-white/10 px-5 py-5">
-          <p className="rc-label" style={{ color: "#8E9B96" }}>
-            {t("Residence")}
-          </p>
-          <p className="mt-1.5 text-[14px] font-medium leading-snug text-white">
-            {user?.organization?.trim() || RESIDENCE.name}
-          </p>
-          <AccountMenu />
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <ViewHeader
-          title={meta.title}
-          subtitle={meta.subtitle}
-          search={view === "demandes" || view === "dossier" ? search : undefined}
-          onSearch={
-            view === "demandes" || view === "dossier" ? setSearch : undefined
-          }
-        />
-
+    <ResidenceConsoleShell
+      activeView={view}
+      activeCount={activeCount}
+      title={meta.title}
+      subtitle={meta.subtitle}
+      search={view === "demandes" || view === "dossier" ? search : undefined}
+      onSearch={view === "demandes" || view === "dossier" ? setSearch : undefined}
+      onNavigate={(nextView) => {
+        setView(nextView);
+        setAccepting(false);
+        if (nextView !== "dossier") setSelId(null);
+      }}
+    >
         <div className="flex-1 overflow-auto px-[34px] pb-[46px] pt-[30px]">
           {view === "demandes" && (
             <DemandesView
@@ -644,8 +666,7 @@ export function ResidenceConsole() {
           {view === "tableau" && <TableauView />}
           {view === "etablissement" && <EtablissementView />}
         </div>
-      </div>
-    </div>
+    </ResidenceConsoleShell>
   );
 }
 

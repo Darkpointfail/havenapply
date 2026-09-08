@@ -1013,6 +1013,35 @@
   margin: 8px 0 20px;
 }
 
+.rp-load-error {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.rp-load-error > div {
+  width: min(520px, 100%);
+  padding: 28px;
+}
+
+.rp-load-error h1 {
+  font-family: var(--rc-font-serif);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.rp-load-error p {
+  margin: 8px 0 20px;
+  color: var(--rc-ink-muted);
+}
+
+.rp-load-error > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (max-width: 980px) {
   .rp-profile {
     padding-inline: 22px;

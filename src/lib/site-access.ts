@@ -6,6 +6,8 @@ export const SITE_ACCESS_COOKIE = "haven_site_access";
 
 export const SITE_ACCESS_PATH = "/site-access";
 export const SITE_ACCESS_API_PATH = "/api/site-access";
+/** Midnight in Montréal (EDT) on the announced launch date. */
+export const PUBLIC_LAUNCH_AT = Date.UTC(2026, 9, 1, 4, 0, 0);
 
 /** Reject absurd payloads before any comparison. */
 export const SITE_ACCESS_PASSWORD_MAX_LENGTH = 128;
@@ -24,9 +26,12 @@ export async function siteAccessCookieValue(): Promise<string | null> {
   return Buffer.from(digest).toString("base64url");
 }
 
-/** The gate is inert when no password is configured. */
+/**
+ * Keep the launch gate closed until the announced date, even if deployment
+ * configuration is incomplete. A missing password must fail closed.
+ */
 export function siteAccessEnabled(): boolean {
-  return siteAccessPassword() !== null;
+  return Date.now() < PUBLIC_LAUNCH_AT;
 }
 
 export function configuredSitePassword(): string | null {
@@ -37,8 +42,7 @@ export function isSiteAccessPublicPath(pathname: string): boolean {
   return (
     pathname === SITE_ACCESS_PATH ||
     pathname === SITE_ACCESS_API_PATH ||
-    pathname.startsWith(`${SITE_ACCESS_API_PATH}/`) ||
-    pathname === "/media"
+    pathname.startsWith(`${SITE_ACCESS_API_PATH}/`)
   );
 }
 

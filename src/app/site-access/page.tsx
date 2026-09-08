@@ -2,7 +2,7 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock } from "lucide-react";
+import { CalendarDays, Lock } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/locale";
@@ -58,17 +58,27 @@ function SiteAccessForm() {
             <Logo href="/" size="nav" className="!ml-0 !translate-y-0" />
           </div>
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-ink">
-            {t("Private preview")}
+            HavenApply arrive le 1er octobre
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">
-            {t("Enter the access password to continue to the site.")}
+            Nous finalisons actuellement le logiciel afin de préparer son lancement officiel.
           </p>
+          <div className="mx-auto mt-5 flex w-fit items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-4 py-2 text-sm font-medium text-brand-strong">
+            <CalendarDays size={16} aria-hidden />
+            Lancement officiel le 1er octobre 2026
+          </div>
         </div>
 
         <form
           onSubmit={onSubmit}
           className="rounded-[1.75rem] border border-line/80 bg-surface/95 p-6 shadow-sm md:p-7"
         >
+          <div className="mb-5">
+            <p className="text-base font-semibold text-ink">Accès privé</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+              Cet accès est réservé au propriétaire de HavenApply pendant la finalisation.
+            </p>
+          </div>
           <label className="block">
             <span className="text-sm font-medium text-ink">{t("Password")}</span>
             <div className="relative mt-2">

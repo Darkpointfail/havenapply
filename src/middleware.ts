@@ -12,8 +12,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // The gate only exists when a password is configured; there is no built-in
-  // shared password any more.
+  // Closed until launch. Missing deployment configuration fails closed; there
+  // is no built-in shared password.
   if (siteAccessEnabled() && !isSiteAccessPublicPath(pathname)) {
     const expected = await siteAccessCookieValue();
     const unlocked = Boolean(expected) && request.cookies.get(SITE_ACCESS_COOKIE)?.value === expected;

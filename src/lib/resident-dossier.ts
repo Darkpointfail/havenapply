@@ -1169,3 +1169,120 @@ export function trackingLabel(status: ApplicationStatus): string {
 }
 
 export { emptySeniorProfile };
+
+// --- Bridge: turn the family's filled ResidentDossier into the structured
+// `dossier` payload the residence console (ClientDossier / DossierView)
+// expects. Without this, only a truncated 2-5 item summary reaches the
+// residence at submission time — the rich medications/allergies/ADL detail
+// the family filled in never leaves their browser. See mapping.ts /
+// community-portal.ts's ClientDossier for the target shape.
+
+function splitFreeText(text: string | undefined | null, max = 12): string[] {
+  if (!text) return [];
+  return text
+    .split(/\r?\n|,|;/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, max);
+}
+
+function adlLevelLabel(levelId: string | undefined): string {
+  if (!levelId) return "";
+  const found = ADL_ASSIST_LEVELS.find((l) => l.id === levelId);
+  return found?.label || levelId;
+}
+
+function fallHistorySummary(rd: ResidentDossier): string | undefined {
+  const parts: string[] = [];
+  if (rd.fallRisk === "yes") parts.push("Identified fall risk");
+  if (rd.fallsPast90Days === "yes") {
+    parts.push(
+      `Fall(s) in the last 90 days${rd.fallsCount ? ` (${rd.fallsCount})` : ""}`,
+    );
+  }
+  if (rd.fallsInjuryDetails) parts.push(rd.fallsInjuryDetails);
+  return parts.length ? parts.join(" · ") : undefined;
+}
+
+function fundingSourcesSummary(rd: ResidentDossier): string[] {
+  const sources: string[] = [];
+  if (rd.governmentAssistance) sources.push(rd.governmentAssistance);
+  if (rd.veteransBenefits === "yes") sources.push("Veterans benefits");
+  if (rd.longTermCareInsurance === "yes") sources.push("Long-term care insurance");
+  if (rd.primaryPayor) sources.push(rd.primaryPayor);
+  return sources;
+}
+
+/**
+ * Maps the family-facing wizard state to the structure the residence
+ * console reads via CommunityApplication.dossier. Best-effort: the two
+ * forms were not designed together, so free-text fields are split
+ * heuristically rather than truly structured.
+ */
+export function residentDossierToClientDossier(
+  rd: ResidentDossier,
+): Record<string, unknown> {
+  const addressParts = [rd.address, rd.city, rd.state, rd.zip].filter(Boolean);
+
+  return {
+    dateOfBirth: rd.dateOfBirth || "",
+    gender: rd.gender || "",
+    primaryLanguage: rd.primaryLanguage || "",
+    maritalStatus: rd.maritalStatus || undefined,
+    height: rd.height || undefined,
+    weight: rd.weight || undefined,
+    currentAddress: addressParts.length ? addressParts.join(", ") : undefined,
+    currentLivingSituation: rd.livingSituation || "",
+
+    pathologies: splitFreeText(rd.diagnoses || rd.medicalConditions).map((name) => ({
+      name,
+      status: "active" as const,
+    })),
+    medications: splitFreeText(rd.currentMedications).map((name) => ({
+      name,
+      dose: "",
+      frequency: "",
+    })),
+    allergies: [
+      ...splitFreeText(rd.medicationAllergies),
+      ...splitFreeText(rd.foodEnvironmentalAllergies),
+      ...splitFreeText(rd.allergies),
+    ].map((substance) => ({ substance, reaction: "" })),
+    previousFacilities: [],
+    hospitalizations: splitFreeText(rd.recentHospitalizations),
+    surgeries: splitFreeText(rd.pastSurgeries),
+    vaccinations: splitFreeText(rd.vaccinationStatus),
+
+    adls: ADL_CARD_ACTIVITIES.map(({ id, label }) => ({
+      activity: label,
+      level: adlLevelLabel(rd.adls?.[id]),
+    })).filter((entry) => entry.level),
+    mobilityAids: rd.mobilityDevices?.length ? rd.mobilityDevices : undefined,
+    diet: rd.dietaryRequirements || undefined,
+    continence: rd.continence || undefined,
+    cognitiveNotes: [
+      ...(rd.memoryCognition || []),
+      rd.behavioralConcerns,
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined,
+    fallHistory: fallHistorySummary(rd),
+    socialSupports: rd.familyMembers?.length
+      ? `${rd.familyMembers.length} family contact(s) on file`
+      : undefined,
+
+    desiredMoveInTimeframe: rd.desiredMoveIn || undefined,
+    preferredLocations: splitFreeText(rd.preferredCities),
+    budgetMonthly: rd.budgetMax || rd.budgetMin || rd.maxMonthlyBudget || undefined,
+    fundingSources: fundingSourcesSummary(rd),
+
+    unitType: rd.roomPreference || undefined,
+    accessibilityNeeds: rd.mobility || undefined,
+    importantPreferences: rd.specialPreferences?.length
+      ? rd.specialPreferences
+      : undefined,
+    nonNegotiables: rd.specialPreferencesNotes
+      ? splitFreeText(rd.specialPreferencesNotes)
+      : undefined,
+  };
+}

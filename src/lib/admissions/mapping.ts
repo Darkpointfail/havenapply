@@ -289,6 +289,7 @@ export function admissionInputFromFamilyApplication(
         }
       : null,
     desiredMoveIn: app.desiredMoveIn ?? null,
+    dossier: extras.dossier ?? null,
   };
 }
 

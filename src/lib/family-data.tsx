@@ -71,6 +71,7 @@ import { ensureApplicationPublicRef, ensureDossierPublicRef, ensurePersonPublicR
 import {
   emptyResidentDossier,
   migrateResidentDossier,
+  residentDossierToClientDossier,
   syncDossierToFamily,
   type ResidentDossier,
 } from "@/lib/resident-dossier";
@@ -386,6 +387,11 @@ function publishToServer(data: FamilyData, submitted: FamilyApplication) {
     documentMeta: data.documents
       .filter((d) => submitted.attachedDocumentIds.includes(d.id))
       .map((d) => ({ id: d.id, name: d.name, category: d.category, shared: true })),
+    // Full clinical/situation/housing detail the family filled in — without
+    // this only the truncated summary above reaches the residence.
+    dossier: data.residentDossier
+      ? residentDossierToClientDossier(data.residentDossier)
+      : null,
   });
 
   void apiSubmitAdmission(input);

@@ -11,6 +11,7 @@ import type {
 const MAX_TEXT = 2000;
 const MAX_LIST = 40;
 const MAX_DOCS = 50;
+const MAX_DOSSIER_BYTES = 40_000;
 
 export type ValidationResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -156,6 +157,7 @@ export function parseSubmitInput(body: unknown): ValidationResult<AdmissionSubmi
       },
       dossierSnapshot: dossierSnapshot(raw.dossierSnapshot),
       desiredMoveIn: text(raw.desiredMoveIn, 120) ?? null,
+      dossier: dossierPayload(raw.dossier),
     },
   };
 }

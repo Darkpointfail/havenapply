@@ -73,6 +73,15 @@ export type StaffInvitationRecord = {
   createdAt: string;
 };
 
+export type SiteClaimRecord = {
+  id: string;
+  siteId: string;
+  tokenHash: string;
+  createdAt: string;
+  claimedAt: string | null;
+  claimedByUserId: string | null;
+};
+
 export type AuditEventRecord = {
   id: string;
   at: string;
@@ -95,6 +104,7 @@ type IdentityState = {
   sessions: SessionRecord[];
   memberships: StaffMembershipRecord[];
   invitations: StaffInvitationRecord[];
+  siteClaims: SiteClaimRecord[];
   audit: AuditEventRecord[];
   rateLimits: RateLimitRecord[];
 };
@@ -104,6 +114,7 @@ const EMPTY: IdentityState = {
   sessions: [],
   memberships: [],
   invitations: [],
+  siteClaims: [],
   audit: [],
   rateLimits: [],
 };
@@ -129,6 +140,7 @@ async function readState(): Promise<IdentityState> {
       sessions: parsed.sessions ?? [],
       memberships: parsed.memberships ?? [],
       invitations: parsed.invitations ?? [],
+      siteClaims: parsed.siteClaims ?? [],
       audit: parsed.audit ?? [],
       rateLimits: parsed.rateLimits ?? [],
     };
@@ -295,6 +307,11 @@ export async function listMembershipsByUser(userId: string): Promise<StaffMember
   return state.memberships.filter((m) => m.userId === userId && m.status === "active");
 }
 
+export async function listMembershipsBySite(siteId: string): Promise<StaffMembershipRecord[]> {
+  const state = await readState();
+  return state.memberships.filter((m) => m.siteId === siteId && m.status === "active");
+}
+
 export async function upsertMembership(input: {
   userId: string;
   email: string;
@@ -388,6 +405,105 @@ export async function revokeInvitation(id: string): Promise<void> {
   await withState((state) => {
     const index = state.invitations.findIndex((i) => i.id === id);
     if (index >= 0) state.invitations[index] = { ...state.invitations[index], revokedAt: nowIso() };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Site claims — free self-serve access for a non-client residence.
+//
+// When a family sends a dossier to a residence that has no staff on
+// HavenApply yet, that residence needs a way to claim its own access without
+// an existing admin inviting them (the invitation flow above requires one).
+// A claim token is scoped to a site and can only ever be consumed while that
+// site has zero active staff — it cannot be used to hijack an already-active
+// client's site, even if the token or link leaks.
+// ---------------------------------------------------------------------------
+
+/**
+ * Mints a fresh, single-use claim token for a site — mirrors
+ * createInvitation() above: the raw token is only ever known at creation
+ * time, matching the "operator reads it back for out-of-band delivery"
+ * pattern used everywhere else until a mail transport exists. Safe to call
+ * repeatedly for the same still-unclaimed site: whichever token is used
+ * first wins, and consumeSiteClaim() re-checks the site has no active staff
+ * at consumption time regardless of which valid token is presented.
+ */
+export async function createSiteClaim(
+  siteId: string,
+): Promise<{ record: SiteClaimRecord; token: string }> {
+  return withState((state) => {
+    const token = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    const record: SiteClaimRecord = {
+      id: `claim_${randomUUID()}`,
+      siteId,
+      tokenHash: hashToken(token),
+      createdAt: nowIso(),
+      claimedAt: null,
+      claimedByUserId: null,
+    };
+    state.siteClaims.push(record);
+    return { record, token };
+  });
+}
+
+export async function resolveSiteClaim(
+  token: string,
+): Promise<{ ok: true; record: SiteClaimRecord } | { ok: false; error: string }> {
+  const state = await readState();
+  const record = state.siteClaims.find((c) => c.tokenHash === hashToken(token));
+  if (!record) return { ok: false, error: "Lien de réclamation introuvable." };
+  if (record.claimedAt) return { ok: false, error: "Ce lien a déjà été utilisé." };
+  return { ok: true, record };
+}
+
+/** Consumes the token and grants the claiming user admin on the site — but
+ * only if the site still has no active staff, checked inside the same
+ * write transaction to close the race with a second, concurrent claim. */
+export async function consumeSiteClaim(
+  token: string,
+  userId: string,
+  userEmail: string,
+): Promise<{ ok: true; siteId: string } | { ok: false; error: string }> {
+  return withState((state) => {
+    const tokenHash = hashToken(token);
+    const index = state.siteClaims.findIndex((c) => c.tokenHash === tokenHash);
+    if (index < 0) return { ok: false as const, error: "Lien de réclamation introuvable." };
+
+    const claim = state.siteClaims[index];
+    if (claim.claimedAt) return { ok: false as const, error: "Ce lien a déjà été utilisé." };
+
+    const siteHasStaff = state.memberships.some(
+      (m) => m.siteId === claim.siteId && m.status === "active",
+    );
+    if (siteHasStaff) {
+      return {
+        ok: false as const,
+        error: "Cette résidence a déjà un accès actif — contacte-nous pour être ajouté à l'équipe.",
+      };
+    }
+
+    state.siteClaims[index] = { ...claim, claimedAt: nowIso(), claimedByUserId: userId };
+
+    const existingMembership = state.memberships.find(
+      (m) => m.userId === userId && m.siteId === claim.siteId,
+    );
+    if (existingMembership) {
+      state.memberships = state.memberships.map((m) =>
+        m.id === existingMembership.id ? { ...m, role: "admin" as const, status: "active" as const } : m,
+      );
+    } else {
+      state.memberships.push({
+        id: `mem_${randomUUID()}`,
+        userId,
+        email: userEmail.trim().toLowerCase(),
+        siteId: claim.siteId,
+        role: "admin",
+        status: "active",
+        createdAt: nowIso(),
+      });
+    }
+
+    return { ok: true as const, siteId: claim.siteId };
   });
 }
 

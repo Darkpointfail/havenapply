@@ -50,7 +50,14 @@ describe("family dossier reaches the residence console", () => {
       currentMedications: "Metformine 500mg, Amlodipine 5mg",
       medicationAllergies: "Sulfamides",
       diagnoses: "Diabète type 2, Hypertension",
-      adls: { bathing: "hands_on", eating: "independent" },
+      adls: {
+        bathing: "hands_on",
+        dressing: "",
+        toileting: "",
+        eating: "independent",
+        walking: "",
+        transfers: "",
+      },
     };
 
     // Step 1: family-side bridge (this pass's fix).

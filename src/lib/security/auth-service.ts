@@ -36,6 +36,7 @@ export const RATE_LIMITS = {
   verify: { limit: 10, windowMs: 1000 * 60 * 60 },
   invite: { limit: 20, windowMs: 1000 * 60 * 60 },
   upload: { limit: 60, windowMs: 1000 * 60 * 10 },
+  siteClaim: { limit: 10, windowMs: 1000 * 60 * 60 },
 } as const;
 
 export type ServiceFailure = { ok: false; status: number; error: string };

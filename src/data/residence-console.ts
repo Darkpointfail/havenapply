@@ -418,11 +418,17 @@ export function sortWaitlist(list: WaitlistEntry[]): WaitlistEntry[] {
   });
 }
 
-/** Last n required docs are pending based on piecesManquantes. */
-export function docsForDemande(piecesManquantes: number) {
-  const total = REQUIRED_DOCS.length;
+/**
+ * Last n required docs are pending based on piecesManquantes.
+ * `requiredDocs` is the résidence's own configured checklist (its saved
+ * `profile.requiredDocuments`) — callers fall back to `REQUIRED_DOCS` only
+ * when the résidence hasn't configured one of its own yet, same spirit as
+ * every other blank-profile default in the app.
+ */
+export function docsForDemande(piecesManquantes: number, requiredDocs: readonly string[] = REQUIRED_DOCS) {
+  const total = requiredDocs.length;
   const pendingStart = total - piecesManquantes;
-  return REQUIRED_DOCS.map((name, i) => ({
+  return requiredDocs.map((name, i) => ({
     name,
     received: i < pendingStart,
   }));

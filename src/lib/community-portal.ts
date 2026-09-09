@@ -5,6 +5,7 @@ import { STATUS_META } from "@/data/applications";
 import { getResidence } from "@/data/residences";
 import { buildCommunityDetail } from "@/lib/residence-detail";
 import { residencesForCommunityOrg } from "@/lib/messaging";
+import { resolveKnownSite } from "@/lib/admissions/site-registry";
 import type { PatientTransfer } from "@/lib/patient-transfer";
 
 export type CommunityTeamRole =
@@ -503,6 +504,10 @@ export type CommunityProfile = {
   zip: string;
   phone: string;
   email: string;
+  /** e.g. "Résidence privée pour aînés", "CHSLD" — shown on the public page and console. */
+  residenceType: string;
+  /** Total unit/suite count. Null when the résidence hasn't set it yet. */
+  unitCount: number | null;
   careTypes: string[];
   amenities: string[];
   services: string[];
@@ -551,6 +556,47 @@ export function isResidenceAcceptingApplications(residenceId: string): boolean {
   } catch {
     return true;
   }
+}
+
+/**
+ * A genuinely blank profile for a residence that has never saved one —
+ * used for real (non-curated, RPA-registry) residences claimed through the
+ * free self-serve flow, so they see their own name and empty fields ready
+ * to fill in rather than a demo residence's content.
+ */
+export function emptyCommunityProfile(residenceId: string, name: string): CommunityProfile {
+  return {
+    residenceId,
+    name,
+    description: "",
+    photos: [],
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+    email: "",
+    residenceType: "",
+    unitCount: null,
+    careTypes: [],
+    amenities: [],
+    services: [],
+    admissionCriteria: [],
+    notAccepted: [],
+    requiredDocuments: [],
+    roomTypes: [],
+    promotions: "",
+    waitlistNotes: "",
+    acceptingApplications: true,
+    admissionFlags: {
+      medicaid: false,
+      privatePay: true,
+      pets: false,
+      smoking: "Non-smoking",
+      minAge: 65,
+      notes: "",
+    },
+  };
 }
 
 export function notifyCommunityProfileChanged(residenceId?: string) {
@@ -748,8 +794,44 @@ export function resolveCommunityResidenceId(
   return ids[0] || "maple-grove";
 }
 
+/**
+ * A claimed real résidence (self-serve, see the site-claim flow) is not in
+ * the curated demo catalog — it has no fabricated team or applications to
+ * show. Returning a genuinely empty workspace (real name when known, blank
+ * everything else) keeps its console honest instead of leaking Maple
+ * Grove's demo staff ("Jordan Lee", ...) and demo dossiers onto a real
+ * business.
+ */
+function blankCommunityWorkspace(residenceId: string): CommunityWorkspace {
+  const known = resolveKnownSite(residenceId);
+  const name = known?.name || residenceId;
+  const now = new Date().toISOString();
+  return {
+    residenceId,
+    residenceName: name,
+    profile: emptyCommunityProfile(residenceId, name),
+    availability: [],
+    applications: [],
+    patientTransfers: [],
+    team: [],
+    notifications: [],
+    auditLog: [audit("System", `Workspace opened for ${name}`)],
+    metrics: {
+      conversionRate: 0,
+      avgResponseHours: 0,
+      openBeds: 0,
+      waitlistTotal: 0,
+    },
+    updatedAt: now,
+  };
+}
+
 export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace {
-  const r = getResidence(residenceId) || getResidence("maple-grove")!;
+  const curated = getResidence(residenceId);
+  if (!curated) {
+    return blankCommunityWorkspace(residenceId);
+  }
+  const r = curated;
   const detail = buildCommunityDetail(r);
   const now = new Date().toISOString();
 
@@ -1670,6 +1752,8 @@ export function seedCommunityWorkspace(residenceId: string): CommunityWorkspace 
       zip: r.zip,
       phone: detail.phone,
       email: detail.email,
+      residenceType: detail.communityType,
+      unitCount: detail.capacity,
       careTypes: [...r.careLevels],
       amenities: [...r.amenities],
       services: [...r.includedServices],

@@ -1,5 +1,6 @@
 import type { Residence } from "@/data/residences";
 import { getResidence } from "@/data/residences";
+import type { CommunityProfile } from "@/lib/community-portal";
 
 // Lazy import path for CMS is handled by callers on the server via getCatalogResidence.
 // This module stays safe for shared use; getCommunityDetail prefers curated, then optional lookup.
@@ -444,4 +445,104 @@ export function getCommunityDetail(id: string): CommunityDetail | undefined {
 
 export function getCommunityDetailFromResidence(r: Residence): CommunityDetail {
   return buildCommunityDetail(r);
+}
+
+
+/**
+ * Overlays a résidence's own saved profile (edited in the staff console) onto
+ * the generated/curated CommunityDetail that public pages render. Only the
+ * fields the two shapes actually share are touched; everything else (reviews,
+ * nearby places, tour slots, ...) keeps coming from the demo/CMS generator
+ * since the profile has no equivalent for them yet.
+ *
+ * A profile field only overrides its target when the résidence actually
+ * filled it in (non-empty string / non-empty array) — an untouched blank
+ * profile must never blank out a curated demo listing.
+ */
+export function applyProfileToDetail(
+  detail: CommunityDetail,
+  profile: CommunityProfile,
+): CommunityDetail {
+  const next: CommunityDetail = { ...detail };
+
+  if (profile.description.trim()) {
+    next.philosophy = profile.description;
+  }
+
+  if (profile.photos.length) {
+    next.image = profile.photos[0];
+    next.gallery = profile.photos;
+  }
+
+  if (profile.phone.trim()) next.phone = profile.phone;
+  if (profile.email.trim()) next.email = profile.email;
+
+  if (profile.roomTypes.length) {
+    next.rooms = profile.roomTypes.map((rt) => {
+      // HavenApply is bilingual (Québec-first), so both English and
+      // French naming for room types must be recognized here.
+      const nameLower = rt.name.toLowerCase();
+      const type: RoomPricing["type"] =
+        nameLower.includes("shared") || nameLower.includes("partag")
+          ? "Shared"
+          : nameLower.includes("suite")
+            ? "Suite"
+            : "Private";
+      return {
+        name: rt.name,
+        type,
+        sqft: null,
+        basePrice: rt.price,
+        communityFee: rt.price != null ? Math.round(rt.price * 0.08) : null,
+        careFee: rt.price != null ? Math.round(rt.price * 0.12) : null,
+        deposit: rt.price != null ? Math.round(rt.price * 0.5) : null,
+        estimated: rt.price == null,
+        included: [],
+        extras: [],
+        notes: rt.notes,
+      };
+    });
+  }
+
+  if (profile.careTypes.length) {
+    const matched = new Set<string>();
+    const merged = next.careServices.map((block) => {
+      const isDeclared = profile.careTypes.some((ct) => {
+        const hit =
+          ct.toLowerCase().includes(block.title.toLowerCase()) ||
+          block.title.toLowerCase().includes(ct.toLowerCase());
+        if (hit) matched.add(ct);
+        return hit;
+      });
+      return isDeclared ? { ...block, available: true } : block;
+    });
+    const extra = profile.careTypes
+      .filter((ct) => !matched.has(ct))
+      .map((ct) => ({ title: ct, available: true, detail: "" }));
+    next.careServices = [...merged, ...extra];
+  }
+
+  if (profile.admissionCriteria.length || profile.notAccepted.length || profile.requiredDocuments.length) {
+    next.admission = {
+      ...next.admission,
+      acceptedConditions: profile.admissionCriteria.length
+        ? profile.admissionCriteria
+        : next.admission.acceptedConditions,
+      notAccepted: profile.notAccepted.length ? profile.notAccepted : next.admission.notAccepted,
+      documents: profile.requiredDocuments.length
+        ? profile.requiredDocuments
+        : next.admission.documents,
+    };
+  }
+
+  if (profile.acceptingApplications === false) {
+    next.availabilityDetail = {
+      ...next.availabilityDetail,
+      label: "N'accepte pas de nouvelles demandes actuellement",
+      contactNote:
+        "Cette résidence a indiqué ne pas accepter de nouvelles demandes d'admission pour le moment.",
+    };
+  }
+
+  return next;
 }

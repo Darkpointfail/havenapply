@@ -6,29 +6,22 @@ import { Logo } from "@/components/brand/Logo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useAuth } from "@/lib/auth";
 import { useCommunityPortal } from "@/lib/community-portal-store";
+import type { AvailabilityUnit } from "@/lib/community-portal";
 import {
   communityAppToDemande,
   communityAppsToWaitlist,
+  communityAppsToWeeklySeries,
+  communityAppsToFunnel,
 } from "@/lib/fr-portal-dynamic";
 import { useLocale, useT, type Locale } from "@/lib/i18n/locale";
 import { catalogLabel } from "@/lib/i18n/catalog-labels";
 import {
-  DASHBOARD_FUNNEL,
-  DEMANDES,
   docsForDemande,
-  INITIAL_WAITLIST,
-  PROGRESS_STEPS,
-  progressIndexForStatus,
   REFUS_MOTIFS,
   REQUIRED_DOCS,
-  RESIDENCE,
-  SERVICES_INCLUS,
   sortWaitlist,
   STATUS_STYLES,
-  UNIT_AVAILABILITY,
-  UNIT_PRICING,
   VISITS,
-  WEEKLY_DEMANDES,
   type AutonomyTile,
   type Demande,
   type DemandeStatus,
@@ -190,8 +183,11 @@ function AccountMenu() {
   const displayName =
     user?.name?.trim() ||
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
-    RESIDENCE.staff.name;
-  const displayRole = user?.jobTitle?.trim() || RESIDENCE.staff.role;
+    t("Team member");
+  // "Fonction" isn't wired through account creation yet (tracked
+  // separately) — a signed-in user with no jobTitle set gets a generic
+  // label here, never a fabricated specific title.
+  const displayRole = user?.jobTitle?.trim() || t("Team member");
   const initials = initialsFrom(displayName);
 
   useEffect(() => {
@@ -452,6 +448,20 @@ export function ResidenceConsole() {
   const portal = useCommunityPortal();
   const router = useRouter();
   const t = useT();
+  // Real signed-in staff name, with a generic (never fictional) fallback —
+  // used anywhere the console needs to attribute an action ("Signed …",
+  // note authorship) to whoever is actually logged in.
+  const staffDisplayName =
+    user?.name?.trim() ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    t("Team member");
+  // The résidence's own configured document checklist (profile.requiredDocuments)
+  // takes priority; REQUIRED_DOCS is only a generic starting default, never a
+  // stand-in for this specific résidence's real requirements.
+  const requiredDocuments =
+    portal.workspace?.profile?.requiredDocuments?.length
+      ? portal.workspace.profile.requiredDocuments
+      : REQUIRED_DOCS;
   const [view, setView] = useState<ConsoleView>("demandes");
   const [filter, setFilter] = useState<FilterId>("All");
   const [selId, setSelId] = useState<string | null>(null);
@@ -459,29 +469,26 @@ export function ResidenceConsole() {
   const [placed, setPlaced] = useState<Record<string, UrgenceLevel>>({});
   const [refused, setRefused] = useState<Record<string, string>>({});
   const [notesByDemande, setNotesByDemande] = useState<Record<string, NoteEntry[]>>({});
-  // Local overlay for optimistic edits when portal apps empty (seed fallback)
-  const [localDemandes, setLocalDemandes] = useState<Demande[]>(DEMANDES);
-  const [localWaitlist, setLocalWaitlist] = useState<WaitlistEntry[]>(() =>
-    sortWaitlist(INITIAL_WAITLIST),
-  );
+  // Local overlay for optimistic edits: starts empty. It is only ever
+  // populated by real mutations below (accept/refuse/etc. when the server
+  // call fails) — never seeded from fictional demo data. When a résidence
+  // has zero real applications, the console must say so honestly instead of
+  // showing fabricated ones (see the community-portal-seed regression test
+  // for the equivalent guarantee on the server side).
+  const [localDemandes, setLocalDemandes] = useState<Demande[]>([]);
+  // Starts empty, same reasoning as localDemandes above: only ever
+  // populated by real data (the sync effect below) or real local mutations,
+  // never by fictional seed names.
+  const [localWaitlist, setLocalWaitlist] = useState<WaitlistEntry[]>([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
+  // This in-console thread is a local demo affordance, not yet wired to
+  // the real messaging system — it starts empty rather than with a
+  // fabricated exchange, and any message the résidence sends is attributed
+  // to whoever is actually signed in.
   const [messages, setMessages] = useState<
     { id: string; from: "family" | "residence"; author: string; body: string }[]
-  >([
-    {
-      id: "m1",
-      from: "family",
-      author: "Sophie Lévesque",
-      body: "Hello, we sent the medical assessment this morning. Proof of income will follow by tomorrow.",
-    },
-    {
-      id: "m2",
-      from: "residence",
-      author: "Claudine Mercier",
-      body: "Thank you Sophie. Once we receive both documents, we can schedule the visit.",
-    },
-  ]);
+  >([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const portalApps = portal.workspace?.applications ?? [];
@@ -646,6 +653,7 @@ export function ResidenceConsole() {
           {view === "demandes" && (
             <DemandesView
               filtered={filtered}
+              allDemandes={demandes}
               filter={filter}
               setFilter={setFilter}
               onOpen={openDossier}
@@ -655,6 +663,8 @@ export function ResidenceConsole() {
             <DossierView
               key={selected.id}
               demande={selected}
+              staffName={staffDisplayName}
+              requiredDocuments={requiredDocuments}
               placed={placed[selected.id]}
               refused={refused[selected.id]}
               accepting={accepting}
@@ -683,7 +693,7 @@ export function ResidenceConsole() {
                   {
                     id: `m${m.length + 1}`,
                     from: "residence",
-                    author: "Claudine Mercier",
+                    author: staffDisplayName,
                     body: message.trim(),
                   },
                 ]);
@@ -691,11 +701,14 @@ export function ResidenceConsole() {
               }}
             />
           )}
-          {view === "documents" && <DocumentsView demandes={demandes} />}
+          {view === "documents" && (
+            <DocumentsView demandes={demandes} requiredDocuments={requiredDocuments} />
+          )}
           {view === "visites" && <VisitesView />}
           {view === "attente" && (
             <AttenteView
               waitlist={waitlist}
+              availability={portal.workspace?.availability ?? []}
               setWaitlist={setLocalWaitlist}
               onRemove={(id) => {
                 const r = portal.changeStatus(id, "under_review");
@@ -714,39 +727,59 @@ export function ResidenceConsole() {
 
 function DemandesView({
   filtered,
+  allDemandes,
   filter,
   setFilter,
   onOpen,
 }: {
   filtered: Demande[];
+  allDemandes: Demande[];
   filter: FilterId;
   setFilter: (f: FilterId) => void;
   onOpen: (id: string) => void;
 }) {
   const t = useT();
   const filters: FilterId[] = ["All", "New", "Missing documents", "Visit scheduled"];
+
+  // Real counts computed from the actual queue — never a fixed placeholder.
+  const activeCount = allDemandes.filter((d) =>
+    ["Nouvelle", "En évaluation", "Documents manquants", "Visite planifiée"].includes(d.statut),
+  ).length;
+  const completeCount = allDemandes.filter((d) => d.piecesManquantes === 0).length;
+  const missingDocsCount = allDemandes.filter((d) => d.piecesManquantes > 0).length;
+  const avgProcessingDays = (() => {
+    const withDates = allDemandes
+      .map((d) => {
+        const t2 = Date.parse(d.recueLe);
+        return Number.isFinite(t2) ? (Date.now() - t2) / (1000 * 60 * 60 * 24) : null;
+      })
+      .filter((v): v is number => v != null && v >= 0);
+    if (!withDates.length) return null;
+    return Math.round(withDates.reduce((a, b) => a + b, 0) / withDates.length);
+  })();
+
   return (
     <div className="flex flex-col gap-[22px]">
       <div className="grid grid-cols-4 gap-5">
         <StatCard
           label={t("Active applications")}
-          value={18}
+          value={activeCount}
           context={t("Currently being processed")}
         />
         <StatCard
           label={t("Complete files")}
-          value={11}
+          value={completeCount}
           context={t("Ready for a decision")}
         />
         <StatCard
           label={t("Missing documents")}
-          value={12}
+          value={missingDocsCount}
           context={t("Documents pending")}
-          alert
+          alert={missingDocsCount > 0}
         />
         <StatCard
           label={t("Average processing time")}
-          value={`9 ${t("d")}`}
+          value={avgProcessingDays != null ? `${avgProcessingDays} ${t("d")}` : t("Not available yet")}
           context={t("Over 90 days")}
         />
       </div>
@@ -793,7 +826,17 @@ function DemandesView({
           <span />
         </div>
 
-        {filtered.map((d) => (
+        {filtered.length === 0 ? (
+          <div className="rc-table-row" style={{ display: "block", padding: "32px 4px" }}>
+            <p className="text-[14.5px] font-medium text-[var(--rc-ink)]">
+              {t("No requests yet")}
+            </p>
+            <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
+              {t("Families' applications will appear here as soon as they are submitted.")}
+            </p>
+          </div>
+        ) : (
+          filtered.map((d) => (
           <div
             key={d.id}
             role="button"
@@ -838,7 +881,8 @@ function DemandesView({
              {t("View file")}
            </p>
           </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
@@ -846,6 +890,8 @@ function DemandesView({
 
 function DossierView({
   demande,
+  staffName,
+  requiredDocuments,
   placed,
   refused,
   accepting,
@@ -862,6 +908,8 @@ function DossierView({
   onAddNote,
 }: {
   demande: Demande;
+  staffName: string;
+  requiredDocuments: readonly string[];
   placed?: UrgenceLevel;
   refused?: string;
   accepting: boolean;
@@ -878,9 +926,9 @@ function DossierView({
   onAddNote: (entry: NoteEntry) => void;
 }) {
   const t = useT();
-  const docs = docsForDemande(demande.piecesManquantes);
+  const docs = docsForDemande(demande.piecesManquantes, requiredDocuments);
   const received = docs.filter((d) => d.received).length;
-  const completionPourcent = Math.round((received / REQUIRED_DOCS.length) * 100);
+  const completionPourcent = Math.round((received / requiredDocuments.length) * 100);
 
   const [showRefusePanel, setShowRefusePanel] = useState(false);
   const [selectedMotif, setSelectedMotif] = useState<string | null>(null);
@@ -912,7 +960,7 @@ function DossierView({
     if (!texte) return;
     onAddNote({
       id: `local-${Date.now()}`,
-      auteur: RESIDENCE.staff.name,
+      auteur: staffName,
       horodatage: t("Just now"),
       etiquette: "Suivi",
       texte,
@@ -1457,7 +1505,7 @@ function DossierView({
             <div className="mb-3 flex items-center justify-between">
               <h2 className="rc-serif text-[19px]">{t("Documents")}</h2>
               <span className="text-[13.5px] text-[var(--rc-ink-muted)]">
-                {t("{received} of {total} received", { received, total: REQUIRED_DOCS.length })}
+                {t("{received} of {total} received", { received, total: requiredDocuments.length })}
               </span>
             </div>
             <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--rc-canvas)" }}>
@@ -1569,7 +1617,7 @@ function DossierView({
                 style={{ borderColor: "var(--rc-border)", background: "var(--rc-subtle)" }}
               />
               <div className="flex items-center justify-between">
-                <span className="text-[12.5px] text-[var(--rc-ink-muted)]">{t("Signed {name}", { name: RESIDENCE.staff.name })}</span>
+                <span className="text-[12.5px] text-[var(--rc-ink-muted)]">{t("Signed {name}", { name: staffName })}</span>
                 <button type="button" className="rc-btn rc-btn-primary" onClick={submitNote}>
                   {t("Add note")}
                 </button>
@@ -1656,12 +1704,18 @@ function NoteTag({ etiquette }: { etiquette: NoteEntry["etiquette"] }) {
     </span>
   );
 }
-function DocumentsView({ demandes }: { demandes: Demande[] }) {
+function DocumentsView({
+  demandes,
+  requiredDocuments,
+}: {
+  demandes: Demande[];
+  requiredDocuments: readonly string[];
+}) {
   const t = useT();
   const rows = demandes
     .filter((d) => d.piecesManquantes > 0)
     .flatMap((d) => {
-      const docs = docsForDemande(d.piecesManquantes).filter((x) => !x.received);
+      const docs = docsForDemande(d.piecesManquantes, requiredDocuments).filter((x) => !x.received);
       return docs.map((doc, i) => ({
         key: `${d.id}-${doc.name}`,
         dossier: d.nom,
@@ -1734,7 +1788,7 @@ function DocumentsView({ demandes }: { demandes: Demande[] }) {
         <div className="rc-card p-6">
           <h3 className="rc-serif text-[19px]">{t("Documents required by the facility")}</h3>
           <div className="mt-4 flex flex-wrap gap-2">
-            {REQUIRED_DOCS.map((doc) => (
+            {requiredDocuments.map((doc) => (
               <span
                 key={doc}
                 className="rc-pill"
@@ -1762,6 +1816,16 @@ function formatVisitTime(time: string, locale: Locale) {
   });
 }
 
+/**
+ * KNOWN FICTIONAL DATA — not yet wired to real data (tracked as a separate
+ * follow-up, not part of the 2026-09-09 real-data pass): this tab still
+ * renders the hardcoded `VISITS` demo calendar and a hand-typed subtitle
+ * regardless of which résidence is signed in. Tour scheduling has no
+ * structured backend entity yet (CommunityApplication only carries loose
+ * `tourProposal`/`assessmentProposal` text) — replacing this properly needs
+ * a real scheduling data model, not just a fallback swap like the other
+ * tabs in this file got.
+ */
 function VisitesView() {
   const t = useT();
   const { locale } = useLocale();
@@ -1834,15 +1898,31 @@ function VisitesView() {
 
 function AttenteView({
   waitlist,
+  availability,
   setWaitlist,
   onRemove,
 }: {
   waitlist: WaitlistEntry[];
+  availability: AvailabilityUnit[];
   setWaitlist: React.Dispatch<React.SetStateAction<WaitlistEntry[]>>;
   onRemove?: (id: string) => void;
 }) {
   const t = useT();
   const urgentCount = waitlist.filter((w) => w.urgence === "Urgente").length;
+
+  // Real per-unit-type availability, aggregated from `workspace.availability`
+  // — never the fictional demo table.
+  const availabilityByType = useMemo(() => {
+    const map = new Map<string, { roomType: string; free: number; waiting: number; alert: boolean }>();
+    for (const u of availability) {
+      const entry = map.get(u.roomType) ?? { roomType: u.roomType, free: 0, waiting: 0, alert: false };
+      entry.free += u.count;
+      entry.waiting += u.waitlistCount;
+      if (u.count === 0 && u.waitlistCount > 0) entry.alert = true;
+      map.set(u.roomType, entry);
+    }
+    return Array.from(map.values());
+  }, [availability]);
 
   const updateUrgence = (id: string, urgence: UrgenceLevel) => {
     setWaitlist((prev) =>
@@ -1892,7 +1972,17 @@ function AttenteView({
           <span />
         </div>
 
-        {waitlist.map((w, i) => (
+        {waitlist.length === 0 ? (
+          <div className="rc-table-row" style={{ display: "block", padding: "32px 4px" }}>
+            <p className="text-[14.5px] font-medium text-[var(--rc-ink)]">
+              {t("No one on the waitlist yet")}
+            </p>
+            <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
+              {t("Families placed on the waitlist will appear here.")}
+            </p>
+          </div>
+        ) : (
+          waitlist.map((w, i) => (
           <div
             key={w.id}
             className="rc-table-row"
@@ -1943,27 +2033,36 @@ function AttenteView({
               {t("Remove")}
             </button>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="rc-card p-6">
         <h3 className="rc-serif text-[19px]">{t("Availability by unit type")}</h3>
-        <ul className="mt-5 divide-y divide-[var(--rc-border-faint)]">
-          {UNIT_AVAILABILITY.map((u) => (
-            <li key={u.type} className="flex items-baseline justify-between gap-4 py-3.5">
-              <div>
-                <p className="text-[15px] font-semibold">{catalogLabel(t, u.type)}</p>
-                <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">{t(u.waiting)}</p>
-              </div>
-              <p
-                className="text-[14px] font-semibold"
-                style={{ color: u.alert ? "var(--rc-terra)" : "var(--rc-ink)" }}
-              >
-                {t(u.free)}
-              </p>
-            </li>
-          ))}
-        </ul>
+        {availabilityByType.length === 0 ? (
+          <p className="mt-5 text-[13.5px] text-[var(--rc-ink-muted)]">
+            {t("No availability configured yet.")}
+          </p>
+        ) : (
+          <ul className="mt-5 divide-y divide-[var(--rc-border-faint)]">
+            {availabilityByType.map((u) => (
+              <li key={u.roomType} className="flex items-baseline justify-between gap-4 py-3.5">
+                <div>
+                  <p className="text-[15px] font-semibold">{catalogLabel(t, u.roomType)}</p>
+                  <p className="mt-0.5 text-[13px] text-[var(--rc-ink-muted)]">
+                    {t("{count} waiting", { count: u.waiting })}
+                  </p>
+                </div>
+                <p
+                  className="text-[14px] font-semibold"
+                  style={{ color: u.alert ? "var(--rc-terra)" : "var(--rc-ink)" }}
+                >
+                  {u.free > 0 ? t("{count} available", { count: u.free }) : t("Full")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -1971,51 +2070,97 @@ function AttenteView({
 
 function TableauView() {
   const t = useT();
-  const max = Math.max(...WEEKLY_DEMANDES);
+  const { workspace } = useCommunityPortal();
+  const applications = workspace?.applications ?? [];
+  const profile = workspace?.profile;
+  const metrics = workspace?.metrics;
+
+  const receivedLast90d = useMemo(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    return applications.filter((a) => {
+      const t2 = a.submittedAt ? new Date(a.submittedAt).getTime() : NaN;
+      return Number.isFinite(t2) && t2 >= cutoff;
+    }).length;
+  }, [applications]);
+
+  const occupancyPct =
+    profile?.unitCount != null && profile.unitCount > 0 && metrics
+      ? Math.max(
+          0,
+          Math.min(100, Math.round(((profile.unitCount - metrics.openBeds) / profile.unitCount) * 100)),
+        )
+      : null;
+
+  const weekly = useMemo(() => communityAppsToWeeklySeries(applications), [applications]);
+  const funnel = useMemo(() => communityAppsToFunnel(applications), [applications]);
+  const max = Math.max(1, ...weekly.map((w) => w.count));
+
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-4 gap-5">
         <StatCard
           label={t("Applications received (90 days)")}
-          value={142}
+          value={receivedLast90d}
           context={t("All sources")}
         />
-        <StatCard label={t("Conversion rate")} value="24 %" context={t("Confirmed admissions")} />
-        <StatCard label={t("First response time")} value="6 h" context={t("Team average")} />
-        <StatCard label={t("Occupancy rate")} value="94 %" context={t("Units leased")} />
+        <StatCard
+          label={t("Conversion rate")}
+          value={metrics ? `${metrics.conversionRate} %` : t("Not available yet")}
+          context={t("Confirmed admissions")}
+        />
+        <StatCard
+          label={t("First response time")}
+          value={metrics ? `${metrics.avgResponseHours} h` : t("Not available yet")}
+          context={t("Team average")}
+        />
+        <StatCard
+          label={t("Occupancy rate")}
+          value={occupancyPct != null ? `${occupancyPct} %` : t("Set unit count in your profile")}
+          context={t("Units leased")}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="rc-card p-6">
           <h3 className="rc-serif text-[19px]">{t("Applications received per week")}</h3>
-          <div className="mt-8 flex h-[190px] items-end gap-2">
-            {WEEKLY_DEMANDES.map((v, i) => {
-              const h = Math.round((v / max) * 160);
-              const last = i === WEEKLY_DEMANDES.length - 1;
-              return (
-                <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-[var(--rc-ink-muted)]">{v}</span>
-                  <div
-                    className="w-full rounded-t-[4px]"
-                    style={{
-                      height: h,
-                      background: last ? "var(--rc-green)" : "#C2DBD4",
-                    }}
-                  />
-                  <span className="text-[11px] text-[var(--rc-ink-faint)]">
-                    {t("W")}
-                    {24 + i}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          {applications.length === 0 ? (
+            <p className="mt-6 text-[13.5px] text-[var(--rc-ink-muted)]">
+              {t("No applications received yet — this chart fills in as families apply.")}
+            </p>
+          ) : (
+            <div className="mt-8 flex h-[190px] items-end gap-2">
+              {weekly.map((w, i) => {
+                const h = Math.round((w.count / max) * 160);
+                const last = i === weekly.length - 1;
+                return (
+                  <div key={w.weekStart} className="flex flex-1 flex-col items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-[var(--rc-ink-muted)]">
+                      {w.count}
+                    </span>
+                    <div
+                      className="w-full rounded-t-[4px]"
+                      style={{
+                        height: h,
+                        background: last ? "var(--rc-green)" : "#C2DBD4",
+                      }}
+                    />
+                    <span className="text-[11px] text-[var(--rc-ink-faint)]">
+                      {new Date(w.weekStart).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="rc-card p-6">
           <h3 className="rc-serif text-[19px]">{t("Application funnel")}</h3>
           <ul className="mt-6 space-y-4">
-            {DASHBOARD_FUNNEL.map((f) => (
+            {funnel.map((f) => (
               <li key={f.label}>
                 <div className="mb-1.5 flex items-baseline justify-between gap-3">
                   <span className="text-[14px] font-medium">{t(f.label)}</span>
@@ -2031,9 +2176,12 @@ function TableauView() {
             ))}
           </ul>
           <p className="mt-5 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-            {t(
-              "Out of 142 applications received, 24% result in a confirmed admission. The main bottleneck is between completed files and completed visits.",
-            )}
+            {applications.length === 0
+              ? t("No applications yet — the funnel fills in as your résidence receives files.")
+              : t("{received} applications received, {pct}% result in a confirmed admission so far.", {
+                  received: funnel[0].value,
+                  pct: funnel[3].pct,
+                })}
           </p>
         </div>
       </div>
@@ -2046,13 +2194,23 @@ function EtablissementView() {
   const { workspace, updateProfile, can } = useCommunityPortal();
   const profile = workspace?.profile;
   const accepting = profile?.acceptingApplications !== false;
+  const receivedLast90d = useMemo(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    return (workspace?.applications ?? []).filter((a) => {
+      const ts = a.submittedAt ? new Date(a.submittedAt).getTime() : NaN;
+      return Number.isFinite(ts) && ts >= cutoff;
+    }).length;
+  }, [workspace?.applications]);
   const canToggle =
     can("editAdmissions") || can("editProfile") || can("acceptDecline");
-  const name = profile?.name || RESIDENCE.name;
-  const city = profile?.city || RESIDENCE.city;
+  // Real profile data only — no fictional residence identity as a
+  // fallback. A brand-new (blank) profile shows an honest "not filled in
+  // yet" placeholder instead of borrowing another business's details.
+  const name = profile?.name || t("Untitled residence");
+  const city = profile?.city || t("City not set");
   const description = profile?.description
     ? profile.description
-    : t(RESIDENCE.description);
+    : t("No description yet — add one from the profile editor.");
 
   const toggleAccepting = () => {
     if (!canToggle) return;
@@ -2146,7 +2304,9 @@ function EtablissementView() {
             </span>
           </div>
           <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
-            {city} · {RESIDENCE.units} {t("units")} · {t(RESIDENCE.type)}
+            {city}
+            {profile?.unitCount != null ? ` · ${profile.unitCount} ${t("units")}` : ""}
+            {profile?.residenceType ? ` · ${profile.residenceType}` : ""}
           </p>
           <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-[var(--rc-ink-muted)]">
             {description}
@@ -2163,40 +2323,60 @@ function EtablissementView() {
                 <span>{t("Indicative price")}</span>
                 <span>{t("Availability")}</span>
               </div>
-              {UNIT_PRICING.map((u) => (
-                <div
-                  key={u.type}
-                  className="rc-table-row"
-                  style={{
-                    gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr",
-                    cursor: "default",
-                  }}
-                >
-                  <p className="text-[14.5px] font-semibold">{catalogLabel(t, u.type)}</p>
-                  <p className="text-[14px] text-[var(--rc-ink-muted)]">{t(u.area)}</p>
-                  <p className="text-[14px] font-medium">{t(u.price)}</p>
-                  <p className="text-[14px]">{t(u.avail)}</p>
+              {(profile?.roomTypes?.length ?? 0) === 0 ? (
+                <div className="rc-table-row" style={{ display: "block", padding: "20px 4px" }}>
+                  <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                    {t("No rates configured yet — add them from the profile editor.")}
+                  </p>
                 </div>
-              ))}
+              ) : (
+                profile!.roomTypes.map((room, i) => (
+                  <div
+                    key={`${room.name}-${i}`}
+                    className="rc-table-row"
+                    style={{
+                      gridTemplateColumns: "1.2fr 1fr 1.1fr 1fr",
+                      cursor: "default",
+                    }}
+                  >
+                    <p className="text-[14.5px] font-semibold">{catalogLabel(t, room.name)}</p>
+                    <p className="text-[14px] text-[var(--rc-ink-muted)]">{room.notes || "—"}</p>
+                    <p className="text-[14px] font-medium">
+                      {room.price != null ? `$${room.price.toLocaleString()}` : t("On request")}
+                    </p>
+                    <p className="text-[14px]">
+                      {room.availableUnits != null
+                        ? t("{count} available", { count: room.availableUnits })
+                        : t("Not specified")}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="flex flex-col gap-5">
               <div>
                 <p className="rc-label mb-3">{t("Services included")}</p>
                 <div className="flex flex-wrap gap-2">
-                  {SERVICES_INCLUS.map((s) => (
-                    <span
-                      key={s}
-                      className="rc-pill"
-                      style={{
-                        background: "var(--rc-subtle)",
-                        borderColor: "var(--rc-border)",
-                        color: "var(--rc-ink)",
-                      }}
-                    >
-                      {t(s)}
-                    </span>
-                  ))}
+                  {(profile?.services?.length ? profile.services : profile?.amenities ?? []).length === 0 ? (
+                    <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                      {t("No services listed yet — add them from the profile editor.")}
+                    </p>
+                  ) : (
+                    (profile?.services?.length ? profile!.services : profile!.amenities).map((s) => (
+                      <span
+                        key={s}
+                        className="rc-pill"
+                        style={{
+                          background: "var(--rc-subtle)",
+                          borderColor: "var(--rc-border)",
+                          color: "var(--rc-ink)",
+                        }}
+                      >
+                        {t(s)}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -2207,7 +2387,7 @@ function EtablissementView() {
                 <p className="rc-label" style={{ color: "#8E9B96" }}>
                   {t("From this page")}
                 </p>
-                <p className="rc-serif mt-3 text-[38px] leading-none">38</p>
+                <p className="rc-serif mt-3 text-[38px] leading-none">{receivedLast90d}</p>
                 <p className="mt-2 text-[13.5px] text-[#C5D2CD]">
                   {t("applications submitted over the last 90 days")}
                 </p>

@@ -28,6 +28,7 @@ import {
   COMMUNITY_PORTAL_STORAGE_KEY as STORAGE_KEY,
   communityRoleHas,
   computeDashboardStats,
+  emptyCommunityProfile,
   notifyCommunityProfileChanged,
   seedCommunityWorkspace,
   type AvailabilityUnit,
@@ -53,6 +54,8 @@ import {
 } from "@/lib/patient-transfer";
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { useT } from "@/lib/i18n/locale";
+import { apiGetCommunityProfile, apiSaveCommunityProfile } from "@/lib/community-profile/client-api";
+import { getResidence } from "@/data/residences";
 
 type PortalContextValue = {
   ready: boolean;
@@ -229,20 +232,36 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Workspace shell (profile, team, availability) stays local for now; the
-      // applications list comes from the server and never from a demo seed.
+      // Team, availability and notes stay local for now. The applications
+      // list and the profile (description/pricing/photos/services) come
+      // from the server — the profile is what the public pages and a
+      // second staff device both need to see, so this browser's copy is
+      // only ever a starting point, overridden by whatever was last saved.
       const map = readMap();
       const shell = map[residenceId] ?? seedCommunityWorkspace(residenceId);
       const prior = Array.isArray(shell.applications) ? shell.applications : [];
 
-      const applications = admissionsEnabled()
-        ? await fetchServerApplications(prior)
-        : prior;
+      const [applications, profileResult] = await Promise.all([
+        admissionsEnabled() ? fetchServerApplications(prior) : Promise.resolve(prior),
+        apiGetCommunityProfile(residenceId),
+      ]);
       if (cancelled) return;
+
+      // A saved server profile always wins. With none yet: a curated demo
+      // residence keeps its seeded demo profile, but a real (non-curated)
+      // residence — the common case for one claimed through the free
+      // self-serve flow — gets its own blank profile instead of silently
+      // inheriting the demo residence's name, photos and pricing.
+      const isCuratedDemo = Boolean(getResidence(residenceId));
+      const fallbackProfile =
+        isCuratedDemo || !profileResult.siteName
+          ? shell.profile
+          : emptyCommunityProfile(residenceId, profileResult.siteName);
 
       const ws = normalizeWorkspace({
         ...shell,
         applications,
+        profile: profileResult.profile ?? fallbackProfile,
         updatedAt: new Date().toISOString(),
       });
       const nextMap = readMap();
@@ -992,14 +1011,22 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
           ? "Opened new applications"
           : "Closed new applications";
       }
+      let nextProfile: CommunityProfile | null = null;
       persist((ws) => {
         residenceId = ws.residenceId;
-        return pushAudit(
+        const next = pushAudit(
           { ...ws, profile: { ...ws.profile, ...patch } },
           auditMsg,
         );
+        nextProfile = next.profile;
+        return next;
       });
       notifyCommunityProfileChanged(residenceId || undefined);
+      // Persist server-side so a second device — and the public listing
+      // pages — see the same profile, not just this browser's copy.
+      if (residenceId && nextProfile) {
+        void apiSaveCommunityProfile(residenceId, nextProfile);
+      }
       return { ok: true };
     },
     [can, persist, pushAudit],

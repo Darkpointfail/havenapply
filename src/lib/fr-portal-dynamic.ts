@@ -351,3 +351,62 @@ export const FR_RESIDENCE_CATALOG: Record<string, string> = {
 export function toCatalogResidenceId(id: string) {
   return FR_RESIDENCE_CATALOG[id] || id;
 }
+
+/**
+ * Weekly received-applications counts for the dashboard bar chart, computed
+ * live from real submittedAt timestamps — never a hardcoded series. Returns
+ * the last `weeks` week-buckets, oldest first, each paired with its ISO
+ * week-start date for the axis label.
+ */
+export function communityAppsToWeeklySeries(
+  applications: CommunityApplication[],
+  weeks = 12,
+): { weekStart: string; count: number }[] {
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const buckets = Array.from({ length: weeks }, (_, i) => {
+    const end = now - (weeks - 1 - i) * msPerWeek;
+    return { weekStart: new Date(end - msPerWeek).toISOString().slice(0, 10), count: 0 };
+  });
+  const earliest = now - weeks * msPerWeek;
+  for (const app of applications) {
+    const t = app.submittedAt ? new Date(app.submittedAt).getTime() : NaN;
+    if (!Number.isFinite(t) || t < earliest || t > now) continue;
+    const idx = Math.min(weeks - 1, Math.floor((t - earliest) / msPerWeek));
+    if (buckets[idx]) buckets[idx].count += 1;
+  }
+  return buckets;
+}
+
+export type DashboardFunnelStage = {
+  label: string;
+  value: number;
+  pct: number;
+  color: string;
+};
+
+/**
+ * Admissions funnel computed live from real application statuses/documents
+ * — replaces the hardcoded demo funnel. Stages are cumulative-ish counts
+ * (received → files completed → visit proposed → admission confirmed), same
+ * shape the dashboard already renders.
+ */
+export function communityAppsToFunnel(applications: CommunityApplication[]): DashboardFunnelStage[] {
+  const received = applications.length;
+  const filesCompleted = applications.filter(
+    (a) => (a.documents?.filter((d) => d.shared).length ?? 0) >= 4,
+  ).length;
+  const visitProposed = applications.filter(
+    (a) => Boolean(a.tourProposal) || a.status === "move_in_scheduled",
+  ).length;
+  const confirmed = applications.filter((a) =>
+    ["approved", "offer_received", "conditionally_approved", "move_in_scheduled"].includes(a.status),
+  ).length;
+  const pct = (n: number) => (received ? Math.round((n / received) * 100) : 0);
+  return [
+    { label: "Received", value: received, pct: 100, color: "#101815" },
+    { label: "Files completed", value: filesCompleted, pct: pct(filesCompleted), color: "#0E9384" },
+    { label: "Visits proposed", value: visitProposed, pct: pct(visitProposed), color: "#0A6F63" },
+    { label: "Admissions confirmed", value: confirmed, pct: pct(confirmed), color: "#A6572B" },
+  ];
+}

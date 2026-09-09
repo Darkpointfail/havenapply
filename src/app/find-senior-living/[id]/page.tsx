@@ -5,7 +5,9 @@ import { getCatalogResidence, getCmsRawById } from "@/lib/cms-nursing-homes";
 import {
   getCommunityDetail,
   getCommunityDetailFromResidence,
+  applyProfileToDetail,
 } from "@/lib/residence-detail";
+import { getProfile } from "@/lib/community-profile/repository";
 
 export function generateStaticParams() {
   // Curated communities with photos only — Medicare facilities are resolved on demand.
@@ -69,5 +71,14 @@ export default async function ResidenceProfilePage({
   }
 
   if (!community) notFound();
+
+  // A résidence that saved its own profile in the staff console (whether a
+  // curated demo listing or a real self-serve-claimed site) overrides the
+  // fields it filled in, on top of whatever generated/CMS content is above.
+  const profile = await getProfile(id);
+  if (profile) {
+    community = applyProfileToDetail(community, profile);
+  }
+
   return <CommunityDetailGate community={community} />;
 }

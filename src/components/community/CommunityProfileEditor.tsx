@@ -323,6 +323,31 @@ export function CommunityProfileEditor() {
               />
             </label>
             <div className="ep-grid-2">
+              <label>
+                <span className="ep-label">{t("Establishment type")}</span>
+                <input
+                  className="ep-input"
+                  value={draft.residenceType}
+                  disabled={!can("editProfile")}
+                  placeholder={t("e.g. Résidence privée pour aînés, CHSLD…")}
+                  onChange={(e) => patch({ residenceType: e.target.value })}
+                />
+              </label>
+              <label>
+                <span className="ep-label">{t("Number of units")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  className="ep-input"
+                  value={draft.unitCount ?? ""}
+                  disabled={!can("editProfile")}
+                  onChange={(e) =>
+                    patch({ unitCount: e.target.value === "" ? null : Number(e.target.value) })
+                  }
+                />
+              </label>
+            </div>
+            <div className="ep-grid-2">
               <label className="ep-span-2">
                 <span className="ep-label">{t("Address")}</span>
                 <input

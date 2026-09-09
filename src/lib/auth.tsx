@@ -20,7 +20,6 @@ import {
   resetPasswordWithToken,
   signInAccount,
   signOutAccount,
-  signUpWithRoleAccount,
   writeSession,
   updateSessionProfile,
   type AuthResult,
@@ -55,7 +54,7 @@ import {
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseBackend } from "@/lib/supabase/config";
-import { fetchServerIdentity, serverSignIn, serverSignOut } from "@/lib/family/client-api";
+import { fetchServerIdentity, serverRegister, serverSignIn, serverSignOut } from "@/lib/family/client-api";
 import { AUTH_MESSAGES } from "@/lib/auth-messages";
 
 export type { SessionUser, UserRole };
@@ -163,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               emailConfirmed: true,
               communityStatus: isFacilityRole(role) ? "verified" : undefined,
               onboardingCompleted: true,
+              communityStatus: isFacilityRole(role) ? "verified" : undefined,
             }
           : null,
       );
@@ -185,11 +185,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return result;
       }
-      const result = await signUpWithRoleAccount(input);
-      if (result.ok) {
-        setUser(result.data);
+      // Local backend: create the credential server-side (the same store
+      // sign-in reads from) instead of the old client-only prototype store,
+      // then sign in immediately to establish a real server session.
+      const registered = await serverRegister({
+        email: input.email,
+        password: input.password,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone,
+        role: input.role,
+      });
+      if (!registered.ok) {
+        return { ok: false as const, error: registered.error };
       }
-      return result;
+      const server = await serverSignIn({
+        email: input.email,
+        password: input.password,
+        expectedRole: input.role,
+      });
+      if (!server.ok) return { ok: false as const, error: server.error };
+
+      const identity = await fetchServerIdentity();
+      if (!identity) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
+      }
+      const signedInRole = parseUserRole(identity.role);
+      if (!signedInRole) {
+        await serverSignOut();
+        return { ok: false as const, error: AUTH_MESSAGES.accessDenied };
+      }
+      const [signedInFirstName = "", ...signedInRest] = (identity.name || identity.email).split(
+        " ",
+      );
+      const signedIn: SessionUser = {
+        id: identity.id,
+        email: identity.email,
+        firstName: signedInFirstName,
+        lastName: signedInRest.join(" "),
+        name: identity.name || identity.email,
+        role: signedInRole,
+        emailConfirmed: true,
+        onboardingCompleted: true,
+        // Local backend has no community review workflow yet: a facility
+        // account is auto-verified, matching the old prototype behavior.
+        communityStatus: isFacilityRole(signedInRole) ? "verified" : undefined,
+      };
+      // Keep the local profile store in step when it knows this account.
+      void signInAccount(input);
+      setUser(signedIn);
+      return { ok: true as const, data: signedIn };
     },
     [remote],
   );
@@ -286,6 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailConfirmed: true,
         communityStatus: isFacilityRole(role) ? "verified" : undefined,
         onboardingCompleted: true,
+        communityStatus: isFacilityRole(role) ? "verified" : undefined,
       };
       // Keep the local profile store in step when it knows this account.
       void signInAccount(input);

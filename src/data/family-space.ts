@@ -18,6 +18,7 @@ export type FamilyView =
   | "depot"
   | "dossier"
   | "demandes"
+  | "messages"
   | "assistance";
 
 /** Create vs manage the same admission dossier. */

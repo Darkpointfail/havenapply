@@ -47,6 +47,17 @@ export type AdmissionFamilyContact = {
   email: string;
   phone: string;
   relationship: string;
+  preferredLanguage?: string;
+  preferredContactMethod?: string;
+  availability?: string;
+  decisionAuthority?: boolean;
+};
+
+export type AdmissionEmergencyContact = {
+  name: string;
+  phone: string;
+  relationship: string;
+  email?: string;
 };
 
 /**
@@ -130,8 +141,7 @@ export type AdmissionApplicationRecord = {
   /** Metadata only — file bytes are not shared with staff in this milestone. */
   documents: AdmissionDocumentMeta[];
   familyContact: AdmissionFamilyContact;
-  dossierSnapshot: AdmissionDossierSnapshot | null;
-  desiredMoveIn: string | null;
+  dossierSnapshot: AdmissionDossierSnapshot | null;  desiredMoveIn: string | null;
   waitlistPosition: number | null;
   decision: AdmissionDecision;
   /** True only for explicitly seeded development data. */
@@ -200,8 +210,7 @@ export type AdmissionSubmitInput = {
   medicalHighlights?: string[];
   documents?: AdmissionDocumentMeta[];
   familyContact?: Partial<AdmissionFamilyContact>;
-  dossierSnapshot?: AdmissionDossierSnapshot | null;
-  desiredMoveIn?: string | null;
+  dossierSnapshot?: AdmissionDossierSnapshot | null;  desiredMoveIn?: string | null;
 };
 
 export type AdmissionRepositoryError = {

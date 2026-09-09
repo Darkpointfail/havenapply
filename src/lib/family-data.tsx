@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -58,9 +59,12 @@ import {
 import { normalizeApplicationStatus } from "@/data/applications";
 import {
   admissionsEnabled,
+  apiGetAdmissionDetail,
+  apiListFamilyAdmissions,
   apiSubmitAdmission,
   apiWithdrawAdmission,
 } from "@/lib/admissions/client-api";
+import type { AdmissionApplicationRecord, AdmissionStatus } from "@/lib/admissions/types";
 import { admissionInputFromFamilyApplication } from "@/lib/admissions/mapping";
 import { isResidenceAcceptingApplications } from "@/lib/community-portal";
 import { ensureApplicationPublicRef, ensureDossierPublicRef, ensurePersonPublicRef } from "@/lib/public-refs";
@@ -73,6 +77,53 @@ import {
 
 export type { DocCategoryId, VaultDocument, SavedFavorite, FavoriteTagId, FamilyApplication };
 export type { ResidentDossier };
+
+/**
+ * What the residence console's status change means for the family view.
+ * `null` = no family-facing decision change (draft, or same as "pending").
+ */
+function communityDecisionKindForAdmissionStatus(
+  status: AdmissionStatus,
+): CommunityDecisionKind | null {
+  switch (status) {
+    case "more_info":
+      return "info_requested";
+    case "tour_requested":
+      return "tour_offered";
+    case "assessment_requested":
+      return "assessment_offered";
+    case "waitlisted":
+      return "waitlist";
+    case "approved":
+      return "accepted";
+    case "declined":
+      return "rejected";
+    case "received":
+    case "under_review":
+      return "pending";
+    default:
+      return null;
+  }
+}
+
+/** Matches a real admissions record to the family's locally-tracked application. */
+function findLocalApplicationForAdmission(
+  applications: FamilyApplication[],
+  admission: AdmissionApplicationRecord,
+): FamilyApplication | null {
+  return (
+    applications.find(
+      (a) => admission.publicRef && a.publicRef && a.publicRef === admission.publicRef,
+    ) ??
+    applications.find(
+      (a) => admission.dossierRef && a.dossierRef && a.dossierRef === admission.dossierRef,
+    ) ??
+    applications.find(
+      (a) => admission.personRef && a.personRef && a.personRef === admission.personRef,
+    ) ??
+    null
+  );
+}
 /** @deprecated use DocCategoryId */
 export type DocCategory = DocCategoryId;
 
@@ -1213,6 +1264,43 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
     },
     [persist],
   );
+
+  /**
+   * Pulls the residence console's real status/decision into the family view,
+   * once per session. The console already writes a descriptive note to the
+   * server on every action (assign, request info/documents, propose a
+   * tour/assessment, change status) — this is the missing read side.
+   */
+  const admissionsSyncedRef = useRef(false);
+  useEffect(() => {
+    if (!ready || admissionsSyncedRef.current) return;
+    if (!user || user.role !== "family") return;
+    if (!admissionsEnabled()) return;
+    admissionsSyncedRef.current = true;
+
+    (async () => {
+      const listResult = await apiListFamilyAdmissions();
+      if (!listResult?.ok || !listResult.applications) return;
+
+      for (const admission of listResult.applications) {
+        const kind = communityDecisionKindForAdmissionStatus(admission.status);
+        if (!kind) continue;
+
+        const local = findLocalApplicationForAdmission(data.applications, admission);
+        if (!local || local.communityDecision?.kind === kind) continue;
+
+        const detail = await apiGetAdmissionDetail(admission.id);
+        const events = detail?.ok ? detail.statusEvents ?? [] : [];
+        const latest = events.length ? events[events.length - 1] : null;
+        const note = latest?.note?.trim() || `The residence updated this application’s status.`;
+
+        setCommunityDecision(local.id, kind, note);
+      }
+    })();
+    // Runs once per session (guarded by the ref above); data.applications is
+    // read from the closure at that moment, not tracked as a live dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user]);
 
   const withdrawApplication = useCallback(
     (applicationId: string) => {

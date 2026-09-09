@@ -933,6 +933,12 @@ html {
     width: 100%;
   }
 
+  .al-mobile-lang {
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
+  }
+
   .al-hero {
     padding-top: 44px;
     padding-bottom: 44px;

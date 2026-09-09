@@ -121,6 +121,20 @@ export const fr = {
   "hp.footer.privacy": "Confidentialité",
   "hp.footer.collection": "Avis de collecte",
   "hp.footer.terms": "Conditions",
+
+  "hp.aria.mainNav": "Navigation principale",
+  "hp.aria.mobileNav": "Menu mobile",
+  "hp.aria.testimonial": "Témoignage",
+  "hp.aria.footerNav": "Pied de page",
+
+  "hp.demo.role": "Accompagnatrice HavenApply",
+  "hp.demo.claire1":
+    "Bonjour Sophie. Parlons de votre mère. Vit-elle encore à la maison en ce moment ?",
+  "hp.demo.family1":
+    "Elle est à l'hôpital depuis sa chute, ils veulent la transférer d'ici deux semaines.",
+  "hp.demo.claire2":
+    "Compris. J'ai noté « hôpital » et j'ai marqué le dossier comme urgent — les résidences le verront en priorité. Est-ce qu'elle a besoin d'aide pour se déplacer ?",
+  "hp.demo.s3": "Je ne sais pas",
 } as const;
 
 export type MessageKey = keyof typeof fr;

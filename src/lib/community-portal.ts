@@ -243,6 +243,20 @@ export type ClientDossier = {
   fallHistory?: string;
   smokingAlcohol?: string;
   socialSupports?: string;
+
+  // --- Situation & move project ---------------------------------------
+  searchReason?: string;
+  desiredMoveInTimeframe?: string;
+  preferredLocations?: string[];
+  budgetMonthly?: string;
+  fundingSources?: string[];
+
+  // --- Housing preferences ----------------------------------------------
+  unitType?: string;
+  roomSharing?: string;
+  accessibilityNeeds?: string;
+  importantPreferences?: string[];
+  nonNegotiables?: string[];
 };
 
 export type CommunityApplication = {
@@ -271,6 +285,10 @@ export type CommunityApplication = {
     email: string;
     phone: string;
     relationship: string;
+    preferredLanguage?: string;
+    preferredContactMethod?: string;
+    availability?: string;
+    decisionAuthority?: boolean;
   };
   emergencyContact?: {
     name: string;
@@ -301,6 +319,8 @@ export type CommunityApplication = {
   };
   communicationPreference?: string;
   decisionAuthority?: string;
+  /** Family consented to sharing this dossier with residences. */
+  consentToShare?: boolean;
   paymentMethod?: string;
   moveInRequested?: string;
   status: ApplicationStatus;

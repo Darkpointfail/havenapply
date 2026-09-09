@@ -238,6 +238,13 @@ const STATUS_TO_DEMANDE: Partial<Record<ApplicationStatus, DemandeStatus>> = {
   declined: "Liste d'attente",
 };
 
+function autonomyLevelFromText(level: string): "autonome" | "aide" | "assistance" {
+  const lower = level.toLowerCase();
+  if (lower.includes("autonome") && !lower.includes("aide") && !lower.includes("partiel")) return "autonome";
+  if (lower.includes("assistance") || lower.includes("total") || lower.includes("aucune")) return "assistance";
+  return "aide";
+}
+
 export function communityAppToDemande(app: CommunityApplication): Demande {
   const status = normalizeApplicationStatus(app.status);
   const sharedCount = app.documents?.filter((d) => d.shared).length ?? 0;
@@ -268,6 +275,40 @@ export function communityAppToDemande(app: CommunityApplication): Demande {
     emmenagement: app.moveInRequested || "As soon as possible",
     resumeIa: app.executiveSummary || app.summary || "File received via HavenApply.",
     noteInterne: app.internalNotes?.[0]?.body,
+    contactTel: app.family?.phone,
+    contactCourriel: app.family?.email,
+    contactPreference: app.family?.preferredContactMethod,
+    contactUrgenceNom: app.emergencyContact?.name,
+    contactUrgenceLien: app.emergencyContact?.relationship,
+    contactUrgenceTel: app.emergencyContact?.phone,
+    contactUrgenceCourriel: app.emergencyContact?.email,
+    secteursRecherches: app.dossier?.preferredLocations?.join(", "),
+    referenceExterne: app.dossierRef || undefined,
+    logementNonNegociable: app.dossier?.nonNegotiables?.[0],
+    logementPreferences: app.dossier?.importantPreferences,
+    notes: app.internalNotes?.map((n, i) => ({
+      id: n.id || `note-${i}`,
+      auteur: n.author || "Équipe",
+      horodatage: n.at ? new Date(n.at).toLocaleString("fr-CA") : "—",
+      etiquette: "Suivi" as const,
+      texte: n.body,
+    })),
+    medicaments: app.dossier?.medications?.map((m) => ({
+      nom: m.name,
+      dose: m.dose,
+      frequence: m.frequency,
+      indication: m.indication || m.route || "—",
+    })),
+    allergies: app.dossier?.allergies?.length
+      ? app.dossier.allergies.map((a) => a.substance).join(", ")
+      : undefined,
+    pharmacie: app.dossier?.pharmacy,
+    autonomieTuiles: app.dossier?.adls?.map((a) => ({
+      label: a.activity,
+      value: a.level,
+      level: autonomyLevelFromText(a.level),
+    })),
+    evaluationTransmise: app.dossier?.fallHistory,
   };
 }
 

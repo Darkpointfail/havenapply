@@ -124,4 +124,17 @@ export const en: Messages = {
   "hp.footer.privacy": "Privacy",
   "hp.footer.collection": "Collection notice",
   "hp.footer.terms": "Terms",
+
+  "hp.aria.mainNav": "Main navigation",
+  "hp.aria.mobileNav": "Mobile menu",
+  "hp.aria.testimonial": "Testimonial",
+  "hp.aria.footerNav": "Footer navigation",
+
+  "hp.demo.role": "HavenApply guide",
+  "hp.demo.claire1": "Hello Sophie. Let's talk about your mother. Is she still living at home right now?",
+  "hp.demo.family1":
+    "She's been in hospital since her fall, they want to transfer her within two weeks.",
+  "hp.demo.claire2":
+    "Understood. I've noted \"hospital\" and flagged the file as urgent — residences will see it as a priority. Does she need help getting around?",
+  "hp.demo.s3": "I don't know",
 };

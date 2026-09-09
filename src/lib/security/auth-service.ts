@@ -41,9 +41,15 @@ export const RATE_LIMITS = {
 export type ServiceFailure = { ok: false; status: number; error: string };
 export type ServiceResult<T> = { ok: true; data: T } | ServiceFailure;
 
-/** Verification is required for family accounts before a session is issued. */
+/**
+ * Email verification gate before a session is issued.
+ * Disabled for now (product decision, 2026-09-09): no email transport is
+ * wired up yet, so requiring confirmation blocks every signup. Restore
+ * `return role === "family";` once verification should be enforced again.
+ */
 export function requiresVerifiedEmail(role: UserRole): boolean {
-  return role === "family";
+  void role;
+  return false;
 }
 
 function normalizeEmail(value: unknown): string | null {
@@ -54,18 +60,20 @@ function normalizeEmail(value: unknown): string | null {
   return email;
 }
 
+/**
+ * Rate limiting on auth attempts is disabled for now (product decision,
+ * 2026-09-09): during active development/testing it locks out the person
+ * testing the app for up to an hour. `consumeRateLimit` still records every
+ * attempt below, so re-enabling is just restoring the check that used its
+ * verdict (see git history) once the site has real, unattended traffic.
+ */
 async function limit(
   bucket: keyof typeof RATE_LIMITS,
   discriminator: string,
 ): Promise<ServiceFailure | null> {
   const { limit: max, windowMs } = RATE_LIMITS[bucket];
-  const verdict = await consumeRateLimit(`${bucket}:${hashLookup(discriminator)}`, max, windowMs);
-  if (verdict.allowed) return null;
-  return {
-    ok: false,
-    status: 429,
-    error: `Too many attempts. Try again in ${verdict.retryAfterSeconds} seconds.`,
-  };
+  await consumeRateLimit(`${bucket}:${hashLookup(discriminator)}`, max, windowMs);
+  return null;
 }
 
 export type RegisterInput = {

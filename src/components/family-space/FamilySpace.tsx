@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Source_Serif_4, Public_Sans } from "next/font/google";
 import { ResidencesBrowse, ResidenceFiche } from "@/components/family-space/ResidencesPage";
 import { DossiersView } from "@/components/family-space/DossiersView";
+import { MessagingInbox } from "@/components/messaging/MessagingInbox";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   askAssistant,
@@ -84,6 +85,7 @@ const NAV: { id: FamilyView; labelKey: string }[] = [
   { id: "residences", labelKey: "Residences" },
   { id: "dossier", labelKey: "Files" },
   { id: "demandes", labelKey: "My requests" },
+  { id: "messages", labelKey: "Messages" },
   { id: "assistance", labelKey: "Assistance" },
 ];
 
@@ -260,7 +262,7 @@ export function FamilySpace() {
       demandes: "demandes",
       applications: "demandes",
       assistance: "assistance",
-      messages: "assistance",
+      messages: "messages",
     };
     const next = map[raw];
     if (!next) return;
@@ -1020,6 +1022,7 @@ export function FamilySpace() {
             onSearch={() => go("residences")}
           />
         )}
+        {view === "messages" && <MessagingInbox portal="family" />}
         {view === "assistance" && (
           <Assistance
             chat={helpChat}

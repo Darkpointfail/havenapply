@@ -102,10 +102,13 @@ function Section({
 }
 
 function Field({ label, value }: { label: string; value?: string | null }) {
+  const filled = Boolean(value?.trim());
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">{label}</p>
-      <p className="mt-1 whitespace-pre-line text-sm text-ink">{value?.trim() || ","}</p>
+      <p className={cn("mt-1 whitespace-pre-line text-sm", filled ? "text-ink" : "text-ink-faint italic")}>
+        {filled ? value!.trim() : "Non précisé"}
+      </p>
     </div>
   );
 }
@@ -162,6 +165,8 @@ export function CommunityApplicationDetail() {
     updateTransitionChecklist,
     setMoveInConfirmed,
     completeTransition,
+    addInternalNote,
+    requestDocument,
   } = useCommunityPortal();
 
   const app = getApplication(id);
@@ -182,6 +187,10 @@ export function CommunityApplicationDetail() {
   const [moveInDraft, setMoveInDraft] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DossierTabId>("snapshot");
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [docRequestOpen, setDocRequestOpen] = useState(false);
+  const [docRequestDraft, setDocRequestDraft] = useState("");
 
   const docsGrouped = useMemo(() => {
     if (!app) return {} as Record<string, CommunityApplication["documents"]>;
@@ -196,6 +205,31 @@ export function CommunityApplicationDetail() {
   }, [app]);
 
   const dossier = app?.dossier;
+  const dossierCompleteness = useMemo(() => {
+    if (!app) return { percent: 0, missing: [] as string[] };
+    const d = app.dossier;
+    const checks: { label: string; ok: boolean }[] = [
+      { label: "Date de naissance", ok: Boolean(d?.dateOfBirth) },
+      { label: "Langue préférée", ok: Boolean(d?.primaryLanguage) },
+      { label: "Téléphone du contact principal", ok: Boolean(app.family.phone?.trim()) },
+      { label: "Autorisation de décision du contact", ok: app.family.decisionAuthority !== undefined },
+      { label: "Contact d'urgence", ok: Boolean(app.emergencyContact?.name) },
+      { label: "Raison de la recherche", ok: Boolean(d?.searchReason) },
+      { label: "Délai souhaité", ok: Boolean(d?.desiredMoveInTimeframe || app.moveInRequested) },
+      { label: "Budget mensuel estimé", ok: Boolean(d?.budgetMonthly) },
+      { label: "Type d'unité souhaité", ok: Boolean(d?.unitType) },
+      { label: "Besoins de soins", ok: (app.careNeeds?.length ?? 0) > 0 },
+      { label: "Consentement de partage", ok: app.consentToShare === true },
+      { label: "Document d'identité", ok: (app.documents || []).some((doc) => documentCategoryGroup(doc.category) === "Identity") },
+      { label: "Document médical", ok: (app.documents || []).some((doc) => documentCategoryGroup(doc.category) === "Medical") },
+      { label: "Document financier", ok: (app.documents || []).some((doc) => documentCategoryGroup(doc.category) === "Financial") },
+    ];
+    const done = checks.filter((c) => c.ok).length;
+    return {
+      percent: Math.round((done / checks.length) * 100),
+      missing: checks.filter((c) => !c.ok).map((c) => c.label),
+    };
+  }, [app]);
   const reviewProgress = app ? reviewChecklistProgress(app) : null;
   const transitionProgress = app ? transitionChecklistProgress(app) : null;
   const inTransition = app ? isTransitionApplication(app) : false;
@@ -369,6 +403,43 @@ export function CommunityApplicationDetail() {
             <p className="text-sm text-ink-muted">{catalogLabel(t, app.family.relationship)}</p>
           </div>
         </div>
+
+        {app.family.phone?.trim() ? (
+          <a
+            href={`tel:${app.family.phone}`}
+            className="mt-4 flex items-center justify-between rounded-xl border border-brand/30 bg-brand-soft/40 px-4 py-3 text-brand-strong transition hover:bg-brand-soft/70"
+          >
+            <span className="text-[15px] font-semibold tabular-nums">{app.family.phone}</span>
+            <span className="text-xs font-medium">{t("Appeler")} →</span>
+          </a>
+        ) : (
+          <p className="mt-4 rounded-xl border border-dashed border-line px-4 py-3 text-sm text-ink-faint italic">
+            {t("No phone on file")}
+          </p>
+        )}
+
+        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+          <div>
+            <p className="text-xs text-ink-faint">{t("Preferred language")}</p>
+            <p className="text-ink">{app.family.preferredLanguage || "Non précisé"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">{t("Preferred contact")}</p>
+            <p className="text-ink">{app.family.preferredContactMethod || "Non précisé"}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-ink-faint">{t("Availability")}</p>
+            <p className="text-ink">{app.family.availability || "Non précisé"}</p>
+          </div>
+        </div>
+        {app.family.decisionAuthority !== undefined ? (
+          <Badge tone={app.family.decisionAuthority ? "success" : "neutral"} className="mt-3">
+            {app.family.decisionAuthority
+              ? t("Authorized to make decisions")
+              : t("Not the primary decision-maker")}
+          </Badge>
+        ) : null}
+
         <div className="mt-4 flex flex-col gap-2">
           <Button
             type="button"
@@ -387,6 +458,28 @@ export function CommunityApplicationDetail() {
           </a>
         </div>
       </section>
+
+      {app.emergencyContact?.name ? (
+        <section className="rounded-2xl border border-line bg-surface p-5">
+          <h2 className="text-[19px] font-semibold tracking-[-0.025em] text-ink">
+            {t("Emergency contact")}
+          </h2>
+          <div className="mt-3 space-y-1 text-sm">
+            <p className="font-medium text-ink">{app.emergencyContact.name}</p>
+            <p className="text-ink-muted">{catalogLabel(t, app.emergencyContact.relationship)}</p>
+            {app.emergencyContact.phone ? (
+              <a href={`tel:${app.emergencyContact.phone}`} className="block text-brand hover:underline">
+                {app.emergencyContact.phone}
+              </a>
+            ) : null}
+            {app.emergencyContact.email ? (
+              <a href={`mailto:${app.emergencyContact.email}`} className="block text-brand hover:underline">
+                {app.emergencyContact.email}
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="text-[19px] font-semibold tracking-[-0.025em] text-ink">
@@ -467,6 +560,9 @@ export function CommunityApplicationDetail() {
                       {app.seniorName}
                     </h1>
                     <Badge tone={priorityTone(priority)}>{priorityBadgeLabel(priority)}</Badge>
+                    <Badge tone={dossierCompleteness.percent >= 80 ? "success" : dossierCompleteness.percent >= 50 ? "warn" : "danger"}>
+                      {t("Dossier")} {dossierCompleteness.percent}% {t("complet")}
+                    </Badge>
                   </div>
                   <p className="mt-0.5 text-sm text-ink-muted">
                     {catalogLabel(t, applicationCareType(app))}
@@ -500,6 +596,11 @@ export function CommunityApplicationDetail() {
               ) : null}
 
               <div className="flex flex-wrap items-center gap-2">
+                {app.family.phone?.trim() ? (
+                  <Button size="sm" variant="secondary" href={`tel:${app.family.phone}`}>
+                    {t("Appeler")} · {app.family.phone}
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
@@ -507,6 +608,28 @@ export function CommunityApplicationDetail() {
                   onClick={() => router.push(messageHref)}
                 >
                   {t("Ask the family")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setDocRequestDraft("");
+                    setDocRequestOpen(true);
+                  }}
+                >
+                  {t("Demander un document")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setNoteDraft("");
+                    setNoteOpen(true);
+                  }}
+                >
+                  {t("Ajouter une note")}
                 </Button>
                 <Button
                   type="button"
@@ -609,6 +732,46 @@ export function CommunityApplicationDetail() {
                           }
                         />
                         <Field label={t("Referral source")} value={app.referralSource} />
+                        <Field label={t("Dossier status")} value={t(reviewStatusLabel(app))} />
+                        <Field label={t("Created")} value={formatPortalDate(app.submittedAt)} />
+                        <Field label={t("Last updated")} value={formatPortalDate(app.lastUpdated)} />
+                        <Field
+                          label={t("Sharing consent")}
+                          value={app.consentToShare ? t("Consented") : t("Not confirmed")}
+                        />
+                      </div>
+                    </SubCard>
+
+                    <SubCard title={t("Situation & move project")}>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <Field label={t("Current living situation")} value={dossier?.currentLivingSituation} />
+                        <Field label={t("Reason for search")} value={dossier?.searchReason} />
+                        <Field label={t("Desired move-in timeframe")} value={dossier?.desiredMoveInTimeframe} />
+                        <Field
+                          label={t("Preferred locations")}
+                          value={dossier?.preferredLocations?.length ? dossier.preferredLocations.join(", ") : undefined}
+                        />
+                        <Field label={t("Monthly budget")} value={dossier?.budgetMonthly} />
+                        <Field
+                          label={t("Funding sources")}
+                          value={dossier?.fundingSources?.length ? dossier.fundingSources.join(", ") : undefined}
+                        />
+                      </div>
+                    </SubCard>
+
+                    <SubCard title={t("Housing preferences")}>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <Field label={t("Desired unit type")} value={dossier?.unitType} />
+                        <Field label={t("Room sharing")} value={dossier?.roomSharing} />
+                        <Field label={t("Accessibility needs")} value={dossier?.accessibilityNeeds} />
+                        <Field
+                          label={t("Important preferences")}
+                          value={dossier?.importantPreferences?.length ? dossier.importantPreferences.join(", ") : undefined}
+                        />
+                        <Field
+                          label={t("Non-negotiables")}
+                          value={dossier?.nonNegotiables?.length ? dossier.nonNegotiables.join(", ") : undefined}
+                        />
                       </div>
                     </SubCard>
 
@@ -1708,6 +1871,96 @@ export function CommunityApplicationDetail() {
       )}
 
       {/* Decline modal */}
+      {noteOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+          <div className="absolute inset-0" onClick={() => setNoteOpen(false)} aria-hidden />
+          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
+            <h2 className="text-xl font-semibold tracking-tight">{t("Ajouter une note")}</h2>
+            <p className="mt-1 text-sm text-ink-muted">{t("Not visible to the family")}</p>
+            <textarea
+              rows={4}
+              autoFocus
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              className="mt-4 w-full rounded-2xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+              placeholder={t("Note interne sur ce dossier…")}
+            />
+            <div className="mt-5 flex gap-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setNoteOpen(false)}>
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                disabled={!noteDraft.trim()}
+                onClick={() => {
+                  const r = addInternalNote(app.id, noteDraft.trim());
+                  if (r.ok) {
+                    setNoteOpen(false);
+                    flashMsg(t("Note added"));
+                  }
+                }}
+              >
+                {t("Save")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {docRequestOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+          <div className="absolute inset-0" onClick={() => setDocRequestOpen(false)} aria-hidden />
+          <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-lg">
+            <h2 className="text-xl font-semibold tracking-tight">{t("Demander un document")}</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              {t("The family sees this request in HavenApply and can respond by uploading a document.")}
+            </p>
+            <textarea
+              rows={3}
+              autoFocus
+              value={docRequestDraft}
+              onChange={(e) => setDocRequestDraft(e.target.value)}
+              className="mt-4 w-full rounded-2xl border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
+              placeholder={t("Ex.: Évaluation médicale récente (OEMC)")}
+            />
+            {dossierCompleteness.missing.length ? (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {dossierCompleteness.missing.slice(0, 6).map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setDocRequestDraft((prev) => (prev ? `${prev}\n${label}` : label))}
+                    className="rounded-full border border-line bg-bg-soft px-2.5 py-1 text-xs text-ink-muted hover:border-brand hover:text-brand"
+                  >
+                    + {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="mt-5 flex gap-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setDocRequestOpen(false)}>
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                disabled={!docRequestDraft.trim()}
+                onClick={() => {
+                  const r = requestDocument(app.id, docRequestDraft.trim());
+                  if (r.ok) {
+                    setDocRequestOpen(false);
+                    flashMsg(t("Document request sent"));
+                  }
+                }}
+              >
+                {t("Send request")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {declineOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
           <div

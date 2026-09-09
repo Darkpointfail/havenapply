@@ -83,7 +83,14 @@ export function admissionRecordToCommunityApplication(
     careNeeds: record.careNeeds,
     medicalHighlights: record.medicalHighlights,
     documents: record.documents,
-    family: record.familyContact,
+    family: {
+      ...record.familyContact,
+      preferredLanguage: record.familyContact.preferredLanguage ?? prior?.family?.preferredLanguage,
+      preferredContactMethod:
+        record.familyContact.preferredContactMethod ?? prior?.family?.preferredContactMethod,
+      availability: record.familyContact.availability ?? prior?.family?.availability,
+      decisionAuthority: record.familyContact.decisionAuthority ?? prior?.family?.decisionAuthority,
+    },
     status: record.status as ApplicationStatus,
     careType: prior?.careType,
     referralSource: prior?.referralSource ?? "Family",
@@ -112,8 +119,7 @@ export function admissionRecordToCommunityApplication(
     housingPreferences: snapshot?.housing ?? prior?.housingPreferences,
     communicationPreference:
       snapshot?.communicationPreference || prior?.communicationPreference,
-    decisionAuthority: snapshot?.decisionAuthority || prior?.decisionAuthority,
-    paymentMethod: prior?.paymentMethod,
+    decisionAuthority: snapshot?.decisionAuthority || prior?.decisionAuthority,    paymentMethod: prior?.paymentMethod,
     moveInRequested: prior?.moveInRequested ?? record.desiredMoveIn ?? undefined,
     focusReason: prior?.focusReason,
     nextAction: prior?.nextAction,

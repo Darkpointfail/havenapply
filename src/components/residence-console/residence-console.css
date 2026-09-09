@@ -16,6 +16,10 @@
   --rc-hover: #f3f8f6;
   --rc-border: #dce6e2;
   --rc-border-faint: #ecf2f0;
+  --rc-mint: #f1f8f6;
+  --rc-mint-bd: #c2dbd4;
+  --rc-terra-bd: #e4c7b0;
+  --rc-warn-bg: #fff9f4;
 
   --rc-font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
   --rc-font-sans: var(--font-public-sans), "Public Sans", system-ui, sans-serif;

@@ -19,6 +19,7 @@ import {
   INITIAL_WAITLIST,
   PROGRESS_STEPS,
   progressIndexForStatus,
+  REFUS_MOTIFS,
   REQUIRED_DOCS,
   RESIDENCE,
   SERVICES_INCLUS,
@@ -28,8 +29,10 @@ import {
   UNIT_PRICING,
   VISITS,
   WEEKLY_DEMANDES,
+  type AutonomyTile,
   type Demande,
   type DemandeStatus,
+  type NoteEntry,
   type UrgenceLevel,
   type WaitlistEntry,
 } from "@/data/residence-console";
@@ -62,6 +65,7 @@ const DEMANDE_STATUS_EN: Record<DemandeStatus, string> = {
   "Visite planifiée": "Visit scheduled",
   Acceptée: "Accepted",
   "Liste d'attente": "Waitlist",
+  "Refusée": "Declined",
 };
 
 function todayLabel(locale: Locale) {
@@ -453,6 +457,8 @@ export function ResidenceConsole() {
   const [selId, setSelId] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [placed, setPlaced] = useState<Record<string, UrgenceLevel>>({});
+  const [refused, setRefused] = useState<Record<string, string>>({});
+  const [notesByDemande, setNotesByDemande] = useState<Record<string, NoteEntry[]>>({});
   // Local overlay for optimistic edits when portal apps empty (seed fallback)
   const [localDemandes, setLocalDemandes] = useState<Demande[]>(DEMANDES);
   const [localWaitlist, setLocalWaitlist] = useState<WaitlistEntry[]>(() =>
@@ -558,6 +564,37 @@ export function ResidenceConsole() {
     setView("attente");
   };
 
+  const refuseWithReason = (demandeId: string, reasonLabel: string) => {
+    setRefused((r) => ({ ...r, [demandeId]: reasonLabel }));
+    const result = portal.changeStatus(demandeId, "declined");
+    if (!result.ok) {
+      setLocalDemandes((prev) =>
+        prev.map((d) => (d.id === demandeId ? { ...d, statut: "Refusée" as DemandeStatus } : d)),
+      );
+    }
+  };
+
+  const cancelDecision = (demandeId: string) => {
+    setPlaced((p) => {
+      const next = { ...p };
+      delete next[demandeId];
+      return next;
+    });
+    setRefused((r) => {
+      const next = { ...r };
+      delete next[demandeId];
+      return next;
+    });
+    const result = portal.changeStatus(demandeId, "under_review");
+    if (!result.ok) {
+      setLocalDemandes((prev) =>
+        prev.map((d) =>
+          d.id === demandeId ? { ...d, statut: "En évaluation" as DemandeStatus } : d,
+        ),
+      );
+    }
+  };
+
   const titles: Record<ConsoleView, { title: string; subtitle: string }> = {
     demandes: {
       title: t("Requests"),
@@ -616,8 +653,10 @@ export function ResidenceConsole() {
           )}
           {view === "dossier" && selected && (
             <DossierView
+              key={selected.id}
               demande={selected}
               placed={placed[selected.id]}
+              refused={refused[selected.id]}
               accepting={accepting}
               setAccepting={setAccepting}
               onBack={() => {
@@ -625,6 +664,15 @@ export function ResidenceConsole() {
                 setAccepting(false);
               }}
               onAccept={(u) => acceptWithUrgence(selected.id, u)}
+              onRefuse={(label) => refuseWithReason(selected.id, label)}
+              onCancelDecision={() => cancelDecision(selected.id)}
+              notes={notesByDemande[selected.id] ?? selected.notes ?? []}
+              onAddNote={(entry) =>
+                setNotesByDemande((prev) => ({
+                  ...prev,
+                  [selected.id]: [entry, ...(prev[selected.id] ?? selected.notes ?? [])],
+                }))
+              }
               messages={messages}
               message={message}
               setMessage={setMessage}
@@ -640,12 +688,6 @@ export function ResidenceConsole() {
                   },
                 ]);
                 setMessage("");
-              }}
-              photoUrl={photoUrl}
-              onPhoto={(file) => {
-                if (!file) return;
-                const url = URL.createObjectURL(file);
-                setPhotoUrl(url);
               }}
             />
           )}
@@ -805,355 +847,815 @@ function DemandesView({
 function DossierView({
   demande,
   placed,
+  refused,
   accepting,
   setAccepting,
   onBack,
   onAccept,
+  onRefuse,
+  onCancelDecision,
   messages,
   message,
   setMessage,
   onSend,
-  photoUrl,
-  onPhoto,
+  notes,
+  onAddNote,
 }: {
   demande: Demande;
   placed?: UrgenceLevel;
+  refused?: string;
   accepting: boolean;
   setAccepting: (v: boolean) => void;
   onBack: () => void;
   onAccept: (u: UrgenceLevel) => void;
+  onRefuse: (reasonLabel: string) => void;
+  onCancelDecision: () => void;
   messages: { id: string; from: "family" | "residence"; author: string; body: string }[];
   message: string;
   setMessage: (v: string) => void;
   onSend: () => void;
-  photoUrl: string | null;
-  onPhoto: (f: File | null) => void;
+  notes: NoteEntry[];
+  onAddNote: (entry: NoteEntry) => void;
 }) {
   const t = useT();
   const docs = docsForDemande(demande.piecesManquantes);
   const received = docs.filter((d) => d.received).length;
-  const step = progressIndexForStatus(demande.statut);
+  const completionPourcent = Math.round((received / REQUIRED_DOCS.length) * 100);
+
+  const [showRefusePanel, setShowRefusePanel] = useState(false);
+  const [selectedMotif, setSelectedMotif] = useState<string | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+
+  const decided = !!placed || !!refused;
+
+  const autonomieTuiles: AutonomyTile[] =
+    demande.autonomieTuiles && demande.autonomieTuiles.length > 0
+      ? demande.autonomieTuiles
+      : [{ label: t("Declared autonomy level"), value: catalogLabel(t, demande.autonomie), level: "aide" }];
+
+  const tileBorder: Record<AutonomyTile["level"], string> = {
+    autonome: "#2C6B4F",
+    aide: "var(--rc-green)",
+    assistance: "var(--rc-terra)",
+  };
+
+  function submitRefuse() {
+    const motif = REFUS_MOTIFS.find((m) => m.id === selectedMotif);
+    if (!motif) return;
+    onRefuse(motif.label);
+    setShowRefusePanel(false);
+  }
+
+  function submitNote() {
+    const texte = noteDraft.trim();
+    if (!texte) return;
+    onAddNote({
+      id: `local-${Date.now()}`,
+      auteur: RESIDENCE.staff.name,
+      horodatage: t("Just now"),
+      etiquette: "Suivi",
+      texte,
+    });
+    setNoteDraft("");
+  }
 
   return (
     <div className="flex flex-col gap-5">
-      <button
-        type="button"
-        onClick={onBack}
-        className="w-fit text-[14px] font-semibold text-[var(--rc-green)] hover:text-[var(--rc-green-deep)]"
-      >
-        {t("← Back to applications")}
-      </button>
+      <nav className="text-[13.5px] text-[var(--rc-ink-muted)]">
+        <button type="button" onClick={onBack} className="hover:underline">
+          {t("Applications")}
+        </button>{" "}
+        / {t("Files")} / <span className="font-medium text-[var(--rc-ink)]">{t("Resident profile")}</span>
+      </nav>
 
-      {placed ? (
-        <div
-          className="rounded-[10px] border px-4 py-3 text-[14.5px] font-medium"
-          style={{
-            background: "var(--rc-green-bg)",
-            borderColor: "#C2DBD4",
-            color: "var(--rc-green-deep)",
-          }}
-        >
-          {t("Placed on the waitlist · {urgency} urgency", {
-            urgency: t(URGENCE_EN[placed]).toLowerCase(),
-          })}
-        </div>
-      ) : null}
-
-      <div className="rc-card grid gap-0 lg:grid-cols-[auto_1fr_262px]">
-        <div className="border-b border-[var(--rc-border)] p-5 lg:border-b-0 lg:border-r">
-          <label className="block cursor-pointer">
+      {/* Bloc 1: header card + contact card */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(360px,1fr))" }}>
+        {/* Header card */}
+        <div className="rc-card flex flex-col gap-[22px]" style={{ padding: "26px 28px" }}>
+          <div className="flex flex-wrap items-center gap-4">
             <div
-              className="relative overflow-hidden rounded-lg bg-[var(--rc-subtle)]"
-              style={{ width: 132, height: 158 }}
+              className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full border"
+              style={{ background: "var(--rc-green-bg)", borderColor: "var(--rc-mint-bd)" }}
             >
-              {photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-3 text-center">
-                  <span className="text-[12px] text-[var(--rc-ink-faint)]">
-                    {t("Upload a photo")}
-                  </span>
-                </div>
-              )}
+              <span className="rc-serif text-[22px]" style={{ color: "var(--rc-green-deep)" }}>
+                {initialsFrom(demande.nom)}
+              </span>
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(e) => onPhoto(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          <p className="mt-2 max-w-[132px] text-[12px] text-[var(--rc-ink-faint)]">
-            {t("Photo submitted by the family")}
-          </p>
-        </div>
-
-        <div className="border-b border-[var(--rc-border)] p-6 lg:border-b-0 lg:border-r">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="rc-serif text-[30px] leading-tight">{demande.nom}</h2>
+            <h1 className="rc-serif text-[31px]" style={{ textWrap: "balance" as any }}>
+              {demande.nom}
+            </h1>
             <StatusPill status={demande.statut} />
-          </div>
-          <p className="mt-2 text-[14.5px] text-[var(--rc-ink-muted)]">
-            {t("{age} yrs", { age: demande.age })} · {t("application submitted by")}{" "}
-            {demande.contact}, {relationLabel(t, demande.contactLien)}
-          </p>
-          {demande.publicRef ? (
-            <p className="mt-2 font-mono text-[13.5px] tracking-wide text-[var(--rc-ink-muted)]">
-              {t("Ref. {ref}", { ref: demande.publicRef })}
-            </p>
-          ) : null}
-          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
-            {[
-              [t("Desired unit"), catalogLabel(t, demande.unite)],
-              [t("Desired move-in"), catalogLabel(t, demande.emmenagement)],
-              [
-                t("Contact person"),
-                `${demande.contact} (${relationLabel(t, demande.contactLien)})`,
-              ],
-              [t("Received on"), t(demande.recueLe)],
-              ...(demande.publicRef
-                ? ([[t("Haven reference"), demande.publicRef]] as [string, string][])
-                : []),
-            ].map(([label, value]) => (
-              <div key={label}>
-                <p className="rc-label">{label}</p>
-                <p className="mt-1 text-[15px] font-medium">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="flex flex-col gap-2.5 p-5">
-          {!accepting ? (
-            <>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button type="button" className="rc-btn rc-btn-outline">
+                {t("Request a document")}
+              </button>
+              {!decided ? (
+                <button
+                  type="button"
+                  className="rc-btn"
+                  style={{ background: "transparent", border: "1px solid var(--rc-terra-bd)", color: "var(--rc-terra)" }}
+                  onClick={() => setShowRefusePanel((v) => !v)}
+                >
+                  {t("Decline")}
+                </button>
+              ) : null}
+              {!decided && !accepting ? (
+                <button type="button" className="rc-btn rc-btn-primary" onClick={() => setAccepting(true)}>
+                  {t("Accept the application")}
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="rc-btn rc-btn-primary w-full"
-                onClick={() => setAccepting(true)}
-                disabled={!!placed || demande.statut === "Liste d'attente"}
+                onClick={() => setNotesOpen(true)}
+                className="rc-btn rc-btn-outline relative"
               >
-                {t("Accept the application")}
+                ···
+                <span
+                  className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold text-white"
+                  style={{ background: "var(--rc-black)" }}
+                >
+                  {notes.length}
+                </span>
               </button>
-              <button type="button" className="rc-btn rc-btn-outline w-full">
-                {t("Schedule a visit")}
+            </div>
+          </div>
+
+          <p className="text-[14px] text-[var(--rc-ink-muted)]">
+            {t("{age} yrs", { age: demande.age })} · {t("file opened on {date}", { date: t(demande.recueLe) })} ·{" "}
+            {t("last updated {when}", { when: demande.derniereMaj || t("today") })}
+          </p>
+
+          {placed ? (
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border px-4 py-3 text-[14.5px] font-medium"
+              style={{ background: "var(--rc-mint)", borderColor: "var(--rc-mint-bd)", color: "var(--rc-green-deep)" }}
+            >
+              <span>
+                {t("Application accepted — {name} is added to the waitlist for the {unit} at the main building. {contact} has been notified.", {
+                  name: demande.nom.split(" ")[0],
+                  unit: catalogLabel(t, demande.unite),
+                  contact: demande.contact.split(" ")[0],
+                })}
+              </span>
+              <button
+                type="button"
+                onClick={onCancelDecision}
+                className="shrink-0 text-[13.5px] font-medium underline underline-offset-2"
+                style={{ color: "var(--rc-ink)" }}
+              >
+                {t("Cancel decision")}
               </button>
-              <button type="button" className="rc-btn rc-btn-outline w-full">
-                {t("Export the file")}
+            </div>
+          ) : null}
+
+          {refused ? (
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border px-4 py-3 text-[14.5px]"
+              style={{ background: "var(--rc-warn-bg)", borderColor: "var(--rc-terra-bd)", color: "var(--rc-ink)" }}
+            >
+              <span>
+                {t("Reason: {reason}", { reason: refused })}
+              </span>
+              <button
+                type="button"
+                onClick={onCancelDecision}
+                className="shrink-0 text-[13.5px] font-medium underline underline-offset-2"
+                style={{ color: "var(--rc-ink)" }}
+              >
+                {t("Cancel decision")}
               </button>
-            </>
-          ) : (
-            <div className="rounded-[10px] border border-[var(--rc-border)] bg-[var(--rc-subtle)] p-4">
-              <p className="rc-serif text-[19px]">{t("Urgency level")}</p>
-              <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-                {t(
-                  "The accepted file is automatically ranked on the waitlist according to this level.",
-                )}
+            </div>
+          ) : null}
+
+          {showRefusePanel && !decided ? (
+            <div
+              className="flex flex-col gap-3 rounded-[10px] border p-4"
+              style={{ background: "var(--rc-warn-bg)", borderColor: "var(--rc-terra-bd)" }}
+            >
+              <h3 className="text-[15px] font-semibold">{t("Reason for declining")}</h3>
+              <div className="flex flex-wrap gap-2">
+                {REFUS_MOTIFS.map((m) => {
+                  const active = selectedMotif === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedMotif(m.id)}
+                      className="rounded-full border px-3 py-1.5 text-[13.5px] font-medium transition-colors"
+                      style={
+                        active
+                          ? { background: "var(--rc-black)", borderColor: "var(--rc-black)", color: "#fff" }
+                          : { background: "var(--rc-surface)", borderColor: "var(--rc-border)", color: "var(--rc-ink)" }
+                      }
+                    >
+                      {t(m.label)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                {t("{contact} will receive a notice with this reason, and the file will remain visible in declined applications.", {
+                  contact: demande.contact,
+                })}
               </p>
-              <div className="mt-4 flex flex-col gap-2">
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rc-btn rc-btn-terra w-full"
-                  onClick={() => onAccept("Urgente")}
+                  className="rc-btn rc-btn-terra"
+                  disabled={!selectedMotif}
+                  onClick={submitRefuse}
+                  style={!selectedMotif ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
                 >
-                  {t(URGENCE_EN.Urgente)}
+                  {t("Confirm decline")}
                 </button>
-                <button
-                  type="button"
-                  className="rc-btn rc-btn-primary w-full"
-                  onClick={() => onAccept("Élevée")}
-                >
-                  {t(URGENCE_EN["Élevée"])}
-                </button>
-                <button
-                  type="button"
-                  className="rc-btn rc-btn-ghost w-full"
-                  onClick={() => onAccept("Standard")}
-                >
-                  {t(URGENCE_EN.Standard)}
-                </button>
-                <button
-                  type="button"
-                  className="rc-btn rc-btn-outline w-full"
-                  onClick={() => setAccepting(false)}
-                >
+                <button type="button" className="rc-btn rc-btn-outline" onClick={() => setShowRefusePanel(false)}>
                   {t("Cancel")}
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-        <div className="flex flex-col gap-5">
-          <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">{t("Future resident information")}</h3>
-            <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
-              {[
-                [t("Date of birth"), t(demande.dateNaissance)],
-                [t("Current address"), demande.adresse],
-                [t("Declared autonomy level"), catalogLabel(t, demande.autonomie)],
-                [t("Services required"), catalogLabel(t, demande.services)],
-                [t("Stated monthly budget"), catalogLabel(t, demande.budget)],
-                [t("Application source"), catalogLabel(t, demande.provenance)],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="rc-label">{label}</p>
-                  <p className="mt-1 text-[15px] font-medium">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rc-card p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="rc-serif text-[19px]">{t("Documents")}</h3>
-                <p className="mt-1 text-[13.5px] text-[var(--rc-ink-muted)]">
-                  {t("{received} of {total} documents received", {
-                    received,
-                    total: REQUIRED_DOCS.length,
-                  })}
-                </p>
+          {accepting && !decided ? (
+            <div className="rounded-[10px] border border-[var(--rc-border)] bg-[var(--rc-subtle)] p-4">
+              <p className="rc-serif text-[19px]">{t("Urgency level")}</p>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--rc-ink-muted)]">
+                {t("The accepted file is automatically ranked on the waitlist according to this level.")}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" className="rc-btn rc-btn-terra" onClick={() => onAccept("Urgente")}>
+                  {t(URGENCE_EN.Urgente)}
+                </button>
+                <button type="button" className="rc-btn rc-btn-primary" onClick={() => onAccept("Élevée")}>
+                  {t(URGENCE_EN["Élevée"])}
+                </button>
+                <button type="button" className="rc-btn rc-btn-ghost" onClick={() => onAccept("Standard")}>
+                  {t(URGENCE_EN.Standard)}
+                </button>
+                <button type="button" className="rc-btn rc-btn-outline" onClick={() => setAccepting(false)}>
+                  {t("Cancel")}
+                </button>
               </div>
-              <button type="button" className="rc-btn rc-btn-outline">
-                {t("Follow up with the family")}
-              </button>
             </div>
-            <ul className="mt-5 divide-y divide-[var(--rc-border-faint)]">
-              {docs.map((doc) => (
-                <li key={doc.name} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{
-                        background: doc.received ? "var(--rc-green)" : "var(--rc-terra)",
-                      }}
-                    />
-                    <span className="text-[14.5px] font-medium">{t(doc.name)}</span>
-                  </div>
-                  <span
-                    className="text-[13px] font-semibold"
-                    style={{
-                      color: doc.received ? "var(--rc-green)" : "var(--rc-terra)",
-                    }}
-                  >
-                    {doc.received ? t("Received") : t("Pending")}
+          ) : null}
+
+          {/* Progress */}
+          <div className="border-t pt-4" style={{ borderColor: "var(--rc-border-faint)" }}>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="rc-label">{t("File")}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[13.5px] font-medium">{t("{pct}% complete", { pct: completionPourcent })}</span>
+                {demande.piecesManquantes > 0 ? (
+                  <span className="text-[13.5px] font-medium" style={{ color: "var(--rc-terra)" }}>
+                    {t(demande.piecesManquantes === 1 ? "{count} item to complete" : "{count} items to complete", {
+                      count: demande.piecesManquantes,
+                    })}
                   </span>
-                </li>
-              ))}
-            </ul>
+                ) : null}
+              </div>
+            </div>
+            <div className="h-[9px] w-full overflow-hidden rounded-full" style={{ background: "var(--rc-canvas)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${completionPourcent}%`, background: "var(--rc-green)" }}
+              />
+            </div>
           </div>
 
-          <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">{t("Messages with the family")}</h3>
-            <div className="mt-5 space-y-4">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex flex-col ${m.from === "residence" ? "items-end" : "items-start"}`}
+          {/* Summary grid */}
+          <div
+            className="grid gap-4 border-t pt-4"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px,1fr))", borderColor: "var(--rc-border-faint)" }}
+          >
+            <div>
+              <p className="rc-label">{t("Desired move-in")}</p>
+              <p className="mt-1 text-[15px]">{catalogLabel(t, demande.emmenagement)}</p>
+            </div>
+            <div>
+              <p className="rc-label">{t("Priority")}</p>
+              <span
+                className="mt-1 inline-flex rounded-full px-2.5 py-1 text-[13px] font-medium"
+                style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}
+              >
+                {t(demande.priorite || "Moyenne")}
+              </span>
+            </div>
+            <div>
+              <p className="rc-label">{t("Sought environment")}</p>
+              <p className="mt-1 text-[15px]">{demande.milieuRecherche || catalogLabel(t, demande.unite)}</p>
+            </div>
+            <div>
+              <p className="rc-label">{t("Estimated budget")}</p>
+              <p className="mt-1 text-[15px]">{catalogLabel(t, demande.budget)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact card (black, merged with chat) */}
+        <div className="flex flex-col gap-[14px] rounded-[12px]" style={{ background: "var(--rc-black)", padding: "18px 20px" }}>
+          <div className="flex items-center justify-between">
+            <span className="text-[12.5px] font-medium uppercase tracking-[0.07em] text-white/70">
+              {t("Primary contact")}
+            </span>
+            <span className="text-[12.5px] font-medium" style={{ color: "#7FD8C8" }}>
+              {t("Decisions authorized")}
+            </span>
+          </div>
+
+          <div>
+            <div className="rc-serif text-[21px] text-white">{demande.contact}</div>
+            <div className="text-[13.5px]" style={{ color: "#B3C7C1" }}>
+              {relationLabel(t, demande.contactLien)}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {demande.contactTel ? (
+              <>
+                <a href={`tel:${demande.contactTel.replace(/\s+/g, "")}`} className="rc-serif text-[22px] text-white hover:underline">
+                  {demande.contactTel}
+                </a>
+                <a
+                  href={`tel:${demande.contactTel.replace(/\s+/g, "")}`}
+                  className="rc-btn rc-btn-primary"
                 >
-                  <p className="mb-1 text-[12.5px] font-medium text-[var(--rc-ink-muted)]">
-                    {m.author}
-                  </p>
+                  {t("Call {name}", { name: demande.contact.split(" ")[0] })}
+                </a>
+              </>
+            ) : (
+              <span className="text-[14px] italic text-white/50">{t("Not specified")}</span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1 border-t pt-3 text-[13.5px]" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+            <span style={{ color: "#7FD8C8" }}>{demande.contactCourriel || t("Not specified")}</span>
+            <span style={{ color: "#B3C7C1" }}>{demande.contactPreference || t("Not specified")}</span>
+          </div>
+
+          {/* Chat thread */}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[12.5px] font-medium uppercase tracking-[0.07em] text-white/70">
+                {t("Messages with the family")}
+              </span>
+              <span className="text-[12px]" style={{ color: "#7FD8C8" }}>
+                {t("Secure messaging")}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ maxHeight: 280 }}>
+              {messages.map((m) => (
+                <div key={m.id} className={`flex ${m.from === "residence" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className="max-w-[85%] px-3.5 py-2.5 text-[14.5px] leading-relaxed"
+                    className="max-w-[85%] px-3 py-2"
                     style={
                       m.from === "residence"
-                        ? {
-                            background: "var(--rc-black)",
-                            color: "#E8F0ED",
-                            borderRadius: "10px 10px 3px 10px",
-                          }
-                        : {
-                            background: "var(--rc-hover)",
-                            border: "1px solid var(--rc-border)",
-                            borderRadius: "10px 10px 10px 3px",
-                          }
+                        ? { background: "#E9F1EE", color: "var(--rc-ink)", borderRadius: "10px 10px 3px 10px" }
+                        : { background: "var(--rc-black-msg)", color: "#fff", borderRadius: "10px 10px 10px 3px" }
                     }
                   >
-                    {t(m.body)}
+                    <div className="text-[14px] leading-snug">{t(m.body)}</div>
+                    <div
+                      className="mt-1 text-[11.5px]"
+                      style={{ color: m.from === "residence" ? "var(--rc-ink-muted)" : "rgba(255,255,255,0.6)" }}
+                    >
+                      {m.author}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-5 flex gap-2">
+
+            <div className="flex items-center gap-2">
               <input
-                className="rc-input flex-1"
-                placeholder={t("Write a secure message…")}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") onSend();
                 }}
+                placeholder={t("Write to {name}…", { name: demande.contact.split(" ")[0] })}
+                className="flex-1 rounded-[8px] border px-3 py-2 text-[14px] text-white placeholder:text-white/40 focus:outline-none"
+                style={{ borderColor: "rgba(255,255,255,0.14)", background: "var(--rc-black-soft)" }}
               />
-              <button type="button" className="rc-btn rc-btn-primary" onClick={onSend}>
+              <button type="button" onClick={onSend} className="rc-btn rc-btn-primary">
                 {t("Send")}
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-5">
-          <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">{t("Progress")}</h3>
-            <ol className="relative mt-5 space-y-0">
-              {PROGRESS_STEPS.map((label, i) => {
-                const done = i <= step;
-                return (
-                  <li key={label} className="flex gap-3 pb-5 last:pb-0">
-                    <div className="flex flex-col items-center">
-                      <span
-                        className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{
-                          background: done ? "var(--rc-green)" : "var(--rc-border)",
-                        }}
-                      />
-                      {i < PROGRESS_STEPS.length - 1 ? (
-                        <span
-                          className="mt-1 w-px flex-1"
-                          style={{ background: "var(--rc-border-faint)", minHeight: 20 }}
-                        />
-                      ) : null}
-                    </div>
-                    <p
-                      className="text-[14.5px] font-medium"
-                      style={{ color: done ? "var(--rc-ink)" : "var(--rc-ink-faint)" }}
-                    >
-                      {t(label)}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-
-          <div className="rc-card bg-[var(--rc-subtle)] p-6">
-            <h3 className="rc-serif text-[19px]">{t("Assistance")}</h3>
-            <p className="rc-label mt-4">{t("File summary")}</p>
-            <p className="mt-2 text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
+      {/* Bloc 2 */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(360px,1fr))" }}>
+        {/* Large column */}
+        <div className="flex flex-col gap-5" style={{ gridColumn: "span 2 / span 2" }}>
+          <CollapsibleCard
+            title={t("Application overview")}
+            summary={
+              demande.piecesManquantes > 0 ? (
+                <span className="rc-pill" style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}>
+                  {t("{count} items to complete", { count: demande.piecesManquantes })}
+                </span>
+              ) : undefined
+            }
+          >
+            <p className="mb-4 max-w-[70ch] text-[15px]" style={{ textWrap: "pretty" as any }}>
               {t(demande.resumeIa)}
             </p>
-            <button type="button" className="rc-btn rc-btn-outline mt-4 w-full bg-white">
-              {t("Check file compliance")}
+            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))" }}>
+              <div>
+                <p className="rc-label">{t("Areas of interest")}</p>
+                <p className="mt-1 text-[15px]">{demande.secteursRecherches || <Empty t={t} />}</p>
+              </div>
+              <div>
+                <p className="rc-label">{t("Application source")}</p>
+                <p className="mt-1 text-[15px]">{catalogLabel(t, demande.provenance)}</p>
+              </div>
+              <div>
+                <p className="rc-label">{t("Current address")}</p>
+                <p className="mt-1 text-[15px]">{demande.adresse || <Empty t={t} />}</p>
+              </div>
+              <div>
+                <p className="rc-label">{t("External reference")}</p>
+                <p className="mt-1 text-[15px]">
+                  {demande.referenceExterne ? demande.referenceExterne : <Empty t={t} />}
+                </p>
+              </div>
+            </div>
+            {demande.piecesManquantes > 0 ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-[10px] px-4 py-3" style={{ background: "var(--rc-warn-bg)" }}>
+                <span className="text-[13.5px]">
+                  {t("{count} missing documents", { count: demande.piecesManquantes })}
+                </span>
+                <button type="button" className="text-[13.5px] font-medium underline underline-offset-2" style={{ color: "var(--rc-terra)" }}>
+                  {t("Request missing documents")}
+                </button>
+              </div>
+            ) : null}
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title={t("Autonomy and needs")}
+            summary={<span className="text-[13.5px] text-[var(--rc-ink-muted)]">{catalogLabel(t, demande.autonomie)}</span>}
+          >
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px,1fr))" }}>
+              {autonomieTuiles.map((tile) => (
+                <div
+                  key={tile.label}
+                  className="rounded-[8px] p-3"
+                  style={{ background: "var(--rc-subtle)", borderLeft: `3px solid ${tileBorder[tile.level]}` }}
+                >
+                  <p className="rc-label">{tile.label}</p>
+                  <p
+                    className="mt-1 text-[14px] font-medium"
+                    style={{ color: tile.level === "assistance" ? "var(--rc-terra)" : "var(--rc-ink)" }}
+                  >
+                    {tile.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[13.5px]" style={{ borderColor: "var(--rc-border-faint)" }}>
+              <button type="button" className="font-medium underline underline-offset-2" style={{ color: "var(--rc-green-deep)" }}>
+                {t("See needs details")}
+              </button>
+              <span className="text-[var(--rc-ink-muted)]">
+                {demande.evaluationTransmise || <Empty t={t} />}
+              </span>
+            </div>
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title={t("Medication")}
+            summary={
+              <>
+                {demande.medicaments && demande.medicaments.length > 0 ? (
+                  <span className="rc-pill" style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}>
+                    {t("Assistance required")}
+                  </span>
+                ) : null}
+                <span className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                  {demande.medicaments
+                    ? t("{count} medications", { count: demande.medicaments.length })
+                    : t("Not specified")}
+                </span>
+              </>
+            }
+          >
+            {demande.medicaments && demande.medicaments.length > 0 ? (
+              <>
+                <div className="mb-5 grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))" }}>
+                  <div>
+                    <p className="rc-label">{t("Pharmacy")}</p>
+                    <p className="mt-1 text-[15px]">{demande.pharmacie || <Empty t={t} />}</p>
+                  </div>
+                  <div>
+                    <p className="rc-label">{t("Known allergies")}</p>
+                    <p className="mt-1 text-[15px] font-semibold" style={{ color: demande.allergies ? "var(--rc-terra)" : undefined }}>
+                      {demande.allergies || <Empty t={t} />}
+                    </p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[520px] grid rc-label" style={{ gridTemplateColumns: "1.6fr 0.9fr 1.1fr 1fr" }}>
+                    <div className="border-b py-2" style={{ borderColor: "var(--rc-border)" }}>{t("Medication")}</div>
+                    <div className="border-b py-2" style={{ borderColor: "var(--rc-border)" }}>{t("Dose")}</div>
+                    <div className="border-b py-2" style={{ borderColor: "var(--rc-border)" }}>{t("Frequency")}</div>
+                    <div className="border-b py-2" style={{ borderColor: "var(--rc-border)" }}>{t("Indication")}</div>
+                  </div>
+                  {demande.medicaments.map((m) => (
+                    <div key={m.nom} className="min-w-[520px] grid text-[14.5px]" style={{ gridTemplateColumns: "1.6fr 0.9fr 1.1fr 1fr" }}>
+                      <div className="border-b py-2.5 font-medium" style={{ borderColor: "var(--rc-border-faint)" }}>{m.nom}</div>
+                      <div className="border-b py-2.5" style={{ borderColor: "var(--rc-border-faint)" }}>{m.dose}</div>
+                      <div className="border-b py-2.5" style={{ borderColor: "var(--rc-border-faint)" }}>{m.frequence}</div>
+                      <div className="border-b py-2.5" style={{ borderColor: "var(--rc-border-faint)" }}>{m.indication}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[13.5px] text-[var(--rc-ink-muted)]">
+                  <span>{t("List transmitted · to validate before admission")}</span>
+                  <button type="button" className="font-medium underline underline-offset-2" style={{ color: "var(--rc-green-deep)" }}>
+                    {t("See full list")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-[14px] italic" style={{ color: "var(--rc-ink-faint)" }}>
+                {t("Not specified")}
+              </p>
+            )}
+          </CollapsibleCard>
+        </div>
+
+        {/* Narrow column */}
+        <div className="flex flex-col gap-5">
+          <div className="rc-card p-6">
+            <h2 className="rc-serif text-[19px]">{t("People to reach")}</h2>
+            <div className="mt-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-semibold">{demande.contact}</span>
+                <span className="rc-pill" style={{ background: "var(--rc-green-bg)", color: "var(--rc-green-deep)" }}>
+                  {t("Primary contact")}
+                </span>
+              </div>
+              <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                {relationLabel(t, demande.contactLien)}
+                {demande.contactPreference ? ` · ${demande.contactPreference}` : ""}
+              </p>
+              <div
+                className="flex items-center justify-between gap-2 rounded-[8px] border px-3 py-2.5"
+                style={{ background: "var(--rc-mint)", borderColor: "var(--rc-mint-bd)" }}
+              >
+                {demande.contactTel ? (
+                  <>
+                    <a href={`tel:${demande.contactTel.replace(/\s+/g, "")}`} className="rc-serif text-[21px] hover:underline">
+                      {demande.contactTel}
+                    </a>
+                    <a href={`tel:${demande.contactTel.replace(/\s+/g, "")}`} className="text-[13.5px] font-semibold" style={{ color: "var(--rc-green-deep)" }}>
+                      {t("Call")}
+                    </a>
+                  </>
+                ) : (
+                  <Empty t={t} />
+                )}
+              </div>
+              <span className="text-[13.5px] text-[var(--rc-ink-muted)]">{demande.contactCourriel || <Empty t={t} />}</span>
+            </div>
+
+            <div className="my-4 border-t" style={{ borderColor: "var(--rc-border-faint)" }} />
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-semibold">{demande.contactUrgenceNom || <Empty t={t} />}</span>
+                <span className="rc-pill" style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}>
+                  {t("Emergency contact")}
+                </span>
+              </div>
+              <p className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                {demande.contactUrgenceLien ? relationLabel(t, demande.contactUrgenceLien) : <Empty t={t} />}
+              </p>
+              <div className="flex items-center justify-between gap-2 rounded-[8px] px-3 py-2.5" style={{ background: "var(--rc-subtle)" }}>
+                {demande.contactUrgenceTel ? (
+                  <>
+                    <a href={`tel:${demande.contactUrgenceTel.replace(/\s+/g, "")}`} className="rc-serif text-[21px] hover:underline">
+                      {demande.contactUrgenceTel}
+                    </a>
+                    <a href={`tel:${demande.contactUrgenceTel.replace(/\s+/g, "")}`} className="text-[13.5px] font-semibold" style={{ color: "var(--rc-green-deep)" }}>
+                      {t("Call")}
+                    </a>
+                  </>
+                ) : (
+                  <Empty t={t} />
+                )}
+              </div>
+              <span className="text-[13.5px] text-[var(--rc-ink-muted)]">{demande.contactUrgenceCourriel || <Empty t={t} />}</span>
+            </div>
+          </div>
+
+          <div className="rc-card p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="rc-serif text-[19px]">{t("Documents")}</h2>
+              <span className="text-[13.5px] text-[var(--rc-ink-muted)]">
+                {t("{received} of {total} received", { received, total: REQUIRED_DOCS.length })}
+              </span>
+            </div>
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--rc-canvas)" }}>
+              <div className="h-full rounded-full" style={{ width: `${completionPourcent}%`, background: "var(--rc-green)" }} />
+            </div>
+            <ul className="flex flex-col gap-2.5">
+              {docs.map((doc) => (
+                <li key={doc.name} className="flex items-center justify-between gap-2 text-[14px]">
+                  <span className="flex items-center gap-2">
+                    <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: doc.received ? "#2C6B4F" : "var(--rc-terra)" }} />
+                    <span className={doc.received ? undefined : "font-semibold"} style={{ color: doc.received ? "var(--rc-ink)" : "var(--rc-terra)" }}>
+                      {t(doc.name)}
+                    </span>
+                  </span>
+                  <span className="text-[13px]" style={{ color: doc.received ? "var(--rc-ink-muted)" : "var(--rc-terra)", fontWeight: doc.received ? 400 : 600 }}>
+                    {doc.received ? t("Received") : t("Missing")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="mt-4 w-full rounded-[8px] px-4 py-2.5 text-[14px] font-semibold"
+              style={{ background: "var(--rc-terra-bg)", color: "var(--rc-terra)" }}
+            >
+              {t("Request missing documents")}
             </button>
           </div>
 
-          <div className="rc-card p-6">
-            <h3 className="rc-serif text-[19px]">{t("Internal notes")}</h3>
-            <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-[var(--rc-ink-muted)]">
-              {demande.noteInterne
-                ? t(demande.noteInterne)
-                : t("No internal notes yet.\nAdded by C. Mercier · August 25")}
-            </p>
-          </div>
+          <CollapsibleCard
+            title={t("Housing preferences")}
+            summary={
+              demande.logementPreferences && demande.logementPreferences.length > 0 ? (
+                <span className="text-[13.5px] text-[var(--rc-ink-muted)]">{demande.logementPreferences.slice(0, 2).join(" · ")}</span>
+              ) : undefined
+            }
+          >
+            {demande.logementNonNegociable ? (
+              <div className="mb-4 rounded-[10px] p-3" style={{ background: "var(--rc-mint)" }}>
+                <span
+                  className="mb-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.07em] text-white"
+                  style={{ background: "var(--rc-black)" }}
+                >
+                  {t("Non-negotiable")}
+                </span>
+                <p className="text-[14.5px]">{demande.logementNonNegociable}</p>
+              </div>
+            ) : null}
+            {demande.logementPreferences && demande.logementPreferences.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {demande.logementPreferences.map((p) => (
+                  <span key={p} className="rounded-full border px-3 py-1.5 text-[13.5px]" style={{ borderColor: "var(--rc-border)" }}>
+                    {p}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[14px] italic" style={{ color: "var(--rc-ink-faint)" }}>
+                {t("Not specified")}
+              </p>
+            )}
+          </CollapsibleCard>
+
+          {demande.adequation ? (
+            <div className="rc-card p-6" style={{ background: "var(--rc-subtle)" }}>
+              <p className="rc-label">{t("Fit with the residence")}</p>
+              <p className="rc-serif mt-1 text-[34px]" style={{ color: "var(--rc-green-deep)" }}>
+                {demande.adequation.verdict}
+              </p>
+              <p className="mt-1 text-[14px] font-medium">{demande.adequation.sousTitre}</p>
+              <p className="mt-2 text-[13.5px] text-[var(--rc-ink-muted)]">{demande.adequation.nuance}</p>
+              <button type="button" className="rc-btn rc-btn-primary mt-4 w-full">
+                {t("Propose a unit")}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {/* Notes drawer */}
+      {notesOpen ? (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0" style={{ background: "rgba(16,24,21,0.34)" }} onClick={() => setNotesOpen(false)} />
+          <div
+            className="relative flex h-full w-[min(440px,92vw)] flex-col border-l"
+            style={{ borderColor: "var(--rc-border)", background: "var(--rc-surface)" }}
+          >
+            <div className="flex items-start justify-between border-b p-6" style={{ borderColor: "var(--rc-border-faint)" }}>
+              <div>
+                <h2 className="rc-serif text-[20px]">{t("File notes")}</h2>
+                <p className="mt-1 text-[13px] text-[var(--rc-ink-muted)]">{t("Visible only to the residence team")}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotesOpen(false)}
+                aria-label={t("Close")}
+                className="text-[18px] leading-none text-[var(--rc-ink-muted)] hover:text-[var(--rc-ink)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 border-b p-6" style={{ borderColor: "var(--rc-border-faint)" }}>
+              <textarea
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder={t("Add a note about {name}'s file…", { name: demande.nom.split(" ")[0] })}
+                className="min-h-[86px] w-full rounded-[8px] border p-3 text-[14px] outline-none"
+                style={{ borderColor: "var(--rc-border)", background: "var(--rc-subtle)" }}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[12.5px] text-[var(--rc-ink-muted)]">{t("Signed {name}", { name: RESIDENCE.staff.name })}</span>
+                <button type="button" className="rc-btn rc-btn-primary" onClick={submitNote}>
+                  {t("Add note")}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-2">
+              {notes.length === 0 ? (
+                <p className="py-6 text-[14px] italic" style={{ color: "var(--rc-ink-faint)" }}>
+                  {t("No notes yet.")}
+                </p>
+              ) : (
+                notes.map((n) => (
+                  <div key={n.id} className="border-b py-4 last:border-none" style={{ borderColor: "var(--rc-border-faint)" }}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="text-[14px] font-semibold">{n.auteur}</span>
+                      <NoteTag etiquette={n.etiquette} />
+                    </div>
+                    <div className="mb-1.5 text-[12px] text-[var(--rc-ink-muted)]">{n.horodatage}</div>
+                    <p className="text-[14.5px] leading-[1.6]">{n.texte}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
+function CollapsibleCard({
+  title,
+  summary,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  summary?: import("react").ReactNode;
+  defaultOpen?: boolean;
+  children: import("react").ReactNode;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rc-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-4 px-[26px] py-[20px] text-left transition-colors hover:bg-[var(--rc-subtle)]"
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="rc-serif text-[19px]">{title}</h2>
+          {summary}
+        </div>
+        <span className="shrink-0 text-[13.5px] font-medium text-[var(--rc-ink-muted)]">
+          {open ? t("Collapse ▲") : t("Show ▼")}
+        </span>
+      </button>
+      {open ? (
+        <div className="border-t px-[26px] py-[22px]" style={{ borderColor: "var(--rc-border-faint)" }}>
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Empty({ t }: { t: (key: string) => string }) {
+  return <span className="italic" style={{ color: "var(--rc-ink-faint)" }}>{t("Not specified")}</span>;
+}
+
+function NoteTag({ etiquette }: { etiquette: NoteEntry["etiquette"] }) {
+  const map: Record<NoteEntry["etiquette"], { bg: string; fg: string }> = {
+    Suivi: { bg: "var(--rc-green-bg)", fg: "var(--rc-green-deep)" },
+    Documents: { bg: "var(--rc-terra-bg)", fg: "var(--rc-terra)" },
+    Soins: { bg: "var(--rc-canvas)", fg: "#3C4B46" },
+    Logement: { bg: "var(--rc-canvas)", fg: "#3C4B46" },
+  };
+  const s = map[etiquette];
+  return (
+    <span className="shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-medium" style={{ background: s.bg, color: s.fg }}>
+      {etiquette}
+    </span>
+  );
+}
 function DocumentsView({ demandes }: { demandes: Demande[] }) {
   const t = useT();
   const rows = demandes

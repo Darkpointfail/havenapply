@@ -19,6 +19,20 @@ export type SignUpAuthResult = AuthResult<SessionUser> & {
   needsManualSignIn?: boolean;
 };
 
+/** Double-submit CSRF header for mutating fetches to our own API routes. */
+async function csrfHeaders(): Promise<Record<string, string>> {
+  if (typeof document === "undefined") return {};
+  const fromCookie = document.cookie.match(/(?:^|;\s*)haven_csrf=([^;]+)/);
+  if (fromCookie) return { "x-haven-csrf": decodeURIComponent(fromCookie[1]) };
+  try {
+    const res = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+    const json = (await res.json()) as { csrfToken?: string };
+    return json.csrfToken ? { "x-haven-csrf": json.csrfToken } : {};
+  } catch {
+    return {};
+  }
+}
+
 function siteOrigin() {
   if (typeof window !== "undefined") return window.location.origin;
   return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -217,7 +231,8 @@ export async function signUpWithRoleSupabase(
   try {
     const adminRes = await fetch("/api/auth/sign-up", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
       body: JSON.stringify({
         role: input.role,
         firstName: input.firstName,

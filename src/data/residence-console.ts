@@ -6,7 +6,31 @@ export type DemandeStatus =
   | "Documents manquants"
   | "Visite planifiée"
   | "Acceptée"
-  | "Liste d'attente";
+  | "Liste d'attente"
+  | "Refusée";
+
+export type AutonomyLevel = "autonome" | "aide" | "assistance";
+
+export type AutonomyTile = { label: string; value: string; level: AutonomyLevel };
+
+export type Medication = { nom: string; dose: string; frequence: string; indication: string };
+
+export type NoteEntry = {
+  id: string;
+  auteur: string;
+  horodatage: string;
+  etiquette: "Suivi" | "Documents" | "Soins" | "Logement";
+  texte: string;
+};
+
+export type RefusReason = { id: string; label: string };
+
+export const REFUS_MOTIFS: RefusReason[] = [
+  { id: "aucune_unite", label: "Aucune unité disponible" },
+  { id: "soins_eleves", label: "Besoins de soins trop élevés" },
+  { id: "budget", label: "Budget non compatible" },
+  { id: "dossier_incomplet", label: "Dossier incomplet" },
+];
 
 export type UrgenceLevel = "Urgente" | "Élevée" | "Standard";
 
@@ -31,6 +55,28 @@ export type Demande = {
   emmenagement: string;
   resumeIa: string;
   noteInterne?: string;
+  // Champs enrichis pour la page « Profil du résident »
+  contactUrgenceNom?: string;
+  contactUrgenceLien?: string;
+  contactUrgenceTel?: string;
+  contactUrgenceCourriel?: string;
+  contactTel?: string;
+  contactCourriel?: string;
+  contactPreference?: string;
+  medicaments?: Medication[];
+  allergies?: string;
+  pharmacie?: string;
+  autonomieTuiles?: AutonomyTile[];
+  evaluationTransmise?: string;
+  logementNonNegociable?: string;
+  logementPreferences?: string[];
+  secteursRecherches?: string;
+  referenceExterne?: string;
+  notes?: NoteEntry[];
+  adequation?: { verdict: string; sousTitre: string; nuance: string };
+  priorite?: "Élevée" | "Moyenne" | "Faible";
+  milieuRecherche?: string;
+  derniereMaj?: string;
 };
 
 export type WaitlistEntry = {
@@ -88,6 +134,55 @@ export const DEMANDES: Demande[] = [
       "Advanced file: 4 of 6 documents received. Missing proof of income and protection mandate. Profile fits 3½ with services. A follow-up was already sent on August 27.",
     noteInterne:
       "Very engaged family. Schedule a visit once missing documents arrive.\nAdded by C. Mercier · August 25",
+    contactTel: "418 555-0122",
+    contactCourriel: "sophie.levesque@exemple.com",
+    contactPreference: "préfère le téléphone, 9 h à 17 h",
+    contactUrgenceNom: "Marc Lévesque",
+    contactUrgenceLien: "fils",
+    contactUrgenceTel: "418 555-0177",
+    contactUrgenceCourriel: "marc.levesque@exemple.com",
+    secteursRecherches: "Québec, Sainte-Foy",
+    referenceExterne: "Non précisé",
+    pharmacie: "Pharmacie Jean-Coutu, Sainte-Foy",
+    allergies: "Aucune allergie connue",
+    medicaments: [
+      { nom: "Metformine", dose: "500 mg", frequence: "2 fois par jour", indication: "Diabète de type 2" },
+      { nom: "Ramipril", dose: "5 mg", frequence: "1 fois par jour, matin", indication: "Hypertension" },
+      { nom: "Atorvastatine", dose: "20 mg", frequence: "1 fois par jour, soir", indication: "Cholestérol" },
+    ],
+    autonomieTuiles: [
+      { label: "Mobilité", value: "marchette", level: "aide" },
+      { label: "Hygiène", value: "aide partielle", level: "aide" },
+      { label: "Médication", value: "assistance requise", level: "assistance" },
+      { label: "Alimentation", value: "autonome, texture régulière", level: "autonome" },
+      { label: "Cognition", value: "légers troubles de mémoire", level: "aide" },
+      { label: "Continence", value: "autonome", level: "autonome" },
+      { label: "Supervision", value: "vérifications quotidiennes", level: "aide" },
+      { label: "Soins spécialisés", value: "aucun besoin identifié", level: "autonome" },
+    ],
+    evaluationTransmise: "Évaluation transmise par le CLSC le 19 août 2026",
+    logementNonNegociable: "Ascenseur ou unité sans escalier",
+    logementPreferences: [
+      "Studio ou 3½",
+      "Chambre privée privilégiée",
+      "Salle de bain adaptée",
+      "Milieu francophone",
+      "Proximité de la famille à Québec",
+    ],
+    notes: [
+      { id: "n1", auteur: "Claudine Mercier", horodatage: "aujourd'hui 10 h 24", etiquette: "Suivi", texte: "Sophie confirme que sa mère peut visiter la résidence la semaine prochaine." },
+      { id: "n2", auteur: "Claudine Mercier", horodatage: "25 août 9 h 20", etiquette: "Documents", texte: "Deux relances envoyées, Sophie attend le retour du médecin." },
+      { id: "n3", auteur: "Nadia Rioux, infirmière", horodatage: "23 août 14 h 05", etiquette: "Soins", texte: "Aide à la médication matin et soir, pilulier de la pharmacie, aucun soin infirmier complexe prévu." },
+      { id: "n4", auteur: "Claudine Mercier", horodatage: "22 août 11 h 10", etiquette: "Logement", texte: "Accès sans escalier exigé, seul le pavillon principal convient." },
+    ],
+    adequation: {
+      verdict: "Bonne",
+      sousTitre: "3½ libre en octobre, soins évolutifs offerts sur place",
+      nuance: "Le budget estimé de la famille couvre l'unité proposée et l'accès sans escalier exigé est respecté.",
+    },
+    priorite: "Élevée",
+    milieuRecherche: "Résidence avec soins évolutifs",
+    derniereMaj: "aujourd'hui à 10 h 24",
   },
   {
     id: "d2",
@@ -108,6 +203,8 @@ export const DEMANDES: Demande[] = [
     emmenagement: "September 2026",
     resumeIa:
       "Complete file. Visit scheduled for September 2 at 10:30 a.m. Autonomous profile, 2½ unit available.",
+    contactTel: "418 555-0142",
+    contactCourriel: "michel.bouchard@exemple.com",
   },
   {
     id: "d3",
@@ -128,6 +225,8 @@ export const DEMANDES: Demande[] = [
     emmenagement: "As soon as possible",
     resumeIa:
       "CLSC referral. Complete file. High-care profile — confirm 3½ with care availability before deciding.",
+    contactTel: "418 555-0161",
+    contactCourriel: "nathalie.trudel@exemple.com",
   },
   {
     id: "d4",
@@ -148,6 +247,8 @@ export const DEMANDES: Demande[] = [
     emmenagement: "Flexible",
     resumeIa:
       "Incomplete file: 4 missing documents. Three follow-ups sent. Risk of stalling without further action.",
+    contactTel: "418 555-0189",
+    contactCourriel: "luc.pelletier@exemple.com",
   },
   {
     id: "d5",
@@ -167,6 +268,8 @@ export const DEMANDES: Demande[] = [
     contactLien: "fille",
     emmenagement: "September 2026",
     resumeIa: "Application accepted. Complete file. Ready for waitlist placement or transition.",
+    contactTel: "418 555-0135",
+    contactCourriel: "anne.grondin@exemple.com",
   },
   {
     id: "d6",
@@ -186,6 +289,8 @@ export const DEMANDES: Demande[] = [
     contactLien: "fille",
     emmenagement: "When available",
     resumeIa: "Already on the waitlist. Complete file. High urgency.",
+    contactTel: "418 555-0198",
+    contactCourriel: "marie.ouellet@exemple.com",
   },
   {
     id: "d7",
@@ -205,6 +310,8 @@ export const DEMANDES: Demande[] = [
     contactLien: "fils",
     emmenagement: "November 2026",
     resumeIa: "Complete file under clinical review. No missing documents.",
+    contactTel: "418 555-0157",
+    contactCourriel: "pierre.fournier@exemple.com",
   },
   {
     id: "d8",
@@ -225,6 +332,8 @@ export const DEMANDES: Demande[] = [
     emmenagement: "As soon as possible",
     resumeIa:
       "New application received on August 27. One missing document (protection mandate). Prioritize opening the file.",
+    contactTel: "418 555-0173",
+    contactCourriel: "helene.simard@exemple.com",
   },
 ];
 
@@ -292,6 +401,7 @@ export const STATUS_STYLES: Record<DemandeStatus, { bg: string; color: string }>
   "Visite planifiée": { bg: "#E2F3EF", color: "#0E9384" },
   Acceptée: { bg: "#E2F3EF", color: "#0E9384" },
   "Liste d'attente": { bg: "#F3F7F5", color: "#586863" },
+  "Refusée": { bg: "#FBEEE4", color: "#A6572B" },
 };
 
 export const URGENCE_ORDER: Record<UrgenceLevel, number> = {

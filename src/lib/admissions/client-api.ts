@@ -6,7 +6,12 @@
  */
 
 import { admissionsServerEnabled } from "@/lib/admissions/config";
-import type { AdmissionApplicationRecord, AdmissionStatus } from "@/lib/admissions/types";
+import type {
+  AdmissionApplicationRecord,
+  AdmissionAuditEntry,
+  AdmissionStatus,
+  AdmissionStatusEvent,
+} from "@/lib/admissions/types";
 import type { AdmissionSubmitInput } from "@/lib/admissions/types";
 
 type Envelope<T> = { ok: boolean; error?: string } & Partial<T>;
@@ -62,6 +67,15 @@ export async function apiSaveAdmissionDraft(input: AdmissionSubmitInput) {
 
 export async function apiListFamilyAdmissions() {
   return call<{ applications: AdmissionApplicationRecord[] }>("/api/admissions/family");
+}
+
+/** Detail for one application, owning family or staff of the target site only. */
+export async function apiGetAdmissionDetail(applicationId: string) {
+  return call<{
+    application: AdmissionApplicationRecord;
+    statusEvents: AdmissionStatusEvent[];
+    audit: AdmissionAuditEntry[];
+  }>(`/api/admissions/${encodeURIComponent(applicationId)}`);
 }
 
 export async function apiListResidenceAdmissions(siteId?: string) {

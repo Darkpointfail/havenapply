@@ -26,6 +26,8 @@ import {
   type MessageThread,
 } from "@/lib/messaging";
 import { getResidence, residences } from "@/data/residences";
+import { apiListFamilyAdmissions } from "@/lib/admissions/client-api";
+import type { AdmissionApplicationRecord } from "@/lib/admissions/types";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/locale";
@@ -97,7 +99,7 @@ export function MessagingInbox({
       }
       const residenceId = params.get("residence") || "maple-grove";
       const r = getResidence(residenceId);
-      const id = startConversation({
+      void startConversation({
         scope: applicationId ? "application" : "general",
         residenceId,
         residenceName: r?.name || "Your community",
@@ -111,8 +113,9 @@ export function MessagingInbox({
         firstMessage: senior
           ? `Hello, regarding ${decodeURIComponent(senior)}’s application, we’d like to connect securely on Haven.`
           : "Hello, we’d like to connect securely on Haven about your application.",
+      }).then((id) => {
+        if (id) setActiveId(id);
       });
-      if (id) setActiveId(id);
       return;
     }
 
@@ -122,15 +125,16 @@ export function MessagingInbox({
       else {
         const r = getResidence(community);
         if (r && portal === "family") {
-          const id = startConversation({
+          void startConversation({
             scope: "general",
             residenceId: r.id,
             residenceName: r.name,
             avatar: r.image,
             subject: `Inquiry · ${r.name}`,
             firstMessage: `Hello ${r.name} admissions, we’d like to start a private conversation on Haven.`,
+          }).then((id) => {
+            if (id) setActiveId(id);
           });
-          if (id) setActiveId(id);
         }
       }
     } else if (!activeId && filtered[0]) {
@@ -148,9 +152,9 @@ export function MessagingInbox({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [active?.messages.length, activeId]);
 
-  const doSend = (forceSensitive = false) => {
+  const doSend = async (forceSensitive = false) => {
     if (!active || !draft.trim()) return;
-    const result = sendMessage(active.id, draft, {
+    const result = await sendMessage(active.id, draft, {
       forceSensitive,
       attachments: attachName ? [{ name: attachName, size: "," }] : undefined,
       type: attachName ? "attachment" : "text",
@@ -594,8 +598,59 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
   const [residenceId, setResidenceId] = useState(residences[0]?.id || "");
   const [scope, setScope] = useState<"general" | "application" | "community">("general");
   const [message, setMessage] = useState("");
+  const [applications, setApplications] = useState<AdmissionApplicationRecord[]>([]);
+  const [applicationId, setApplicationId] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    apiListFamilyAdmissions().then((res) => {
+      const list = res?.ok ? res.applications ?? [] : [];
+      setApplications(list);
+      setApplicationId((prev) => prev || list[0]?.id || "");
+    });
+  }, [open]);
 
   const r = getResidence(residenceId);
+  const selectedApplication = applications.find((a) => a.id === applicationId);
+  const canStart =
+    scope === "application" ? Boolean(selectedApplication) : Boolean(r);
+
+  const onStart = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      let id = "";
+      if (scope === "application") {
+        if (!selectedApplication) return;
+        id = await startConversation({
+          scope: "application",
+          residenceId: selectedApplication.siteId,
+          residenceName: selectedApplication.siteName,
+          avatar: r?.image || "",
+          applicationId: selectedApplication.id,
+          subject: `Application · ${selectedApplication.siteName}`,
+          firstMessage: message.trim(),
+        });
+      } else if (r) {
+        id = await startConversation({
+          scope,
+          residenceId: r.id,
+          residenceName: r.name,
+          avatar: r.image,
+          applicationId: null,
+          subject:
+            scope === "general" ? `General inquiry · ${r.name}` : `Community · ${r.name}`,
+          firstMessage: message.trim(),
+        });
+      }
+      setOpen(false);
+      setMessage("");
+      if (id) onCreated(id);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="relative">
@@ -605,18 +660,6 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-80 rounded-2xl border border-line bg-surface p-4 shadow-card">
           <p className="text-sm font-semibold">Start a private thread</p>
-          <label className="mt-3 block text-xs font-medium text-ink-muted">Community</label>
-          <select
-            className="mt-1 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
-            value={residenceId}
-            onChange={(e) => setResidenceId(e.target.value)}
-          >
-            {residences.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.name}
-              </option>
-            ))}
-          </select>
           <label className="mt-2 block text-xs font-medium text-ink-muted">Attach to</label>
           <select
             className="mt-1 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
@@ -627,6 +670,45 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
             <option value="application">Application</option>
             <option value="community">Community</option>
           </select>
+
+          {scope === "application" ? (
+            <>
+              <label className="mt-2 block text-xs font-medium text-ink-muted">
+                {t("Application")}
+              </label>
+              <select
+                className="mt-1 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
+                value={applicationId}
+                onChange={(e) => setApplicationId(e.target.value)}
+              >
+                {applications.length === 0 ? (
+                  <option value="">{t("No applications yet")}</option>
+                ) : (
+                  applications.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.siteName}
+                    </option>
+                  ))
+                )}
+              </select>
+            </>
+          ) : (
+            <>
+              <label className="mt-2 block text-xs font-medium text-ink-muted">Community</label>
+              <select
+                className="mt-1 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
+                value={residenceId}
+                onChange={(e) => setResidenceId(e.target.value)}
+              >
+                {residences.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
           <textarea
             className="mt-2 w-full rounded-lg border border-line bg-bg px-2 py-2 text-sm"
             rows={3}
@@ -638,27 +720,8 @@ function NewConversationButton({ onCreated }: { onCreated: (id: string) => void 
             type="button"
             size="sm"
             className="mt-2 w-full"
-            disabled={!r || !message.trim()}
-            onClick={() => {
-              if (!r) return;
-              const id = startConversation({
-                scope,
-                residenceId: r.id,
-                residenceName: r.name,
-                avatar: r.image,
-                applicationId: scope === "application" ? `app-${r.id}` : null,
-                subject:
-                  scope === "application"
-                    ? `Application · ${r.name}`
-                    : scope === "general"
-                      ? `General inquiry · ${r.name}`
-                      : `Community · ${r.name}`,
-                firstMessage: message.trim(),
-              });
-              setOpen(false);
-              setMessage("");
-              if (id) onCreated(id);
-            }}
+            disabled={!canStart || !message.trim() || sending}
+            onClick={() => void onStart()}
           >
             Start
           </Button>

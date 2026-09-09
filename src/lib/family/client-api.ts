@@ -59,12 +59,13 @@ export async function serverRegister(input: {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  role?: string;
 }): Promise<ApiOk<{ userId: string; verificationToken?: string }> | ApiFail> {
   const res = await fetch("/api/auth/register", {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
-    body: JSON.stringify({ ...input, role: "family" }),
+    body: JSON.stringify({ ...input, role: input.role ?? "family" }),
   });
   return parse(res);
 }
@@ -115,7 +116,7 @@ export async function apiPatchApplicant(patch: Partial<ApplicantIdentity>) {
   const res = await fetch("/api/family/applicant", {
     method: "PATCH",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify(patch),
   });
   return parse<{ bundle: FamilyBundle }>(res);
@@ -128,7 +129,7 @@ export async function apiPatchSenior(
   const res = await fetch("/api/family/senior", {
     method: "PATCH",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({
       patch,
       seniorId: opts?.seniorId,
@@ -142,7 +143,7 @@ export async function apiPatchCareNeeds(careNeeds: CareNeeds, seniorId?: string)
   const res = await fetch("/api/family/care-needs", {
     method: "PATCH",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({ careNeeds, seniorId }),
   });
   return parse<{ bundle: FamilyBundle }>(res);
@@ -156,7 +157,7 @@ export async function apiPatchDossier(input: {
   const res = await fetch("/api/family/dossier", {
     method: "PATCH",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify(input),
   });
   return parse<{ bundle: FamilyBundle }>(res);
@@ -166,7 +167,7 @@ export async function apiRecordConsent(granted: boolean) {
   const res = await fetch("/api/family/consents", {
     method: "POST",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({ granted, purpose: "profile_retention" }),
   });
   return parse<{ bundle: FamilyBundle }>(res);
@@ -176,7 +177,7 @@ export async function apiRequestDeletion(scope: "profile" | "account", reason?: 
   const res = await fetch("/api/family/deletion", {
     method: "POST",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({ scope, reason }),
   });
   return parse<{ bundle: FamilyBundle; executed: boolean }>(res);
@@ -190,7 +191,7 @@ export async function apiExecuteDeletion(input: {
   const res = await fetch("/api/family/deletion", {
     method: "POST",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({
       scope: input.scope,
       reason: input.reason,
@@ -224,6 +225,7 @@ export async function apiUploadDocument(input: {
   onProgress?: (pct: number) => void;
 }) {
   // XHR for upload progress
+  const csrf = await csrfHeaders();
   return new Promise<ApiOk<{ bundle: FamilyBundle }> | ApiFail>((resolve) => {
     const xhr = new XMLHttpRequest();
     const form = new FormData();
@@ -235,6 +237,7 @@ export async function apiUploadDocument(input: {
 
     xhr.open("POST", "/api/family/documents");
     xhr.withCredentials = true;
+    Object.entries(csrf).forEach(([key, value]) => xhr.setRequestHeader(key, value));
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && input.onProgress) {
         input.onProgress(Math.round((e.loaded / e.total) * 100));
@@ -261,6 +264,7 @@ export async function apiDeleteDocument(id: string) {
   const res = await fetch(`/api/family/documents?id=${encodeURIComponent(id)}`, {
     method: "DELETE",
     credentials: "same-origin",
+    headers: await csrfHeaders(),
   });
   return parse<{ bundle: FamilyBundle }>(res);
 }
@@ -272,6 +276,7 @@ export async function apiReplaceDocument(id: string, file: File) {
   const res = await fetch("/api/family/documents", {
     method: "PUT",
     credentials: "same-origin",
+    headers: await csrfHeaders(),
     body: form,
   });
   return parse<{ bundle: FamilyBundle }>(res);
@@ -281,7 +286,7 @@ export async function apiSyncApplications(applications: import("@/lib/family-app
   const res = await fetch("/api/family/applications", {
     method: "PUT",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
     body: JSON.stringify({ applications }),
   });
   return parse<{ bundle: FamilyBundle }>(res);

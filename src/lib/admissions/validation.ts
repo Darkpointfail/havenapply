@@ -109,6 +109,23 @@ function dossierSnapshot(value: unknown): AdmissionDossierSnapshot | null {
   };
 }
 
+/**
+ * The full clinical/situation/housing dossier is a nested, evolving shape
+ * (see community-portal.ts's ClientDossier). Rather than re-validate every
+ * field here, accept it as a plain object and cap its size — it is only
+ * ever read back and rendered, never trusted for authorization decisions.
+ */
+function dossierPayload(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  try {
+    const json = JSON.stringify(value);
+    if (json.length > MAX_DOSSIER_BYTES) return null;
+  } catch {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
 export function parseSubmitInput(body: unknown): ValidationResult<AdmissionSubmitInput> {
   if (!body || typeof body !== "object") return { ok: false, error: "Invalid request." };
   const raw = body as Record<string, unknown>;
@@ -135,6 +152,7 @@ export function parseSubmitInput(body: unknown): ValidationResult<AdmissionSubmi
     value: {
       clientRequestId,
       siteId,
+      seniorId: text(raw.seniorId, 128),
       siteName: text(raw.siteName, 300),
       publicRef: text(raw.publicRef, 64) ?? null,
       personRef: text(raw.personRef, 64) ?? null,

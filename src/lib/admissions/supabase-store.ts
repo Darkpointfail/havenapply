@@ -70,6 +70,8 @@ function rowToRecord(row: Row): AdmissionApplicationRecord {
       phone: str(contact.phone),
       relationship: str(contact.relationship),
     },
+    dossierSnapshot: (payload.dossierSnapshot as AdmissionApplicationRecord["dossierSnapshot"]) ?? null,
+    dossier: (payload.dossier as Record<string, unknown> | null) ?? null,
     desiredMoveIn: (row.desired_move_in as string | null) ?? null,
     waitlistPosition:
       typeof payload.waitlistPosition === "number" ? payload.waitlistPosition : null,
@@ -104,6 +106,8 @@ function payloadFromInput(input: AdmissionSubmitInput, familyEmail: string, site
       phone: input.familyContact?.phone ?? "",
       relationship: input.familyContact?.relationship ?? "",
     },
+    dossierSnapshot: input.dossierSnapshot ?? null,
+    dossier: input.dossier ?? null,
     waitlistPosition: null,
     decision: null,
   };
@@ -117,7 +121,7 @@ export async function getSite(siteId: string): Promise<ResidenceSite | null> {
   const client = await sb();
   const { data } = await client
     .from("communities")
-    .select("id, name, status, deleted_at")
+    .select("id, name, status, deleted_at, organization_id")
     .eq("id", siteId)
     .maybeSingle();
   if (!data) return null;
@@ -134,7 +138,12 @@ export async function getSite(siteId: string): Promise<ResidenceSite | null> {
   // claude/audit-etat-supabase-phase-b-2026-09-10.md for the drift this fixes).
   const active =
     row.status === "verified" && !row.deleted_at && (settings?.is_active ?? true) !== false;
-  return { id: str(row.id), name: str(row.name), isActive: Boolean(active) };
+  return {
+    id: str(row.id),
+    name: str(row.name),
+    isActive: Boolean(active),
+    organizationId: str(row.organization_id) || undefined,
+  };
 }
 
 export async function listMembershipsForUser(userId: string): Promise<StaffMembership[]> {
@@ -189,6 +198,16 @@ export async function submitApplication(args: {
   const familyId = await familyIdFor(args.familyUserId);
   if (!familyId) return { ok: false, status: 403, error: "No family record for this account." };
 
+  // `applications.senior_id` is a required FK (also the arbiter of the
+  // one-active-application-per-senior-per-community rule). The family side
+  // already resolves this when building the submission.
+  if (!args.input.seniorId) {
+    return { ok: false, status: 400, error: "Missing senior profile." };
+  }
+  if (!site.organizationId) {
+    return { ok: false, status: 500, error: "Residence is missing its organization." };
+  }
+
   const client = await sb();
 
   // Idempotency: unique index (family_id, client_request_id).
@@ -212,7 +231,9 @@ export async function submitApplication(args: {
       {
         ...(existing ? { id: (existing as Row).id } : {}),
         family_id: familyId,
+        senior_id: args.input.seniorId,
         community_id: site.id,
+        organization_id: site.organizationId,
         client_request_id: args.input.clientRequestId,
         status: "submitted",
         submitted_at: now,

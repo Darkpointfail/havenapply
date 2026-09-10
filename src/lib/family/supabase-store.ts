@@ -21,6 +21,7 @@ import {
   type FamilyBundle,
   type SeniorRecord,
 } from "@/lib/family/types";
+import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { newOpaqueId } from "@/lib/family/session";
 
@@ -275,28 +276,51 @@ export async function loadOrCreateSupabaseFamily(user: {
 
   if (existing) return loadBundleForOwner(client, user, existing);
 
-  const { data: created, error } = await client
-    .from("families")
-    .insert({
-      owner_id: user.id,
-      family_name: `${user.firstName} ${user.lastName}`.trim(),
-      primary_email: user.email,
-      primary_phone: user.phone || null,
-      preferred_language: "fr",
-    })
-    .select("*")
-    .single();
+  // Insert with a known id and never re-`select()` the row back: the RLS
+  // read policy on `families` requires an `is_family_member` row, which
+  // doesn't exist yet at this point — a chained `.select()` after the insert
+  // would fail every time. Insert `family_members` right after, then build
+  // the bundle input from the values already in hand.
+  const familyId = randomUUID();
+  const now = new Date().toISOString();
+  const { error } = await client.from("families").insert({
+    id: familyId,
+    owner_id: user.id,
+    family_name: `${user.firstName} ${user.lastName}`.trim(),
+    primary_email: user.email,
+    primary_phone: user.phone || null,
+    preferred_language: "fr",
+  });
 
-  if (error || !created) {
-    throw new Error(error?.message || "Unable to create the family account.");
+  if (error) {
+    throw new Error(error.message || "Unable to create the family account.");
   }
 
-  await client.from("family_members").insert({
-    family_id: created.id,
+  const { error: memberError } = await client.from("family_members").insert({
+    family_id: familyId,
     user_id: user.id,
     role: "owner",
     invitation_status: "accepted",
   });
+
+  if (memberError) {
+    throw new Error(memberError.message || "Unable to create the family account.");
+  }
+
+  const created: Record<string, unknown> = {
+    id: familyId,
+    owner_id: user.id,
+    family_name: `${user.firstName} ${user.lastName}`.trim(),
+    primary_email: user.email,
+    primary_phone: user.phone || null,
+    relationship_to_senior: null,
+    communication_preference: null,
+    preferred_language: "fr",
+    onboarding_step: 0,
+    created_at: now,
+    updated_at: now,
+    last_saved_at: null,
+  };
 
   return loadBundleForOwner(client, user, created);
 }

@@ -360,7 +360,11 @@ function attachDocsToApp(
  * read by the targeted residence. Fire-and-forget: the local optimistic state
  * is unchanged, so the UI renders exactly as before.
  */
-function publishToServer(data: FamilyData, submitted: FamilyApplication) {
+function publishToServer(
+  data: FamilyData,
+  submitted: FamilyApplication,
+  seniorId: string | null,
+) {
   if (!admissionsEnabled()) return;
 
   const careNeeds = [
@@ -376,6 +380,7 @@ function publishToServer(data: FamilyData, submitted: FamilyApplication) {
   const ageNum = Number(seniorAge(data.senior)) || Number(data.person.age) || 0;
 
   const input = admissionInputFromFamilyApplication(submitted, {
+    seniorId: seniorId ?? undefined,
     seniorName: seniorDisplayName(data.senior) || data.person.name || "Senior",
     seniorAge: ageNum,
     relationship: data.senior.relationship || data.person.relationship || "Family",
@@ -1169,7 +1174,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           personRef: app.personRef || prev.personRef || null,
           dossierRef: app.dossierRef || prev.dossierRef || null,
         });
-        publishToServer(prev, submitted);
+        publishToServer(prev, submitted, seniorId);
         result = submitted;
 
         const others = prev.applications.filter(
@@ -1194,7 +1199,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       }
       return result;
     },
-    [persist, syncAppsServer],
+    [persist, syncAppsServer, seniorId],
   );
 
   const submitApplicationBatch = useCallback(
@@ -1235,7 +1240,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
             personRef: app.personRef || prev.personRef || null,
             dossierRef: app.dossierRef || prev.dossierRef || null,
           });
-          publishToServer({ ...working, applications, documents }, submitted);
+          publishToServer({ ...working, applications, documents }, submitted, seniorId);
           results.push(submitted);
           applications = applications.filter(
             (a) =>
@@ -1256,7 +1261,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
       });
       return results;
     },
-    [persist, syncAppsServer],
+    [persist, syncAppsServer, seniorId],
   );
 
   const setCommunityDecision = useCallback(

@@ -141,7 +141,17 @@ export type AdmissionApplicationRecord = {
   /** Metadata only — file bytes are not shared with staff in this milestone. */
   documents: AdmissionDocumentMeta[];
   familyContact: AdmissionFamilyContact;
-  dossierSnapshot: AdmissionDossierSnapshot | null;  desiredMoveIn: string | null;
+  dossierSnapshot: AdmissionDossierSnapshot | null;
+  /**
+   * Full clinical/situation/housing dossier, best-effort mapped from the
+   * family's ResidentDossier via residentDossierToClientDossier(). Loosely
+   * typed on purpose: shaped like community-portal's ClientDossier but never
+   * imported/enforced as that type here, to avoid an admissions->community
+   * layering dependency. Read-side wiring into the residence console
+   * (admissionRecordToCommunityApplication) is still pending.
+   */
+  dossier: Record<string, unknown> | null;
+  desiredMoveIn: string | null;
   waitlistPosition: number | null;
   decision: AdmissionDecision;
   /** True only for explicitly seeded development data. */
@@ -177,6 +187,8 @@ export type ResidenceSite = {
   id: string;
   name: string;
   isActive: boolean;
+  /** Supabase mode only: resolves `applications.organization_id` (required FK). */
+  organizationId?: string;
 };
 
 export type StaffMembershipRole = "admin" | "manager" | "coordinator" | "readonly";
@@ -200,6 +212,12 @@ export type AdmissionDetail = {
 export type AdmissionSubmitInput = {
   clientRequestId: string;
   siteId: string;
+  /**
+   * The family's senior this application is for (Supabase mode: resolves
+   * `applications.senior_id`, a required FK). Not used by the local backend,
+   * which embeds senior info directly on each record instead.
+   */
+  seniorId?: string;
   siteName?: string;
   publicRef?: string | null;
   personRef?: string | null;
@@ -210,7 +228,9 @@ export type AdmissionSubmitInput = {
   medicalHighlights?: string[];
   documents?: AdmissionDocumentMeta[];
   familyContact?: Partial<AdmissionFamilyContact>;
-  dossierSnapshot?: AdmissionDossierSnapshot | null;  desiredMoveIn?: string | null;
+  dossierSnapshot?: AdmissionDossierSnapshot | null;
+  dossier?: Record<string, unknown> | null;
+  desiredMoveIn?: string | null;
 };
 
 export type AdmissionRepositoryError = {

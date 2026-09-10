@@ -156,6 +156,7 @@ export function admissionRecordToCommunityApplication(
 export function admissionInputFromFamilyApplication(
   app: FamilyApplication,
   extras: {
+    seniorId?: string;
     seniorName?: string;
     seniorAge?: number;
     relationship?: string;
@@ -167,6 +168,7 @@ export function admissionInputFromFamilyApplication(
     summary?: string;
     residentDossier?: ResidentDossier;
     completionPercent?: number;
+    dossier?: Record<string, unknown> | null;
   } = {},
 ): AdmissionSubmitInput {
   const dossier = extras.residentDossier;
@@ -290,6 +292,7 @@ export function admissionInputFromFamilyApplication(
       : null,
     desiredMoveIn: app.desiredMoveIn ?? null,
     dossier: extras.dossier ?? null,
+    seniorId: extras.seniorId,
   };
 }
 

@@ -2,6 +2,7 @@ import { jsonError, jsonOk } from "@/lib/family/authz";
 import { parseUserRole } from "@/lib/auth-store";
 import { isSupabaseBackend } from "@/lib/supabase/config";
 import { registerAccount } from "@/lib/security/auth-service";
+import { sendEmail, verificationEmail } from "@/lib/email/mailer";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { upsertMembership } from "@/lib/security/identity-store";
 import { residencesForCommunityOrg } from "@/lib/messaging";
@@ -60,7 +61,14 @@ export async function POST(request: Request) {
     });
   }
 
-  // The token belongs in the confirmation mail. Until a transport exists an
-  // operator can read it back through /api/auth/verify-email.
+  // Verification is currently disabled for every role (see
+  // requiresVerifiedEmail in auth-service.ts), so verificationToken is null
+  // and no mail goes out. This stays ready for when that gate is switched
+  // back on: an operator can still read a token back through
+  // /api/auth/verify-email for support cases where the mail can't be delivered.
+  if (result.data.verificationToken && typeof body.email === "string") {
+    await sendEmail(verificationEmail(body.email, result.data.verificationToken));
+  }
+
   return jsonOk({ userId: result.data.userId }, 201);
 }

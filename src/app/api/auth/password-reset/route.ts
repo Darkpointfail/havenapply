@@ -3,6 +3,7 @@ import { recordAuditEvent } from "@/lib/security/identity-store";
 import { completePasswordReset, requestPasswordReset } from "@/lib/security/auth-service";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { operatorTokenMatches } from "@/lib/security/operator";
+import { passwordResetEmail, sendEmail } from "@/lib/email/mailer";
 
 /**
  * Operator override for support cases where the reset mail cannot be
@@ -24,6 +25,14 @@ export async function POST(request: Request) {
   const result = await requestPasswordReset(body.email, await requestFingerprint());
   if (!result.ok) return jsonError(result.error, result.status);
 
+  // A token means a real account exists for this address — email the reset
+  // link to it. (No token means either an invalid address or an unknown
+  // account; either way there is nothing to send, and the response below
+  // stays the same either way so accounts can't be enumerated.)
+  if (result.data.token && typeof body.email === "string") {
+    await sendEmail(passwordResetEmail(body.email, result.data.token));
+  }
+
   const operator = operatorTokenMatches(request.headers.get("x-haven-bootstrap-token"));
   if (operator) {
     await recordAuditEvent({
@@ -32,8 +41,10 @@ export async function POST(request: Request) {
       metadata: { via: "operator" },
     });
   }
-  // Only an operator ever reads the token back; a non-production flag is not a
-  // trust boundary on a shared preview host.
+  // The operator override exists for support cases where the mail can't be
+  // delivered (e.g. no transport configured yet, or a bounce) — it lets a
+  // support agent read the token back with the deployment bootstrap secret.
+  // It is not how a real user gets their link; that always goes by email.
   const token = operator ? result.data.token : undefined;
   return jsonOk({ sent: true, resetToken: token });
 }

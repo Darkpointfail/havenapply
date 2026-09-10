@@ -23,6 +23,7 @@ import {
 } from "@/lib/family/types";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { newOpaqueId } from "@/lib/family/session";
 
 type Sb = Awaited<ReturnType<typeof createClient>>;
@@ -776,11 +777,26 @@ export async function uploadDocument(input: {
   // Use uuid-like path; storage bucket senior-documents
   const version = 1;
   const storagePath = `${fam.id}/${senior.id}/${docId}/v${version}`;
-  const { error: upErr } = await client.storage.from("senior-documents").upload(storagePath, input.bytes, {
+
+  // `senior-documents` denies direct client writes at the RLS level on
+  // purpose (PHI bucket — see supabase/storage/buckets.sql). requireFamilyUser()
+  // in the API route already did the AuthZ before this function was ever
+  // called, so this route plays the "trusted intermediary" role the policy's
+  // comment describes: the actual write goes through the service-role client,
+  // never the user-scoped one, and the RLS policy itself is left untouched.
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("[family/uploadDocument] SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    return { error: "Upload is not configured on this server.", status: 500 as const };
+  }
+  const { error: upErr } = await admin.storage.from("senior-documents").upload(storagePath, input.bytes, {
     contentType: input.mimeType,
     upsert: false,
   });
-  if (upErr) return { error: "Upload failed.", status: 500 as const };
+  if (upErr) {
+    console.error("[family/uploadDocument] Storage upload failed:", storagePath, upErr);
+    return { error: `Upload failed: ${upErr.message}`, status: 500 as const };
+  }
 
   const categoryMap: Record<string, string> = {
     identification: "id",
@@ -824,7 +840,13 @@ export async function uploadDocument(input: {
     .select("*")
     .single();
 
-  if (error || !docRow) return { error: "Unable to save the document.", status: 500 as const };
+  if (error || !docRow) {
+    console.error("[family/uploadDocument] documents insert failed:", storagePath, error);
+    return {
+      error: error ? `Unable to save the document: ${error.message}` : "Unable to save the document.",
+      status: 500 as const,
+    };
+  }
 
   const bundle = await loadOrCreateSupabaseFamily({
     id: input.ownerId,

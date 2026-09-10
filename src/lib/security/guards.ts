@@ -13,10 +13,11 @@ import { createClient } from "@/lib/supabase/server";
 import { sessionFromSupabaseUser } from "@/lib/auth-supabase";
 import {
   findCredentialById,
-  listMembershipsByUser,
+  listMembershipsByUser as listLocalMembershipsByUser,
   recordAuditEvent,
   type StaffMembershipRecord,
 } from "@/lib/security/identity-store";
+import { listMembershipsByUser as listSupabaseMembershipsByUser } from "@/lib/security/supabase-store";
 import { SESSION_COOKIE, resolveSession } from "@/lib/security/session";
 import { CSRF_COOKIE, verifyCsrf } from "@/lib/security/csrf";
 
@@ -124,7 +125,9 @@ export async function requireStaff(): Promise<GuardResult<StaffPrincipal>> {
     return { ok: false, status: 403, error: "Access reserved for residence accounts." };
   }
 
-  const memberships = await listMembershipsByUser(principal.userId);
+  const memberships = isSupabaseBackend()
+    ? await listSupabaseMembershipsByUser(principal.userId)
+    : await listLocalMembershipsByUser(principal.userId);
   const siteIds = [...new Set(memberships.map((m) => m.siteId))];
   if (siteIds.length === 0) {
     return { ok: false, status: 403, error: "No residence is linked to this account." };

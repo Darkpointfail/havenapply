@@ -6,8 +6,14 @@ import {
   updateCredential,
   upsertMembership,
 } from "@/lib/security/identity-store";
+import {
+  findAccountByEmail,
+  promoteAccountRole,
+  upsertMembership as upsertSupabaseMembership,
+} from "@/lib/security/supabase-store";
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { operatorEndpointsEnabled, operatorTokenMatches } from "@/lib/security/operator";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 
 /**
  * Grant the first staff membership on a site.
@@ -49,6 +55,34 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const siteId = typeof body.siteId === "string" ? body.siteId.trim() : "";
   if (!email || !siteId) return jsonError("email and siteId are required.", 400);
+
+  if (isSupabaseBackend()) {
+    const account = await findAccountByEmail(email);
+    if (!account) return jsonError("No account for this address.", 404);
+
+    if (account.role !== "facility" && account.role !== "community") {
+      const promoted = await promoteAccountRole(account.userId, "facility");
+      if (!promoted.ok) return jsonError(promoted.error, 500);
+    }
+
+    const granted = await upsertSupabaseMembership({
+      userId: account.userId,
+      email: account.email,
+      siteId,
+      role: "admin",
+    });
+    if (!granted.ok) return jsonError(granted.error, 500);
+
+    await recordAuditEvent({
+      event: "staff.bootstrap",
+      outcome: "success",
+      subject: email,
+      actorId: account.userId,
+      metadata: { siteId, membershipId: granted.record.id, roleBefore: account.role },
+    });
+
+    return jsonOk({ siteId, role: granted.record.role }, 201);
+  }
 
   const credential = await findCredentialByEmail(email);
   if (!credential) return jsonError("No account for this address.", 404);

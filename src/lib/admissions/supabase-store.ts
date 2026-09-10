@@ -12,6 +12,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { listMembershipsByUser as listStaffMembershipsByUser } from "@/lib/security/supabase-store";
 import type {
   AdmissionApplicationRecord,
   AdmissionDetail,
@@ -149,29 +150,20 @@ export async function getSite(siteId: string): Promise<ResidenceSite | null> {
 export async function listMembershipsForUser(userId: string): Promise<StaffMembership[]> {
   // staff_memberships (migration 0011) is the source of truth for staff
   // access, not community_team_members (0003): its roles (admin / manager /
-  // coordinator / readonly) match StaffMembershipRole exactly, and it is
-  // what the current server-side auth code (security/identity-store.ts) and
-  // the staff-invitation flow already use. See
-  // claude/audit-etat-supabase-phase-b-2026-09-10.md for why the two exist
-  // and why this one wins. community_team_members remains readable (RLS
-  // helpers OR both together) but should not gain new writers.
-  const client = await sb();
-  const { data } = await client
-    .from("staff_memberships")
-    .select("id, user_id, community_id, role, status")
-    .eq("user_id", userId)
-    .eq("status", "active");
-  return (data ?? []).map((row) => {
-    const r = row as Row;
-    return {
-      id: str(r.id),
-      userId: str(r.user_id),
-      email: "",
-      siteId: str(r.community_id),
-      role: str(r.role, "readonly") as StaffMembership["role"],
-      status: "active" as const,
-    };
-  });
+  // coordinator / readonly) match StaffMembershipRole exactly. The query
+  // itself lives in security/supabase-store.ts, shared with
+  // security/guards.ts#requireStaff() so there is exactly one place that
+  // reads it. community_team_members remains readable (RLS helpers OR both
+  // together) but should not gain new writers.
+  const memberships = await listStaffMembershipsByUser(userId);
+  return memberships.map((m) => ({
+    id: m.id,
+    userId: m.userId,
+    email: m.email,
+    siteId: m.siteId,
+    role: m.role as StaffMembership["role"],
+    status: m.status,
+  }));
 }
 
 async function familyIdFor(userId: string): Promise<string | null> {

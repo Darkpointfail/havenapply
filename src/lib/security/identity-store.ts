@@ -1,10 +1,15 @@
 /**
- * Server-side identity store: credentials, sessions, staff memberships,
+ * Local-backend identity store: credentials, sessions, staff memberships,
  * invitations, rate-limit counters and audit events.
  *
- * Filesystem-backed for the local backend (`.data/identity/state.json`). In
- * Supabase mode the credential and session lifecycle belongs to Supabase Auth;
- * this store still owns memberships, invitations, rate limits and audit.
+ * Filesystem-backed (`.data/identity/state.json`), used when
+ * NEXT_PUBLIC_DATA_BACKEND is not "supabase". In Supabase mode, credentials
+ * and sessions belong to Supabase Auth directly, and staff memberships live
+ * in the real `staff_memberships` table (read via
+ * security/supabase-store.ts, used by guards.ts#requireStaff()) — not here.
+ * Invitations, rate limits and audit currently still write to this local
+ * store even when Supabase is the active data backend; that split hasn't
+ * been revisited since the membership fix and may need the same treatment.
  *
  * Server-only: importing node:fs makes this unusable from a client component,
  * and no `"use client"` module may import it.

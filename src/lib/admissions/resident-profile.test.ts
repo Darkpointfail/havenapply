@@ -111,6 +111,7 @@ describe("resident admission-profile contract", () => {
         relationship: "Fille",
       },
       dossierSnapshot: SNAPSHOT,
+      dossier: null,
       desiredMoveIn: "Dans les 30 prochains jours",
       waitlistPosition: null,
       decision: null,

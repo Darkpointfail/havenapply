@@ -19,6 +19,7 @@ import {
   docsForDemande,
   REFUS_MOTIFS,
   REQUIRED_DOCS,
+  RESIDENCE,
   sortWaitlist,
   STATUS_STYLES,
   VISITS,
@@ -448,6 +449,7 @@ export function ResidenceConsole() {
   const portal = useCommunityPortal();
   const router = useRouter();
   const t = useT();
+  const { user } = useAuth();
   // Real signed-in staff name, with a generic (never fictional) fallback —
   // used anywhere the console needs to attribute an action ("Signed …",
   // note authorship) to whoever is actually logged in.

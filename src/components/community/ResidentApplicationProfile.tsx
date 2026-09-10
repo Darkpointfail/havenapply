@@ -180,12 +180,12 @@ function ResidentMessages({
   );
   const messages = thread?.messages ?? [];
 
-  const send = (event?: FormEvent) => {
+  const send = async (event?: FormEvent) => {
     event?.preventDefault();
     const text = draft.trim();
     if (!text) return;
     if (thread) {
-      const result = messaging.sendMessage(thread.id, text);
+      const result = await messaging.sendMessage(thread.id, text);
       if (!result.ok) {
         setFeedback(
           result.sensitiveFlags?.length
@@ -195,7 +195,7 @@ function ResidentMessages({
         return;
       }
     } else {
-      messaging.startConversation({
+      await messaging.startConversation({
         scope: "application",
         residenceId: app.residenceId,
         residenceName: "Équipe des admissions",

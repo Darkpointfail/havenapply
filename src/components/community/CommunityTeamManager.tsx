@@ -23,12 +23,14 @@ export function CommunityTeamManager() {
     can,
     myRole,
     updateTeamMemberRole,
+    setTeamMemberStatus,
     inviteTeamMember,
   } = useCommunityPortal();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CommunityTeamRole>("admissions_manager");
   const [flash, setFlash] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   if (!ready || !workspace) {
     return (
@@ -38,8 +40,8 @@ export function CommunityTeamManager() {
     );
   }
 
-  const invite = () => {
-    const r = inviteTeamMember({
+  const invite = async () => {
+    const r = await inviteTeamMember({
       name: name.trim(),
       email: email.trim(),
       role,
@@ -53,6 +55,20 @@ export function CommunityTeamManager() {
     } else {
       setFlash(r.error || "Could not invite");
     }
+  };
+
+  const changeRole = async (memberId: string, nextRole: CommunityTeamRole) => {
+    setBusyId(memberId);
+    const r = await updateTeamMemberRole(memberId, nextRole);
+    setBusyId(null);
+    if (!r.ok) setFlash(r.error || "Could not change role");
+  };
+
+  const toggleStatus = async (memberId: string, current: "active" | "invited" | "suspended") => {
+    setBusyId(memberId);
+    const r = await setTeamMemberStatus(memberId, current === "suspended" ? "active" : "suspended");
+    setBusyId(null);
+    if (!r.ok) setFlash(r.error || "Could not update member");
   };
 
   return (
@@ -140,16 +156,27 @@ export function CommunityTeamManager() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge tone={member.status === "active" ? "success" : "warn"}>
-                    {member.status === "active" ? "Active" : "Invited"}
+                  <Badge
+                    tone={
+                      member.status === "active"
+                        ? "success"
+                        : member.status === "suspended"
+                          ? "danger"
+                          : "warn"
+                    }
+                  >
+                    {member.status === "active"
+                      ? "Active"
+                      : member.status === "suspended"
+                        ? "Suspended"
+                        : "Invited"}
                   </Badge>
                   {can("manageTeam") ? (
                     <select
                       className="rounded-lg border border-line bg-bg px-2 py-1.5 text-sm"
                       value={member.role}
-                      onChange={(e) =>
-                        updateTeamMemberRole(member.id, e.target.value as CommunityTeamRole)
-                      }
+                      disabled={busyId === member.id}
+                      onChange={(e) => changeRole(member.id, e.target.value as CommunityTeamRole)}
                     >
                       {COMMUNITY_INVITE_ROLES.map((id) => (
                         <option key={id} value={id}>
@@ -164,6 +191,17 @@ export function CommunityTeamManager() {
                     <span className="text-sm text-ink-muted">
                       {communityRoleLabel(member.role)}
                     </span>
+                  )}
+                  {can("manageTeam") && member.status !== "invited" && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={busyId === member.id}
+                      onClick={() => toggleStatus(member.id, member.status)}
+                    >
+                      {member.status === "suspended" ? t("Reactivate") : t("Suspend")}
+                    </Button>
                   )}
                 </div>
               </li>

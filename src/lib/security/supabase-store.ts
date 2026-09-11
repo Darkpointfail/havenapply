@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/auth-crypto";
 import { accountTypeLabel } from "@/lib/auth-store";
-import type { StaffMembershipRecord } from "@/lib/security/identity-store";
+import type { StaffMembershipRecord, TeamMemberRecord } from "@/lib/security/identity-store";
 
 type Row = Record<string, unknown>;
 
@@ -28,7 +28,21 @@ function membershipFromRow(row: Row, email = ""): StaffMembershipRecord {
     email,
     siteId: str(row.community_id),
     role: str(row.role, "readonly") as StaffMembershipRecord["role"],
-    status: "active" as const,
+    status: (row.status === "suspended" ? "suspended" : "active") as StaffMembershipRecord["status"],
+    createdAt: str(row.created_at),
+  };
+}
+
+function teamMemberFromRow(row: Row): TeamMemberRecord {
+  const profile = (row.profiles ?? {}) as Row;
+  const name = [str(profile.first_name), str(profile.last_name)].filter(Boolean).join(" ").trim();
+  return {
+    id: str(row.id),
+    userId: str(row.user_id),
+    email: str(profile.email),
+    name,
+    role: str(row.role, "readonly") as StaffMembershipRecord["role"],
+    status: (row.status === "suspended" ? "suspended" : "active") as StaffMembershipRecord["status"],
     createdAt: str(row.created_at),
   };
 }
@@ -59,10 +73,58 @@ export async function listMembershipsBySite(siteId: string): Promise<StaffMember
   if (!admin) return [];
   const { data } = await admin
     .from("staff_memberships")
-    .select("id, user_id, community_id, role, status, created_at")
+    .select("id, user_id, community_id, role, status, created_at, profiles(email)")
     .eq("community_id", siteId)
     .eq("status", "active");
-  return (data ?? []).map((row) => membershipFromRow(row as Row));
+  return (data ?? []).map((row) => {
+    const r = row as Row;
+    const profile = (r.profiles ?? {}) as Row;
+    return membershipFromRow(r, str(profile.email));
+  });
+}
+
+/**
+ * Full team for a site — active and suspended, with the real name/email
+ * from `profiles` (migration 0011's `staff_memberships.user_id` references
+ * `profiles.id`, so this is a single embedded select, not N+1 lookups).
+ * Service-role, same reasoning as listMembershipsBySite: the caller of this
+ * function (the team API route) has already proven site-admin access itself,
+ * so RLS on staff_memberships/profiles would only get in the way here.
+ */
+export async function listTeamForSite(siteId: string): Promise<TeamMemberRecord[]> {
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data } = await admin
+    .from("staff_memberships")
+    .select("id, user_id, community_id, role, status, created_at, profiles(email, first_name, last_name)")
+    .eq("community_id", siteId)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map((row) => teamMemberFromRow(row as Row));
+}
+
+/**
+ * Suspend or reactivate an existing membership without touching its role.
+ * Unlike upsertMembership (which always sets status back to "active"), this
+ * is the only path that can set status: "suspended" — used by the
+ * remove/suspend team action.
+ */
+export async function setMembershipStatus(input: {
+  userId: string;
+  siteId: string;
+  status: StaffMembershipRecord["status"];
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = createAdminClient();
+  if (!admin) {
+    return { ok: false, error: "Server misconfiguration: service role key missing." };
+  }
+  const { error, count } = await admin
+    .from("staff_memberships")
+    .update({ status: input.status }, { count: "exact" })
+    .eq("user_id", input.userId)
+    .eq("community_id", input.siteId);
+  if (error) return { ok: false, error: error.message };
+  if (!count) return { ok: false, error: "No membership found for this member on this residence." };
+  return { ok: true };
 }
 
 /**

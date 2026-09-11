@@ -65,6 +65,17 @@ export type StaffMembershipRecord = {
   createdAt: string;
 };
 
+/** A membership plus the member's display name, for the team-management UI. */
+export type TeamMemberRecord = {
+  id: string;
+  userId: string;
+  email: string;
+  name: string;
+  role: StaffMembershipRecord["role"];
+  status: StaffMembershipRecord["status"];
+  createdAt: string;
+};
+
 export type StaffInvitationRecord = {
   id: string;
   email: string;
@@ -317,6 +328,30 @@ export async function listMembershipsBySite(siteId: string): Promise<StaffMember
   return state.memberships.filter((m) => m.siteId === siteId && m.status === "active");
 }
 
+/** Full team for a site (active and suspended), with each member's real
+ * name from the local credential record — the Supabase-mode equivalent of
+ * security/supabase-store.ts#listTeamForSite. */
+export async function listTeamForSite(siteId: string): Promise<TeamMemberRecord[]> {
+  const state = await readState();
+  return state.memberships
+    .filter((m) => m.siteId === siteId)
+    .map((m) => {
+      const credential = state.credentials.find((c) => c.userId === m.userId);
+      const name = credential
+        ? `${credential.firstName} ${credential.lastName}`.trim()
+        : "";
+      return {
+        id: m.id,
+        userId: m.userId,
+        email: m.email,
+        name,
+        role: m.role,
+        status: m.status,
+        createdAt: m.createdAt,
+      };
+    });
+}
+
 export async function upsertMembership(input: {
   userId: string;
   email: string;
@@ -346,17 +381,26 @@ export async function upsertMembership(input: {
   });
 }
 
-export async function setMembershipStatus(
-  membershipId: string,
-  status: StaffMembershipRecord["status"],
-): Promise<StaffMembershipRecord | null> {
-  return withState((state) => {
-    const index = state.memberships.findIndex((m) => m.id === membershipId);
-    if (index < 0) return null;
-    const next = { ...state.memberships[index], status };
-    state.memberships[index] = next;
-    return next;
+/** Suspend or reactivate an existing membership without touching its role.
+ * Mirrors security/supabase-store.ts#setMembershipStatus's signature so the
+ * team API route can call either backend uniformly. */
+export async function setMembershipStatus(input: {
+  userId: string;
+  siteId: string;
+  status: StaffMembershipRecord["status"];
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const updated = await withState((state) => {
+    const index = state.memberships.findIndex(
+      (m) => m.userId === input.userId && m.siteId === input.siteId,
+    );
+    if (index < 0) return false;
+    state.memberships[index] = { ...state.memberships[index], status: input.status };
+    return true;
   });
+  if (!updated) {
+    return { ok: false, error: "No membership found for this member on this residence." };
+  }
+  return { ok: true };
 }
 
 export async function createInvitation(input: {

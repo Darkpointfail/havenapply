@@ -610,10 +610,13 @@ export function notifyCommunityProfileChanged(residenceId?: string) {
 
 export type CommunityTeamMember = {
   id: string;
+  /** The membership's own user id — the server routes (staff/team/role,
+   * staff/team/status) are keyed on this, not on `id`. */
+  userId?: string;
   name: string;
   email: string;
   role: CommunityTeamRole;
-  status: "active" | "invited";
+  status: "active" | "invited" | "suspended";
   jobTitle: string;
 };
 

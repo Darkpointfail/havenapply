@@ -55,6 +55,14 @@ import {
 import { canonicalSeniorName, scrubDemoNamesDeep } from "@/lib/demo-name-fix";
 import { useT } from "@/lib/i18n/locale";
 import { apiGetCommunityProfile, apiSaveCommunityProfile } from "@/lib/community-profile/client-api";
+import {
+  apiInviteTeamMember,
+  apiListTeam,
+  apiSetTeamMemberStatus,
+  apiUpdateTeamRole,
+  toClientRole,
+  type TeamMemberRecord,
+} from "@/lib/staff-team/client-api";
 import { getResidence } from "@/data/residences";
 
 type PortalContextValue = {
@@ -126,13 +134,17 @@ type PortalContextValue = {
   updateTeamMemberRole: (
     memberId: string,
     role: CommunityTeamRole,
-  ) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
+  setTeamMemberStatus: (
+    memberId: string,
+    status: "active" | "suspended",
+  ) => Promise<{ ok: boolean; error?: string }>;
   inviteTeamMember: (input: {
     name: string;
     email: string;
     role: CommunityTeamRole;
     jobTitle: string;
-  }) => { ok: boolean; error?: string };
+  }) => Promise<{ ok: boolean; error?: string }>;
 };
 
 function normalizeWorkspace(ws: CommunityWorkspace): CommunityWorkspace {
@@ -183,6 +195,27 @@ async function fetchServerApplications(
       },
     });
   });
+}
+
+function teamMemberRecordToCommunityMember(record: TeamMemberRecord): CommunityTeamMember {
+  return {
+    id: record.id,
+    userId: record.userId,
+    name: record.name || record.email.split("@")[0] || "Team member",
+    email: record.email,
+    role: toClientRole(record.role),
+    status: record.status,
+    // No backing column for a job title once wired through staff_memberships
+    // (only the deprecated community_team_members table had one) — left
+    // blank rather than invented.
+    jobTitle: "",
+  };
+}
+
+/** The real team roster, from `staff_memberships` (see staff-team/client-api.ts). */
+async function fetchServerTeam(siteId: string): Promise<CommunityTeamMember[]> {
+  const records = await apiListTeam(siteId);
+  return records.map(teamMemberRecordToCommunityMember);
 }
 
 function readMap(): Record<string, CommunityWorkspace> {
@@ -238,18 +271,18 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Team, availability and notes stay local for now. The applications
-      // list and the profile (description/pricing/photos/services) come
-      // from the server — the profile is what the public pages and a
-      // second staff device both need to see, so this browser's copy is
-      // only ever a starting point, overridden by whatever was last saved.
+      // Availability and notes stay local for now. Applications, the profile
+      // and the team roster come from the server — a second staff device
+      // needs to see the same team, so this browser's copy is only ever a
+      // starting point, overridden by whatever the server has.
       const map = readMap();
       const shell = map[residenceId] ?? seedCommunityWorkspace(residenceId);
       const prior = Array.isArray(shell.applications) ? shell.applications : [];
 
-      const [applications, profileResult] = await Promise.all([
+      const [applications, profileResult, team] = await Promise.all([
         admissionsEnabled() ? fetchServerApplications(prior) : Promise.resolve(prior),
         apiGetCommunityProfile(residenceId),
+        fetchServerTeam(residenceId),
       ]);
       if (cancelled) return;
 
@@ -268,6 +301,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         ...shell,
         applications,
         profile: profileResult.profile ?? fallbackProfile,
+        // An empty server answer (e.g. this account isn't a site admin, so
+        // the team route refused the read) keeps the prior local list rather
+        // than wiping it — same caution as the applications/profile fetches.
+        team: team.length > 0 ? team : shell.team,
         updatedAt: new Date().toISOString(),
       });
       const nextMap = readMap();
@@ -317,6 +354,26 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
             updatedAt: new Date().toISOString(),
           }),
         );
+      })();
+    };
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+    };
+  }, [authReady, user, persist]);
+
+  // Same reasoning for the team: an invite accepted, a role changed or a
+  // member suspended from another device (or another teammate's browser)
+  // has no way to notify this one either.
+  useEffect(() => {
+    if (!authReady || !user || !isFacilityRole(user.role)) return;
+    const refresh = () => {
+      void (async () => {
+        const current = workspaceRef.current;
+        if (!current) return;
+        const team = await fetchServerTeam(current.residenceId);
+        if (team.length === 0) return;
+        persist((ws) => normalizeWorkspace({ ...ws, team, updatedAt: new Date().toISOString() }));
       })();
     };
     window.addEventListener("focus", refresh);
@@ -1067,27 +1124,56 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const updateTeamMemberRole = useCallback(
-    (memberId: string, role: CommunityTeamRole) => {
+    async (memberId: string, role: CommunityTeamRole) => {
       if (!can("manageTeam")) {
         return { ok: false, error: "You don’t have permission to manage the team." };
       }
-      persist((ws) => {
-        const member = ws.team.find((t) => t.id === memberId);
-        return pushAudit(
-          {
-            ...ws,
-            team: ws.team.map((t) => (t.id === memberId ? { ...t, role } : t)),
-          },
-          `Changed role for ${member?.name || memberId} → ${role}`,
-        );
-      });
+      const member = workspace?.team.find((t) => t.id === memberId);
+      if (!workspace || !member?.userId) {
+        return { ok: false, error: "Team member not found." };
+      }
+      persist((ws) =>
+        pushAudit(
+          { ...ws, team: ws.team.map((t) => (t.id === memberId ? { ...t, role } : t)) },
+          `Changed role for ${member.name || memberId} → ${role}`,
+        ),
+      );
+      // Was a fire-and-forget local edit only — staff_memberships (the table
+      // guards.ts actually reads role from) never learned about it, so the
+      // change silently reverted on next load. See supabase-store.ts#upsertMembership.
+      const result = await apiUpdateTeamRole(workspace.residenceId, member.userId, role);
+      if (!result.ok) return { ok: false, error: result.error };
       return { ok: true };
     },
-    [can, persist, pushAudit],
+    [can, persist, pushAudit, workspace],
+  );
+
+  const setTeamMemberStatus = useCallback(
+    async (memberId: string, status: "active" | "suspended") => {
+      if (!can("manageTeam")) {
+        return { ok: false, error: "You don’t have permission to manage the team." };
+      }
+      const member = workspace?.team.find((t) => t.id === memberId);
+      if (!workspace || !member?.userId) {
+        return { ok: false, error: "Team member not found." };
+      }
+      persist((ws) =>
+        pushAudit(
+          { ...ws, team: ws.team.map((t) => (t.id === memberId ? { ...t, status } : t)) },
+          status === "suspended"
+            ? `Suspended ${member.name || memberId}`
+            : `Reactivated ${member.name || memberId}`,
+        ),
+      );
+      const result = await apiSetTeamMemberStatus(workspace.residenceId, member.userId, status);
+      if (!result.ok) return { ok: false, error: result.error };
+      return { ok: true };
+    },
+    [can, persist, pushAudit, workspace],
   );
 
   const inviteTeamMember = useCallback(
-    (input: {
+    async (input: {
       name: string;
       email: string;
       role: CommunityTeamRole;
@@ -1096,25 +1182,20 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       if (!can("manageTeam")) {
         return { ok: false, error: "You don’t have permission to manage the team." };
       }
+      if (!workspace) return { ok: false, error: "Workspace not ready." };
       const email = input.email.trim().toLowerCase();
       if (!email.includes("@")) return { ok: false, error: "Enter a valid email." };
-      const member: CommunityTeamMember = {
-        id: `tm-${Date.now()}`,
-        name: input.name.trim() || email.split("@")[0],
-        email,
-        role: input.role,
-        status: "invited",
-        jobTitle: input.jobTitle.trim() || "Team member",
-      };
-      persist((ws) =>
-        pushAudit(
-          { ...ws, team: [...ws.team, member] },
-          `Invited ${member.name} (${member.email}) as ${member.role}`,
-        ),
-      );
+      // Used to fabricate a local CommunityTeamMember (id: tm-${Date.now()},
+      // status: "invited") without sending anything server-side — the person
+      // never actually got an email and never appeared for a second device.
+      // Now goes through the real single-use invitation flow (staff/invitations);
+      // the invitee shows up in the roster once they accept it, not before.
+      const result = await apiInviteTeamMember(workspace.residenceId, email, input.role);
+      if (!result.ok) return { ok: false, error: result.error };
+      persist((ws) => pushAudit({ ...ws }, `Invited ${email} as ${input.role}`));
       return { ok: true };
     },
-    [can, persist, pushAudit],
+    [can, persist, pushAudit, workspace],
   );
 
   const value = useMemo(
@@ -1150,6 +1231,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       upsertAvailability,
       removeAvailability,
       updateTeamMemberRole,
+      setTeamMemberStatus,
       inviteTeamMember,
     }),
     [
@@ -1184,6 +1266,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       upsertAvailability,
       removeAvailability,
       updateTeamMemberRole,
+      setTeamMemberStatus,
       inviteTeamMember,
     ],
   );

@@ -11,6 +11,7 @@ import type {
   AdmissionAuditEntry,
   AdmissionStatus,
   AdmissionStatusEvent,
+  InternalNoteRecord,
 } from "@/lib/admissions/types";
 import type { AdmissionSubmitInput } from "@/lib/admissions/types";
 
@@ -100,5 +101,20 @@ export async function apiChangeAdmissionStatus(
   return call<{ application: AdmissionApplicationRecord }>(
     `/api/admissions/${encodeURIComponent(applicationId)}/status`,
     { method: "POST", body: JSON.stringify({ status, ...options }) },
+  );
+}
+
+/** Staff-only — a dedicated route, not a field on apiGetAdmissionDetail's
+ * response, so there is no shared shape a family-facing edit could leak into. */
+export async function apiListInternalNotes(applicationId: string) {
+  return call<{ notes: InternalNoteRecord[] }>(
+    `/api/admissions/${encodeURIComponent(applicationId)}/notes`,
+  );
+}
+
+export async function apiAddInternalNote(applicationId: string, body: string) {
+  return call<{ note: InternalNoteRecord }>(
+    `/api/admissions/${encodeURIComponent(applicationId)}/notes`,
+    { method: "POST", body: JSON.stringify({ body }) },
   );
 }

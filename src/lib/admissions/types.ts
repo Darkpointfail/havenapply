@@ -183,6 +183,17 @@ export type AdmissionAuditEntry = {
   at: string;
 };
 
+/** Staff-only note on an application (application_internal_notes, migration
+ * 0024) — never surfaced to the family, unlike AdmissionAuditEntry above. */
+export type InternalNoteRecord = {
+  id: string;
+  applicationId: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+};
+
 export type ResidenceSite = {
   id: string;
   name: string;

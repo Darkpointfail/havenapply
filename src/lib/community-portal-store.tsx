@@ -16,7 +16,9 @@ import type { ApplicationStatus } from "@/data/applications";
 import { fetchServerIdentity } from "@/lib/family/client-api";
 import {
   admissionsEnabled,
+  apiAddInternalNote,
   apiChangeAdmissionStatus,
+  apiListInternalNotes,
   apiListResidenceAdmissions,
 } from "@/lib/admissions/client-api";
 import {
@@ -39,6 +41,7 @@ import {
   type CommunityTeamRole,
   type CommunityWorkspace,
   type DashboardStats,
+  type InternalNote,
 } from "@/lib/community-portal";
 import {
   deriveTransitionChecklist,
@@ -80,6 +83,7 @@ type PortalContextValue = {
     memberId: string | null,
   ) => Promise<{ ok: boolean; error?: string }>;
   addInternalNote: (appId: string, body: string) => Promise<{ ok: boolean; error?: string }>;
+  refreshInternalNotes: (appId: string) => Promise<void>;
   requestInfo: (appId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
   requestDocument: (appId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
   proposeTour: (appId: string, when: string) => Promise<{ ok: boolean; error?: string }>;
@@ -535,25 +539,70 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
     async (appId: string, body: string) => {
       const trimmed = body.trim();
       if (!trimmed) return { ok: false, error: "Write a note first." };
-      return mutateApp(
-        appId,
-        "addInternalNotes",
-        (a) => ({
-          ...a,
-          internalNotes: [
-            {
-              id: `n-${Date.now()}`,
-              author: actorName,
-              body: trimmed,
-              at: new Date().toISOString(),
-            },
-            ...a.internalNotes,
-          ],
-        }),
-        "Added internal note",
-      );
+      if (!can("addInternalNotes")) {
+        return { ok: false, error: "You don’t have permission for this action." };
+      }
+      if (!workspace?.applications.some((a) => a.id === appId)) {
+        return { ok: false, error: "Application not found." };
+      }
+      // Used to ride mutateApp → apiChangeAdmissionStatus: every note write
+      // re-submitted the application's current status to the server with
+      // note: "Added internal note" as the transition note. Harmless-looking,
+      // except changeStatus() always writes that note into
+      // admissions_audit_log (family-readable — can_read_application makes no
+      // staff/family distinction) and, whenever the application's current
+      // status carries a decision kind (approved/declined/more_info/
+      // waitlisted/tour_requested/assessment_requested), the status route
+      // also emails the family with that same note text. A private note left
+      // for a colleague was one API call away from landing in the family's
+      // inbox. Routes through a dedicated staff-only endpoint now — see
+      // api/admissions/[id]/notes/route.ts — which never touches
+      // applications.status or admissions_audit_log at all.
+      const serverId = applicationIdFromCommunityAppId(appId);
+      if (!serverId || !admissionsEnabled()) {
+        return { ok: false, error: "Internal notes require the server admissions flow." };
+      }
+      const res = await apiAddInternalNote(serverId, trimmed);
+      if (!res?.ok || !res.note) {
+        return { ok: false, error: res?.error || "Unable to reach the server." };
+      }
+      const note: InternalNote = {
+        id: res.note.id,
+        author: res.note.authorName || actorName,
+        body: res.note.body,
+        at: res.note.createdAt,
+      };
+      persist((ws) => {
+        const apps = ws.applications.map((a) =>
+          a.id === appId ? { ...a, internalNotes: [note, ...a.internalNotes] } : a,
+        );
+        return pushAudit({ ...ws, applications: apps }, "Added internal note");
+      });
+      return { ok: true };
     },
-    [actorName, mutateApp],
+    [actorName, can, persist, pushAudit, workspace],
+  );
+
+  /** Loads the real staff-only notes for one application — see addInternalNote
+   * above for why they can no longer ride the shared status/audit path. */
+  const refreshInternalNotes = useCallback(
+    async (appId: string) => {
+      const serverId = applicationIdFromCommunityAppId(appId);
+      if (!serverId || !admissionsEnabled()) return;
+      const res = await apiListInternalNotes(serverId);
+      if (!res?.ok || !res.notes) return;
+      const notes: InternalNote[] = res.notes.map((n) => ({
+        id: n.id,
+        author: n.authorName,
+        body: n.body,
+        at: n.createdAt,
+      }));
+      persist((ws) => ({
+        ...ws,
+        applications: ws.applications.map((a) => (a.id === appId ? { ...a, internalNotes: notes } : a)),
+      }));
+    },
+    [persist],
   );
 
   const requestInfo = useCallback(
@@ -1211,6 +1260,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       markAllNotificationsRead,
       assignApplication,
       addInternalNote,
+      refreshInternalNotes,
       requestInfo,
       requestDocument,
       proposeTour,
@@ -1246,6 +1296,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       markAllNotificationsRead,
       assignApplication,
       addInternalNote,
+      refreshInternalNotes,
       requestInfo,
       requestDocument,
       proposeTour,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Check,
@@ -166,10 +166,19 @@ export function CommunityApplicationDetail() {
     setMoveInConfirmed,
     completeTransition,
     addInternalNote,
+    refreshInternalNotes,
     requestDocument,
   } = useCommunityPortal();
 
   const app = getApplication(id);
+
+  useEffect(() => {
+    if (app) void refreshInternalNotes(app.id);
+    // Deliberately app?.id, not app: refreshInternalNotes's own persist()
+    // call replaces `app` with a new object every time it resolves, and
+    // depending on the whole object would refetch in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app?.id, refreshInternalNotes]);
   const [auditOpen, setAuditOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);

@@ -23,6 +23,7 @@ import type {
   AdmissionResult,
   AdmissionStatus,
   AdmissionSubmitInput,
+  InternalNoteRecord,
   ResidenceSite,
   StaffMembership,
 } from "@/lib/admissions/types";
@@ -473,6 +474,76 @@ export async function changeStatus(args: {
   });
 
   return { ok: true, data: rowToRecord(data as Row) };
+}
+
+function noteFromRow(row: Row): InternalNoteRecord {
+  const profile = (row.profiles ?? {}) as Row;
+  const name = [str(profile.first_name), str(profile.last_name)].filter(Boolean).join(" ").trim();
+  return {
+    id: str(row.id),
+    applicationId: str(row.application_id),
+    authorId: str(row.author_id),
+    authorName: name,
+    body: str(row.body),
+    createdAt: str(row.created_at),
+  };
+}
+
+/**
+ * Staff-only notes (application_internal_notes, migration 0024). RLS already
+ * restricts both select and insert to staff of the application's site
+ * (is_site_staff) — the siteIds check below is defence in depth, same
+ * reasoning as changeStatus/getDetail in this file.
+ */
+export async function listInternalNotes(args: {
+  applicationId: string;
+  siteIds: string[];
+}): Promise<AdmissionResult<InternalNoteRecord[]>> {
+  const client = await sb();
+  const { data: app } = await client
+    .from("applications")
+    .select("id")
+    .eq("id", args.applicationId)
+    .in("community_id", args.siteIds)
+    .maybeSingle();
+  if (!app) return { ok: false, status: 404, error: "Application not found." };
+
+  const { data, error } = await client
+    .from("application_internal_notes")
+    .select("id, application_id, author_id, body, created_at, profiles(first_name, last_name)")
+    .eq("application_id", args.applicationId)
+    .order("created_at", { ascending: false });
+  if (error) return { ok: false, status: 500, error: error.message };
+  return { ok: true, data: (data ?? []).map((row) => noteFromRow(row as Row)) };
+}
+
+export async function addInternalNote(args: {
+  applicationId: string;
+  siteIds: string[];
+  authorId: string;
+  authorName: string;
+  body: string;
+}): Promise<AdmissionResult<InternalNoteRecord>> {
+  const client = await sb();
+  const { data: app } = await client
+    .from("applications")
+    .select("id")
+    .eq("id", args.applicationId)
+    .in("community_id", args.siteIds)
+    .maybeSingle();
+  if (!app) return { ok: false, status: 404, error: "Application not found." };
+
+  const { data, error } = await client
+    .from("application_internal_notes")
+    .insert({ application_id: args.applicationId, author_id: args.authorId, body: args.body })
+    .select("id, application_id, author_id, body, created_at")
+    .single();
+  if (error || !data) {
+    return { ok: false, status: 500, error: error?.message ?? "Unable to save the note." };
+  }
+  // Echo the caller's own display name rather than round-tripping through
+  // profiles again: addInternalNote's author is always the current actor.
+  return { ok: true, data: { ...noteFromRow(data as Row), authorName: args.authorName } };
 }
 
 export async function withdraw(args: {

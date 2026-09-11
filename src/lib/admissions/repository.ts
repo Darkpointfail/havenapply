@@ -15,6 +15,7 @@ import type {
   AdmissionResult,
   AdmissionStatus,
   AdmissionSubmitInput,
+  InternalNoteRecord,
   ResidenceSite,
   StaffMembership,
 } from "@/lib/admissions/types";
@@ -84,4 +85,21 @@ export function withdraw(args: {
   familyUserId: string;
 }): Promise<AdmissionResult<AdmissionApplicationRecord>> {
   return isSupabaseBackend() ? remote.withdraw(args) : local.withdraw(args);
+}
+
+export function listInternalNotes(args: {
+  applicationId: string;
+  siteIds: string[];
+}): Promise<AdmissionResult<InternalNoteRecord[]>> {
+  return isSupabaseBackend() ? remote.listInternalNotes(args) : local.listInternalNotes(args);
+}
+
+export function addInternalNote(args: {
+  applicationId: string;
+  siteIds: string[];
+  authorId: string;
+  authorName: string;
+  body: string;
+}): Promise<AdmissionResult<InternalNoteRecord>> {
+  return isSupabaseBackend() ? remote.addInternalNote(args) : local.addInternalNote(args);
 }

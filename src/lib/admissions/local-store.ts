@@ -20,6 +20,7 @@ import {
   type AdmissionStatus,
   type AdmissionStatusEvent,
   type AdmissionSubmitInput,
+  type InternalNoteRecord,
   type ResidenceSite,
   type StaffMembership,
 } from "@/lib/admissions/types";
@@ -33,6 +34,7 @@ type AdmissionsState = {
   audit: AdmissionAuditEntry[];
   sites: ResidenceSite[];
   memberships: StaffMembership[];
+  internalNotes: InternalNoteRecord[];
 };
 
 const EMPTY_STATE: AdmissionsState = {
@@ -41,6 +43,7 @@ const EMPTY_STATE: AdmissionsState = {
   audit: [],
   sites: [],
   memberships: [],
+  internalNotes: [],
 };
 
 function nowIso() {
@@ -61,6 +64,7 @@ async function readState(): Promise<AdmissionsState> {
       audit: Array.isArray(parsed.audit) ? parsed.audit : [],
       sites: Array.isArray(parsed.sites) ? parsed.sites : [],
       memberships: Array.isArray(parsed.memberships) ? parsed.memberships : [],
+      internalNotes: Array.isArray(parsed.internalNotes) ? parsed.internalNotes : [],
     };
   } catch {
     return { ...EMPTY_STATE };
@@ -495,6 +499,46 @@ export async function changeStatus(args: {
     });
 
     return { ok: true as const, data: updated };
+  });
+}
+
+export async function listInternalNotes(args: {
+  applicationId: string;
+  siteIds: string[];
+}): Promise<AdmissionResult<InternalNoteRecord[]>> {
+  const state = await readState();
+  const application = state.applications.find((a) => a.id === args.applicationId);
+  if (!application || !args.siteIds.includes(application.siteId)) {
+    return { ok: false, status: 404, error: "Application not found." };
+  }
+  const notes = state.internalNotes
+    .filter((n) => n.applicationId === args.applicationId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { ok: true, data: notes };
+}
+
+export async function addInternalNote(args: {
+  applicationId: string;
+  siteIds: string[];
+  authorId: string;
+  authorName: string;
+  body: string;
+}): Promise<AdmissionResult<InternalNoteRecord>> {
+  return withState((state) => {
+    const application = state.applications.find((a) => a.id === args.applicationId);
+    if (!application || !args.siteIds.includes(application.siteId)) {
+      return { ok: false as const, status: 404, error: "Application not found." };
+    }
+    const note: InternalNoteRecord = {
+      id: newId("note"),
+      applicationId: args.applicationId,
+      authorId: args.authorId,
+      authorName: args.authorName,
+      body: args.body,
+      createdAt: nowIso(),
+    };
+    state.internalNotes.push(note);
+    return { ok: true as const, data: note };
   });
 }
 

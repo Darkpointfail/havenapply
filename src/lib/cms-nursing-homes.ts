@@ -221,17 +221,21 @@ function haversineMiles(
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export function searchCommunities(input: CommunitySearchInput): CommunitySearchResult {
+/**
+ * Filter/sort/paginate a residence list. Pulled out of searchCommunities so
+ * a non-static list (e.g. the real Supabase community directory in
+ * admissions/public-registry.ts) can reuse the exact same search behaviour
+ * instead of a second, drifting implementation.
+ */
+export function paginateAndFilterResidences(
+  list: Residence[],
+  input: CommunitySearchInput,
+): Omit<CommunitySearchResult, "medicareCount" | "curatedCount"> {
   const page = Math.max(1, input.page || 1);
   const limit = Math.min(100, Math.max(1, input.limit || 48));
   const q = (input.query || "").trim().toLowerCase();
   const state = (input.state || "").trim().toUpperCase();
   const careType = (input.careType || "").trim().toLowerCase();
-
-  let list: Residence[] = [];
-  if (input.source === "curated") list = [...curatedResidences];
-  else if (input.source === "medicare") list = getCmsResidences();
-  else list = getFullCatalog();
 
   let origin: { lat: number; lng: number } | null = null;
   const postal = (input.postalCode || "").replace(/\D/g, "");
@@ -275,11 +279,17 @@ export function searchCommunities(input: CommunitySearchInput): CommunitySearchR
   const start = (page - 1) * limit;
   const items = sorted.slice(start, start + limit);
 
+  return { items, total: sorted.length, page, limit };
+}
+
+export function searchCommunities(input: CommunitySearchInput): CommunitySearchResult {
+  let list: Residence[] = [];
+  if (input.source === "curated") list = [...curatedResidences];
+  else if (input.source === "medicare") list = getCmsResidences();
+  else list = getFullCatalog();
+
   return {
-    items,
-    total: sorted.length,
-    page,
-    limit,
+    ...paginateAndFilterResidences(list, input),
     medicareCount: getCmsResidences().length,
     curatedCount: curatedResidences.length,
   };

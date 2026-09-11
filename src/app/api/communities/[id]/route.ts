@@ -4,6 +4,8 @@ import {
   getCmsRawById,
 } from "@/lib/cms-nursing-homes";
 import { buildCommunityDetail } from "@/lib/residence-detail";
+import { getPublicResidence } from "@/lib/admissions/public-registry";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +15,21 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+
+  if (isSupabaseBackend()) {
+    // Returns a bare Residence, not the demo CommunityDetail shape below:
+    // buildCommunityDetail() fills gaps with invented filler text (fake
+    // founding year, capacity, license copy) meant for the static demo
+    // catalog, which would be actively misleading on a real residence.
+    // Every consumer today (compare/page.tsx, FacilityDestinationPicker)
+    // only reads Residence-level fields.
+    const residence = await getPublicResidence(id);
+    if (!residence) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(residence);
+  }
+
   const residence = getCatalogResidence(id);
   if (!residence) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

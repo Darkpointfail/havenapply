@@ -4,6 +4,8 @@ import { createSiteClaim, listMembershipsBySite, recordAuditEvent } from "@/lib/
 import { requestFingerprint, requireCsrf } from "@/lib/security/guards";
 import { operatorEndpointsEnabled, operatorTokenMatches } from "@/lib/security/operator";
 import { resolveKnownSite } from "@/lib/admissions/site-registry";
+import { getSite } from "@/lib/admissions/supabase-store";
+import { isSupabaseBackend } from "@/lib/supabase/config";
 
 /**
  * With no mail transport yet, an operator holding the deployment secret
@@ -34,7 +36,14 @@ export async function POST(request: Request) {
   const siteId = typeof body.siteId === "string" ? body.siteId.trim() : "";
   if (!siteId) return jsonError("siteId is required.", 400);
 
-  const site = resolveKnownSite(siteId);
+  // In Supabase mode, siteId may be an "rpa-XXXX" registry id (migration
+  // 0019 + scripts/import-rpa-communities.mjs imported the Québec RPA
+  // registry as real, unclaimed communities rows) rather than one of the 7
+  // static demo residences resolveKnownSite() knows about — getSite()
+  // resolves either a real UUID or an external_ref to the same real row.
+  // The membership check and claim record below still key off the raw
+  // siteId string as before; that's unchanged, out of today's scope.
+  const site = isSupabaseBackend() ? await getSite(siteId) : resolveKnownSite(siteId);
   if (!site) return jsonError("Unknown residence.", 404);
 
   const existingStaff = await listMembershipsBySite(siteId);

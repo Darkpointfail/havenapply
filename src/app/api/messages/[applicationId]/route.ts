@@ -6,6 +6,7 @@ import type { AdmissionApplicationRecord } from "@/lib/admissions/types";
 import { getMessages, getOrCreateConversation, sendMessage } from "@/lib/messaging-server/repository";
 import { isMessageKind, type MessageSenderRole } from "@/lib/messaging-server/types";
 import { readJson } from "@/lib/admissions/validation";
+import { applicationNewMessageEmail, sendEmail } from "@/lib/email/mailer";
 
 const MAX_BODY = 4000;
 const MAX_META = 300;
@@ -122,6 +123,20 @@ export async function POST(request: Request, ctx: { params: Promise<{ applicatio
     meta,
     attachments,
   });
+
+  // Only notify the family (staff → family); a family's own message doesn't
+  // need to email itself. Best-effort — sendEmail() never throws, so a mail
+  // provider hiccup can't fail the send.
+  if (actor.role === "staff" && actor.application.familyEmail) {
+    await sendEmail(
+      applicationNewMessageEmail(actor.application.familyEmail, {
+        familyName: actor.application.familyContact.name || actor.application.senior.name,
+        seniorName: actor.application.senior.name,
+        residenceName: actor.application.siteName,
+        messagePreview: text,
+      }),
+    );
+  }
 
   return jsonOk({ conversation, message });
 }

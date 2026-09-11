@@ -6,6 +6,12 @@ import { decisionKindForStatus } from "@/lib/admissions/mapping";
 import { isAdmissionStatus } from "@/lib/admissions/types";
 import { readJson } from "@/lib/admissions/validation";
 import { requireCsrf } from "@/lib/security/guards";
+import {
+  applicationAcceptedEmail,
+  applicationDeclinedEmail,
+  applicationStatusChangedEmail,
+  sendEmail,
+} from "@/lib/email/mailer";
 
 /** Staff transition. Writes one status event and one audit entry. */
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -57,5 +63,26 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   });
   if (!result.ok) return jsonError(result.error, result.status);
 
-  return jsonOk({ application: result.data });
+  // Best-effort: a family must find out their application status changed,
+  // but a mail provider hiccup must never fail the transition itself —
+  // sendEmail() never throws (see mailer.ts), so no try/catch is needed.
+  const app = result.data;
+  if (app.familyEmail) {
+    const emailArgs = {
+      familyName: app.familyContact.name || app.senior.name,
+      seniorName: app.senior.name,
+      residenceName: app.siteName,
+    };
+    if (body.status === "approved") {
+      await sendEmail(applicationAcceptedEmail(app.familyEmail, emailArgs));
+    } else if (body.status === "declined") {
+      await sendEmail(applicationDeclinedEmail(app.familyEmail, emailArgs));
+    } else {
+      await sendEmail(
+        applicationStatusChangedEmail(app.familyEmail, { ...emailArgs, newStatus: body.status }),
+      );
+    }
+  }
+
+  return jsonOk({ application: app });
 }

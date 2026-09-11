@@ -354,10 +354,11 @@ export function CommunityApplicationDetail() {
     });
     if (r.ok) {
       setAuditOpen(false);
-      const parts = ["Accepted, now in Transition"];
-      if (emailPayload) parts.push("email sent");
-      if (smsPayload) parts.push("text sent");
-      flashMsg(parts.join(" · "));
+      // The family's real notification is the templated email fired
+      // server-side on the status transition (mailer.ts#applicationAcceptedEmail,
+      // wired in /api/admissions/[id]/status) — not this composer, which
+      // doesn't actually send its custom subject/body. Don't claim it does.
+      flashMsg("Accepted, now in Transition");
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
     }
   };

@@ -566,67 +566,32 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       appId: string,
       options?: {
         note?: string;
+        // email/sms: kept for the composer UI's optional custom message,
+        // but this store never actually sends either — the real family
+        // notification is the templated email fired server-side on the
+        // status transition itself (mailer.ts#applicationAcceptedEmail,
+        // wired in /api/admissions/[id]/status). Previously this recorded
+        // fabricated "email sent"/"SMS sent" audit entries regardless of
+        // whether anything was actually sent; removed rather than left lying.
         email?: { to: string; subject: string; body: string } | null;
         sms?: { to: string; body: string } | null;
       },
     ) => {
       const note = options?.note?.trim();
-      const email = options?.email;
-      const sms = options?.sms;
-      const channels: string[] = [];
-      if (email?.to.trim() && email.body.trim()) {
-        channels.push(`email to ${email.to.trim()}`);
-      }
-      if (sms?.to.trim() && sms.body.trim()) {
-        channels.push(`SMS to ${sms.to.trim()}`);
-      }
 
       return mutateApp(
         appId,
         "acceptDecline",
-        (a) => {
-          const now = new Date().toISOString();
-          const notifyAudits: typeof a.auditLog = [];
-          if (email?.to.trim() && email.body.trim()) {
-            notifyAudits.push({
-              id: `aud-email-${Date.now()}`,
-              at: now,
-              actor: actorName,
-              action: `Acceptance email sent to ${email.to.trim()} · ${email.subject.trim() || "No subject"}`,
-            });
-            notifyAudits.push({
-              id: `aud-email-body-${Date.now()}`,
-              at: now,
-              actor: actorName,
-              action: `Email message: ${email.body.trim().slice(0, 280)}${email.body.trim().length > 280 ? "…" : ""}`,
-            });
-          }
-          if (sms?.to.trim() && sms.body.trim()) {
-            notifyAudits.push({
-              id: `aud-sms-${Date.now()}`,
-              at: now,
-              actor: actorName,
-              action: `Acceptance SMS sent to ${sms.to.trim()}: ${sms.body.trim().slice(0, 160)}${sms.body.trim().length > 160 ? "…" : ""}`,
-            });
-          }
-          return {
-            ...a,
-            status: "approved" as ApplicationStatus,
-            transitionChecklist: a.transitionChecklist ?? {},
-            moveInConfirmed: a.moveInConfirmed ?? null,
-            auditLog: [...a.auditLog, ...notifyAudits],
-          };
-        },
-        [
-          "Accepted · moved to transition",
-          channels.length ? `notified via ${channels.join(" · ")}` : null,
-          note || null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
+        (a) => ({
+          ...a,
+          status: "approved" as ApplicationStatus,
+          transitionChecklist: a.transitionChecklist ?? {},
+          moveInConfirmed: a.moveInConfirmed ?? null,
+        }),
+        ["Accepted · moved to transition", note || null].filter(Boolean).join(" · "),
       );
     },
-    [actorName, mutateApp],
+    [mutateApp],
   );
 
   const declineApplication = useCallback(

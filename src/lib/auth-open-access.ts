@@ -133,28 +133,14 @@ export function hasOpenProfessionalSession() {
   }
 }
 
-/** Public browse list only (not a community profile). */
-export function isPublicCommunityListPath(pathname: string) {
-  const p = pathname.replace(/\/$/, "") || "/";
-  return p === "/find-senior-living" || p === "/residences";
-}
-
-/** Community profile / establishment detail. */
-export function isCommunityDetailPath(pathname: string) {
-  return /^\/(find-senior-living|residences)\/[^/]+\/?$/.test(pathname);
-}
-
 /**
- * Shared browse surfaces used by Family and Care Professional
- * (search, profiles, compare, saved).
+ * Shared browse surfaces used by Family and Care Professional.
+ * find-senior-living/residences/compare were retired (redirect to home) —
+ * the real browse experience lives in the authenticated family space
+ * (/family/dashboard?view=residences); only /saved remains a real page here.
  */
 export function isSharedBrowsePath(pathname: string) {
-  return (
-    pathname.startsWith("/find-senior-living") ||
-    pathname.startsWith("/residences") ||
-    pathname.startsWith("/compare") ||
-    pathname.startsWith("/saved")
-  );
+  return pathname.startsWith("/saved");
 }
 
 /** @deprecated use isSharedBrowsePath, kept for existing imports */

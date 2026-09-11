@@ -135,7 +135,7 @@ function CommunitiesInner() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  href={`/find-senior-living/${r.id}`}
+                  href={`/professional/apply/${r.id}`}
                   variant="secondary"
                   size="sm"
                   className="flex-1"
@@ -162,13 +162,6 @@ function CommunitiesInner() {
           </Card>
         ))}
       </div>
-
-      <p className="mt-8 text-center text-sm text-ink-muted">
-        Prefer the full map view?{" "}
-        <Link href="/find-senior-living" className="font-medium text-brand hover:underline">
-          {t("Open Find Senior Living")}
-        </Link>
-      </p>
     </div>
   );
 }

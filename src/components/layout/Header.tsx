@@ -31,7 +31,6 @@ const marketingLinks = [
   { href: "/#problem", label: "Why Haven" },
   { href: "/#ai", label: "AI" },
   { href: "/#pricing", label: "Pricing" },
-  { href: "/find-senior-living", label: "Browse" },
 ];
 
 const familyLinks = [

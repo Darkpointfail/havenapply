@@ -77,7 +77,7 @@ function DashboardInner() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button href="/residences" variant="secondary">
+          <Button href="/family/dashboard?view=residences" variant="secondary">
             {t("Find communities")}
           </Button>
           <Button href="/apply">
@@ -220,9 +220,6 @@ function DashboardInner() {
             <div className="mt-3 grid gap-2">
               <Button href="/documents" size="sm" variant="soft">
                 {t("Upload document")}
-              </Button>
-              <Button href="/compare?ids=maple-grove,cedar-memory" size="sm" variant="secondary">
-                {t("Compare shortlist")}
               </Button>
               <Button href="/tasks" size="sm" variant="ghost">
                 <CheckCircle2 size={14} /> Task checklist

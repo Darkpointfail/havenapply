@@ -21,7 +21,7 @@ export function answerCopilot(input: {
     if (!apps.length) {
       return {
         text: "You don't have any submitted applications yet. I can help you search communities and prepare one when you're ready.",
-        href: "/find-senior-living",
+        href: "/family/dashboard?view=residences",
       };
     }
     const lines = apps.slice(0, 5).map((a) => {
@@ -55,7 +55,7 @@ export function answerCopilot(input: {
   if (q.includes("cheap") || q.includes("budget") || q.includes("price") || q.includes("cost")) {
     return {
       text: "Open search and sort by fit. I can also apply a budget filter if you tell me a monthly maximum, for example “under $7000 near Boston”.",
-      href: "/find-senior-living",
+      href: "/family/dashboard?view=residences",
     };
   }
 

@@ -42,11 +42,6 @@ export function MarketingFooter() {
                   {t("How it works")}
                 </Link>
               </li>
-              <li>
-                <Link href="/find-senior-living" className={linkClass}>
-                  {t("Find Senior Living")}
-                </Link>
-              </li>
             </ul>
           </div>
           <div>

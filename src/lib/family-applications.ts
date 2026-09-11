@@ -212,7 +212,7 @@ export function applicationFeesNote(residence: Residence): string {
 }
 
 export function emptyDraftApplication(
-  residence: Residence,
+  residence: Pick<Residence, "id" | "name" | "image">,
   meta: { name: string; email: string },
   opts?: { batchId?: string },
 ): FamilyApplication {

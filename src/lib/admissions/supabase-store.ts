@@ -12,7 +12,11 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { listMembershipsByUser as listStaffMembershipsByUser } from "@/lib/security/supabase-store";
+import {
+  listMembershipsByUser as listStaffMembershipsByUser,
+  listMembershipsBySite,
+} from "@/lib/security/supabase-store";
+import { internalUnclaimedApplicationEmail, sendEmail } from "@/lib/email/mailer";
 import type {
   AdmissionApplicationRecord,
   AdmissionDetail,
@@ -118,27 +122,49 @@ async function sb() {
   return createClient();
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Every real communities.id is a Postgres-generated UUID; an id from an
+ * outside registry (e.g. the Québec RPA "rpa-1428") never is. Used to pick
+ * which column getSite() resolves against, so an existing client site keeps
+ * resolving by id exactly as before.
+ */
+function looksLikeUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 export async function getSite(siteId: string): Promise<ResidenceSite | null> {
   const client = await sb();
+  const lookupColumn = looksLikeUuid(siteId) ? "id" : "external_ref";
   const { data } = await client
     .from("communities")
-    .select("id, name, status, deleted_at, organization_id")
-    .eq("id", siteId)
+    .select("id, name, status, deleted_at, organization_id, external_ref")
+    .eq(lookupColumn, siteId)
     .maybeSingle();
   if (!data) return null;
+
+  const row = data as Row;
 
   const { data: settings } = await client
     .from("site_admissions_settings")
     .select("is_active")
-    .eq("community_id", siteId)
+    .eq("community_id", str(row.id))
     .maybeSingle();
 
-  const row = data as Row;
   // "verified" is the deployed community_status value meaning the listing is
   // real/published (there is no "active" value on this enum — see
   // claude/audit-etat-supabase-phase-b-2026-09-10.md for the drift this fixes).
+  // A "pending_review" community that also carries an external_ref is an
+  // unclaimed residence imported from an outside registry (migration 0019 +
+  // scripts/import-rpa-communities.mjs) — not a verified HavenApply client,
+  // so it stays out of public search results, but the whole point of
+  // importing it is that it can still receive a dossier.
+  const isImportedUnclaimed = row.status === "pending_review" && Boolean(row.external_ref);
   const active =
-    row.status === "verified" && !row.deleted_at && (settings?.is_active ?? true) !== false;
+    (row.status === "verified" || isImportedUnclaimed) &&
+    !row.deleted_at &&
+    (settings?.is_active ?? true) !== false;
   return {
     id: str(row.id),
     name: str(row.name),
@@ -254,7 +280,52 @@ export async function submitApplication(args: {
     metadata: { siteId: record.siteId },
   });
 
+  await notifyIfUnclaimed(client, record);
+
   return { ok: true, data: { record, created: true } };
+}
+
+/**
+ * Alert HavenApply (not the residence — there's no one there to receive it
+ * yet, and no staff account to send a secure link to) when a dossier lands
+ * on a community with no active staff_memberships row — the RPA-imported,
+ * unclaimed residences (migration 0019) are the common case today. Reuses
+ * listMembershipsBySite() (security/supabase-store.ts), the same
+ * per-site membership check requireStaff() uses, rather than duplicating it.
+ * Best-effort: never blocks or fails the submission that already succeeded.
+ */
+async function notifyIfUnclaimed(
+  client: Awaited<ReturnType<typeof sb>>,
+  record: AdmissionApplicationRecord,
+): Promise<void> {
+  try {
+    const staffed = await listMembershipsBySite(record.siteId);
+    if (staffed.length > 0) return;
+
+    const { data } = await client
+      .from("communities")
+      .select("address, city, state, zip")
+      .eq("id", record.siteId)
+      .maybeSingle();
+    const row = (data ?? {}) as Row;
+    const address = [str(row.address), str(row.city), str(row.state), str(row.zip)]
+      .filter(Boolean)
+      .join(", ");
+
+    await sendEmail(
+      internalUnclaimedApplicationEmail({
+        residenceName: record.siteName,
+        residenceAddress: address,
+        familyName: record.familyContact.name,
+        familyPhone: record.familyContact.phone,
+        familyEmail: record.familyEmail,
+        seniorName: record.senior.name,
+        dossierSummary: record.summary,
+      }),
+    );
+  } catch (err) {
+    console.error("[admissions] unclaimed-residence notification failed:", err);
+  }
 }
 
 export async function listForFamily(familyUserId: string): Promise<AdmissionApplicationRecord[]> {

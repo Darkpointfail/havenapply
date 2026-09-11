@@ -1464,6 +1464,7 @@ export const frMessages: Record<string, string> = {
   "Sent securely": "Envoi sécurisé",
   Dossier: "Dossier",
   "About your loved one": "À propos de votre proche",
+  "your loved one": "votre proche",
   "Daily support": "Soutien au quotidien",
   Vault: "Coffre",
   "Dossier complete": "Dossier complet",
@@ -2178,6 +2179,10 @@ export const frMessages: Record<string, string> = {
   "Privacy and data": "Confidentialité et données",
   "An application is already active for this residence. See My requests.":
     "Une demande est déjà active pour cette résidence. Consultez Mes demandes.",
+  "The residence did not receive your application: {error}. Please try again or contact us.":
+    "La résidence n'a pas reçu votre demande : {error}. Veuillez réessayer ou nous contacter.",
+  "This residence isn't set up for online applications yet. Please contact it directly.":
+    "Cette résidence n'est pas encore configurée pour les candidatures en ligne. Veuillez la contacter directement.",
   "Withdraw this application? This cannot be undone.":
     "Retirer cette demande ? Cette action est irréversible.",
   Full: "Complet",

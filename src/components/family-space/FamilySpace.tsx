@@ -619,7 +619,7 @@ export function FamilySpace() {
     setView("depot");
   };
 
-  const sendApplication = () => {
+  const sendApplication = async () => {
     if (!selectedRes || !selectedUnit || !consent) return;
     const draft = buildSubmitDraft({
       residenceId: selectedRes.id,
@@ -631,13 +631,31 @@ export function FamilySpace() {
         .filter((d) => d.hasFile || d.status === "uploaded" || d.status === "verified")
         .map((d) => d.id),
     });
-    if (!draft) return;
-    const saved = submitApplication(draft);
+    if (!draft) {
+      // Defensive only: buildSubmitDraft() now builds straight from
+      // selectedRes, so this should only fire on a genuinely missing
+      // id/name — but still say so instead of doing nothing silently.
+      window.alert(
+        t("This residence isn't set up for online applications yet. Please contact it directly."),
+      );
+      return;
+    }
+    const { application: saved, serverError } = await submitApplication(draft);
     if (!saved) {
       window.alert(
         t("An application is already active for this residence. See My requests."),
       );
       setView("demandes");
+      return;
+    }
+    if (serverError) {
+      // Local state already recorded the attempt, but the residence never
+      // received it — say so instead of moving on as if it worked.
+      window.alert(
+        t("The residence did not receive your application: {error}. Please try again or contact us.", {
+          error: serverError,
+        }),
+      );
       return;
     }
     setView("demandes");

@@ -360,12 +360,14 @@ function attachDocsToApp(
  * read by the targeted residence. Fire-and-forget: the local optimistic state
  * is unchanged, so the UI renders exactly as before.
  */
-function publishToServer(
+type ServerSubmitResult = { ok: true } | { ok: false; error: string };
+
+async function publishToServer(
   data: FamilyData,
   submitted: FamilyApplication,
   seniorId: string | null,
-) {
-  if (!admissionsEnabled()) return;
+): Promise<ServerSubmitResult> {
+  if (!admissionsEnabled()) return { ok: true };
 
   const careNeeds = [
     ...data.careNeeds.mobility.slice(0, 2).map((m) => `Mobility: ${m}`),
@@ -399,7 +401,19 @@ function publishToServer(
       : null,
   });
 
-  void apiSubmitAdmission(input);
+  const result = await apiSubmitAdmission(input);
+  if (!result || !result.ok) {
+    return { ok: false, error: result?.error || "Unable to reach the server." };
+  }
+  return { ok: true };
+}
+
+async function resolveServerError(
+  pending: Promise<ServerSubmitResult> | null,
+): Promise<string | null> {
+  if (!pending) return null;
+  const outcome = await pending;
+  return outcome.ok ? null : outcome.error;
 }
 
 function computeCompleteness(data: FamilyData) {
@@ -468,7 +482,9 @@ type FamilyDataContextValue = {
   toggleCompareCommunity: (communityId: string) => void;
   setCompareIds: (ids: string[]) => void;
   upsertApplication: (app: FamilyApplication) => void;
-  submitApplication: (app: FamilyApplication) => FamilyApplication | null;
+  submitApplication: (
+    app: FamilyApplication,
+  ) => Promise<{ application: FamilyApplication | null; serverError: string | null }>;
   submitApplicationBatch: (apps: FamilyApplication[]) => FamilyApplication[];
   setCommunityDecision: (
     applicationId: string,
@@ -1136,8 +1152,11 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
   );
 
   const submitApplication = useCallback(
-    (app: FamilyApplication) => {
+    async (app: FamilyApplication) => {
       let result: FamilyApplication | null = null;
+      // Set only on the branch that actually calls the server, so a locally
+      // blocked/duplicate submit (no server call made) doesn't report an error.
+      let serverSubmission: Promise<ServerSubmitResult> | null = null;
 
       persist((prev) => {
         if (!isResidenceAcceptingApplications(app.residenceId)) {
@@ -1174,7 +1193,7 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           personRef: app.personRef || prev.personRef || null,
           dossierRef: app.dossierRef || prev.dossierRef || null,
         });
-        publishToServer(prev, submitted, seniorId);
+        serverSubmission = publishToServer(prev, submitted, seniorId);
         result = submitted;
 
         const others = prev.applications.filter(
@@ -1197,7 +1216,9 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
           return curr;
         });
       }
-      return result;
+
+      const serverError = await resolveServerError(serverSubmission);
+      return { application: result, serverError };
     },
     [persist, syncAppsServer, seniorId],
   );
@@ -1240,7 +1261,11 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
             personRef: app.personRef || prev.personRef || null,
             dossierRef: app.dossierRef || prev.dossierRef || null,
           });
-          publishToServer({ ...working, applications, documents }, submitted, seniorId);
+          // persist()'s updater must stay synchronous, so this batch path can't
+          // await the server result the way submitApplication() now does — it
+          // remains fire-and-forget. Same silent-failure class as the single-apply
+          // path had; not fixed here, out of today's scope (see submitApplication).
+          void publishToServer({ ...working, applications, documents }, submitted, seniorId);
           results.push(submitted);
           applications = applications.filter(
             (a) =>

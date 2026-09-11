@@ -5,7 +5,6 @@
 
 import type { ApplicationStatus } from "@/data/applications";
 import { normalizeApplicationStatus } from "@/data/applications";
-import { getResidence } from "@/data/residences";
 import type { FamilyApplication as StoreApp } from "@/lib/family-applications";
 import { emptyDraftApplication } from "@/lib/family-applications";
 import type { CommunityApplication } from "@/lib/community-portal";
@@ -192,26 +191,41 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
   };
 }
 
+/**
+ * Builds a draft from what the caller already resolved (FamilySpace.tsx
+ * already holds the full residence object, whichever catalog it came from —
+ * demo catalog or the real RPA-backed communities). This used to re-resolve
+ * residenceId against @/data/residences (the small 7-residence demo catalog)
+ * via toCatalogResidenceId()/getResidence(), which silently failed (returned
+ * null) for every real RPA registry id: that lookup is gone, the id/name/
+ * image the caller already has are used directly. residenceId is passed
+ * through unchanged — server-side getSite() (admissions/supabase-store.ts)
+ * is the one place that now resolves an "rpa-XXXX" id to its real
+ * communities row, via external_ref.
+ */
 export function buildSubmitDraft(input: {
   residenceId: string;
   residenceName: string;
+  residenceImage?: string;
   unit: string;
   userName: string;
   userEmail: string;
   documentIds: string[];
 }): StoreApp | null {
-  const catalogId = toCatalogResidenceId(input.residenceId);
-  const residence = getResidence(catalogId);
-  if (!residence) return null;
+  if (!input.residenceId || !input.residenceName) return null;
 
-  const draft = emptyDraftApplication(residence, {
-    name: input.userName,
-    email: input.userEmail,
-  });
+  const draft = emptyDraftApplication(
+    {
+      id: input.residenceId,
+      name: input.residenceName,
+      image: input.residenceImage || "/community-photos/lobby.jpg",
+    },
+    { name: input.userName, email: input.userEmail },
+  );
   return {
     ...draft,
-    residenceId: catalogId,
-    residenceName: input.residenceName || residence.name,
+    residenceId: input.residenceId,
+    residenceName: input.residenceName,
     desiredMoveIn: "As soon as possible",
     consentShare: true,
     consentAccurate: true,
@@ -338,19 +352,6 @@ export function communityAppsToWaitlist(apps: CommunityApplication[]): WaitlistE
     .map(({ _rank: _, ...rest }) => rest);
 }
 
-/** Map FR mock residence keys to catalog ids used by the community portal. */
-export const FR_RESIDENCE_CATALOG: Record<string, string> = {
-  jardins: "maple-grove",
-  manoir: "lakeside-haven",
-  villa: "cedar-memory",
-  "maple-grove": "maple-grove",
-  "lakeside-haven": "lakeside-haven",
-  "cedar-memory": "cedar-memory",
-};
-
-export function toCatalogResidenceId(id: string) {
-  return FR_RESIDENCE_CATALOG[id] || id;
-}
 
 /**
  * Weekly received-applications counts for the dashboard bar chart, computed

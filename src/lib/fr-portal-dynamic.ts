@@ -137,22 +137,33 @@ export function storeAppToUi(app: StoreApp): UiApp | null {
         ? "Sainte-Foy"
         : "Québec";
 
+  // communityDecision.note is the real text the residence wrote when
+  // requesting info/documents or proposing a tour (synced from the server —
+  // family-data.tsx#admissionsSyncedRef) and takes priority whenever
+  // present; requestedDocuments/upcomingAppointment are older fields
+  // nothing currently populates, kept only as a fallback for a
+  // not-yet-synced or purely local/demo application.
   let update = "Application received by the residence.";
   let updateTone: UiApp["updateTone"] = "green";
   if (status === "waitlisted") {
-    update = app.waitingPosition
-      ? `Placed on the waitlist — rank ${app.waitingPosition}.`
-      : "Placed on the waitlist — rank shared by the residence.";
+    update =
+      app.communityDecision?.note ||
+      (app.waitingPosition
+        ? `Placed on the waitlist — rank ${app.waitingPosition}.`
+        : "Placed on the waitlist — rank shared by the residence.");
     updateTone = "neutral";
   } else if (status === "tour_requested" || app.upcomingAppointment) {
-    update = app.upcomingAppointment
-      ? `Visit scheduled: ${app.upcomingAppointment}.`
-      : "Visit proposed by the residence.";
+    update =
+      app.communityDecision?.note ||
+      (app.upcomingAppointment
+        ? `Visit scheduled: ${app.upcomingAppointment}.`
+        : "Visit proposed by the residence.");
   } else if (status === "under_review" || status === "more_info") {
     update =
-      app.requestedDocuments?.length > 0
+      app.communityDecision?.note ||
+      (app.requestedDocuments?.length > 0
         ? `Documents requested: ${app.requestedDocuments.slice(0, 2).join(", ")}.`
-        : "File verified. Decision expected shortly.";
+        : "File verified. Decision expected shortly.");
   } else if (app.communityDecision?.note) {
     update = app.communityDecision.note;
   }

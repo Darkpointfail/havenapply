@@ -201,8 +201,8 @@ export function CommunityTransitionWorkspace() {
     if (!r.ok) setFlash(r.error || "Could not save");
   };
 
-  const confirmClose = () => {
-    const r = completeTransition(app.id, closeNote.trim() || undefined);
+  const confirmClose = async () => {
+    const r = await completeTransition(app.id, closeNote.trim() || undefined);
     if (r.ok) {
       setCloseOpen(false);
       setFlash("Dossier closed, moved to History");

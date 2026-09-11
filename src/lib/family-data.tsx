@@ -59,7 +59,6 @@ import {
 import { normalizeApplicationStatus } from "@/data/applications";
 import {
   admissionsEnabled,
-  apiGetAdmissionDetail,
   apiListFamilyAdmissions,
   apiSubmitAdmission,
   apiWithdrawAdmission,
@@ -1306,6 +1305,13 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
    * once per session. The console already writes a descriptive note to the
    * server on every action (assign, request info/documents, propose a
    * tour/assessment, change status) — this is the missing read side.
+   *
+   * The note lives in admission.decision.note (admissions_payload.decision,
+   * set by changeStatus() — see decisionKindForStatus() in admissions/mapping.ts),
+   * already present on the list result via rowToRecord(). It does NOT come
+   * from application_status_history.note: that column was a hardcoded null
+   * until migration 0023, so a per-application detail fetch just to read it
+   * would have always returned the same generic fallback text anyway.
    */
   const admissionsSyncedRef = useRef(false);
   useEffect(() => {
@@ -1325,10 +1331,8 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         const local = findLocalApplicationForAdmission(data.applications, admission);
         if (!local || local.communityDecision?.kind === kind) continue;
 
-        const detail = await apiGetAdmissionDetail(admission.id);
-        const events = detail?.ok ? detail.statusEvents ?? [] : [];
-        const latest = events.length ? events[events.length - 1] : null;
-        const note = latest?.note?.trim() || `The residence updated this application’s status.`;
+        const note =
+          admission.decision?.note?.trim() || `The residence updated this application’s status.`;
 
         setCommunityDecision(local.id, kind, note);
       }

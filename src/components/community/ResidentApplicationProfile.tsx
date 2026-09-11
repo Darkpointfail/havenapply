@@ -382,12 +382,12 @@ export function ResidentApplicationProfile() {
     workspace.availability?.length && (housing?.roomPreference || app.careType),
   );
 
-  const accept = () => {
-    const result = changeStatus(app.id, "approved");
+  const accept = async () => {
+    const result = await changeStatus(app.id, "approved");
     setNotice(result.ok ? "La décision est enregistrée dans HavenApply." : result.error || "");
   };
-  const confirmDecline = () => {
-    const result = declineApplication(app.id, declineReason);
+  const confirmDecline = async () => {
+    const result = await declineApplication(app.id, declineReason);
     if (result.ok) {
       setDeclineOpen(false);
       setNotice("Le motif est enregistré dans l’historique du dossier.");
@@ -395,23 +395,23 @@ export function ResidentApplicationProfile() {
       setNotice(result.error || "La décision n’a pas pu être enregistrée.");
     }
   };
-  const undoDecision = () => {
-    const result = changeStatus(app.id, "under_review");
+  const undoDecision = async () => {
+    const result = await changeStatus(app.id, "under_review");
     setNotice(result.ok ? "Le dossier est de nouveau en évaluation." : result.error || "");
   };
-  const requestMissingDocuments = () => {
+  const requestMissingDocuments = async () => {
     const labels = documentRequest.length
       ? documentRequest.join(", ")
       : "Documents complémentaires au dossier";
-    const result = requestDocument(app.id, labels);
+    const result = await requestDocument(app.id, labels);
     setNotice(
       result.ok
         ? "La demande de documents est enregistrée dans le dossier."
         : result.error || "",
     );
   };
-  const addNote = () => {
-    const result = addInternalNote(app.id, noteDraft);
+  const addNote = async () => {
+    const result = await addInternalNote(app.id, noteDraft);
     if (result.ok) {
       setNoteDraft("");
       setNotice("Note interne ajoutée.");

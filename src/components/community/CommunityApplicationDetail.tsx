@@ -321,7 +321,7 @@ export function CommunityApplicationDetail() {
     setAuditOpen(true);
   };
 
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
     const emailPayload =
       sendEmail && emailTo.trim() && emailBody.trim()
         ? {
@@ -347,7 +347,7 @@ export function CommunityApplicationDetail() {
       return;
     }
 
-    const r = acceptApplication(app.id, {
+    const r = await acceptApplication(app.id, {
       note: auditNote.trim() || undefined,
       email: emailPayload,
       sms: smsPayload,
@@ -360,32 +360,40 @@ export function CommunityApplicationDetail() {
       // doesn't actually send its custom subject/body. Don't claim it does.
       flashMsg("Accepted, now in Transition");
       window.setTimeout(() => router.push(`/community/transition/${app.id}`), 900);
+    } else {
+      flashMsg(r.error || "Could not accept this application");
     }
   };
 
-  const confirmDecline = () => {
+  const confirmDecline = async () => {
     const note = [declineReason, declineNote.trim()].filter(Boolean).join(" · ");
-    const r = declineApplication(app.id, note);
+    const r = await declineApplication(app.id, note);
     if (r.ok) {
       setDeclineOpen(false);
       flashMsg("Application declined");
+    } else {
+      flashMsg(r.error || "Could not decline this application");
     }
   };
 
-  const confirmClose = () => {
-    const r = completeTransition(app.id, closeNote.trim() || undefined);
+  const confirmClose = async () => {
+    const r = await completeTransition(app.id, closeNote.trim() || undefined);
     if (r.ok) {
       setCloseOpen(false);
       flashMsg("Dossier closed, moved to History");
       window.setTimeout(() => router.push("/community/applications?filter=history"), 900);
+    } else {
+      flashMsg(r.error || "Could not close this dossier");
     }
   };
 
-  const saveMoveInDate = () => {
+  const saveMoveInDate = async () => {
     const date = moveInDraft.trim() || null;
-    const r = setMoveInConfirmed(app.id, date);
+    const r = await setMoveInConfirmed(app.id, date);
     if (r.ok) {
       flashMsg(date ? "Move-in date confirmed" : "Move-in date cleared");
+    } else {
+      flashMsg(r.error || "Could not save the move-in date");
     }
   };
 
@@ -1894,11 +1902,13 @@ export function CommunityApplicationDetail() {
                 type="button"
                 className="flex-1"
                 disabled={!noteDraft.trim()}
-                onClick={() => {
-                  const r = addInternalNote(app.id, noteDraft.trim());
+                onClick={async () => {
+                  const r = await addInternalNote(app.id, noteDraft.trim());
                   if (r.ok) {
                     setNoteOpen(false);
                     flashMsg(t("Note added"));
+                  } else {
+                    flashMsg(r.error || t("Could not add the note"));
                   }
                 }}
               >
@@ -1947,11 +1957,13 @@ export function CommunityApplicationDetail() {
                 type="button"
                 className="flex-1"
                 disabled={!docRequestDraft.trim()}
-                onClick={() => {
-                  const r = requestDocument(app.id, docRequestDraft.trim());
+                onClick={async () => {
+                  const r = await requestDocument(app.id, docRequestDraft.trim());
                   if (r.ok) {
                     setDocRequestOpen(false);
                     flashMsg(t("Document request sent"));
+                  } else {
+                    flashMsg(r.error || t("Could not send the request"));
                   }
                 }}
               >

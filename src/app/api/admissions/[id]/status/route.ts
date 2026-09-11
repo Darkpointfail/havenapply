@@ -79,7 +79,11 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       await sendEmail(applicationDeclinedEmail(app.familyEmail, emailArgs));
     } else {
       await sendEmail(
-        applicationStatusChangedEmail(app.familyEmail, { ...emailArgs, newStatus: body.status }),
+        applicationStatusChangedEmail(app.familyEmail, {
+          ...emailArgs,
+          newStatus: body.status,
+          note: app.decision?.note,
+        }),
       );
     }
   }

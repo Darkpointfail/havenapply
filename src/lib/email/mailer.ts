@@ -152,10 +152,22 @@ export function applicationDeclinedEmail(
 
 export function applicationStatusChangedEmail(
   to: string,
-  args: { familyName: string; seniorName: string; residenceName: string; newStatus: string },
+  args: {
+    familyName: string;
+    seniorName: string;
+    residenceName: string;
+    newStatus: string;
+    /** The residence's own note, when this transition came with one — e.g.
+     * the specific document/info requested or the proposed tour slot
+     * (applications.admissions_payload.decision.note, see
+     * decisionKindForStatus() in admissions/mapping.ts). Reused here rather
+     * than building a separate template per request type. */
+    note?: string | null;
+  },
 ): EmailMessage {
   const link = applicationsLink();
   const status = args.newStatus.replace(/_/g, " ");
+  const note = args.note?.trim();
   return {
     to,
     subject: `Mise à jour de la demande de ${args.seniorName} — ${args.residenceName}`,
@@ -163,6 +175,7 @@ export function applicationStatusChangedEmail(
       `Bonjour ${args.familyName},`,
       "",
       `Le statut de la demande de ${args.seniorName} auprès de ${args.residenceName} a changé : ${status}.`,
+      ...(note ? ["", note] : []),
       "Consultez le détail dans votre espace famille :",
       link,
       "",
@@ -171,6 +184,7 @@ export function applicationStatusChangedEmail(
       `Hello ${args.familyName},`,
       "",
       `The status of ${args.seniorName}'s application with ${args.residenceName} changed: ${status}.`,
+      ...(note ? ["", note] : []),
       "See the details in your family space:",
       link,
     ].join("\n"),

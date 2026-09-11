@@ -477,7 +477,10 @@ export function ResidenceConsole() {
   // has zero real applications, the console must say so honestly instead of
   // showing fabricated ones (see the community-portal-seed regression test
   // for the equivalent guarantee on the server side).
-  const [localDemandes, setLocalDemandes] = useState<Demande[]>([]);
+  // No setter: this only ever stayed empty in practice (its 3 writers were
+  // the "local mock mutation" fallback for a server sync that silently
+  // failed — mutateApp now surfaces that failure for real instead).
+  const [localDemandes] = useState<Demande[]>([]);
   // Starts empty, same reasoning as localDemandes above: only ever
   // populated by real data (the sync effect below) or real local mutations,
   // never by fictional seed names.
@@ -537,53 +540,36 @@ export function ResidenceConsole() {
     router.push(`/community/applications/${encodeURIComponent(id)}`);
   };
 
-  const acceptWithUrgence = (demandeId: string, urgence: UrgenceLevel) => {
-    setPlaced((p) => ({ ...p, [demandeId]: urgence }));
-    const priority = urgence === "Urgente" ? "high" : urgence === "Élevée" ? "medium" : "low";
+  const acceptWithUrgence = async (demandeId: string, urgence: UrgenceLevel) => {
     // Prefer waitlist placement for capacity management; accept when urgent+complete
-    const result = portal.changeStatus(demandeId, "waitlisted");
+    const result = await portal.changeStatus(demandeId, "waitlisted");
     if (!result.ok) {
-      // Fallback local mock mutation
-      setLocalDemandes((prev) =>
-        prev.map((d) =>
-          d.id === demandeId ? { ...d, statut: "Liste d'attente" as DemandeStatus } : d,
-        ),
-      );
-      const d = (portalApps.length ? demandes : localDemandes).find((x) => x.id === demandeId);
-      if (d) {
-        setLocalWaitlist((prev) =>
-          sortWaitlist([
-            {
-              id: d.id,
-              nom: d.nom,
-              age: d.age,
-              unite: d.unite,
-              joursAttente: 1,
-              urgence,
-              dossierComplet: d.piecesManquantes === 0,
-            },
-            ...prev.filter((w) => w.id !== d.id),
-          ]),
-        );
-      }
-    } else {
-      void priority;
+      // A real, server-backed application whose sync actually failed — say
+      // so instead of faking local success (this fallback used to run
+      // unconditionally before changeStatus() ever awaited its real result).
+      window.alert(result.error || "Impossible d'enregistrer cette décision.");
+      return;
     }
+    setPlaced((p) => ({ ...p, [demandeId]: urgence }));
     setAccepting(false);
     setView("attente");
   };
 
-  const refuseWithReason = (demandeId: string, reasonLabel: string) => {
-    setRefused((r) => ({ ...r, [demandeId]: reasonLabel }));
-    const result = portal.changeStatus(demandeId, "declined");
+  const refuseWithReason = async (demandeId: string, reasonLabel: string) => {
+    const result = await portal.changeStatus(demandeId, "declined");
     if (!result.ok) {
-      setLocalDemandes((prev) =>
-        prev.map((d) => (d.id === demandeId ? { ...d, statut: "Refusée" as DemandeStatus } : d)),
-      );
+      window.alert(result.error || "Impossible d'enregistrer ce refus.");
+      return;
     }
+    setRefused((r) => ({ ...r, [demandeId]: reasonLabel }));
   };
 
-  const cancelDecision = (demandeId: string) => {
+  const cancelDecision = async (demandeId: string) => {
+    const result = await portal.changeStatus(demandeId, "under_review");
+    if (!result.ok) {
+      window.alert(result.error || "Impossible d'annuler cette décision.");
+      return;
+    }
     setPlaced((p) => {
       const next = { ...p };
       delete next[demandeId];
@@ -594,14 +580,6 @@ export function ResidenceConsole() {
       delete next[demandeId];
       return next;
     });
-    const result = portal.changeStatus(demandeId, "under_review");
-    if (!result.ok) {
-      setLocalDemandes((prev) =>
-        prev.map((d) =>
-          d.id === demandeId ? { ...d, statut: "En évaluation" as DemandeStatus } : d,
-        ),
-      );
-    }
   };
 
   const titles: Record<ConsoleView, { title: string; subtitle: string }> = {
@@ -712,10 +690,10 @@ export function ResidenceConsole() {
               waitlist={waitlist}
               availability={portal.workspace?.availability ?? []}
               setWaitlist={setLocalWaitlist}
-              onRemove={(id) => {
-                const r = portal.changeStatus(id, "under_review");
+              onRemove={async (id) => {
+                const r = await portal.changeStatus(id, "under_review");
                 if (!r.ok) {
-                  setLocalWaitlist((prev) => prev.filter((w) => w.id !== id));
+                  window.alert(r.error || "Impossible de retirer ce dossier de la liste d'attente.");
                 }
               }}
             />
@@ -2214,12 +2192,12 @@ function EtablissementView() {
     ? profile.description
     : t("No description yet — add one from the profile editor.");
 
-  const toggleAccepting = () => {
+  const toggleAccepting = async () => {
     if (!canToggle) return;
     const next = !accepting;
-    const result = updateProfile({ acceptingApplications: next });
+    const result = await updateProfile({ acceptingApplications: next });
     if (!result.ok) {
-      console.warn(result.error);
+      window.alert(result.error || "Impossible d'enregistrer ce changement.");
     }
   };
 

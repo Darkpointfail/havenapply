@@ -67,13 +67,19 @@ type PortalContextValue = {
   getApplication: (id: string) => CommunityWorkspace["applications"][0] | undefined;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  assignApplication: (appId: string, memberId: string | null) => { ok: boolean; error?: string };
-  addInternalNote: (appId: string, body: string) => { ok: boolean; error?: string };
-  requestInfo: (appId: string, text: string) => { ok: boolean; error?: string };
-  requestDocument: (appId: string, text: string) => { ok: boolean; error?: string };
-  proposeTour: (appId: string, when: string) => { ok: boolean; error?: string };
-  proposeAssessment: (appId: string, when: string) => { ok: boolean; error?: string };
-  changeStatus: (appId: string, status: ApplicationStatus) => { ok: boolean; error?: string };
+  assignApplication: (
+    appId: string,
+    memberId: string | null,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  addInternalNote: (appId: string, body: string) => Promise<{ ok: boolean; error?: string }>;
+  requestInfo: (appId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
+  requestDocument: (appId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
+  proposeTour: (appId: string, when: string) => Promise<{ ok: boolean; error?: string }>;
+  proposeAssessment: (appId: string, when: string) => Promise<{ ok: boolean; error?: string }>;
+  changeStatus: (
+    appId: string,
+    status: ApplicationStatus,
+  ) => Promise<{ ok: boolean; error?: string }>;
   acceptApplication: (
     appId: string,
     options?: {
@@ -81,8 +87,8 @@ type PortalContextValue = {
       email?: { to: string; subject: string; body: string } | null;
       sms?: { to: string; body: string } | null;
     },
-  ) => { ok: boolean; error?: string };
-  declineApplication: (appId: string, note?: string) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
+  declineApplication: (appId: string, note?: string) => Promise<{ ok: boolean; error?: string }>;
   updateReviewChecklist: (
     appId: string,
     patch: Partial<Record<string, boolean>>,
@@ -94,8 +100,8 @@ type PortalContextValue = {
   setMoveInConfirmed: (
     appId: string,
     date: string | null,
-  ) => { ok: boolean; error?: string };
-  completeTransition: (appId: string, note?: string) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
+  completeTransition: (appId: string, note?: string) => Promise<{ ok: boolean; error?: string }>;
   saveTransitionWork: (
     appId: string,
     updater: (prev: TransitionWork) => TransitionWork,
@@ -114,7 +120,7 @@ type PortalContextValue = {
   ) => { ok: boolean; error?: string };
   sendPatientTransfer: (transferId: string) => { ok: boolean; error?: string };
   getPatientTransfer: (id: string) => PatientTransfer | undefined;
-  updateProfile: (patch: Partial<CommunityProfile>) => { ok: boolean; error?: string };
+  updateProfile: (patch: Partial<CommunityProfile>) => Promise<{ ok: boolean; error?: string }>;
   upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
   removeAvailability: (unitId: string) => { ok: boolean; error?: string };
   updateTeamMemberRole: (
@@ -391,7 +397,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const mutateApp = useCallback(
-    (
+    async (
       appId: string,
       permission: CommunityPermission,
       fn: (
@@ -403,6 +409,10 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       if (!workspace?.applications.some((a) => a.id === appId)) {
         return { ok: false, error: "Application not found." };
       }
+      // Set only when a server sync is actually attempted, so a permission/
+      // not-found return above (or a status not tracked server-side) never
+      // reports a server error that never happened.
+      let serverSync: Promise<{ ok: boolean; error?: string }> | null = null;
       persist((ws) => {
         const apps = ws.applications.map((a) => {
           if (a.id !== appId) return a;
@@ -424,22 +434,28 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
           // from the same source of truth, from any device.
           const serverId = applicationIdFromCommunityAppId(appId);
           if (serverId && admissionsEnabled() && isAdmissionStatus(enriched.status)) {
-            void apiChangeAdmissionStatus(serverId, enriched.status, {
+            serverSync = apiChangeAdmissionStatus(serverId, enriched.status, {
               note: auditAction,
               waitlistPosition: enriched.waitlistPosition,
-            });
+            }).then((res) =>
+              res?.ok ? { ok: true } : { ok: false, error: res?.error || "Unable to reach the server." },
+            );
           }
           return enriched;
         });
         return pushAudit({ ...ws, applications: apps }, auditAction);
       });
+      if (serverSync) {
+        const result = await (serverSync as Promise<{ ok: boolean; error?: string }>);
+        if (!result.ok) return { ok: false, error: result.error };
+      }
       return { ok: true };
     },
     [actorName, can, persist, pushAudit, workspace],
   );
 
   const assignApplication = useCallback(
-    (appId: string, memberId: string | null) => {
+    async (appId: string, memberId: string | null) => {
       if (!workspace) return { ok: false, error: "Workspace not ready." };
       const member = memberId
         ? workspace.team.find((t) => t.id === memberId)
@@ -459,7 +475,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const addInternalNote = useCallback(
-    (appId: string, body: string) => {
+    async (appId: string, body: string) => {
       const trimmed = body.trim();
       if (!trimmed) return { ok: false, error: "Write a note first." };
       return mutateApp(
@@ -484,7 +500,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const requestInfo = useCallback(
-    (appId: string, text: string) => {
+    async (appId: string, text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return { ok: false, error: "Describe the information needed." };
       return mutateApp(
@@ -502,7 +518,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const requestDocument = useCallback(
-    (appId: string, text: string) => {
+    async (appId: string, text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return { ok: false, error: "Name the document(s) needed." };
       return mutateApp(
@@ -520,7 +536,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const proposeTour = useCallback(
-    (appId: string, when: string) => {
+    async (appId: string, when: string) => {
       const trimmed = when.trim();
       if (!trimmed) return { ok: false, error: "Enter a visit date/time." };
       return mutateApp(
@@ -538,7 +554,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const proposeAssessment = useCallback(
-    (appId: string, when: string) => {
+    async (appId: string, when: string) => {
       const trimmed = when.trim();
       if (!trimmed) return { ok: false, error: "Enter an assessment slot." };
       return mutateApp(
@@ -782,7 +798,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const completeTransition = useCallback(
-    (appId: string, note?: string) => {
+    async (appId: string, note?: string) => {
       const app = workspace?.applications.find((a) => a.id === appId);
       if (!app) return { ok: false, error: "Application not found." };
       const work = ensureTransitionWork(app, workspace?.profile);
@@ -960,7 +976,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const updateProfile = useCallback(
-    (patch: Partial<CommunityProfile>) => {
+    async (patch: Partial<CommunityProfile>) => {
       const onlyAccepting =
         Object.keys(patch).length === 1 && typeof patch.acceptingApplications === "boolean";
       const canEditProfile =
@@ -988,9 +1004,12 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       });
       notifyCommunityProfileChanged(residenceId || undefined);
       // Persist server-side so a second device — and the public listing
-      // pages — see the same profile, not just this browser's copy.
+      // pages — see the same profile, not just this browser's copy. Used
+      // to be void apiSaveCommunityProfile(...) — fire-and-forget, so this
+      // always returned {ok:true} even when the real save failed.
       if (residenceId && nextProfile) {
-        void apiSaveCommunityProfile(residenceId, nextProfile);
+        const saved = await apiSaveCommunityProfile(residenceId, nextProfile);
+        if (!saved.ok) return { ok: false, error: saved.error };
       }
       return { ok: true };
     },

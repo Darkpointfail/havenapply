@@ -125,11 +125,13 @@ export function CommunityProfileEditor() {
     });
   };
 
-  const save = () => {
-    const r = updateProfile(draft);
+  const save = async () => {
+    const r = await updateProfile(draft);
     if (r.ok) {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
+    } else {
+      window.alert(r.error || t("Could not save the profile."));
     }
   };
 
@@ -191,10 +193,14 @@ export function CommunityProfileEditor() {
               aria-checked={draft.acceptingApplications}
               disabled={!canToggleIntake}
               className="ep-row-switch"
-              onClick={() => {
+              onClick={async () => {
                 const next = !draft.acceptingApplications;
                 patch({ acceptingApplications: next });
-                updateProfile({ ...draft, acceptingApplications: next });
+                const r = await updateProfile({ ...draft, acceptingApplications: next });
+                if (!r.ok) {
+                  patch({ acceptingApplications: !next });
+                  window.alert(r.error || t("Could not save the profile."));
+                }
               }}
             >
               <span className="ep-row-copy">

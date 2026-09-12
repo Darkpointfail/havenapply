@@ -27,11 +27,16 @@ export async function siteAccessCookieValue(): Promise<string | null> {
 }
 
 /**
- * Keep the launch gate closed until the announced date, even if deployment
- * configuration is incomplete. A missing password must fail closed.
+ * Disarmed: the site is open to the public for real user testing. The
+ * October launch gate (PUBLIC_LAUNCH_AT, this file, middleware.ts,
+ * /site-access) is left fully in place, not removed — only this function
+ * was flipped, so it can be reactivated with a one-line change ahead of an
+ * actual public launch if the date-gated rollout is needed again. To
+ * reactivate: replace the `return false` below with
+ * `return Date.now() < PUBLIC_LAUNCH_AT;`.
  */
 export function siteAccessEnabled(): boolean {
-  return Date.now() < PUBLIC_LAUNCH_AT;
+  return false;
 }
 
 export function configuredSitePassword(): string | null {

@@ -184,12 +184,6 @@ function GetStartedInner() {
       );
       return;
     }
-    if (result.needsManualSignIn) {
-      router.push(
-        `/sign-in?registered=1&email=${encodeURIComponent(result.data.email)}&next=${encodeURIComponent(destination)}`,
-      );
-      return;
-    }
     router.push(destination);
   };
 

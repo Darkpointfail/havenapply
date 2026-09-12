@@ -218,10 +218,16 @@ export async function promoteAccountRole(
 }
 
 /**
- * Create a Supabase Auth account for a staff invite/bootstrap flow. Mirrors
- * /api/auth/sign-up/route.ts's admin.createUser call exactly (same metadata
- * shape) — that is the one confirmed-working real account-creation path in
- * Supabase mode; registerAccount() in security/auth-service.ts is local-only.
+ * Create a Supabase Auth account for a staff invite/bootstrap flow, pre-
+ * confirmed: the person already proved themselves via a single-use
+ * invitation token sent to this address, so looping them through email
+ * confirmation again would be redundant. registerAccount() in
+ * security/auth-service.ts is the local-backend equivalent.
+ *
+ * The one other admin.createUser() caller in this codebase — the general
+ * signup route — was removed: it pre-confirmed every account regardless,
+ * which defeated the 6-digit-code confirmation screen entirely. This one
+ * is a deliberately different case and stays as-is.
  */
 export async function createStaffAccount(input: {
   email: string;

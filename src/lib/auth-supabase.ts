@@ -15,70 +15,11 @@ import { createClient } from "@/lib/supabase/client";
 
 export type SignUpAuthResult = AuthResult<SessionUser> & {
   pendingConfirmation?: boolean;
-  /** Account was created but the browser session could not be opened yet. */
-  needsManualSignIn?: boolean;
 };
-
-/** Double-submit CSRF header for mutating fetches to our own API routes. */
-async function csrfHeaders(): Promise<Record<string, string>> {
-  if (typeof document === "undefined") return {};
-  const fromCookie = document.cookie.match(/(?:^|;\s*)haven_csrf=([^;]+)/);
-  if (fromCookie) return { "x-haven-csrf": decodeURIComponent(fromCookie[1]) };
-  try {
-    const res = await fetch("/api/auth/csrf", { credentials: "same-origin" });
-    const json = (await res.json()) as { csrfToken?: string };
-    return json.csrfToken ? { "x-haven-csrf": json.csrfToken } : {};
-  } catch {
-    return {};
-  }
-}
 
 function siteOrigin() {
   if (typeof window !== "undefined") return window.location.origin;
   return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-}
-
-function buildSessionFromInput(
-  userId: string,
-  input: SignUpWithRoleInput,
-  email: string,
-  emailConfirmed: boolean,
-): SessionUser {
-  return {
-    id: userId,
-    email,
-    firstName: input.firstName.trim(),
-    lastName: input.lastName.trim(),
-    name: `${input.firstName.trim()} ${input.lastName.trim()}`.trim() || email,
-    role: input.role === "facility" ? "facility" : input.role,
-    organization: input.organization?.trim(),
-    jobTitle: input.jobTitle?.trim(),
-    emailConfirmed,
-    communityStatus: input.role === "facility" ? "verified" : undefined,
-    onboardingCompleted: input.role !== "family",
-  };
-}
-
-async function signInAfterCreate(
-  email: string,
-  password: string,
-  attempts = 3,
-): Promise<{ user: User; errorMessage?: string; errorCode?: string } | { user: null; errorMessage: string; errorCode?: string }> {
-  const supabase = createClient();
-  let lastMessage: string = AUTH_MESSAGES.generic;
-  let lastCode: string | undefined;
-
-  for (let i = 0; i < attempts; i++) {
-    if (i > 0) {
-      await new Promise((r) => window.setTimeout(r, 400 * i));
-    }
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (data.user && !error) return { user: data.user };
-    lastMessage = error?.message || AUTH_MESSAGES.generic;
-    lastCode = error?.code;
-  }
-
-  return { user: null, errorMessage: lastMessage, errorCode: lastCode };
 }
 
 function metaString(meta: Record<string, unknown>, key: string) {
@@ -227,73 +168,19 @@ export async function signUpWithRoleSupabase(
 
   const email = normalizeEmail(input.email);
 
-  // Prefer server admin signup when available (bypasses default SMTP allowlist in local/dev).
-  try {
-    const adminRes = await fetch("/api/auth/sign-up", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", ...(await csrfHeaders()) },
-      body: JSON.stringify({
-        role: input.role,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        email,
-        password: input.password,
-        acceptedTerms: input.acceptedTerms,
-        organization: input.organization,
-        jobTitle: input.jobTitle,
-        phone: input.phone,
-      }),
-    });
-    const adminJson = (await adminRes.json()) as {
-      ok: boolean;
-      error?: string;
-      code?: string;
-    };
-
-    if (adminRes.ok && adminJson.ok) {
-      const signedIn = await signInAfterCreate(email, input.password);
-      if (signedIn.user) {
-        const sessionUser = sessionFromSignup(signedIn.user, {
-          email,
-          firstName: input.firstName.trim(),
-          lastName: input.lastName.trim(),
-          role: input.role,
-          organization: input.organization?.trim(),
-          jobTitle: input.jobTitle?.trim(),
-          communityStatus: input.role === "facility" ? "verified" : undefined,
-          onboardingCompleted: input.role !== "family",
-        });
-        return { ok: true, data: sessionUser };
-      }
-
-      // Account exists in Auth, never show a hard failure that hides a successful signup.
-      console.warn(
-        "[auth] account created but auto sign-in failed:",
-        signedIn.errorMessage,
-        signedIn.errorCode,
-      );
-      return {
-        ok: true,
-        data: buildSessionFromInput("pending-session", input, email, true),
-        needsManualSignIn: true,
-      };
-    }
-
-    // No service role: keep trying client signup (works once custom SMTP / team email is set).
-    // Still surface a clearer hint when admin path is unavailable and client path will likely fail.
-    if (adminJson.code === "missing_service_role") {
-      // continue to client signUp below
-    } else {
-      return {
-        ok: false,
-        error: adminJson.error || AUTH_MESSAGES.generic,
-      };
-    }
-  } catch {
-    // Fall through to client signup.
-  }
-
+  // The only signup path now: a plain client signUp() with the anon key.
+  // There used to be a server admin.createUser() path tried first — it
+  // existed only to dodge Supabase's default local-dev email allowlist, not
+  // because role/metadata needed elevated privileges (user_metadata via
+  // options.data below works identically on either key). It also silently
+  // pre-confirmed the address (email_confirm: true), which is exactly the
+  // link/no-code flow this signup screen replaces — removed rather than
+  // fixed in place, so every signup now genuinely goes through the 6-digit
+  // code. createStaffAccount() (security/supabase-store.ts, used only by
+  // the staff invitation-accept flow) is a different, legitimate case for
+  // admin.createUser + email_confirm: true — that person already proved
+  // themselves via a single-use token sent to their real address, and is
+  // untouched by this change.
   const supabase = createClient();
   const nextPath =
     input.role === "facility"
@@ -419,6 +306,56 @@ export async function signInSupabase(input: {
 export async function signOutSupabase() {
   const supabase = createClient();
   await supabase.auth.signOut();
+}
+
+/**
+ * French copy for the 6-digit signup code screen specifically — kept apart
+ * from mapAuthError() (used everywhere else in this file, always in
+ * English) rather than mixing languages inside one shared function.
+ */
+function mapVerifyOtpError(message: string, code?: string): string {
+  const m = message.toLowerCase();
+  const c = (code || "").toLowerCase();
+
+  // Supabase returns the same otp_expired code/message for a wrong code and
+  // a genuinely expired one — it does not distinguish the two server-side,
+  // so the copy can't claim "expired" specifically without risking telling
+  // someone who just mistyped that they waited too long.
+  if (c === "otp_expired" || m.includes("expired")) {
+    return "Code invalide ou expiré. Vérifiez les 6 chiffres reçus par courriel, ou demandez-en un nouveau ci-dessous.";
+  }
+  if (
+    c === "over_email_send_rate_limit" ||
+    c === "over_request_rate_limit" ||
+    m.includes("rate limit") ||
+    m.includes("too many")
+  ) {
+    return "Trop de tentatives. Réessayez dans quelques minutes.";
+  }
+  if (m.includes("invalid") || m.includes("token")) {
+    return "Code incorrect. Vérifiez les 6 chiffres reçus par courriel et réessayez.";
+  }
+  return "Une erreur est survenue. Réessayez.";
+}
+
+/** Verifies the 6-digit code sent on signup. A success returns a real
+ * session directly — Supabase's own onAuthStateChange listener (auth.tsx)
+ * picks it up, no separate sign-in call needed. */
+export async function verifyEmailCodeSupabase(
+  email: string,
+  code: string,
+): Promise<AuthResult<SessionUser>> {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalizeEmail(email),
+    token: code.trim(),
+    type: "email",
+  });
+  if (error) return { ok: false, error: mapVerifyOtpError(error.message, error.code) };
+  if (!data.user) return { ok: false, error: "Une erreur est survenue. Réessayez." };
+  const sessionUser = sessionFromSupabaseUser(data.user);
+  if (!sessionUser) return { ok: false, error: "Une erreur est survenue. Réessayez." };
+  return { ok: true, data: sessionUser };
 }
 
 export async function resendConfirmationSupabase(

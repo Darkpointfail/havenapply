@@ -28,7 +28,5 @@ export const AUTH_MESSAGES = {
   emailInvalid:
     "This email can’t be used for signup right now. Try another address, or ask your admin to finish Supabase email setup.",
   emailNotAuthorized:
-    "Supabase’s built-in email only allows team member addresses. Add a custom SMTP provider, or set SUPABASE_SERVICE_ROLE_KEY in .env.local for local signup.",
-  signupNeedsSmtp:
-    "Account creation needs Supabase email setup. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Project Settings → API → service_role) for local testing, or configure custom SMTP in Supabase Auth.",
+    "Supabase’s built-in email only allows team member addresses. Configure a custom SMTP provider in Supabase Auth to allow real signups.",
 } as const;

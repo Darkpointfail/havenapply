@@ -50,6 +50,7 @@ import {
   signInSupabase,
   signOutSupabase,
   signUpWithRoleSupabase,
+  verifyEmailCodeSupabase,
   type SignUpAuthResult,
 } from "@/lib/auth-supabase";
 import { createClient } from "@/lib/supabase/client";
@@ -74,6 +75,7 @@ type AuthContextValue = {
   }) => Promise<AuthResult<SessionUser>>;
   signOut: () => void;
   confirmEmail: (token: string) => AuthResult<SessionUser>;
+  verifyEmailCode: (email: string, code: string) => Promise<AuthResult<SessionUser>>;
   resendConfirmationEmail: (
     email: string,
   ) => Promise<AuthResult<{ email: string; confirmToken: string }>>;
@@ -179,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Always persist real accounts (and role metadata) even when open-access demo is on.
       if (remote) {
         const result = await signUpWithRoleSupabase(input);
-        if (result.ok && !result.pendingConfirmation && !result.needsManualSignIn) {
+        if (result.ok && !result.pendingConfirmation) {
           setUser(result.data);
         }
         return result;
@@ -356,6 +358,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return confirmEmailToken(token);
   }, []);
 
+  const verifyEmailCode = useCallback(
+    async (email: string, code: string) => {
+      // Local backend never produces pendingConfirmation (signUp() above
+      // always signs in immediately there), so this is never reachable
+      // from the local flow — guard anyway rather than assume the caller
+      // checked isSupabaseBackend() first.
+      if (!remote) return { ok: false as const, error: AUTH_MESSAGES.generic };
+      const result = await verifyEmailCodeSupabase(email, code);
+      if (result.ok) setUser(result.data);
+      return result;
+    },
+    [remote],
+  );
+
   const resendConfirmationEmail = useCallback(
     async (email: string) => {
       if (remote) return resendConfirmationSupabase(email);
@@ -449,6 +465,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       confirmEmail,
+      verifyEmailCode,
       resendConfirmationEmail,
       forgotPassword,
       resetPassword,
@@ -468,6 +485,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       confirmEmail,
+      verifyEmailCode,
       resendConfirmationEmail,
       forgotPassword,
       resetPassword,

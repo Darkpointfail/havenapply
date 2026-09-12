@@ -165,12 +165,12 @@ export function CommunityAvailabilityManager() {
           <div className="flex gap-2">
             <Button
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 if (!draft.roomType.trim()) {
                   alert(t("Enter a room type."));
                   return;
                 }
-                const res = upsertAvailability(draft);
+                const res = await upsertAvailability(draft);
                 if (res.ok) setDraft(null);
                 else alert(res.error ? t(res.error) : t("Unable to save availability."));
               }}
@@ -211,8 +211,10 @@ export function CommunityAvailabilityManager() {
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => {
-                      if (confirm(`Remove ${u.roomType}?`)) removeAvailability(u.id);
+                    onClick={async () => {
+                      if (!confirm(`Remove ${u.roomType}?`)) return;
+                      const res = await removeAvailability(u.id);
+                      if (!res.ok) alert(res.error ? t(res.error) : t("Unable to remove availability."));
                     }}
                   >
                     {t("Remove")}

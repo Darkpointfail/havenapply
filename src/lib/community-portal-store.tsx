@@ -66,6 +66,11 @@ import {
   toClientRole,
   type TeamMemberRecord,
 } from "@/lib/staff-team/client-api";
+import {
+  apiListAvailability,
+  apiRemoveAvailability,
+  apiUpsertAvailability,
+} from "@/lib/community-availability/client-api";
 import { getResidence } from "@/data/residences";
 
 type PortalContextValue = {
@@ -133,8 +138,8 @@ type PortalContextValue = {
   sendPatientTransfer: (transferId: string) => { ok: boolean; error?: string };
   getPatientTransfer: (id: string) => PatientTransfer | undefined;
   updateProfile: (patch: Partial<CommunityProfile>) => Promise<{ ok: boolean; error?: string }>;
-  upsertAvailability: (unit: AvailabilityUnit) => { ok: boolean; error?: string };
-  removeAvailability: (unitId: string) => { ok: boolean; error?: string };
+  upsertAvailability: (unit: AvailabilityUnit) => Promise<{ ok: boolean; error?: string }>;
+  removeAvailability: (unitId: string) => Promise<{ ok: boolean; error?: string }>;
   updateTeamMemberRole: (
     memberId: string,
     role: CommunityTeamRole,
@@ -275,18 +280,19 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Availability and notes stay local for now. Applications, the profile
-      // and the team roster come from the server — a second staff device
-      // needs to see the same team, so this browser's copy is only ever a
-      // starting point, overridden by whatever the server has.
+      // Notes stay local for now. Applications, the profile, the team
+      // roster and availability come from the server — a second staff
+      // device needs to see the same data, so this browser's copy is only
+      // ever a starting point, overridden by whatever the server has.
       const map = readMap();
       const shell = map[residenceId] ?? seedCommunityWorkspace(residenceId);
       const prior = Array.isArray(shell.applications) ? shell.applications : [];
 
-      const [applications, profileResult, team] = await Promise.all([
+      const [applications, profileResult, team, availability] = await Promise.all([
         admissionsEnabled() ? fetchServerApplications(prior) : Promise.resolve(prior),
         apiGetCommunityProfile(residenceId),
         fetchServerTeam(residenceId),
+        apiListAvailability(residenceId),
       ]);
       if (cancelled) return;
 
@@ -309,6 +315,11 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         // the team route refused the read) keeps the prior local list rather
         // than wiping it — same caution as the applications/profile fetches.
         team: team.length > 0 ? team : shell.team,
+        // Unlike team, a genuine empty availability list is a legitimate
+        // real state (a new residence with nothing entered yet) — trusted
+        // as-is. null means the fetch itself failed, not that there's
+        // nothing there; only then does the local shell survive.
+        availability: availability ?? shell.availability,
         updatedAt: new Date().toISOString(),
       });
       const nextMap = readMap();
@@ -378,6 +389,25 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
         const team = await fetchServerTeam(current.residenceId);
         if (team.length === 0) return;
         persist((ws) => normalizeWorkspace({ ...ws, team, updatedAt: new Date().toISOString() }));
+      })();
+    };
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+    };
+  }, [authReady, user, persist]);
+
+  // Same reasoning again for availability: a colleague updating room counts
+  // on another device has no way to notify this one.
+  useEffect(() => {
+    if (!authReady || !user || !isFacilityRole(user.role)) return;
+    const refresh = () => {
+      void (async () => {
+        const current = workspaceRef.current;
+        if (!current) return;
+        const availability = await apiListAvailability(current.residenceId);
+        if (availability === null) return;
+        persist((ws) => normalizeWorkspace({ ...ws, availability, updatedAt: new Date().toISOString() }));
       })();
     };
     window.addEventListener("focus", refresh);
@@ -1123,15 +1153,30 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
   );
 
   const upsertAvailability = useCallback(
-    (unit: AvailabilityUnit) => {
+    async (unit: AvailabilityUnit) => {
       if (!can("editAvailability")) {
         return { ok: false, error: "You don’t have permission to edit availability." };
       }
+      if (!workspace) return { ok: false, error: "Workspace not ready." };
+      // Server-first, not optimistic like mutateApp/updateProfile: the real
+      // key in public.availability is (site, careLevel), not this client id
+      // (a `tm-…`-style local id was never anything more than form state).
+      // Two units saved under the same care level collapse into the same
+      // row server-side — the real saved unit is needed before the local
+      // list can be reconciled correctly, not just echoed back.
+      const result = await apiUpsertAvailability(workspace.residenceId, unit);
+      if (!result.ok || !result.unit) {
+        return { ok: false, error: result.error || "Unable to reach the server." };
+      }
+      const saved = result.unit;
       persist((ws) => {
-        const exists = ws.availability.some((u) => u.id === unit.id);
-        const availability = exists
-          ? ws.availability.map((u) => (u.id === unit.id ? unit : u))
-          : [unit, ...ws.availability];
+        const existed = ws.availability.some((u) => u.id === saved.id);
+        const availability = [
+          saved,
+          ...ws.availability.filter(
+            (u) => u.id !== unit.id && u.id !== saved.id && u.careLevel !== saved.careLevel,
+          ),
+        ];
         const openBeds = availability.reduce((s, u) => s + u.count, 0);
         const waitlistTotal = availability.reduce((s, u) => s + u.waitlistCount, 0);
         return pushAudit(
@@ -1140,21 +1185,26 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
             availability,
             metrics: { ...ws.metrics, openBeds, waitlistTotal },
           },
-          exists ? `Updated availability · ${unit.roomType}` : `Added availability · ${unit.roomType}`,
+          existed ? `Updated availability · ${saved.roomType}` : `Added availability · ${saved.roomType}`,
         );
       });
       return { ok: true };
     },
-    [can, persist, pushAudit],
+    [can, persist, pushAudit, workspace],
   );
 
   const removeAvailability = useCallback(
-    (unitId: string) => {
+    async (unitId: string) => {
       if (!can("editAvailability")) {
         return { ok: false, error: "You don’t have permission to edit availability." };
       }
+      if (!workspace) return { ok: false, error: "Workspace not ready." };
+      const unit = workspace.availability.find((u) => u.id === unitId);
+      const result = await apiRemoveAvailability(workspace.residenceId, unitId);
+      if (!result.ok) {
+        return { ok: false, error: result.error || "Unable to reach the server." };
+      }
       persist((ws) => {
-        const unit = ws.availability.find((u) => u.id === unitId);
         const availability = ws.availability.filter((u) => u.id !== unitId);
         const openBeds = availability.reduce((s, u) => s + u.count, 0);
         const waitlistTotal = availability.reduce((s, u) => s + u.waitlistCount, 0);
@@ -1169,7 +1219,7 @@ export function CommunityPortalProvider({ children }: { children: ReactNode }) {
       });
       return { ok: true };
     },
-    [can, persist, pushAudit],
+    [can, persist, pushAudit, workspace],
   );
 
   const updateTeamMemberRole = useCallback(
